@@ -1409,7 +1409,7 @@ html.sg-on #sfOffer,html.sg-on .tabs{display:none!important}
 #sgSetup .sg-chips>*{padding:10px 14px;border-radius:999px;border:1.5px solid color-mix(in srgb,var(--ink) 18%,transparent);background:none;color:var(--ink);font:inherit;font-size:.95rem;cursor:pointer}
 #sgSetup .sg-chips>.on{border-color:var(--mango);background:color-mix(in srgb,var(--mango) 18%,transparent)}
 #sgSetup .sg-chips>.fixed{cursor:default;opacity:.85}
-html.mp-guest #pkSeg [data-v="league"],html.mp-guest #pkSeg [data-v="ar"],html.mp-guest:not(.tr-poker) #pkSeg [data-v="ot"],html.mp-guest:not(.tr-bets) #pkSeg [data-v="sb"]{display:none!important}
+html.mp-guest #pkSeg [data-v="league"],html.mp-guest:not(.tr-casino) #pkSeg [data-v="ar"],html.mp-guest:not(.tr-poker) #pkSeg [data-v="ot"],html.mp-guest:not(.tr-bets) #pkSeg [data-v="sb"]{display:none!important}
 #sgTabs{flex-basis:100%;max-width:340px;margin:6px auto 0;text-align:left}
 #sgTabs>span{display:block;text-align:center;margin-bottom:4px}
 #sgTabs .tg{display:flex;align-items:center;justify-content:space-between;padding:9px 4px;border-bottom:1px solid color-mix(in srgb,var(--ink) 10%,transparent);color:var(--ink);font-size:.95rem}
@@ -1663,6 +1663,17 @@ html:root[data-palette="goyardl"] .stat b.ipend{color:#9A6F1F}
 #people .pic.pmore{background:transparent;color:var(--muted);width:28px}
 #people .pic.pmore svg{fill:currentColor;stroke:none}
 </style>
+<style id="pato-base">
+html:not(.mp-guest) #s-topay{display:none!important}
+#tpList .tp{border-bottom:1px solid color-mix(in srgb,var(--ink) 10%,transparent)}
+#tpList .tp summary{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:12px 0;cursor:pointer;list-style:none;color:var(--ink)}
+#tpList .tp summary::-webkit-details-marker{display:none}
+#tpList .tp summary small{display:block;color:var(--muted);font-size:.8rem}
+#tpList .tp .tpb{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:0 0 12px}
+#tpList .tp .tpb input[type=text]{flex:1;min-width:120px}
+#tpList .tp .lnk{background:none;border:0;color:var(--muted);text-decoration:underline;font:inherit;font-size:.85rem;cursor:pointer}
+#tpList .tp.paid{opacity:.55}
+</style>
 </head>
 <body>
 <script id="stakd-ver">window.STAKD_V="20261110180413";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
@@ -1753,11 +1764,11 @@ html:root[data-palette="goyardl"] .stat b.ipend{color:#9A6F1F}
 <button class="primary" type="button" id="sfYes">Turn on Face ID</button><br><button type="button" class="lnk" id="sfNo">Not now</button></div></div>
 <script>try{if(localStorage.getItem("stakd-faceid"))document.documentElement.classList.add("sf-locked");}catch(e){}</script>
 <div id="sgSetup" hidden><form class="g" id="sgForm"><h2>Welcome to Pato</h2><p>Set up your app. You can change this later.</p>
-<label class="f" for="sgGoal">Your savings goal (RD$)</label><input type="text" id="sgGoal" inputmode="numeric" value="1,000,000">
+<label class="f" for="sgGoal">Your savings goal (RD$)</label><input type="text" id="sgGoal" inputmode="numeric" placeholder="e.g. 500,000">
 <label class="f" for="sgLimit">Monthly spending limit (RD$, optional)</label><input type="text" id="sgLimit" inputmode="numeric" placeholder="e.g. 50,000">
 <label class="f" for="sgPal">Color</label><select id="sgPal"></select>
 <label class="f">What do you want to track?</label>
-<div class="sg-chips"><span class="on fixed">💰 Saving</span><button type="button" data-k="spending" class="on">💳 Spending</button><button type="button" data-k="bets">⚽ Sports bets</button><button type="button" data-k="poker">♠️ Poker</button><button type="button" data-k="loans">🤝 Money I lend</button><button type="button" data-k="trends" class="on">📈 Trends</button></div>
+<div class="sg-chips"><span class="on fixed">💰 Saving</span><button type="button" data-k="spending" class="on">💳 Spending</button><button type="button" data-k="bets">⚽ Sports bets</button><button type="button" data-k="casino">🎰 Casino</button><button type="button" data-k="poker">♠️ Poker</button><button type="button" data-k="loans">🤝 Loans &amp; debts</button><button type="button" data-k="trends" class="on">📈 Trends</button></div>
 <button class="primary" type="submit">Start</button><div class="hint" id="sgMsg" aria-live="polite"></div></form></div>
 <script src="mp-firebase.js"></script>
 <script src="faceid.js?v=2" defer></script>
@@ -2051,6 +2062,20 @@ html:root[data-palette="goyardl"] .stat b.ipend{color:#9A6F1F}
       <button class="secondary" id="dSave" disabled>Add debt</button>
     </details>
   </section>
+  <section id="s-topay">
+    <div class="shead"><h2>To pay</h2><span class="num" id="tpHead"></span></div>
+    <div id="tpList"></div>
+    <details class="newloan" id="tpNew">
+      <summary>+ Add</summary>
+      <div class="grid">
+        <div><label for="tpName">To whom</label><input id="tpName" placeholder="Name" autocomplete="off"></div>
+        <div><label for="tpAmt">Amount (RD$)</label><input id="tpAmt" inputmode="decimal" placeholder="5,000" autocomplete="off"></div>
+        <div><label for="tpDue">Due (optional)</label><input id="tpDue" type="date"></div>
+        <div><label for="tpNote">What for (optional)</label><input id="tpNote" autocomplete="off"></div>
+      </div>
+      <button class="secondary" id="tpSave">Add</button>
+    </details>
+  </section>
   </div>
 
   <div class="tabp" role="tabpanel" id="p-poker" aria-labelledby="tab-poker" hidden>
@@ -2261,12 +2286,13 @@ html:root[data-palette="goyardl"] .stat b.ipend{color:#9A6F1F}
   const $ = id => document.getElementById(id);
   const LABELS = {"Apuestas":"Sports bets","Premio casino":"Arcade","Saldo inicial":"Starting balance","Rakeback de la liga":"League rakeback","Póker jugando":"League Action","Mensualidad":"Monthly allowance","Préstamo":"Loan","Otro":"Other","Rakeback como jugador":"Player rakeback","Póker casino":"Outside Tables","Póker con amigos":"Home games","Retiro":"Withdrawal","Reposición":"Replacement"};
   const WHY = [["gasto","Expense"],["emergencia","Emergency"],["corriente","Moved to checking account"],["negocio","Business or investment"],["poker","League poker loss or buy-in"],["poker_casino","Outside Tables loss"],["poker_amigos","Home game loss"],["apuesta","Sports bet"],["arcade","Arcade"],["favor","Favor"],["efectivo","Cash"],["otro","Other"]];
+  window.__LB = LABELS; window.__WHY = WHY;
   const whyLbl = k => (WHY.find(w=>w[0]===k)||[])[1] || "Other";
   const whySrc = k => ({poker:"Póker jugando",poker_casino:"Póker casino",poker_amigos:"Póker con amigos",apuesta:"Apuestas",arcade:"Premio casino"})[k] || "Retiro";
   const cap = x => String(x||"").replace(/(^|[\s(·-])(\p{Ll})/gu, (m,a,b)=>a+b.toUpperCase());
   const lbl = x => LABELS[x] || cap(x);
   const OWNER_SOURCES = ["Saldo inicial","Newlink","Rakeback de la liga","Póker jugando","Póker casino","Póker con amigos","Premio casino","Apuestas","Mensualidad","Préstamo","Otro","Reposición"];
-  const baseSources = () => { const me = window.MP_ME; if(!me || me.owner) return OWNER_SOURCES; const pk = document.documentElement.classList.contains("on-poker"); return ["Saldo inicial","Salary", ...(pk ? ["Póker casino","Póker con amigos","Apuestas"] : []), "Mensualidad","Préstamo","Otro","Reposición"]; };
+  const baseSources = () => { const me = window.MP_ME; if(!me || me.owner) return OWNER_SOURCES; const pk = document.documentElement.classList.contains("on-poker"); const C = document.documentElement.classList; return ["Saldo inicial","Salary", ...(pk && C.contains("tr-poker") ? ["Póker casino","Póker con amigos"] : []), ...(pk && C.contains("tr-bets") ? ["Apuestas"] : []), ...(pk && C.contains("tr-casino") ? ["Premio casino"] : []), "Mensualidad","Préstamo","Otro","Reposición"]; };
   const REP = "Reposición";
   // a replacement deposit puts back money taken out of savings; it points at the withdrawal with "repone"
   const repuestoDe = id => entries.filter(x=>x.type!=="out" && x.source===REP && x.repone===id).reduce((t,x)=>t+x.amount,0);
@@ -2717,6 +2743,7 @@ html:root[data-palette="goyardl"] .stat b.ipend{color:#9A6F1F}
     });
   }
   function warnMsg(msg){ toast(msg, "", true); }
+  window.mpSure = sure; window.mpWarn = warnMsg;
   window.mpToast = toast;
   function toast(title, sub, warn, undo){
     $("toastT").textContent = title; $("toastS").textContent = sub || "";
@@ -4627,7 +4654,7 @@ html:root[data-palette="goyardl"] .stat b.ipend{color:#9A6F1F}
       { const ym = today().slice(0,7), byD = {};
         entries.filter(e=>e.source==="Premio casino").forEach(e => { byD[e.date] = (byD[e.date]||0) + (e.type==="out"?-e.amount:e.amount); });
         const all = Object.entries(byD).map(([d,v])=>({d,v})).sort((a,b)=>b.d.localeCompare(a.d)), N = all.length;
-        $("pkATot").innerHTML = `<span>Arcade</span><b class="${cls(arT)}">${sgn(arT)}</b>`;
+        $("pkATot").innerHTML = `<span>${(window.MP_ME&&!window.MP_ME.owner)?"Casino":"Arcade"}</span><b class="${cls(arT)}">${sgn(arT)}</b>`;
         const mo = all.filter(x=>x.d.startsWith(ym)).reduce((t,x)=>t+x.v,0), up = all.filter(x=>x.v>0.5).length, dn = all.filter(x=>x.v<-0.5).length;
         const best = N ? Math.max(...all.map(x=>x.v)) : 0, worst = N ? Math.min(...all.map(x=>x.v)) : 0;
         $("pkASum").innerHTML = N ? `<div><span>This month</span><b class="${cls(mo)}">${sgn(mo)}</b></div><div><span>Days won</span><b>${up}–${dn}</b></div><div><span>Biggest win</span><b class="${cls(best)}">${best>0?sgn(best):"—"}</b></div><div><span>Biggest loss</span><b class="${cls(worst)}">${worst<0?sgn(worst):"—"}</b></div>` : "";
@@ -4709,7 +4736,7 @@ html:root[data-palette="goyardl"] .stat b.ipend{color:#9A6F1F}
     const recovered = inv>0 && pkT>=inv;
     $("be").style.display = inv>0 && !recovered ? "block" : "none";
     $("beDone").style.display = "none";
-    $("pkAllLbl").textContent = recovered ? "Total P&L" : "Poker total";
+    $("pkAllLbl").textContent = recovered ? "Total P&L" : (window.MP_ME&&!window.MP_ME.owner) ? "Total" : "Poker total";
     $("pkInvRow").hidden = true;
     $("pkInvNote").hidden = true;
     if(recovered){
@@ -4794,6 +4821,7 @@ html:root[data-palette="goyardl"] .stat b.ipend{color:#9A6F1F}
   const SP_START = "2026-10";
   const SP_CATS = {food:"Food", gas:"Car", sport:"Tennis & club", out:"Going out",
     subs:"Subscriptions", rides:"Rides", health:"Pharmacy & health", family:"Family", needs:"Essentials", shopping:"Wants", errands:"Errands", fees:"Fees", other:"Other"};
+  window.__SP = SP_CATS;
   const spCat = k => k==="cash" ? "Cash" : (k==="groceries"||k==="delivery") ? SP_CATS.food : k==="gaming" ? SP_CATS.shopping : (SP_CATS[k] || "Other");
   const spKey = k => (k==="groceries"||k==="delivery") ? "food" : k==="gaming" ? "shopping" : k; // old keys share one category
   let spend = [], spMeta = null, spWalletDoc = null, spMonth = null, spFilter = "all", spPendWd = null;
@@ -4867,7 +4895,7 @@ html:root[data-palette="goyardl"] .stat b.ipend{color:#9A6F1F}
     const invs = (config.inversiones||[]).filter(x=>Number(x.rd)>0).map(x=>{ if(!/ibkr/i.test(x.nombre||"")) return x; const c = ibkrCalc(); return c ? {...x, usd:Math.round(c.live*100)/100, rd:Math.round(c.liveRd)} : x; }), inv = invs.reduce((t,x)=>t+Number(x.rd),0);
     $("savSplit").hidden = !(inv || heldT);
     $("savSplit").classList.toggle("n3", 1 + invs.length + held.length >= 3);
-    if(inv || heldT) $("savSplit").innerHTML = `<div><span>BHD</span><b>${fmt(sav-inv-heldT)}</b></div>` + held.map(x=>`<div><span>${spEsc(x.nombre)}</span><b>${fmt(x.rd)}</b>${x.vence?`<small>back ${fmtDate(x.vence,false)}</small>`:""}</div>`).join("") + invs.map(x=>`<div><span>${spEsc(x.nombre)}</span><b>${x.usd?"US$"+Number(x.usd).toLocaleString("en-US"):fmt(x.rd)}</b>${x.usd?`<small>≈ ${fmt(x.rd)}</small>`:""}</div>`).join("");
+    if(inv || heldT) $("savSplit").innerHTML = `<div><span>${(window.MP_ME&&!window.MP_ME.owner)?"Savings":"BHD"}</span><b>${fmt(sav-inv-heldT)}</b></div>` + held.map(x=>`<div><span>${spEsc(x.nombre)}</span><b>${fmt(x.rd)}</b>${x.vence?`<small>back ${fmtDate(x.vence,false)}</small>`:""}</div>`).join("") + invs.map(x=>`<div><span>${spEsc(x.nombre)}</span><b>${x.usd?"US$"+Number(x.usd).toLocaleString("en-US"):fmt(x.rd)}</b>${x.usd?`<small>≈ ${fmt(x.rd)}</small>`:""}</div>`).join("");
     $("netTotal").innerHTML = `<b>${fmt(all)}</b>in your accounts plus what you’re owed`;
     const parts = [["Savings",sav-inv-heldT,"--c-sav"], ...held.map(x=>["Lent: "+x.nombre, x.rd, "--c-owe"]), ...invs.map(x=>[x.nombre, Number(x.rd), "--c-al"]),["Checking",cc,"--c-cc"],["Cash",cash,"--c-int"],["Owed to you",owed,"--c-owe"]];
     $("netBar").innerHTML = all>0 ? parts.map(([,v,c])=>v>0?`<i style="width:${v/all*100}%;background:var(${c})"></i>`:"").join("") : "";
@@ -5953,9 +5981,9 @@ TRACKER DATA:
   var track = [];
   function applyTrack(t){
     track = Array.isArray(t) ? t : [];
-    var bets = track.indexOf("bets") >= 0, pk = track.indexOf("poker") >= 0;
-    H.classList.toggle("tr-bets", bets); H.classList.toggle("tr-poker", pk);
-    var lab = document.querySelector("#tab-poker span"); if(lab) lab.textContent = bets && !pk ? "Bets" : pk && !bets ? "Poker" : "Play";
+    var bets = track.indexOf("bets") >= 0, pk = track.indexOf("poker") >= 0, cas = track.indexOf("casino") >= 0;
+    H.classList.toggle("tr-bets", bets); H.classList.toggle("tr-poker", pk); H.classList.toggle("tr-casino", cas);
+    var lab = document.querySelector("#tab-poker span"); if(lab) lab.textContent = "Games"; if(window.__mpGuestTrack) window.__mpGuestTrack(track);
     var seg = document.getElementById("pkSeg");
     if(seg){ var vis = [].slice.call(seg.querySelectorAll("button")).filter(function(b){ return getComputedStyle(b).display !== "none"; }); var on = seg.querySelector("button.on"); if(vis.length && (!on || vis.indexOf(on) < 0)) vis[0].click(); }
   }
@@ -5979,9 +6007,9 @@ TRACKER DATA:
     box.querySelectorAll(".sg-chips button").forEach(function(b){ b.onclick = function(){ b.classList.toggle("on"); }; });
     document.getElementById("sgForm").onsubmit = async function(e){
       e.preventDefault();
-      var goal = num(document.getElementById("sgGoal").value) || 1000000, lim = num(document.getElementById("sgLimit").value);
+      var goal = num(document.getElementById("sgGoal").value) || 500000, lim = num(document.getElementById("sgLimit").value);
       var picks = [].slice.call(document.querySelectorAll('#sgSetup .sg-chips button.on')).map(function(b){ return b.dataset.k; });
-      var tabs = TABS.filter(function(t){ return t === "poker" ? (picks.indexOf("poker") >= 0 || picks.indexOf("bets") >= 0) : picks.indexOf(t) >= 0; });
+      var tabs = TABS.filter(function(t){ return t === "poker" ? (picks.indexOf("poker") >= 0 || picks.indexOf("bets") >= 0 || picks.indexOf("casino") >= 0) : picks.indexOf(t) >= 0; });
       var hitos = [0.5,0.65,0.8,1].map(function(f){ return Math.round(goal*f/1000)*1000; });
       document.getElementById("sgMsg").textContent = "Saving…";
       try{
@@ -5996,7 +6024,7 @@ TRACKER DATA:
   function addSettings(){
     var sh = document.getElementById("palSheet"); if(!sh || document.getElementById("sgTabs")) return;
     var w = document.createElement("div"); w.id = "sgTabs";
-    w.innerHTML = '<span>Tabs</span>' + TABS.map(function(t){ var n = {spending:"Spend",poker:"Poker",loans:"Loans",trends:"Trends"}[t]; return '<label class="tg"><span>'+n+'</span><input type="checkbox" data-st="'+t+'"></label>'; }).join("") + '<button type="button" id="sgOut">Sign out</button>';
+    w.innerHTML = '<span>Tabs</span>' + TABS.map(function(t){ var n = {spending:"Spend",poker:"Games",loans:"Loans",trends:"Trends"}[t]; return '<label class="tg"><span>'+n+'</span><input type="checkbox" data-st="'+t+'"></label>'; }).join("") + '<button type="button" id="sgOut">Sign out</button>';
     sh.appendChild(w);
     w.querySelectorAll("[data-st]").forEach(function(c){ c.onchange = function(){ var t = TABS.filter(function(x){ var k = w.querySelector('[data-st="'+x+'"]'); return k && k.checked; }); apply(t); db.doc("prefs/ui").update({ tabs: t }).catch(function(){}); }; });
     document.getElementById("sgOut").onclick = function(){ if(window.mpSignOut) window.mpSignOut(); };
@@ -6068,6 +6096,7 @@ TRACKER DATA:
   var $ = function(id){ return document.getElementById(id); };
   var db = null, spend = [], bets = [], file = null;
   var CATS = {food:"Food", gas:"Car", sport:"Tennis & club", out:"Going out", subs:"Subscriptions", rides:"Rides", health:"Pharmacy & health", family:"Family", needs:"Essentials", shopping:"Wants", fees:"Fees", other:"Other"};
+  window.__SNAPC = CATS;
   var HINT = {"tab-savings":"a deposit or transfer receipt", "tab-spending":"a store receipt or bank transfer receipt", "tab-stocks":"an Interactive Brokers screen (orders, trades or positions)", "tab-poker":"a sports bet slip", "tab-loans":"a bank transfer for a loan (money lent or paid back)", "tab-trends":"a receipt"};
   var esc = function(s){ return String(s==null?"":s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); };
   var rd = function(n){ return "RD$" + Math.round(Number(n)||0).toLocaleString("en-US"); };
@@ -6233,5 +6262,95 @@ TRACKER DATA:
 })();
 </script>
 <div id="sbCover"></div>
+<script id="pato-base-js">
+(function(){
+  var H = document.documentElement, $ = function(i){ return document.getElementById(i); }, db = null, items = [];
+  var fmt = function(n){ return "RD$" + Math.round(Number(n)||0).toLocaleString("en-US"); };
+  var num = function(v){ return Number(String(v||"").replace(/[^0-9.]/g,"")) || 0; };
+  var esc = function(s){ return String(s==null?"":s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); };
+  var today = function(){ var d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
+  var MES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  var fd = function(s){ var p = String(s||"").split("-"); return p.length === 3 ? MES[+p[1]-1] + " " + (+p[2]) : ""; };
+  var sure = function(m, ok){ return window.mpSure ? window.mpSure(m, ok) : Promise.resolve(true); };
+  var warn = function(m){ if(window.mpWarn) window.mpWarn(m); };
+  var left = function(x){ return Math.max(0, (Number(x.total)||0) - (Number(x.pagado)||0)); };
+  var owe = function(){ return items.reduce(function(t,x){ return t + left(x); }, 0); };
+  function cats(){
+    [window.__SP, window.__SNAPC].forEach(function(C){ if(!C) return; C.sport = "Sports & gym"; C.subs = "Bills & subscriptions"; C.shopping = "Shopping"; C.health = "Health"; delete C.errands; });
+    var C = window.__SP; if(!C) return;
+    var o = Object.keys(C).map(function(k){ return '<option value="'+k+'">'+C[k]+'</option>'; }).join("");
+    ["spCat","spTrCatSel"].forEach(function(id){ var s = $(id); if(s){ var v = s.value; s.innerHTML = o; if(C[v]) s.value = v; } });
+    var L = window.__LB; if(L){ L["Premio casino"] = "Casino"; L["Póker casino"] = "Casino poker"; }
+  }
+  window.__mpGuestTrack = function(track){
+    var w = $("why"), W = window.__WHY; if(!w || !W) return;
+    var has = function(k){ return track.indexOf(k) >= 0; }, v = w.value;
+    var ok = W.filter(function(x){ return x[0] !== "poker" && ((x[0] !== "poker_casino" && x[0] !== "poker_amigos") || has("poker")) && (x[0] !== "apuesta" || has("bets")) && (x[0] !== "arcade" || has("casino")); });
+    w.innerHTML = '<option value="">Pick a reason</option>' + ok.map(function(x){ return '<option value="'+x[0]+'">'+(x[0]==="arcade"?"Casino":x[0]==="poker_casino"?"Casino poker loss":x[1])+'</option>'; }).join("");
+    if(ok.some(function(x){ return x[0] === v; })) w.value = v;
+    if(window.__mpBuildSources) window.__mpBuildSources();
+  };
+  function texts(){
+    var t = function(sel, s){ var e = document.querySelector(sel); if(e && e.textContent !== s) e.textContent = s; };
+    t("#s-cobrar h2", "To collect"); t("#s-debts .shead h2", "Other debts"); t(".pk-head h2", "Games"); t('#pkSeg [data-v="ar"]', "Casino"); t("#tab-poker span", "Games");
+  }
+  function render(){
+    var L = $("tpList"); if(!L) return;
+    var open = items.filter(function(x){ return left(x) > 0.5; }).sort(function(a,b){ return String(a.vence||"9").localeCompare(String(b.vence||"9")); });
+    var done = items.filter(function(x){ return left(x) <= 0.5; }).slice(0, 5);
+    $("tpHead").textContent = open.length ? fmt(owe()) : "";
+    L.innerHTML = (open.length ? "" : '<p class="hint">Nothing to pay.</p>') + open.concat(done).map(function(x){
+      var l = left(x), late = x.vence && x.vence < today() && l > 0.5;
+      var sub = l <= 0.5 ? "Paid" : (x.vence ? (late ? "Late · was due " : "Due ") + fd(x.vence) : "") + (x.nota ? (x.vence ? " · " : "") + esc(x.nota) : "");
+      return '<details class="tp'+(l<=0.5?' paid':'')+'" data-id="'+x.id+'"><summary><span>'+esc(x.nombre)+(sub?'<small>'+sub+'</small>':'')+'</span><b class="num">'+fmt(l)+'</b></summary>' +
+        '<div class="tpb">' + (l > 0.5 ? '<input type="text" inputmode="decimal" placeholder="'+Math.round(l).toLocaleString("en-US")+'" aria-label="Amount paid"><button class="secondary" data-a="pay">Paid</button>' : '') + '<button class="lnk" data-a="del">Delete</button></div></details>';
+    }).join("");
+    L.querySelectorAll(".tp").forEach(function(d){
+      var x = items.find(function(i){ return i.id === d.dataset.id; }); if(!x) return;
+      d.querySelectorAll("button").forEach(function(b){ b.onclick = async function(){
+        try{
+          if(b.dataset.a === "del"){ if(await sure("Delete " + x.nombre + "?", "Delete")) await db.collection("topay").doc(x.id).delete(); return; }
+          var inp = d.querySelector("input"), a = num(inp.value) || left(x); if(a > left(x) + 0.5) a = left(x);
+          await db.collection("topay").doc(x.id).update({ pagado: (Number(x.pagado)||0) + a, pagos: (x.pagos||[]).concat([{fecha: today(), monto: a}]) });
+        }catch(e){ warn("Couldn’t save."); }
+      }; });
+    });
+    net();
+  }
+  var busy = false;
+  function net(){
+    var s = $("netSplit"), tt = $("netTotal"); if(!s || !tt || busy) return;
+    busy = true;
+    var g = s.querySelector(".nw-g.tp-g"); if(g) g.remove();
+    var o = owe(), b = tt.querySelector("b");
+    if(b){ if(b.dataset.base == null || !b.dataset.mine) { b.dataset.base = num(b.textContent); b.dataset.mine = "1"; } b.textContent = fmt(Number(b.dataset.base) - o); }
+    var last = tt.lastChild; if(last && last.nodeType === 3) last.textContent = o > 0 ? "after what you owe" : "in your accounts plus what you’re owed";
+    if(o > 0){ var d = document.createElement("div"); d.className = "nw-g tp-g"; d.innerHTML = '<div class="nw-gh"><span>To pay</span><b>−'+fmt(o)+'</b></div>' + items.filter(function(x){ return left(x) > 0.5; }).map(function(x){ return '<div class="nw-r"><i style="background:var(--c-owe)"></i><span>'+esc(x.nombre)+'</span><b>−'+fmt(left(x))+'</b><small></small></div>'; }).join(""); s.appendChild(d); }
+    setTimeout(function(){ busy = false; }, 0);
+  }
+  function form(){
+    var go = function(){ $("tpSave").disabled = !($("tpName").value.trim() && num($("tpAmt").value) > 0); };
+    ["tpName","tpAmt"].forEach(function(i){ $(i).addEventListener("input", go); }); go();
+    $("tpSave").onclick = async function(){
+      var n = $("tpName").value.trim(), a = num($("tpAmt").value); if(!n || a <= 0) return;
+      $("tpSave").disabled = true;
+      try{
+        await db.collection("topay").add({ nombre: n, total: a, pagado: 0, vence: $("tpDue").value || "", nota: $("tpNote").value.trim(), creada: today(), createdAt: Date.now() });
+        ["tpName","tpAmt","tpDue","tpNote"].forEach(function(i){ $(i).value = ""; }); $("tpNew").open = false;
+      }catch(e){ warn("Couldn’t save."); }
+      go();
+    };
+  }
+  if(!window.claude) return;
+  window.claude.use("db").then(function(d){
+    db = d; var me = window.MP_ME || {}; if(me.owner) return; // Marco: nothing changes
+    cats(); texts(); form();
+    new MutationObserver(function(){ if(!busy) net(); }).observe($("s-net"), {childList: true, subtree: true});
+    var seg = $("pkSeg"); if(seg) new MutationObserver(texts).observe(seg, {childList: true, subtree: true, characterData: true});
+    db.collection("topay").onSnapshot(function(snap){ items = snap.docs.map(function(x){ return Object.assign({id: x.id}, x.data()); }); render(); }, function(){});
+    setTimeout(texts, 1500);
+  });
+})();
+</script>
 </body>
 </html>
