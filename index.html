@@ -1607,7 +1607,8 @@ html:root[data-palette="goyardl"] #sbCover{background:#F4EFE5}
 #people .pic{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;cursor:pointer;padding:0;border:0;background:color-mix(in srgb,var(--ink) 9%,transparent);color:var(--ink)}
 #people .pic.g{background:transparent;border:1.5px solid #E2B65F;color:#E2B65F}
 html:root[data-palette="goyardl"] #people .pic.g{border-color:#B8892F;color:#9A6F1F}
-#people .pic.done{opacity:.55}
+#people .person>summary .pact{align-items:center;align-self:center}
+#people .pic{margin:0}
 #people .pic svg{width:17px;height:17px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 #people .loan .loan-actions.lb>.lp{display:none!important}
 #people .loan.lc:not(.lo)>.loan-actions{display:none!important}
@@ -1664,7 +1665,8 @@ html:root[data-palette="goyardl"] .stat b.ipend{color:#9A6F1F}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261110154342";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261110160222";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+
 
 
 
@@ -3093,7 +3095,7 @@ html:root[data-palette="goyardl"] .stat b.ipend{color:#9A6F1F}
       const wb = warmBits(name), msg = items.length === 1 ? msgFor(items[0]) : `${saludoDR()} ${name}, ${wb.op} Te recuerdo tus pagos: ` +
         items.map(it => it.kind === "late" ? `${mEs(it)} del ${dEs(it)} (pendiente)` : `${mEs(it)} para el ${dEs(it)}`).join(", ").replace(/, ([^,]*)$/, " y $1") + ". " + wb.cl;
       const done = items.every(wasReminded) || items.every(it => waOpened.has(itKey(it)));
-      const rb = document.createElement("button"); rb.type = "button"; rb.className = "pic" + (done ? " done" : "");
+      const rb = document.createElement("button"); rb.type = "button"; rb.className = "pic" + (done ? " sent" : "");   // not "done": that global class added a top margin (Marco, Nov 10)
       rb.setAttribute("aria-label", "Remind " + name + " on WhatsApp"); rb.title = done ? "Reminded · send again" : "Remind"; rb.innerHTML = SV.wa;
       rb.onclick = ev => { stop(ev); warmSent(name, msg); const tel = telOf(p.name);
         if(tel){ items.forEach(it => waOpened.add(itKey(it))); window.open(waLink(tel, msg), "_blank", "noopener"); setTimeout(render, 300); return; }
