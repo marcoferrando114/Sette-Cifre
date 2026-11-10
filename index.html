@@ -1697,7 +1697,8 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261110230017";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261110235803";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+
 
 
 
@@ -4735,6 +4736,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
         if(bk.length){ rows.push(["This month", sg(mo), cl(mo)]); rows.push(["All time", sg(net), cl(net)]); }
         const done = bets.filter(b=>b.result==="won"||b.result==="lost"||b.result==="push"), st = done.reduce((s,b)=>s+(Number(b.stake)||0),0), bn = done.reduce((s,b)=>s+(Number(b.payout)||0)-(Number(b.stake)||0),0);
         if(st>0){ const per = bn/st*100; rows.push(["Per RD$100 you bet", `${sg(per)} ${per>=0?"profit":"loss"}`, cl(per)]); }
+        { const R = bets.filter(b=>b.result==="won"||b.result==="lost").sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||"")); if(R.length){ const r0 = R[0].result; let k = 0; while(k<R.length && R[k].result===r0) k++; rows.push(["Current streak", k===1 ? (r0==="won"?"Won last bet":"Lost last bet") : `${k} ${r0==="won"?"wins":"losses"} in a row`, r0==="won"?"profit":"late"]); } }
         const grp = k => { const g = {}; done.forEach(b=>{ const x = k(b); if(!x) return; g[x] = g[x] || {n:0, net:0}; g[x].n++; g[x].net += (Number(b.payout)||0)-(Number(b.stake)||0); }); return g; };
         const ty = grp(b=>b.tipo==="parlay"?"Parlays":"Singles");
         ["Parlays","Singles"].forEach(k => { if(ty[k]) rows.push([k, sg(ty[k].net), cl(ty[k].net)]); });
@@ -4752,7 +4754,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
           const S = bets.filter(b=>(b.result==="won"||b.result==="lost") && dec(b)>1).sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||"")).slice(0,50);
           if(S.length >= 20){ const n = S.length, w = S.filter(b=>b.result==="won").length, need = S.reduce((s,b)=>s+1/dec(b),0)/n, more = Math.ceil(need*n - w - 1e-9);
             const el = $("rcSports"), v = document.createElement("button"); v.type = "button"; v.className = "rc-v " + (more<=0 ? "ok" : "no");
-            const ad = 1/need, ao = ad>=2 ? "+"+Math.round((ad-1)*100) : "−"+Math.round(100/(ad-1));
+            const ao = (1/need).toFixed(2)+"x";
             v.innerHTML = (more<=0 ? "✅ You win enough to profit at your odds" : "❌ Lately, you're not winning enough for the odds you take") + `<small>You win ${Math.round(w/n*100)}% of your bets (${w} of your last ${n}). At your average odds of ${ao}, you need ${Math.round(need*100)}% to break even${more>0?`, so ${more} more win${more>1?"s":""}`:""}.</small>`;
             const hd = el.querySelector(".rc-h"); if(hd) hd.after(v); else { el.prepend(v); el.hidden = false; } } } }
       // POKER (Outside Tables + Home games)
