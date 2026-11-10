@@ -1697,7 +1697,8 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261110200231";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261110230017";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+
 
 
 
@@ -4733,11 +4734,11 @@ html:not(.mp-guest) #s-gst{display:none!important}
         const net = bk.reduce((s,e)=>s+(e.type==="out"?-e.amount:e.amount),0), mo = bk.filter(e=>(e.date||"").startsWith(ym)).reduce((s,e)=>s+(e.type==="out"?-e.amount:e.amount),0);
         if(bk.length){ rows.push(["This month", sg(mo), cl(mo)]); rows.push(["All time", sg(net), cl(net)]); }
         const done = bets.filter(b=>b.result==="won"||b.result==="lost"||b.result==="push"), st = done.reduce((s,b)=>s+(Number(b.stake)||0),0), bn = done.reduce((s,b)=>s+(Number(b.payout)||0)-(Number(b.stake)||0),0);
-        if(st>0){ const back = (st+bn)/st*100; rows.push(["Every RD$100 bet", `RD$${Math.round(back)} back`, back>=100?"profit":"late"]); }
+        if(st>0){ const per = bn/st*100; rows.push(["Per RD$100 you bet", `${sg(per)} ${per>=0?"profit":"loss"}`, cl(per)]); }
         const grp = k => { const g = {}; done.forEach(b=>{ const x = k(b); if(!x) return; g[x] = g[x] || {n:0, net:0}; g[x].n++; g[x].net += (Number(b.payout)||0)-(Number(b.stake)||0); }); return g; };
         const ty = grp(b=>b.tipo==="parlay"?"Parlays":"Singles");
         ["Parlays","Singles"].forEach(k => { if(ty[k]) rows.push([k, sg(ty[k].net), cl(ty[k].net)]); });
-        const sp = grp(b=>{ const s = [...new Set((b.legs||[]).map(l=>String(l.sport||"").trim()).filter(Boolean))]; return s.length===1 ? s[0] : s.length ? "Mixed" : null; });
+        const sp = grp(b=>{ const s = [...new Set((b.legs||[]).map(l=>String(l.sport||"").trim()).filter(Boolean))]; return s.length===1 ? s[0] : null; });
         const spk = Object.keys(sp).sort((a,b)=>sp[b].net-sp[a].net);
         if(spk.length>=2){ rows.push([`Best sport · ${spEsc(spk[0])}`, sg(sp[spk[0]].net), cl(sp[spk[0]].net)]); rows.push([`Worst sport · ${spEsc(spk[spk.length-1])}`, sg(sp[spk[spk.length-1]].net), cl(sp[spk[spk.length-1]].net)]); }
         else if(spk.length===1) rows.push([spEsc(spk[0]), sg(sp[spk[0]].net), cl(sp[spk[0]].net)]);
@@ -4751,8 +4752,8 @@ html:not(.mp-guest) #s-gst{display:none!important}
           const S = bets.filter(b=>(b.result==="won"||b.result==="lost") && dec(b)>1).sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||"")).slice(0,50);
           if(S.length >= 20){ const n = S.length, w = S.filter(b=>b.result==="won").length, need = S.reduce((s,b)=>s+1/dec(b),0)/n, more = Math.ceil(need*n - w - 1e-9);
             const el = $("rcSports"), v = document.createElement("button"); v.type = "button"; v.className = "rc-v " + (more<=0 ? "ok" : "no");
-            v.innerHTML = (more<=0 ? "✅ You win often enough to profit at these odds" : `❌ To break even, you'd need to win ${more} more of your last ${n} bets`) + `<small hidden>You win ${Math.round(w/n*100)}% of your bets. At the odds you take, you need ${Math.round(need*100)}% to break even.</small>`;
-            v.onclick = () => { const s = v.querySelector("small"); s.hidden = !s.hidden; };
+            const ad = 1/need, ao = ad>=2 ? "+"+Math.round((ad-1)*100) : "−"+Math.round(100/(ad-1));
+            v.innerHTML = (more<=0 ? "✅ You win enough to profit at your odds" : "❌ Lately, you're not winning enough for the odds you take") + `<small>You win ${Math.round(w/n*100)}% of your bets (${w} of your last ${n}). At your average odds of ${ao}, you need ${Math.round(need*100)}% to break even${more>0?`, so ${more} more win${more>1?"s":""}`:""}.</small>`;
             const hd = el.querySelector(".rc-h"); if(hd) hd.after(v); else { el.prepend(v); el.hidden = false; } } } }
       // POKER (Outside Tables + Home games)
       { const all = [...((window.__rcPk||{}).pkWeeks||[]), ...((window.__rcPk||{}).pkWeeksH||[])], rows = [];
@@ -4786,7 +4787,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
     const recovered = inv>0 && pkT>=inv;
     $("be").style.display = inv>0 && !recovered ? "block" : "none";
     $("beDone").style.display = "none";
-    $("pkAllLbl").textContent = recovered ? "Total P&L" : (window.MP_ME&&!window.MP_ME.owner) ? "Total" : "Poker total";
+    $("pkAllLbl").textContent = recovered ? "Total P&L" : (window.MP_ME&&!window.MP_ME.owner) ? "All games" : "Poker total";
     $("pkInvRow").hidden = true;
     $("pkInvNote").hidden = true;
     if(recovered){
