@@ -1392,7 +1392,7 @@ html.mp-guest #alWrap{display:none}
 <style id="stakd-stale">#stStale{display:inline-block;margin:6px 0 2px;padding:3px 10px;border-radius:999px;font-size:.78rem;color:var(--muted);border:1px solid color-mix(in srgb,var(--ink) 14%,transparent)}#stStale[hidden]{display:none}</style>
 <style id="stakd-guest">
 #mpGate input{display:block;width:100%}
-html.mp-guest #saGmRow,html.mp-guest #spSrc,html.mp-guest #saKey,html.mp-guest #tab-stocks{display:none!important}
+html.mp-guest #saGmRow,html.mp-guest #spSrc,html.mp-guest #saKey,html.mp-guest:not(.on-stocks) #tab-stocks,html.mp-guest #p-stocks > :not(#s-gst){display:none!important}
 html.mp-guest:not(.on-spending) #tab-spending,html.mp-guest:not(.on-poker) #tab-poker,html.mp-guest:not(.on-loans) #tab-loans,html.mp-guest:not(.on-trends) #tab-trends{display:none!important}
 #sgSetup{position:fixed;inset:0;z-index:90;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:max(24px,env(safe-area-inset-top)) 16px 32px;background:var(--paper)}
 #sgSetup[hidden]{display:none}
@@ -1674,6 +1674,23 @@ html:not(.mp-guest) #s-topay{display:none!important}
 #tpList .tp .lnk{background:none;border:0;color:var(--muted);text-decoration:underline;font:inherit;font-size:.85rem;cursor:pointer}
 #tpList .tp.paid{opacity:.55}
 </style>
+<style id="pato-gst">
+html:not(.mp-guest) #s-gst{display:none!important}
+#s-gst .gst-sub{color:var(--muted);font-size:.9rem;margin:2px 0 14px}
+#s-gst .up{color:var(--gain,#A6E9C2)} #s-gst .dn{color:var(--loss,#FFB8AA)}
+#gstList .tp{border-bottom:1px solid color-mix(in srgb,var(--ink) 10%,transparent)}
+#gstList summary{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:12px 0;cursor:pointer;list-style:none;color:var(--ink)}
+#gstList summary::-webkit-details-marker{display:none}
+#gstList summary small{display:block;color:var(--muted);font-size:.8rem}
+#gstList summary .r{text-align:right}
+#gstList .tpb{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 0 12px}
+#gstList .tpb .full{grid-column:1/-1;display:flex;gap:8px;flex-wrap:wrap}
+#gstList .lnk,#s-gst .lnk{background:none;border:0;color:var(--muted);text-decoration:underline;font:inherit;font-size:.85rem;cursor:pointer}
+#s-gst ol{margin:8px 0 0;padding-left:20px;color:var(--muted);font-size:.9rem;line-height:1.5}
+#s-gst .krow{display:flex;gap:8px;margin-top:10px}
+#s-gst .krow input{flex:1;min-width:0;width:auto}
+#s-gst .krow .secondary{width:auto;flex:none;padding-left:18px;padding-right:18px}
+</style>
 </head>
 <body>
 <script id="stakd-ver">window.STAKD_V="20261110180413";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
@@ -1768,7 +1785,7 @@ html:not(.mp-guest) #s-topay{display:none!important}
 <label class="f" for="sgLimit">Monthly spending limit (RD$, optional)</label><input type="text" id="sgLimit" inputmode="numeric" placeholder="e.g. 50,000">
 <label class="f" for="sgPal">Color</label><select id="sgPal"></select>
 <label class="f">What do you want to track?</label>
-<div class="sg-chips"><span class="on fixed">💰 Saving</span><button type="button" data-k="spending" class="on">💳 Spending</button><button type="button" data-k="loans">🤝 Loans &amp; debts</button><button type="button" data-k="trends" class="on">📈 Trends</button></div>
+<div class="sg-chips"><span class="on fixed">💰 Saving</span><button type="button" data-k="spending" class="on">💳 Spending</button><button type="button" data-k="stocks">📊 Stocks</button><button type="button" data-k="loans">🤝 Loans &amp; debts</button><button type="button" data-k="trends" class="on">📈 Trends</button></div>
 <label class="f">Games</label>
 <div class="sg-chips"><button type="button" data-k="poker">♠️ Poker</button><button type="button" data-k="casino">🎰 Casino</button><button type="button" data-k="bets">⚽ Sports bets</button></div>
 <button class="primary" type="submit">Start</button><div class="hint" id="sgMsg" aria-live="polite"></div></form></div>
@@ -2132,6 +2149,31 @@ html:not(.mp-guest) #s-topay{display:none!important}
   </div>
 
   <div class="tabp" role="tabpanel" id="p-stocks" aria-labelledby="tab-stocks" hidden>
+  <section id="s-gst">
+    <h2>Stocks</h2>
+    <div class="st-big num" id="gstVal">US$0</div>
+    <div class="gst-sub num" id="gstSub"></div>
+    <div id="gstList"></div>
+    <details class="newloan" id="gstNew">
+      <summary>+ Add stock</summary>
+      <div class="grid">
+        <div><label for="gstT">Ticker</label><input id="gstT" placeholder="AAPL" autocomplete="off" autocapitalize="characters"></div>
+        <div><label for="gstS">Shares</label><input id="gstS" inputmode="decimal" placeholder="2.5" autocomplete="off"></div>
+        <div><label for="gstP">Price paid per share (US$)</label><input id="gstP" inputmode="decimal" placeholder="180" autocomplete="off"></div>
+      </div>
+      <button class="secondary" id="gstSave">Add</button>
+    </details>
+    <details class="newloan" id="gstHow">
+      <summary>How to keep it up to date</summary>
+      <ol>
+        <li>Each time you buy, tap the stock → <b>Bought</b>, and type the shares and the price from your broker.</li>
+        <li>Each time you sell, tap the stock → <b>Sold</b>.</li>
+        <li>Live prices: make a free account at <a href="https://finnhub.io/register" target="_blank" rel="noopener">finnhub.io</a>, copy your API key and paste it here once.</li>
+        <li>No key? Tap the stock → <b>Set price</b> when you want to update it.</li>
+      </ol>
+      <div class="krow"><input id="gstKey" type="password" placeholder="Finnhub API key" autocomplete="off" aria-label="Finnhub API key"><button class="secondary" id="gstKeySave">Save</button></div>
+    </details>
+  </section>
   <section id="s-stocks">
     <h2>IBKR</h2>
     <div class="st-big num" id="stVal">—</div>
@@ -5978,7 +6020,7 @@ TRACKER DATA:
 </script>
 <script id="stakd-guest-js">
 (function(){
-  var H = document.documentElement, TABS = ["spending","poker","loans","trends"], db = null, cur = null, shown = false;
+  var H = document.documentElement, TABS = ["spending","stocks","poker","loans","trends"], db = null, cur = null, shown = false;
   var num = function(v){ return Number(String(v||"").replace(/[^0-9.]/g,"")) || 0; };
   var track = [];
   function applyTrack(t){
@@ -6026,7 +6068,7 @@ TRACKER DATA:
   function addSettings(){
     var sh = document.getElementById("palSheet"); if(!sh || document.getElementById("sgTabs")) return;
     var w = document.createElement("div"); w.id = "sgTabs";
-    w.innerHTML = '<span>Tabs</span>' + TABS.map(function(t){ var n = {spending:"Spend",poker:"Games",loans:"Loans",trends:"Trends"}[t]; return '<label class="tg"><span>'+n+'</span><input type="checkbox" data-st="'+t+'"></label>'; }).join("") + '<button type="button" id="sgOut">Sign out</button>';
+    w.innerHTML = '<span>Tabs</span>' + TABS.map(function(t){ var n = {spending:"Spend",stocks:"Stocks",poker:"Games",loans:"Loans",trends:"Trends"}[t]; return '<label class="tg"><span>'+n+'</span><input type="checkbox" data-st="'+t+'"></label>'; }).join("") + '<button type="button" id="sgOut">Sign out</button>';
     sh.appendChild(w);
     w.querySelectorAll("[data-st]").forEach(function(c){ c.onchange = function(){ var t = TABS.filter(function(x){ var k = w.querySelector('[data-st="'+x+'"]'); return k && k.checked; }); apply(t); db.doc("prefs/ui").update({ tabs: t }).catch(function(){}); }; });
     document.getElementById("sgOut").onclick = function(){ if(window.mpSignOut) window.mpSignOut(); };
@@ -6351,6 +6393,80 @@ TRACKER DATA:
     var seg = $("pkSeg"); if(seg) new MutationObserver(texts).observe(seg, {childList: true, subtree: true, characterData: true});
     db.collection("topay").onSnapshot(function(snap){ items = snap.docs.map(function(x){ return Object.assign({id: x.id}, x.data()); }); render(); }, function(){});
     setTimeout(texts, 1500);
+  });
+})();
+</script>
+<script id="pato-gst-js">
+(function(){
+  var $ = function(i){ return document.getElementById(i); }, db = null, H = [], key = null, busy = false;
+  var num = function(v){ return Number(String(v||"").replace(/[^0-9.]/g,"")) || 0; };
+  var usd = function(n){ var a = Math.abs(n); return (n < 0 ? "−" : "") + "US$" + a.toLocaleString("en-US", {minimumFractionDigits: a < 1000 ? 2 : 0, maximumFractionDigits: a < 1000 ? 2 : 0}); };
+  var sg = function(n){ return (n > 0 ? "+" : "") + usd(n); };
+  var pc = function(n){ return (n > 0 ? "+" : "") + n.toFixed(1) + "%"; };
+  var esc = function(s){ return String(s==null?"":s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); };
+  var warn = function(m){ if(window.mpWarn) window.mpWarn(m); };
+  var sure = function(m, ok){ return window.mpSure ? window.mpSure(m, ok) : Promise.resolve(true); };
+  var px = function(x){ return Number(x.precio) || Number(x.costo) || 0; };
+  function render(){
+    var L = $("gstList"); if(!L) return;
+    var list = H.filter(function(x){ return Number(x.sh) > 0; }).sort(function(a,b){ return px(b)*b.sh - px(a)*a.sh; });
+    var val = 0, cost = 0, day = 0, hasDay = false;
+    list.forEach(function(x){ val += px(x)*x.sh; cost += (Number(x.costo)||0)*x.sh; if(x.prev){ day += (px(x) - x.prev)*x.sh; hasDay = true; } });
+    $("gstVal").textContent = usd(val);
+    var g = val - cost;
+    $("gstSub").innerHTML = list.length ? '<span class="'+(g>=0?'up':'dn')+'">'+sg(g)+' ('+pc(cost ? g/cost*100 : 0)+')</span> total' + (hasDay ? ' · <span class="'+(day>=0?'up':'dn')+'">'+sg(day)+'</span> today' : '') : 'Add what you own below.';
+    L.innerHTML = list.map(function(x){
+      var v = px(x)*x.sh, gx = (px(x) - (Number(x.costo)||0))*x.sh, live = !!x.pAt;
+      return '<details class="tp" data-id="'+x.id+'"><summary><span><b>'+esc(x.t)+'</b><small>'+(+x.sh).toLocaleString("en-US",{maximumFractionDigits:4})+' sh · avg '+usd(Number(x.costo)||0)+'</small></span><span class="r num"><b>'+usd(v)+'</b><small class="'+(gx>=0?'up':'dn')+'">'+sg(gx)+'</small></span></summary>' +
+        '<div class="tpb"><input data-f="sh" inputmode="decimal" placeholder="Shares" aria-label="Shares"><input data-f="p" inputmode="decimal" placeholder="Price US$" aria-label="Price"><div class="full"><button class="secondary" data-a="buy">Bought</button><button class="secondary" data-a="sell">Sold</button><button class="secondary" data-a="px">Set price</button><button class="lnk" data-a="del">Delete</button></div>' +
+        '<small class="full" style="color:var(--muted)">Price '+usd(px(x))+(live ? '' : ' · set by hand')+'</small></div></details>';
+    }).join("");
+    L.querySelectorAll(".tp").forEach(function(d){
+      var x = H.find(function(i){ return i.id === d.dataset.id; }); if(!x) return;
+      d.querySelectorAll("button").forEach(function(b){ b.onclick = async function(){
+        var s = num(d.querySelector('[data-f=sh]').value), pr = num(d.querySelector('[data-f=p]').value), ref = db.collection("holdings").doc(x.id), a = b.dataset.a;
+        try{
+          if(a === "del"){ if(await sure("Delete " + x.t + "?", "Delete")) await ref.delete(); return; }
+          if(a === "px"){ if(!pr) return warn("Type the price."); await ref.update({ precio: pr, prev: null, pAt: null }); return; }
+          if(a === "buy"){ if(!s || !pr) return warn("Type the shares and the price."); var ns = Number(x.sh) + s; await ref.update({ sh: ns, costo: ((Number(x.costo)||0)*x.sh + s*pr) / ns }); return; }
+          if(a === "sell"){ if(!s) return warn("Type the shares you sold."); var left = Math.max(0, Number(x.sh) - s); if(left < 1e-6){ if(await sure("Sold all of " + x.t + "?", "Yes")) await ref.delete(); } else await ref.update({ sh: left }); }
+        }catch(e){ warn("Couldn’t save."); }
+      }; });
+    });
+  }
+  async function quotes(){
+    if(busy || !key || !H.length || document.hidden) return; busy = true;
+    try{
+      for(var i = 0; i < H.length; i++){
+        var x = H[i], r = await fetch("https://finnhub.io/api/v1/quote?symbol=" + encodeURIComponent(x.t) + "&token=" + encodeURIComponent(key));
+        if(!r.ok) continue; var q = await r.json();
+        if(q && q.c > 0 && (q.c !== x.precio || q.pc !== x.prev)) await db.collection("holdings").doc(x.id).update({ precio: q.c, prev: q.pc || null, pAt: Date.now() });
+      }
+    }catch(e){} busy = false;
+  }
+  function form(){
+    var go = function(){ $("gstSave").disabled = !($("gstT").value.trim() && num($("gstS").value) > 0 && num($("gstP").value) > 0); };
+    ["gstT","gstS","gstP"].forEach(function(i){ $(i).addEventListener("input", go); }); go();
+    $("gstSave").onclick = async function(){
+      var t = $("gstT").value.trim().toUpperCase().replace(/[^A-Z0-9.\-]/g, ""), s = num($("gstS").value), pr = num($("gstP").value); if(!t || !s || !pr) return;
+      var ex = H.find(function(x){ return x.t === t; });
+      try{
+        if(ex){ var ns = Number(ex.sh) + s; await db.collection("holdings").doc(ex.id).update({ sh: ns, costo: ((Number(ex.costo)||0)*ex.sh + s*pr) / ns }); }
+        else await db.collection("holdings").add({ t: t, sh: s, costo: pr, precio: pr, createdAt: Date.now() });
+        ["gstT","gstS","gstP"].forEach(function(i){ $(i).value = ""; }); $("gstNew").open = false; setTimeout(quotes, 500);
+      }catch(e){ warn("Couldn’t save."); }
+      go();
+    };
+    $("gstKeySave").onclick = async function(){ var k = $("gstKey").value.trim(); if(!k) return; try{ await db.doc("prefs/keys").set({ finnhub: k, at: Date.now() }); $("gstKey").value = ""; $("gstHow").open = false; if(window.mpToast) window.mpToast("Live prices on", ""); }catch(e){ warn("Couldn’t save."); } };
+  }
+  if(!window.claude) return;
+  window.claude.use("db").then(function(d){
+    db = d; var me = window.MP_ME || {}; if(me.owner) return; // Marco keeps his IBKR tab
+    form();
+    db.collection("holdings").onSnapshot(function(s){ var first = !H.length; H = s.docs.map(function(x){ var v = x.data(); return Object.assign({id: x.id}, v, {sh: Number(v.sh)||0}); }); render(); if(first) quotes(); }, function(){});
+    db.doc("prefs/keys").onSnapshot(function(s){ var k = s.exists ? s.data().finnhub : null; var had = key; key = k || null; $("gstKey").placeholder = key ? "Key saved · paste a new one to change" : "Finnhub API key"; if(key && !had) quotes(); }, function(){});
+    setInterval(function(){ var p = $("p-stocks"); if(p && !p.hidden) quotes(); }, 60000);
+    var t = $("tab-stocks"); if(t) t.addEventListener("click", function(){ setTimeout(quotes, 300); });
   });
 })();
 </script>
