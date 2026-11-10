@@ -11,8 +11,8 @@
 <meta name="theme-color" content="#0F241B">
 <meta name="robots" content="noindex,nofollow">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="apple-touch-icon" href="icon-180.png?v=6">
-<link rel="icon" type="image/png" href="icon-192.png?v=6">
+<link rel="apple-touch-icon" href="icon-180.png?v=7">
+<link rel="icon" type="image/png" href="icon-192.png?v=7">
 <script>(function(){var p="goyards";try{p=localStorage.getItem("mp-palette")||"goyards";}catch(e){}if(["goyards","goyardt","goyardl"].indexOf(p)<0)p="goyards";document.documentElement.setAttribute("data-palette",p);document.documentElement.setAttribute("data-theme",p==="goyardl"?"light":"dark");var t=document.querySelector('meta[name="theme-color"]');if(t)t.setAttribute("content",p==="goyardt"?"#24170E":p==="goyardl"?"#E8D7B8":"#0F241B");})();</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -1665,7 +1665,7 @@ html:root[data-palette="goyardl"] .stat b.ipend{color:#9A6F1F}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261110160222";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261110180413";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -1739,13 +1739,14 @@ html:root[data-palette="goyardl"] .stat b.ipend{color:#9A6F1F}
 
 
 
-<div id="mpGate" hidden><form class="g" id="mpGateForm"><img src="icon-192.png?v=6" alt=""><h1>Pato</h1><p id="mpGateSub">Sign in</p>
+
+<div id="mpGate" hidden><form class="g" id="mpGateForm"><img src="icon-192.png?v=7" alt=""><h1>Pato</h1><p id="mpGateSub">Sign in</p>
 <input type="email" id="mpEmail" autocomplete="username" inputmode="email" placeholder="Email" aria-label="Email" required>
 <input type="password" id="mpPass" autocomplete="current-password" placeholder="Password" aria-label="Password" required>
 <button class="primary" type="submit" id="mpGateGo">Open</button><div class="hint" id="mpGateMsg" aria-live="polite"></div>
 <button type="button" class="lnk" id="mpForgot">Forgot password</button><br><button type="button" class="lnk" id="mpSwitch">Create an account</button></form></div>
 <script>window.MP_FIREBASE={"apiKey": "AIzaSyAMuD9zu8-MXApaHTCVsaXLi5CtV3WufY4", "authDomain": "stakd-3d1b9.firebaseapp.com", "projectId": "stakd-3d1b9", "storageBucket": "stakd-3d1b9.firebasestorage.app", "messagingSenderId": "578019134464", "appId": "1:578019134464:web:09b3b23120c23df3d89ce5"};window.MP_OWNER="marcoferrandodemoya@gmail.com";document.documentElement.classList.add("mp-locked");</script>
-<div id="sfLock" hidden><div class="g"><img src="icon-192.png?v=6" alt=""><h1>Pato</h1><p>Locked</p>
+<div id="sfLock" hidden><div class="g"><img src="icon-192.png?v=7" alt=""><h1>Pato</h1><p>Locked</p>
 <button class="primary" type="button" id="sfUnlock">Unlock with Face ID</button><div id="sfMsg" aria-live="polite"></div>
 <button type="button" class="lnk" id="sfPass">Use password instead</button></div></div>
 <div id="sfOffer" hidden><div class="g"><h2>Use Face ID?</h2><p>Only your face opens Pato. No password to type.</p>
@@ -6017,7 +6018,7 @@ TRACKER DATA:
     var L = p === "goyardl", H = document.documentElement;
     H.setAttribute("data-theme", L ? "light" : "dark");
     var m = document.querySelector('meta[name="theme-color"]'); if(m) m.setAttribute("content", L ? "#F4EFE5" : "#0F241B");
-    document.querySelectorAll('img[src^="icon-192"],img[src^="icon-light-192"]').forEach(function(i){ i.src = L ? "icon-light-192.png?v=6" : "icon-192.png?v=6"; });
+    document.querySelectorAll('img[src^="icon-192"],img[src^="icon-light-192"]').forEach(function(i){ i.src = L ? "icon-light-192.png?v=6" : "icon-192.png?v=7"; });
   };
   window.__patoLook(document.documentElement.getAttribute("data-palette"));
 })();
@@ -6201,7 +6202,7 @@ TRACKER DATA:
       var row = tp.querySelector(":scope > .pp-row");
       if(!row){ row = document.createElement("div"); row.className = "pp-row"; row.innerHTML = '<button type="button" class="pato-pill"><img alt=""><b></b><span></span></button>'; tp.insertBefore(row, tp.firstChild);
         row.firstChild.onclick = function(){ var t = document.getElementById("tab-savings"); if(t && t.getAttribute("aria-selected") !== "true") t.click(); setTimeout(function(){ var c = document.getElementById("psc"); if(c) c.scrollIntoView({behavior:"smooth", block:"center"}); }, 80); }; }
-      var b = row.firstChild; b.querySelector("img").src = light ? "icon-light-192.png?v=6" : "icon-192.png?v=6";
+      var b = row.firstChild; b.querySelector("img").src = light ? "icon-light-192.png?v=6" : "icon-192.png?v=7";
       b.querySelector("b").textContent = s; var sp = b.querySelector("span"); sp.textContent = name; sp.className = cls;
       b.setAttribute("aria-label", "Pato score " + s + ", " + name);
     });
@@ -6226,7 +6227,7 @@ TRACKER DATA:
     if(p === "goyardt"){ if(m) m.setAttribute("content", "#24170E"); }
     if(p === "goyardl"){ if(m) m.setAttribute("content", "#E8D7B8"); }
     document.querySelectorAll('img[src^="icon-192"],img[src^="icon-light-192"],img[src^="icon-brown-192"]').forEach(function(i){
-      i.src = p === "goyardl" ? "icon-light-192.png?v=6" : p === "goyardt" ? "icon-brown-192.png?v=6" : "icon-192.png?v=6"; });
+      i.src = p === "goyardl" ? "icon-light-192.png?v=6" : p === "goyardt" ? "icon-brown-192.png?v=6" : "icon-192.png?v=7"; });
   };
   window.__patoLook(document.documentElement.getAttribute("data-palette"));
 })();
