@@ -6221,7 +6221,7 @@ TRACKER DATA:
       if(m) acts.push(["Save", async function(){ var patch = {receipt:{merchant:String(d.merchant||"").slice(0,80), amount:amt, date:dt}, note:"Receipt: " + String(d.merchant||"").slice(0,60)}; if(!m.userCat && cat !== "other" && m.cat !== "errands") patch.cat = cat; await db.collection("spend").doc(m.id).update(patch); toast("Receipt added", "Matched with your bank charge"); }]);
       else {
         var cash = async function(){ await db.collection("spend").add({date:dt, merchant:String(d.merchant||CATS[cat]).slice(0,80), amount:amt, currency:"DOP", rd:amt, kind:"manual", status:"Aprobada", cat:cat, source:"manual", excluded:false, ts:Date.now(), receipt:true}); toast(rd(amt) + " cash expense logged", CATS[cat]); };
-        var card = async function(){ await queue(d, "card charge not synced yet: attach to it, don’t add a new expense"); toast("Saved", "It joins the card charge when it comes in"); };
+        var card = (window.MP_ME&&!window.MP_ME.owner) ? async function(){ await db.collection("spend").add({date:dt, merchant:String(d.merchant||CATS[cat]).slice(0,80), amount:amt, currency:"DOP", rd:amt, kind:"manual", status:"Aprobada", cat:cat, source:"manual", excluded:false, ts:Date.now(), receipt:true, card:true}); toast(rd(amt) + " expense logged", CATS[cat]); } : async function(){ await queue(d, "card charge not synced yet: attach to it, don’t add a new expense"); toast("Saved", "It joins the card charge when it comes in"); };
         if(d.paid === "cash") acts.push(["Paid cash, save", cash], ["I paid by card", card]); else acts.push(["Paid by card, save", card], ["I paid cash", cash]);
       }
       open(html + buttons(acts)); wire(acts); return;
@@ -6242,8 +6242,8 @@ TRACKER DATA:
     }
     if(k === "stocks"){
       var tr = Array.isArray(d.trades) ? d.trades : [];
-      var html3 = '<h3>Stocks</h3><p class="sub">' + esc(d.summary || "") + '</p>' + tr.map(function(t){ return '<div class="r"><span>' + esc((t.side === "sell" ? "Sell " : "Buy ") + (t.t || "")) + (t.status && t.status !== "filled" ? " · " + esc(t.status) : "") + '</span><b>' + esc(t.sh ? t.sh + " sh" : "") + (t.price ? " @ " + esc(usd(t.price)) : t.limite ? " limit " + esc(usd(t.limite)) : "") + (t.usd ? " · " + esc(usd(t.usd)) : "") + '</b></div>'; }).join("") + '<p class="sub" style="margin-top:10px">Your Stocks tab updates within the hour.</p>';
-      var acts3 = [["Save", async function(){ await queue(d); toast("Saved", "Stocks update within the hour"); }]];
+      var html3 = '<h3>Stocks</h3><p class="sub">' + esc(d.summary || "") + '</p>' + tr.map(function(t){ return '<div class="r"><span>' + esc((t.side === "sell" ? "Sell " : "Buy ") + (t.t || "")) + (t.status && t.status !== "filled" ? " · " + esc(t.status) : "") + '</span><b>' + esc(t.sh ? t.sh + " sh" : "") + (t.price ? " @ " + esc(usd(t.price)) : t.limite ? " limit " + esc(usd(t.limite)) : "") + (t.usd ? " · " + esc(usd(t.usd)) : "") + '</b></div>'; }).join("") + '<p class="sub" style="margin-top:10px">' + ((window.MP_ME&&!window.MP_ME.owner) ? "Adds the filled buys and sells to your Stocks." : "Your Stocks tab updates within the hour.") + '</p>';
+      var acts3 = (window.MP_ME&&!window.MP_ME.owner) && window.__gstApply ? [["Add to my stocks", async function(){ var n = await window.__gstApply(tr); toast(n ? "Stocks updated" : "Nothing filled to add", ""); }]] : [["Save", async function(){ await queue(d); toast("Saved", "Stocks update within the hour"); }]];
       open(html3 + buttons(acts3)); wire(acts3); return;
     }
     if(k === "transfer"){
@@ -6256,7 +6256,7 @@ TRACKER DATA:
         toast(rd(own ? 0 : a) + " transfer logged", to); }; };
       if(out && tab !== "tab-loans"){ if(d.own) acts4.push(["To my own account, save", saveTr(true)], ["It was spending", saveTr(false)]); else acts4.push(["Save as spending", saveTr(false)], ["It went to my own account", saveTr(true)]); }
       if(false) acts4.push(["Fill the transfer form", async function(){ $("spTrAmt").value = a.toLocaleString("en-US"); $("spTrTo").value = String(d.person||"").slice(0,80); $("spTrDate").value = dt2; ["spTrAmt","spTrTo","spTrDate"].forEach(function(x){ $(x).dispatchEvent(new Event("input")); }); setTimeout(function(){ $("s-sptr").scrollIntoView({behavior:"smooth", block:"start"}); }, 50); toast("Check it and tap Log transfer", ""); }]);
-      acts4.push([tab === "tab-loans" ? (out ? "Save as a loan" : "Save as a payment") : out ? "It’s a loan" : "Save", async function(){ await queue(d, tab === "tab-loans" ? (out ? "loan given" : "loan payment received") : ""); toast("Saved", "It’s added within the hour"); }]);
+      acts4.push([tab === "tab-loans" ? (out ? "Save as a loan" : "Save as a payment") : out ? "It’s a loan" : "Save", async function(){ if((window.MP_ME&&!window.MP_ME.owner) && window.__gstTr){ window.__gstTr(d, tab, out); return; } await queue(d, tab === "tab-loans" ? (out ? "loan given" : "loan payment received") : ""); toast("Saved", "It’s added within the hour"); }]);
       open(html4 + buttons(acts4)); wire(acts4); return;
     }
     open('<h3>Couldn’t tell what this is</h3><p class="sub">' + esc(d.summary || "Try a clearer photo or screenshot.") + '</p><div class="bt"><button type="button" class="secondary" id="snapOk">OK</button></div>'); $("snapOk").onclick = close;
@@ -6337,6 +6337,15 @@ TRACKER DATA:
     w.innerHTML = '<option value="">Pick a reason</option>' + ok.map(function(x){ return '<option value="'+x[0]+'">'+(x[0]==="arcade"?"Casino":x[0]==="poker_casino"?"Casino poker loss":x[1])+'</option>'; }).join("");
     if(ok.some(function(x){ return x[0] === v; })) w.value = v;
     if(window.__mpBuildSources) window.__mpBuildSources();
+  };
+  window.__gstTr = function(d, tab, out){
+    var go = function(t){ var b = $(t); if(b) b.click(); }, a = Math.round(Number(d.amount)||0), who = String(d.person||"").slice(0,80);
+    var set = function(id, v){ var e = $(id); if(e){ e.value = v; e.dispatchEvent(new Event("input")); e.dispatchEvent(new Event("change")); } };
+    setTimeout(function(){
+      if(out){ go("tab-loans"); var dt = document.querySelector("#s-loans details.newloan"); if(dt) dt.open = true; set("lName", who); set("lAmt", a.toLocaleString("en-US")); setTimeout(function(){ var e = $("lName"); if(e) e.scrollIntoView({behavior:"smooth", block:"center"}); }, 80); if(window.mpToast) window.mpToast("Check it and tap Add loan", ""); }
+      else if(tab === "tab-loans"){ go("tab-loans"); if(window.mpToast) window.mpToast("Tap ✓ next to " + (who || "their name"), "to log the payment"); }
+      else { go("tab-savings"); go("tIn"); set("amount", a.toLocaleString("en-US")); if(d.date) set("date", d.date); setTimeout(function(){ var e = $("amount"); if(e) e.scrollIntoView({behavior:"smooth", block:"center"}); }, 80); if(window.mpToast) window.mpToast("Pick who paid you and tap Log deposit", ""); }
+    }, 350);
   };
   function texts(){
     var t = function(sel, s){ var e = document.querySelector(sel); if(e && e.textContent !== s) e.textContent = s; };
@@ -6440,6 +6449,20 @@ TRACKER DATA:
       }; });
     });
   }
+  window.__gstApply = async function(trades){
+    var n = 0;
+    for(var i = 0; i < (trades||[]).length; i++){
+      var t = trades[i], tk = String(t.t||"").toUpperCase().replace(/[^A-Z0-9.\-]/g, ""), sh = Number(t.sh)||0, pr = Number(t.price)||0;
+      if(!tk || !sh || (t.status && t.status !== "filled")) continue;
+      var ex = H.find(function(x){ return x.t === tk; });
+      if(t.side === "sell"){ if(!ex) continue; var left = Math.max(0, ex.sh - sh); if(left < 1e-6) await db.collection("holdings").doc(ex.id).delete(); else await db.collection("holdings").doc(ex.id).update({ sh: left }); ex.sh = left; n++; continue; }
+      if(!pr && t.usd) pr = Number(t.usd) / sh; if(!pr) continue;
+      if(ex){ var ns = ex.sh + sh; await db.collection("holdings").doc(ex.id).update({ sh: ns, costo: ((Number(ex.costo)||0)*ex.sh + sh*pr) / ns }); ex.costo = ((Number(ex.costo)||0)*ex.sh + sh*pr) / ns; ex.sh = ns; }
+      else { var r = await db.collection("holdings").add({ t: tk, sh: sh, costo: pr, precio: pr, createdAt: Date.now() }); H.push({ id: r.id, t: tk, sh: sh, costo: pr }); }
+      n++;
+    }
+    setTimeout(quotes, 800); return n;
+  };
   async function quotes(){
     if(busy || !key || !H.length || document.hidden) return; busy = true;
     try{
