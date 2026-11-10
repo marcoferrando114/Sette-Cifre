@@ -1663,17 +1663,6 @@ html:root[data-palette="goyardl"] .stat b.ipend{color:#9A6F1F}
 #people .pic.pmore{background:transparent;color:var(--muted);width:28px}
 #people .pic.pmore svg{fill:currentColor;stroke:none}
 </style>
-<style id="pato-base">
-html:not(.mp-guest) #s-topay{display:none!important}
-#tpList .tp{border-bottom:1px solid color-mix(in srgb,var(--ink) 10%,transparent)}
-#tpList .tp summary{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:12px 0;cursor:pointer;list-style:none;color:var(--ink)}
-#tpList .tp summary::-webkit-details-marker{display:none}
-#tpList .tp summary small{display:block;color:var(--muted);font-size:.8rem}
-#tpList .tp .tpb{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:0 0 12px}
-#tpList .tp .tpb input[type=text]{flex:1;min-width:120px}
-#tpList .tp .lnk{background:none;border:0;color:var(--muted);text-decoration:underline;font:inherit;font-size:.85rem;cursor:pointer}
-#tpList .tp.paid{opacity:.55}
-</style>
 <style id="pato-gst">
 html:not(.mp-guest) #s-gst{display:none!important}
 #s-gst .gst-sub{color:var(--muted);font-size:.9rem;margin:2px 0 14px}
@@ -1690,6 +1679,17 @@ html:not(.mp-guest) #s-gst{display:none!important}
 #s-gst .krow{display:flex;gap:8px;margin-top:10px}
 #s-gst .krow input{flex:1;min-width:0;width:auto}
 #s-gst .krow .secondary{width:auto;flex:none;padding-left:18px;padding-right:18px}
+</style>
+<style id="pato-base">
+html:not(.mp-guest) #s-topay{display:none!important}
+#tpList .tp{border-bottom:1px solid color-mix(in srgb,var(--ink) 10%,transparent)}
+#tpList .tp summary{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:12px 0;cursor:pointer;list-style:none;color:var(--ink)}
+#tpList .tp summary::-webkit-details-marker{display:none}
+#tpList .tp summary small{display:block;color:var(--muted);font-size:.8rem}
+#tpList .tp .tpb{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:0 0 12px}
+#tpList .tp .tpb input[type=text]{flex:1;min-width:120px}
+#tpList .tp .lnk{background:none;border:0;color:var(--muted);text-decoration:underline;font:inherit;font-size:.85rem;cursor:pointer}
+#tpList .tp.paid{opacity:.55}
 </style>
 </head>
 <body>
@@ -4681,7 +4681,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
         return `<div class="r"><span>Week of ${fmtDate(k,false)}</span><b class="${cls(tot)}">${sgn(tot)}</b></div><div class="r"><span>Rakeback</span><span>${fmt(Math.round(rk))}</span></div><div class="r"><span>League Action</span><span class="${ac===undefined?"":cls(ac)}">${ac===undefined?"Not logged":sgn(ac)}</span></div>${owW[k]>0?`<div class="r"><span>League still owes</span><span>${fmt(Math.round(owW[k]))}</span></div>`:""}`; })()
         : `<div class="hint">No league weeks yet.</div>`;
       $("pkWkDet").hidden = !k;
-      $("pkOTot").innerHTML = `<span>Outside Tables</span><b class="${cls(cas)}">${sgn(cas)}</b>`;
+      $("pkOTot").innerHTML = `<span>${(window.MP_ME&&!window.MP_ME.owner)?"Casino poker":"Outside Tables"}</span><b class="${cls(cas)}">${sgn(cas)}</b>`;
       $("pkHTot").innerHTML = `<span>Home games</span><b class="${cls(home)}">${sgn(home)}</b>`;
       { const ym = today().slice(0,7), bets = entries.filter(e=>e.source==="Apuestas").sort((a,b)=>(b.date||"").localeCompare(a.date||"")||((b.createdAt||0)-(a.createdAt||0)));
         const mo = bets.filter(e=>(e.date||"").startsWith(ym)).reduce((t,e)=>t+(e.type==="out"?-e.amount:e.amount),0);
@@ -6306,96 +6306,6 @@ TRACKER DATA:
 })();
 </script>
 <div id="sbCover"></div>
-<script id="pato-base-js">
-(function(){
-  var H = document.documentElement, $ = function(i){ return document.getElementById(i); }, db = null, items = [];
-  var fmt = function(n){ return "RD$" + Math.round(Number(n)||0).toLocaleString("en-US"); };
-  var num = function(v){ return Number(String(v||"").replace(/[^0-9.]/g,"")) || 0; };
-  var esc = function(s){ return String(s==null?"":s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); };
-  var today = function(){ var d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
-  var MES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-  var fd = function(s){ var p = String(s||"").split("-"); return p.length === 3 ? MES[+p[1]-1] + " " + (+p[2]) : ""; };
-  var sure = function(m, ok){ return window.mpSure ? window.mpSure(m, ok) : Promise.resolve(true); };
-  var warn = function(m){ if(window.mpWarn) window.mpWarn(m); };
-  var left = function(x){ return Math.max(0, (Number(x.total)||0) - (Number(x.pagado)||0)); };
-  var owe = function(){ return items.reduce(function(t,x){ return t + left(x); }, 0); };
-  function cats(){
-    [window.__SP, window.__SNAPC].forEach(function(C){ if(!C) return; C.sport = "Sports & gym"; C.subs = "Bills & subscriptions"; C.shopping = "Shopping"; C.health = "Health"; delete C.errands; });
-    var C = window.__SP; if(!C) return;
-    var o = Object.keys(C).map(function(k){ return '<option value="'+k+'">'+C[k]+'</option>'; }).join("");
-    ["spCat","spTrCatSel"].forEach(function(id){ var s = $(id); if(s){ var v = s.value; s.innerHTML = o; if(C[v]) s.value = v; } });
-    var L = window.__LB; if(L){ L["Premio casino"] = "Casino"; L["Póker casino"] = "Casino poker"; }
-  }
-  window.__mpGuestTrack = function(track){
-    var w = $("why"), W = window.__WHY; if(!w || !W) return;
-    var has = function(k){ return track.indexOf(k) >= 0; }, v = w.value;
-    var ok = W.filter(function(x){ return x[0] !== "poker" && ((x[0] !== "poker_casino" && x[0] !== "poker_amigos") || has("poker")) && (x[0] !== "apuesta" || has("bets")) && (x[0] !== "arcade" || has("casino")); });
-    w.innerHTML = '<option value="">Pick a reason</option>' + ok.map(function(x){ return '<option value="'+x[0]+'">'+(x[0]==="arcade"?"Casino":x[0]==="poker_casino"?"Casino poker loss":x[1])+'</option>'; }).join("");
-    if(ok.some(function(x){ return x[0] === v; })) w.value = v;
-    if(window.__mpBuildSources) window.__mpBuildSources();
-  };
-  function texts(){
-    var t = function(sel, s){ var e = document.querySelector(sel); if(e && e.textContent !== s) e.textContent = s; };
-    t("#s-cobrar h2", "To collect"); t("#s-debts .shead h2", "Other debts"); t(".pk-head h2", "Games"); t('#pkSeg [data-v="ar"]', "Casino"); t('#pkSeg [data-v="ot"]', "Poker"); t("#tab-poker span", "Games");
-  }
-  function render(){
-    var L = $("tpList"); if(!L) return;
-    var open = items.filter(function(x){ return left(x) > 0.5; }).sort(function(a,b){ return String(a.vence||"9").localeCompare(String(b.vence||"9")); });
-    var done = items.filter(function(x){ return left(x) <= 0.5; }).slice(0, 5);
-    $("tpHead").textContent = open.length ? fmt(owe()) : "";
-    L.innerHTML = (open.length ? "" : '<p class="hint">Nothing to pay.</p>') + open.concat(done).map(function(x){
-      var l = left(x), late = x.vence && x.vence < today() && l > 0.5;
-      var sub = l <= 0.5 ? "Paid" : (x.vence ? (late ? "Late · was due " : "Due ") + fd(x.vence) : "") + (x.nota ? (x.vence ? " · " : "") + esc(x.nota) : "");
-      return '<details class="tp'+(l<=0.5?' paid':'')+'" data-id="'+x.id+'"><summary><span>'+esc(x.nombre)+(sub?'<small>'+sub+'</small>':'')+'</span><b class="num">'+fmt(l)+'</b></summary>' +
-        '<div class="tpb">' + (l > 0.5 ? '<input type="text" inputmode="decimal" placeholder="'+Math.round(l).toLocaleString("en-US")+'" aria-label="Amount paid"><button class="secondary" data-a="pay">Paid</button>' : '') + '<button class="lnk" data-a="del">Delete</button></div></details>';
-    }).join("");
-    L.querySelectorAll(".tp").forEach(function(d){
-      var x = items.find(function(i){ return i.id === d.dataset.id; }); if(!x) return;
-      d.querySelectorAll("button").forEach(function(b){ b.onclick = async function(){
-        try{
-          if(b.dataset.a === "del"){ if(await sure("Delete " + x.nombre + "?", "Delete")) await db.collection("topay").doc(x.id).delete(); return; }
-          var inp = d.querySelector("input"), a = num(inp.value) || left(x); if(a > left(x) + 0.5) a = left(x);
-          await db.collection("topay").doc(x.id).update({ pagado: (Number(x.pagado)||0) + a, pagos: (x.pagos||[]).concat([{fecha: today(), monto: a}]) });
-        }catch(e){ warn("Couldn’t save."); }
-      }; });
-    });
-    net();
-  }
-  var busy = false;
-  function net(){
-    var s = $("netSplit"), tt = $("netTotal"); if(!s || !tt || busy) return;
-    busy = true;
-    var g = s.querySelector(".nw-g.tp-g"); if(g) g.remove();
-    var o = owe(), b = tt.querySelector("b");
-    if(b){ if(b.dataset.base == null || !b.dataset.mine) { b.dataset.base = num(b.textContent); b.dataset.mine = "1"; } b.textContent = fmt(Number(b.dataset.base) - o); }
-    var last = tt.lastChild; if(last && last.nodeType === 3) last.textContent = o > 0 ? "after what you owe" : "in your accounts plus what you’re owed";
-    if(o > 0){ var d = document.createElement("div"); d.className = "nw-g tp-g"; d.innerHTML = '<div class="nw-gh"><span>To pay</span><b>−'+fmt(o)+'</b></div>' + items.filter(function(x){ return left(x) > 0.5; }).map(function(x){ return '<div class="nw-r"><i style="background:var(--c-owe)"></i><span>'+esc(x.nombre)+'</span><b>−'+fmt(left(x))+'</b><small></small></div>'; }).join(""); s.appendChild(d); }
-    setTimeout(function(){ busy = false; }, 0);
-  }
-  function form(){
-    var go = function(){ $("tpSave").disabled = !($("tpName").value.trim() && num($("tpAmt").value) > 0); };
-    ["tpName","tpAmt"].forEach(function(i){ $(i).addEventListener("input", go); }); go();
-    $("tpSave").onclick = async function(){
-      var n = $("tpName").value.trim(), a = num($("tpAmt").value); if(!n || a <= 0) return;
-      $("tpSave").disabled = true;
-      try{
-        await db.collection("topay").add({ nombre: n, total: a, pagado: 0, vence: $("tpDue").value || "", nota: $("tpNote").value.trim(), creada: today(), createdAt: Date.now() });
-        ["tpName","tpAmt","tpDue","tpNote"].forEach(function(i){ $(i).value = ""; }); $("tpNew").open = false;
-      }catch(e){ warn("Couldn’t save."); }
-      go();
-    };
-  }
-  if(!window.claude) return;
-  window.claude.use("db").then(function(d){
-    db = d; var me = window.MP_ME || {}; if(me.owner) return; // Marco: nothing changes
-    cats(); texts(); form();
-    new MutationObserver(function(){ if(!busy) net(); }).observe($("s-net"), {childList: true, subtree: true});
-    var seg = $("pkSeg"); if(seg) new MutationObserver(texts).observe(seg, {childList: true, subtree: true, characterData: true});
-    db.collection("topay").onSnapshot(function(snap){ items = snap.docs.map(function(x){ return Object.assign({id: x.id}, x.data()); }); render(); }, function(){});
-    setTimeout(texts, 1500);
-  });
-})();
-</script>
 <script id="pato-gst-js">
 (function(){
   var $ = function(i){ return document.getElementById(i); }, db = null, H = [], key = null, busy = false;
@@ -6467,6 +6377,96 @@ TRACKER DATA:
     db.doc("prefs/keys").onSnapshot(function(s){ var k = s.exists ? s.data().finnhub : null; var had = key; key = k || null; $("gstKey").placeholder = key ? "Key saved · paste a new one to change" : "Finnhub API key"; if(key && !had) quotes(); }, function(){});
     setInterval(function(){ var p = $("p-stocks"); if(p && !p.hidden) quotes(); }, 60000);
     var t = $("tab-stocks"); if(t) t.addEventListener("click", function(){ setTimeout(quotes, 300); });
+  });
+})();
+</script>
+<script id="pato-base-js">
+(function(){
+  var H = document.documentElement, $ = function(i){ return document.getElementById(i); }, db = null, items = [];
+  var fmt = function(n){ return "RD$" + Math.round(Number(n)||0).toLocaleString("en-US"); };
+  var num = function(v){ return Number(String(v||"").replace(/[^0-9.]/g,"")) || 0; };
+  var esc = function(s){ return String(s==null?"":s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); };
+  var today = function(){ var d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0,10); };
+  var MES = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  var fd = function(s){ var p = String(s||"").split("-"); return p.length === 3 ? MES[+p[1]-1] + " " + (+p[2]) : ""; };
+  var sure = function(m, ok){ return window.mpSure ? window.mpSure(m, ok) : Promise.resolve(true); };
+  var warn = function(m){ if(window.mpWarn) window.mpWarn(m); };
+  var left = function(x){ return Math.max(0, (Number(x.total)||0) - (Number(x.pagado)||0)); };
+  var owe = function(){ return items.reduce(function(t,x){ return t + left(x); }, 0); };
+  function cats(){
+    [window.__SP, window.__SNAPC].forEach(function(C){ if(!C) return; C.sport = "Sports & gym"; C.subs = "Bills & subscriptions"; C.shopping = "Shopping"; C.health = "Health"; delete C.errands; });
+    var C = window.__SP; if(!C) return;
+    var o = Object.keys(C).map(function(k){ return '<option value="'+k+'">'+C[k]+'</option>'; }).join("");
+    ["spCat","spTrCatSel"].forEach(function(id){ var s = $(id); if(s){ var v = s.value; s.innerHTML = o; if(C[v]) s.value = v; } });
+    var L = window.__LB; if(L){ L["Premio casino"] = "Casino"; L["Póker casino"] = "Casino poker"; } (window.__WHY||[]).forEach(function(x){ if(x[0]==="arcade") x[1] = "Casino"; if(x[0]==="poker_casino") x[1] = "Casino poker loss"; });
+  }
+  window.__mpGuestTrack = function(track){
+    var w = $("why"), W = window.__WHY; if(!w || !W) return;
+    var has = function(k){ return track.indexOf(k) >= 0; }, v = w.value;
+    var ok = W.filter(function(x){ return x[0] !== "poker" && ((x[0] !== "poker_casino" && x[0] !== "poker_amigos") || has("poker")) && (x[0] !== "apuesta" || has("bets")) && (x[0] !== "arcade" || has("casino")); });
+    w.innerHTML = '<option value="">Pick a reason</option>' + ok.map(function(x){ return '<option value="'+x[0]+'">'+(x[0]==="arcade"?"Casino":x[0]==="poker_casino"?"Casino poker loss":x[1])+'</option>'; }).join("");
+    if(ok.some(function(x){ return x[0] === v; })) w.value = v;
+    if(window.__mpBuildSources) window.__mpBuildSources();
+  };
+  function texts(){
+    var t = function(sel, s){ var e = document.querySelector(sel); if(e && e.textContent !== s) e.textContent = s; };
+    t("#s-cobrar h2", "To collect"); t("#s-debts .shead h2", "Other debts"); t(".pk-head h2", "Games"); t('#pkSeg [data-v="ar"]', "Casino"); t('#pkSeg [data-v="ot"]', "Poker"); t("#tab-poker span", "Games");
+  }
+  function render(){
+    var L = $("tpList"); if(!L) return;
+    var open = items.filter(function(x){ return left(x) > 0.5; }).sort(function(a,b){ return String(a.vence||"9").localeCompare(String(b.vence||"9")); });
+    var done = items.filter(function(x){ return left(x) <= 0.5; }).slice(0, 5);
+    $("tpHead").textContent = open.length ? fmt(owe()) : "";
+    L.innerHTML = (open.length ? "" : '<p class="hint">Nothing to pay.</p>') + open.concat(done).map(function(x){
+      var l = left(x), late = x.vence && x.vence < today() && l > 0.5;
+      var sub = l <= 0.5 ? "Paid" : (x.vence ? (late ? "Late · was due " : "Due ") + fd(x.vence) : "") + (x.nota ? (x.vence ? " · " : "") + esc(x.nota) : "");
+      return '<details class="tp'+(l<=0.5?' paid':'')+'" data-id="'+x.id+'"><summary><span>'+esc(x.nombre)+(sub?'<small>'+sub+'</small>':'')+'</span><b class="num">'+fmt(l)+'</b></summary>' +
+        '<div class="tpb">' + (l > 0.5 ? '<input type="text" inputmode="decimal" placeholder="'+Math.round(l).toLocaleString("en-US")+'" aria-label="Amount paid"><button class="secondary" data-a="pay">Paid</button>' : '') + '<button class="lnk" data-a="del">Delete</button></div></details>';
+    }).join("");
+    L.querySelectorAll(".tp").forEach(function(d){
+      var x = items.find(function(i){ return i.id === d.dataset.id; }); if(!x) return;
+      d.querySelectorAll("button").forEach(function(b){ b.onclick = async function(){
+        try{
+          if(b.dataset.a === "del"){ if(await sure("Delete " + x.nombre + "?", "Delete")) await db.collection("topay").doc(x.id).delete(); return; }
+          var inp = d.querySelector("input"), a = num(inp.value) || left(x); if(a > left(x) + 0.5) a = left(x);
+          await db.collection("topay").doc(x.id).update({ pagado: (Number(x.pagado)||0) + a, pagos: (x.pagos||[]).concat([{fecha: today(), monto: a}]) });
+        }catch(e){ warn("Couldn’t save."); }
+      }; });
+    });
+    net();
+  }
+  var busy = false;
+  function net(){
+    var s = $("netSplit"), tt = $("netTotal"); if(!s || !tt || busy) return;
+    busy = true;
+    var g = s.querySelector(".nw-g.tp-g"); if(g) g.remove();
+    var o = owe(), b = tt.querySelector("b");
+    if(b){ if(b.dataset.base == null || !b.dataset.mine) { b.dataset.base = num(b.textContent); b.dataset.mine = "1"; } b.textContent = fmt(Number(b.dataset.base) - o); }
+    var last = tt.lastChild; if(last && last.nodeType === 3) last.textContent = o > 0 ? "after what you owe" : "in your accounts plus what you’re owed";
+    if(o > 0){ var d = document.createElement("div"); d.className = "nw-g tp-g"; d.innerHTML = '<div class="nw-gh"><span>To pay</span><b>−'+fmt(o)+'</b></div>' + items.filter(function(x){ return left(x) > 0.5; }).map(function(x){ return '<div class="nw-r"><i style="background:var(--c-owe)"></i><span>'+esc(x.nombre)+'</span><b>−'+fmt(left(x))+'</b><small></small></div>'; }).join(""); s.appendChild(d); }
+    setTimeout(function(){ busy = false; }, 0);
+  }
+  function form(){
+    var go = function(){ $("tpSave").disabled = !($("tpName").value.trim() && num($("tpAmt").value) > 0); };
+    ["tpName","tpAmt"].forEach(function(i){ $(i).addEventListener("input", go); }); go();
+    $("tpSave").onclick = async function(){
+      var n = $("tpName").value.trim(), a = num($("tpAmt").value); if(!n || a <= 0) return;
+      $("tpSave").disabled = true;
+      try{
+        await db.collection("topay").add({ nombre: n, total: a, pagado: 0, vence: $("tpDue").value || "", nota: $("tpNote").value.trim(), creada: today(), createdAt: Date.now() });
+        ["tpName","tpAmt","tpDue","tpNote"].forEach(function(i){ $(i).value = ""; }); $("tpNew").open = false;
+      }catch(e){ warn("Couldn’t save."); }
+      go();
+    };
+  }
+  if(!window.claude) return;
+  window.claude.use("db").then(function(d){
+    db = d; var me = window.MP_ME || {}; if(me.owner) return; // Marco: nothing changes
+    cats(); texts(); form();
+    new MutationObserver(function(){ if(!busy) net(); }).observe($("s-net"), {childList: true, subtree: true});
+    var seg = $("pkSeg"); if(seg) new MutationObserver(texts).observe(seg, {childList: true, subtree: true, characterData: true});
+    db.collection("topay").onSnapshot(function(snap){ items = snap.docs.map(function(x){ return Object.assign({id: x.id}, x.data()); }); render(); }, function(){});
+    setTimeout(texts, 1500);
   });
 })();
 </script>
