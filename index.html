@@ -1697,7 +1697,8 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261110235803";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261110235918";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+
 
 
 
@@ -4686,7 +4687,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
       $("pkWkChips").querySelectorAll("[data-k]").forEach(c => c.onclick = () => { window.pkSel = c.dataset.k; render(); });
       const k = window.pkSel;
       $("pkWkDet").innerHTML = k ? (()=>{ const rk = earnedDay[k]||0, ac = actDay[k], tot = rk + (ac||0), nt = [...new Set(notesOf(k))];
-        return `<div class="r"><span>Week of ${fmtDate(k,false)}</span><b class="${cls(tot)}">${sgn(tot)}</b></div><div class="r"><span>Rakeback</span><span>${fmt(Math.round(rk))}</span></div><div class="r"><span>League Action</span><span class="${ac===undefined?"":cls(ac)}">${ac===undefined?"Not logged":sgn(ac)}</span></div>${owW[k]>0?`<div class="r"><span>League still owes</span><span>${fmt(Math.round(owW[k]))}</span></div>`:""}`; })()
+        return `<div class="r"><span>Week of ${fmtDate(k,false)}</span><b class="${cls(tot)}">${sgn(tot)}</b></div><div class="r"><span>Rakeback</span><span>${fmt(Math.round(rk))}</span></div><div class="r"><span>League Action</span><span class="${ac===undefined?"":cls(ac)}">${ac===undefined?"Not logged":sgn(ac)}</span></div>`;   // no "League still owes" row here, the box above shows it (Marco, Nov 10) })()
         : `<div class="hint">No league weeks yet.</div>`;
       $("pkWkDet").hidden = !k;
       $("pkOTot").innerHTML = `<span>${(window.MP_ME&&!window.MP_ME.owner)?"Casino poker":"Outside Tables"}</span><b class="${cls(cas)}">${sgn(cas)}</b>`;
