@@ -1664,7 +1664,8 @@ html:root[data-palette="goyardl"] .stat b.ipend{color:#9A6F1F}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261110004223";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261110154342";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+
 
 
 
@@ -3034,7 +3035,7 @@ html:root[data-palette="goyardl"] .stat b.ipend{color:#9A6F1F}
     if(wd === "Fri") ops.push("feliz viernes");
     const key = "pato-op-" + String(name||"").toLowerCase(); let last = ""; try{ last = localStorage.getItem(key) || ""; }catch(e){}
     const pool = ops.filter(o => o !== last), op = pool[Math.floor(Math.random()*pool.length)];
-    const cl = ["Gracias"]; if(hr < 12) cl.push("Gracias, que tengas buen día"); else if(hr < 19) cl.push("Gracias, buena tarde");
+    const cl = ["Gracias."]; if(hr < 12) cl.push("Gracias, que tengas buen día."); else if(hr < 19) cl.push("Gracias, buena tarde.");
     return {op: /\?$/.test(op) ? op : op + ".", cl: cl[Math.floor(Math.random()*cl.length)]};   // "todo bien?" needs no period
   }
   // remember the opener only when a message is actually sent, so the next one differs
