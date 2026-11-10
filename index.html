@@ -1628,6 +1628,7 @@ html:root[data-palette="goyardl"] #people .pic.g{border-color:#B8892F;color:#9A6
 .stat b.ipend{color:#E2B65F}
 html:root[data-palette="goyardl"] .stat b.ipend{color:#9A6F1F}
 .badge.hold{border-color:color-mix(in srgb,var(--muted) 55%,transparent);color:var(--muted);font-weight:600}
+#people .powed .phold{font-size:.8rem;font-weight:600;color:var(--muted)}
 </style>
 <style id="pato-score">
 #psc{margin:14px 0;padding:16px 18px 14px;border-radius:20px;background:var(--card);border:1px solid color-mix(in srgb,var(--ink) 8%,transparent);text-align:center}
@@ -1663,7 +1664,8 @@ html:root[data-palette="goyardl"] .stat b.ipend{color:#9A6F1F}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261109184918";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261110004223";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+
 
 
 
@@ -4371,7 +4373,7 @@ html:root[data-palette="goyardl"] .stat b.ipend{color:#9A6F1F}
         if(nt){ const sm=document.createElement("small"); sm.className="pnote"; sm.textContent=nt; nm.parentNode.appendChild(sm); } }
       const onHold = p.loans.some(l=>!l.pagado && l.pausado);
       if(p.loans.length){ const bd=document.createElement("span"); bd.className="badge "+tr.cls; bd.textContent = `${tr.label} · ${tr.score}`; nm.after(bd); }
-      if(onHold){ const pb=document.createElement("span"); pb.className="badge none hold"; pb.textContent="On hold"; nm.after(pb); }
+      if(onHold){ queueMicrotask(()=>{ const pw=det.querySelector(".powed"); if(pw && !pw.querySelector(".phold")) pw.insertAdjacentHTML("beforeend", ' <span class="phold">· On hold</span>'); }); }   // on the amount line, so the name row never runs into the buttons (Marco, Nov 10)
       const actN = p.loans.filter(l=>!l.pagado).length;
       det.querySelector(".powed").innerHTML = isD ? (p.owe>0 ? fmt(p.owe) : `<span class="profit">Paid</span>`) : p.owe>0 ? fmt(p.owe) : `<span class="profit">All paid</span>`;
       const body = det.querySelector(".pbody");
