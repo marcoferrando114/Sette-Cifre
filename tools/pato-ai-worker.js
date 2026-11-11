@@ -62,7 +62,7 @@ async function cached(url, ttl, kind) {
   return { at: Number(r.headers.get("x-at")) || Date.now(), body };
 }
 // Google News blocks Cloudflare (503/429) at times, so every feed falls back to Bing News RSS for the same topic (Nov 11).
-const BQ = { BUSINESS: "business stock market economy", WORLD: "world news", TECHNOLOGY: "technology", ENTERTAINMENT: "entertainment celebrities movies music", HEALTH: "health medicine" };
+const BQ = { BUSINESS: "business stock market economy", WORLD: "world news", TECHNOLOGY: "AI OR Apple OR Google OR Microsoft OR Nvidia OR OpenAI tech", ENTERTAINMENT: "Hollywood OR Netflix OR celebrity OR music OR movie", HEALTH: "health medicine" };
 function bingUrl(url) {
   if (url === GN + "?" + ES) return "https://www.bing.com/news/search?q=" + encodeURIComponent("República Dominicana") + "&format=rss&setlang=es&cc=DO&count=40&qft=interval%3d%227%22&qft=sortbydate%3d%221%22";
   let q = ""; const m = url.match(/\/topic\/([A-Z]+)/); if (m) q = BQ[m[1]] || m[1].toLowerCase();
