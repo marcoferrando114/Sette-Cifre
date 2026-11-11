@@ -1358,6 +1358,7 @@ html.mp-guest #p-stocks > #pnTick:not([hidden]){display:flex!important}
 .pd-done .pd-h1{font-size:1.2rem;line-height:1.25}.pd-done .pd-opt{padding:11px 16px;font-size:.95rem}.pd-done .pd-opts{gap:8px}.pd-done .pd-res{margin-top:12px}.pd-done .pd-why{font-size:.92rem;line-height:1.4}
 .pd-tk{font-size:.9rem;line-height:1.4;margin:10px 0 0;padding:9px 12px;border-radius:12px;background:rgba(232,192,106,.12);color:#F3E6C4}.pd-tk b{color:#E8C06A;margin-right:4px}.pd-done .pd-pct em{font-size:2.2rem}.pd-done .pd-pct{margin-top:2px}.pd-done .pd-know{margin-top:10px}
 .pd-next{margin-top:12px;width:100%;box-sizing:border-box;background:rgba(232,192,106,.16);color:#F3E6C4}
+.pd-up{margin-top:22px;padding-top:16px;border-top:1px solid rgba(255,255,255,.12)}.pd-up>i{display:block;font-style:normal;font-size:.7rem;letter-spacing:.12em;font-weight:800;color:#9FB3A7;margin-bottom:8px}.pd-up div{display:flex;flex-direction:column;gap:2px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06)}.pd-up div:last-child{border-bottom:0}.pd-up b{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:#E8C06A}.pd-up span{font-size:.95rem;line-height:1.35;color:#E4ECE7;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .pd-ft{padding:10px 16px 16px;text-align:center;font-size:.72rem;color:#9FB3A7}
 .pd-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
 .pd-chips button{all:unset;cursor:pointer;font-size:.88rem;padding:8px 13px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#CFE0D6}
@@ -1796,7 +1797,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261111201500";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261111202000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -6668,11 +6669,11 @@ TRACKER DATA:
   }
   function getDaily(force){
     if(!base() || busy || !window.mpIdToken) return;
-    var st = ls("pd-daily3"); if(!force && st && st.day === day() && st.sig === sig() && st.data && (st.data.take || Date.now() - (st.at||0) < 2*3600e3)){ daily = st.data; return render(); }
+    var st = ls("pd-daily4"); if(!force && st && st.day === day() && st.sig === sig() && st.data && ((st.data.take && Object.keys(st.data.cats || {}).length >= 2) || Date.now() - (st.at||0) < 15*6e4)){ daily = st.data; return render(); }
     busy = 1;
     window.mpIdToken().then(function(tok){ return fetch(base() + "/daily?" + q(), {method: "POST", headers: {"content-type": "application/json", authorization: "Bearer " + tok}, body: JSON.stringify(facts())}); })
       .then(function(r){ return r.ok ? r.json() : null; }).then(function(d){ busy = 0; if(!d) return render(); daily = d; tick = {at: d.at, ticker: d.ticker, big: d.big};
-        ls("pd-daily3", {day: day(), sig: sig(), at: Date.now(), data: d}); render(); }).catch(function(){ busy = 0; render(); });
+        ls("pd-daily4", {day: day(), sig: sig(), at: Date.now(), data: d}); render(); }).catch(function(){ busy = 0; render(); });
   }
   function getTick(){   // ticker + big news refresh every 2h (free, no AI)
     if(!base() || (tick && Date.now() - (tick.got||0) < 2*3600e3)) return;
@@ -6713,12 +6714,14 @@ TRACKER DATA:
     var cq = callQ(); if(cq) L.push({id: ed + ":call:" + cq.id, cls: "call", t: CALL, w: "today's money question", call: cq, body: ""});
     L.push({id: "pick", cls: "", t: "Pato Daily", w: "your stories", pick: 1, body: '<div class="pd-k">' + (prefs && prefs.picked ? "YOUR STORIES" : "PICK WHAT YOU LIKE") + '</div><div class="pd-h1">' + (prefs && prefs.picked ? "That's today. Change what you see:" : "What do you want in your stories?") + '</div><div class="pd-chips" id="pdChips">' +
       CATS.filter(function(c){ return FIX.indexOf(c[0]) < 0; }).map(function(c){ return '<button type="button" data-k="' + c[0] + '"' + (want.indexOf(c[0])>=0 ? ' class="on"' : '') + '>' + c[1] + '</button>'; }).join("") + '</div><div class="pd-m" id="pdPickM">Pick up to ' + TOP + '. Big news and Local come every day. Next edition at 7am.</div>'});
+    // Pato's take page: "In today's edition" = what's coming, so the page is full and pulls you into the stories
+    var nt = [tk.happened, tk.you, tk.watch].filter(function(r){ return r && r.text; }).length, up = L.slice(1).filter(function(x){ return x.ph || x.call; }).slice(0, nt >= 3 ? 3 : 6);
+    if(up.length) L[0].body += '<div class="pd-up"><i>IN TODAY\'S EDITION</i>' + up.map(function(x){ return '<div><b>' + esc(x.t) + '</b><span>' + esc(x.call ? x.call.q : x.ph) + '</span></div>'; }).join("") + '</div>';
     return L;
   }
   // ---------- This or that: one money question a day, then what % of Pato users got it right + why ----------
   var CALL = "Daily duel";   // story name (Marco picked Nov 11; was "This or that")
   function callQ(){ if(!QZ.length) return null;
-    if(PICS()){ var D = QZ.filter(function(q){ return q.t; }).concat(QZ.filter(function(q){ return !q.t; })); return D[(Number(ls("pd-dq")) || 0) % D.length]; }   // demo: walk every duel, upgraded ones first
     return QZ[Math.floor(Date.parse(day()) / 864e5) % QZ.length]; }
   function callSt(){ var c = ls("pd-call"); return c && c.day === day() ? c : null; }
   function callBody(q){ var c = callSt(), A = c && c.q === q.id ? c : null;
@@ -6727,7 +6730,7 @@ TRACKER DATA:
     if(!A) return h + '<div class="pd-m pd-c">Tap your pick.</div>';
     var pct = A.n >= 5 ? Math.round(A.right / A.n * 100) : null;
     h += '<div class="pd-res"><b>' + (A.a === q.a ? "You got it." : "Not this time.") + '</b>' + (pct != null ? '<div class="pd-pct"><em>' + pct + '%</em><span>of Pato users got it right</span></div>' : '<div class="pd-m">You\'re one of the first to answer today.</div>') + '</div>';
-    return h + '<div class="pd-know"><i>WHY</i><p class="pd-why">' + esc(q.w) + '</p>' + (q.t ? '<p class="pd-tk"><b>The lesson</b> ' + esc(q.t) + '</p>' : '') + '</div>' + (PICS() ? '<button type="button" class="pd-opt pd-next">Try another duel <span>›</span></button>' : '') + '</div>'; }
+    return h + '<div class="pd-know"><i>WHY</i><p class="pd-why">' + esc(q.w) + '</p>' + (q.t ? '<p class="pd-tk"><b>The lesson</b> ' + esc(q.t) + '</p>' : '') + '</div>' + '' + '</div>'; }
   function callSync(q, right){ if(!base() || !window.mpIdToken) return;
     window.mpIdToken().then(function(tok){ return fetch(base() + "/call", {method: "POST", headers: {"content-type": "application/json", authorization: "Bearer " + tok}, body: JSON.stringify(right == null ? {q: q.id + day().replace(/-/g, "")} : {q: q.id + day().replace(/-/g, ""), right: right})}); })
       .then(function(r){ return r.ok ? r.json() : null; }).then(function(d){ var c = callSt(); if(!d || !c || c.q !== q.id) return; c.n = d.n; c.right = d.right; ls("pd-call", c);
@@ -6829,7 +6832,7 @@ TRACKER DATA:
       var r = S0.getBoundingClientRect(); if(e.clientX - r.left < r.width * .3) show(cur - 1); else next(); });
     S0.addEventListener("click", function(e){ var b = e.target.closest("#pdChips [data-k]"); if(!b) return; e.stopPropagation(); var o = on().slice(), k = b.dataset.k, i = o.indexOf(k);
       if(i < 0 && o.length >= TOP){ var m = $("pdPickM"); if(m) m.textContent = "Max " + TOP + ". Tap one to remove it first."; return; }
-      if(i >= 0) o.splice(i, 1); else o.push(k); save(o); b.classList.toggle("on"); ls("pd-daily3", null); });
+      if(i >= 0) o.splice(i, 1); else o.push(k); save(o); b.classList.toggle("on"); ls("pd-daily4", null); });
     document.addEventListener("keydown", function(e){ if(V.hidden) return; if(e.key === "Escape") close(); if(e.key === "ArrowRight") next(); if(e.key === "ArrowLeft") show(cur - 1); });
     document.addEventListener("visibilitychange", function(){ if(!document.hidden){ getDaily(false); getTick(); } });
     setInterval(function(){ if(!document.hidden){ getDaily(false); getTick(); } }, 15*6e4);

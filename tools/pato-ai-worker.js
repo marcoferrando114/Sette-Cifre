@@ -166,7 +166,7 @@ function check(out, body) {
   return out;
 }
 async function take(env, uid, body, b) {
-  const key = "daily3:" + uid + ":" + b.day;
+  const key = "daily4:" + uid + ":" + b.day;
   if (env.LIMITS) { const hit = await env.LIMITS.get(key); if (hit) return JSON.parse(hit); }
   const user = JSON.stringify({ stocks: (body.stocks || []).slice(0, 8), total: body.total || null, bets: (body.bets || []).slice(0, 8), currency: "USD for stocks, RD$ for bets" }).slice(0, 3000);
   const facts = JSON.stringify({ stockNews: b.stocks, marketTop: b.ticker.slice(0, 4).map(i => ({ h: i.h, s: i.s })), rd: b.cats.rd ? { h: b.cats.rd[0].h, s: b.cats.rd[0].s } : null,
@@ -174,12 +174,12 @@ async function take(env, uid, body, b) {
     cards: Object.fromEntries(Object.entries(b.cats).concat(b.big ? [["big", b.big]] : []).map(([k, v]) => { const i = Array.isArray(v) ? v[0] : v; return [k, { h: i.h, also: (i.also || []).slice(0, 3) }]; })) }).slice(0, 9000);
   const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST",
     headers: { "content-type": "application/json", "x-api-key": env.ANTHROPIC_KEY, "anthropic-version": "2023-06-01" },
-    body: JSON.stringify({ model: "claude-haiku-5-5", max_tokens: 1500, messages: [{ role: "user", content: TAKE + "\n\nUSER: " + user + "\n\nFACTS: " + facts + "\n\nGAMES are FACTS.games in order. CARDS are FACTS.cards." }] }) });
+    body: JSON.stringify({ model: "claude-haiku-5-5", max_tokens: 2500, messages: [{ role: "user", content: TAKE + "\n\nUSER: " + user + "\n\nFACTS: " + facts + "\n\nGAMES are FACTS.games in order. CARDS are FACTS.cards." }] }) });
   if (!r.ok) return null;
   const j = await r.json(), txt = ((j.content || []).find(c => c.type === "text") || {}).text || "", m = txt.match(/\{[\s\S]*\}/);
   let out = null; try { out = JSON.parse(m[0]); } catch (e) { return null; }
   out = check(out, body);
-  if (env.LIMITS) await env.LIMITS.put(key, JSON.stringify(out), { expirationTtl: 172800 });
+  if (env.LIMITS && Object.keys(b.cats).length >= 2) await env.LIMITS.put(key, JSON.stringify(out), { expirationTtl: 172800 });   // only keep a take built on a full edition
   return out;
 }
 
