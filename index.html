@@ -1698,7 +1698,8 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261111000719";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261111062519";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+
 
 
 
@@ -3985,7 +3986,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
       const tol = Math.min(10, Math.floor(gap/2));
       // each payment counts toward the nearest open date; a date is only done once ~90% of its amount came in
       // a payment tagged with its league week (late payments) belongs to that Monday only, never to a later one
-      const got = entries.filter(e=>e.type!=="out" && norm(e.source)===k).map(e=>({d:e.date||t, v:Number(e.amount)||0, s:e.semana||null}));
+      const got = entries.filter(e=>e.type!=="out" && !e.extra && norm(e.source)===k) /* extra:true = separate payment, never fills an expected date (Marco, Nov 11) */.map(e=>({d:e.date||t, v:Number(e.amount)||0, s:e.semana||null}));
       pokerOtra.filter(x=>norm(x.source)===k && x.monto>0).forEach(x=>got.push({d:x.fecha, v:x.monto, s:x.semana||null}));
       pagos.filter(x=>norm(x.nombre)===k).forEach(x=>got.push({d:x.fecha||t, v:Number(x.monto)||0}));
       got.sort((a,b)=>a.d.localeCompare(b.d)).forEach(g => {
