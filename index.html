@@ -1264,6 +1264,61 @@ html[data-palette^="goyard"] :is(.pk-three b,.pk-det .r b,.pk-ototal b){font-fam
 #pkNew .pk-det{margin-top:14px;padding:16px 18px;font-size:1rem}
 #pkNew .pk-det .r{padding:7px 0}
 #pkVOther .pk-ototal{margin:20px 0 10px}
+
+.pn-tick{display:flex;align-items:stretch;height:38px;margin:-12px -18px 14px;background:#E3BC6A;color:#13241B;overflow:hidden;font-size:.86rem;font-weight:600}
+.pn-tick[hidden]{display:none!important}
+html.mp-guest #p-stocks > #pnTick:not([hidden]){display:flex!important}
+.pn-lab{flex:none;display:flex;align-items:center;gap:6px;padding:0 10px 0 6px;background:#123326;color:#E3BC6A;font-weight:800;font-size:.72rem;letter-spacing:.08em;z-index:1}
+.pn-lab img{width:24px;height:24px;border-radius:6px}
+.pn-lab small{font-weight:600;color:#8FA597;letter-spacing:0;font-size:.68rem}
+.pn-run{flex:1;overflow:hidden;display:flex;align-items:center}
+.pn-track{display:flex;white-space:nowrap;will-change:transform;animation:pnMove var(--pn-dur,40s) linear infinite}
+.pn-run:active .pn-track{animation-play-state:paused}
+.pn-track a{all:unset;cursor:pointer;padding:0 14px;border-right:1px solid rgba(0,0,0,.18)}
+.pn-track b{font-weight:800;margin-right:4px}
+@keyframes pnMove{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media (prefers-reduced-motion:reduce){.pn-track{animation-duration:120s}}
+.pd-fab{position:fixed;right:14px;bottom:calc(92px + env(safe-area-inset-bottom,0px));z-index:40;width:62px;height:62px;border-radius:50%;padding:3px;border:0;cursor:pointer;touch-action:none;
+  background:conic-gradient(#E3BC6A,#F7DC9C,#C99A3F,#E3BC6A);box-shadow:0 8px 24px rgba(0,0,0,.45);-webkit-tap-highlight-color:transparent;transition:transform .15s}
+.pd-fab[hidden]{display:none}
+.pd-fab.big{background:conic-gradient(#FF5A4A,#FF9A7A,#B8322A,#FF5A4A)}
+.pd-fab:active{transform:scale(.94)}
+.pd-fab img{width:100%;height:100%;border-radius:50%;border:3px solid #13261C;display:block;box-sizing:border-box;pointer-events:none}
+.pd-fab b{position:absolute;top:-3px;right:-3px;min-width:20px;height:20px;padding:0 5px;border-radius:10px;background:#FF5A4A;color:#fff;font-size:.72rem;font-weight:800;display:flex;align-items:center;justify-content:center;border:2px solid #0F1A14;box-sizing:border-box}
+.pd-v{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center;animation:pdIn .22s ease}
+.pd-v[hidden]{display:none}
+@keyframes pdIn{from{opacity:0}to{opacity:1}}
+.pd-s{position:relative;width:min(560px,calc(100% - 20px));height:calc(100% - 40px - env(safe-area-inset-top,0px));margin-bottom:calc(10px + env(safe-area-inset-bottom,0px));border-radius:28px;overflow:hidden;color:#fff;
+  background:linear-gradient(170deg,#1F4A35 0%,#0D1F16 80%);border:1px solid #2F4A3C;box-shadow:0 20px 50px rgba(0,0,0,.6);display:flex;flex-direction:column;transition:transform .2s;touch-action:none;user-select:none;-webkit-user-select:none}
+.pd-s.big{background:linear-gradient(170deg,#3A1D1A 0%,#140B0A 80%);border-color:#B8322A}
+.pd-s.rd{background:linear-gradient(170deg,#1D2F4A 0%,#0B1220 80%);border-color:#3D5F8F}
+.pd-s.game{background:linear-gradient(170deg,#5A4220 0%,#1E160B 80%);border-color:#7A5A2A}
+.pd-bars{display:flex;gap:4px;padding:14px 14px 0}
+.pd-bars i{flex:1;height:3px;border-radius:2px;background:rgba(255,255,255,.25);overflow:hidden}
+.pd-bars i.d{background:#fff}
+.pd-bars i.n::after{content:"";display:block;height:100%;width:100%;background:#fff;transform-origin:left;animation:pdBar var(--pd-t,9s) linear forwards}
+.pd-v.paused .pd-bars i.n::after{animation-play-state:paused}
+@keyframes pdBar{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+.pd-hd{display:flex;align-items:center;gap:10px;padding:10px 14px}
+.pd-hd img{width:32px;height:32px;border-radius:9px}
+.pd-hd b{display:block;font-size:.85rem}.pd-hd small{font-size:.72rem;color:#9FB3A7}
+.pd-hd button{all:unset;cursor:pointer;margin-left:auto;font-size:1.3rem;color:#CFE0D6;padding:4px 8px}
+.pd-bd{flex:1;overflow:auto;padding:28px 24px 20px}
+.pd-k{font-size:.72rem;font-weight:800;letter-spacing:.1em;color:#E3BC6A}
+.pd-s.big .pd-k{color:#FF7A6B}.pd-s.rd .pd-k{color:#8FB6FF}
+.pd-h1{font-size:1.45rem;font-weight:800;line-height:1.28;margin-top:10px}
+.pd-m{font-size:.78rem;color:#9FB3A7;margin-top:8px}
+.pd-ln{margin-top:22px}.pd-ln i{font-style:normal;font-size:.68rem;font-weight:800;letter-spacing:.08em;color:#E3BC6A}
+.pd-ln p{font-size:1.12rem;font-weight:700;line-height:1.32;margin:6px 0 0}.pd-ln p b{color:#F3D38F}
+.pd-ln small{display:block;font-size:.74rem;color:#9FB3A7;margin-top:5px}
+.pd-note{margin-top:26px;border-top:1px solid rgba(227,188,106,.25);padding-top:14px}
+.pd-note i{font-style:normal;font-size:.66rem;font-weight:800;letter-spacing:.08em;color:#E3BC6A}
+.pd-note p{font-size:1rem;font-weight:600;line-height:1.35;margin:5px 0 0}
+.pd-read{all:unset;cursor:pointer;display:inline-block;margin-top:22px;padding:10px 16px;border-radius:999px;background:rgba(255,255,255,.12);font-weight:700;font-size:.85rem}
+.pd-ft{padding:10px 16px 16px;text-align:center;font-size:.72rem;color:#9FB3A7}
+.pd-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.pd-chips button{all:unset;cursor:pointer;font-size:.88rem;padding:8px 13px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#CFE0D6}
+.pd-chips button.on{background:#E3BC6A;border-color:#E3BC6A;color:#13241B;font-weight:700}
 </style>
 <style>
 html,body{overscroll-behavior-y:none}
@@ -1698,7 +1753,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261111062519";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261111150839";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -2163,6 +2218,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
   </div>
 
   <div class="tabp" role="tabpanel" id="p-stocks" aria-labelledby="tab-stocks" hidden>
+  <div class="pn-tick" id="pnTick" hidden><div class="pn-lab"><img src="icon-192.png?v=7" alt="">PATO NEWS<small id="pnAt"></small></div><div class="pn-run"><div class="pn-track" id="pnTrack"></div></div></div>
   <section id="s-gst">
     <h2>Stocks</h2>
     <div class="st-big num" id="gstVal">US$0</div>
@@ -6509,6 +6565,154 @@ TRACKER DATA:
     var t = $("tab-stocks"); if(t) t.addEventListener("click", function(){ setTimeout(quotes, 300); });
   });
 })();
+</script>
+<button type="button" class="pd-fab" id="pdFab" hidden aria-label="Pato Daily"><img src="icon-192.png?v=7" alt=""><b id="pdN"></b></button>
+<div class="pd-v" id="pdV" hidden><div class="pd-s" id="pdS"><div class="pd-bars" id="pdBars"></div><div class="pd-hd"><img src="icon-192.png?v=7" alt=""><div><b id="pdT"></b><small id="pdW"></small></div><button type="button" id="pdX" aria-label="Close">✕</button></div><div class="pd-bd" id="pdBd"></div><div class="pd-ft" id="pdFt">Tap for next · swipe down to go back</div></div></div>
+<script>
+// Pato Daily (Nov 11): floating Pato on every tab opens today's stories on top (7am DR edition); ticker on Stocks.
+(function(){
+  var $ = function(i){ return document.getElementById(i); }, db = null, me = {}, pos = [], bets = [], sports = [], prefs = null, daily = null, tick = null, busy = 0;
+  var CATS = [["big","Big news","🌎"],["rd","🇩🇴 RD","🇩🇴"],["business","Business","💼"],["tech","Tech","💡"],["politics","Politics","🏛️"],["crypto","Crypto","🪙"],
+    ["ent","Entertainment","🎬"],["gaming","Gaming","🎮"],["health","Health","🩺"],["cars","Cars","🏎️"],["fashion","Fashion","👟"],["poker","Poker","♠️"],["game","Game of the day","🏆"]];
+  var DEF = ["big","rd","business","tech","game"], MAX = 6;
+  var esc = function(t){ return String(t==null?"":t).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); };
+  var drd = function(t){ return new Date((t||Date.now()) - 4*3600e3); };
+  var day = function(){ return new Date(Date.now() - 11*3600e3).toISOString().slice(0,10); };   // edition flips at 7am DR
+  var hr = function(t){ var d = drd(t), h = d.getUTCHours(), m = d.getUTCMinutes(); return (h%12||12) + (m ? ":" + String(m).padStart(2,"0") : "") + (h<12?"am":"pm"); };
+  var ago = function(t){ if(!t) return ""; var m = Math.max(1, Math.round((Date.now()-t)/6e4)); return m < 60 ? m+"m" : m < 1440 ? Math.round(m/60)+"h" : Math.round(m/1440)+"d"; };
+  var ls = function(k, v){ try{ if(v===undefined) return JSON.parse(localStorage.getItem(k)||"null"); localStorage.setItem(k, JSON.stringify(v)); }catch(e){ return null; } };
+  var open = function(u){ if(u) window.open(u, "_blank", "noopener"); };
+  var usd = function(n){ return "US$" + Math.abs(n).toLocaleString("en-US", {maximumFractionDigits: Math.abs(n) < 10 ? 2 : 0}); };
+  var bold = function(t){ return esc(t).replace(/((?:US|RD)\$[\d,.]+[kKmM]?|[+−-]?\d+(?:\.\d+)?%)/g, "<b>$1</b>"); };
+  var on = function(){ return prefs && Array.isArray(prefs.on) ? prefs.on : DEF; };
+  var base = function(){ return (window.MP_AI_URL || "").replace(/\/$/, ""); };
+  function q(){ var k = on().filter(function(x){ return x !== "big" && x !== "game"; }); if(k.indexOf("rd") < 0) k.unshift("rd");
+    return "k=" + k.join(",") + (pos.length ? "&t=" + encodeURIComponent(pos.slice(0,5).map(function(p){ return p.t; }).join(",")) : "") + (on().indexOf("game") < 0 ? "&g=0" : ""); }
+  var sig = function(){ return q(); };
+  function facts(){
+    var st = pos.map(function(p){ var o = {ticker: p.t, shares: Math.round(p.sh*1e4)/1e4};
+      if(p.prev > 0 && p.precio > 0){ o.todayUsd = Math.round(p.sh*(p.precio-p.prev)*100)/100; o.todayPct = Math.round((p.precio/p.prev-1)*1e4)/100; }
+      if(p.costo > 0 && p.precio > 0) o.sinceBoughtPct = Math.round((p.precio/p.costo-1)*1e4)/100; return o; });
+    var open = bets.filter(function(b){ return ["won","lost","push"].indexOf(b.result) < 0; }).slice(0,5).map(function(b){ return {stakeRD: Number(b.stake)||0, legs: (b.legs||[]).map(function(l){ return [l.sport, l.game].filter(Boolean).join(": "); }).slice(0,3)}; });
+    var done = bets.filter(function(b){ return b.result==="won"||b.result==="lost"; }).slice(0,6).map(function(b){ return {result: b.result, sport: ((b.legs||[])[0]||{}).sport||""}; });
+    return {stocks: st, bets: open.map(function(b){ b.open = true; return b; }).concat(done)};
+  }
+  function getDaily(force){
+    if(!base() || busy || !window.mpIdToken) return;
+    var st = ls("pd-daily"); if(!force && st && st.day === day() && st.sig === sig() && st.data && (st.data.take || Date.now() - (st.at||0) < 2*3600e3)){ daily = st.data; return render(); }
+    busy = 1;
+    window.mpIdToken().then(function(tok){ return fetch(base() + "/daily?" + q(), {method: "POST", headers: {"content-type": "application/json", authorization: "Bearer " + tok}, body: JSON.stringify(facts())}); })
+      .then(function(r){ return r.ok ? r.json() : null; }).then(function(d){ busy = 0; if(!d) return render(); daily = d; tick = {at: d.at, ticker: d.ticker, big: d.big};
+        ls("pd-daily", {day: day(), sig: sig(), at: Date.now(), data: d}); render(); }).catch(function(){ busy = 0; render(); });
+  }
+  function getTick(){   // ticker + big news refresh every 2h (free, no AI)
+    if(!base() || (tick && Date.now() - (tick.got||0) < 2*3600e3)) return;
+    fetch(base() + "/news?k=business&g=0" + (pos.length ? "&t=" + encodeURIComponent(pos.slice(0,5).map(function(p){ return p.t; }).join(",")) : "")).then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(d){ if(!d) return; tick = {at: d.at, ticker: d.ticker, big: d.big, got: Date.now()}; render(); }).catch(function(){});
+  }
+  function fallback(){
+    var up = 0, n = 0; pos.forEach(function(p){ if(p.prev > 0 && p.precio > 0){ up += p.sh*(p.precio-p.prev); n++; } });
+    if(n) return {you: {text: Math.abs(up) < 1 ? "Your stocks are flat today." : "Your stocks are " + (up>0?"up ":"down ") + usd(up) + " today.", src: "From your stocks"}};
+    var L = ["Saving a little every week beats saving a lot once.", "Pay yourself first: move money to savings the day you get paid.", "Small leaks sink big ships. Check one subscription today."];
+    return {you: {text: L[Number(day().slice(8)) % L.length], src: "Pato"}};
+  }
+  // ---------- stories ----------
+  var S = [], cur = 0, timer = null, ignore = 0;
+  function stories(){
+    var L = [], want = on(), cats = (daily && daily.cats) || {}, notes = (daily && daily.take && daily.take.notes) || {}, big = (tick && tick.big) || (daily && daily.big), ed = day();
+    var tk = (daily && daily.take) || fallback();
+    L.push({id: ed + ":take", cls: "", t: "Pato's take", w: "7am edition", body: '<div class="pd-k">TODAY FOR YOU</div>' + [["HAPPENED", tk.happened], ["FOR YOU", tk.you], ["WATCH", tk.watch]].filter(function(r){ return r[1] && r[1].text; })
+      .map(function(r){ return '<div class="pd-ln"><i>' + r[0] + '</i><p>' + bold(r[1].text) + '</p>' + (r[1].src ? '<small>' + esc(r[1].src) + '</small>' : '') + '</div>'; }).join("")});
+    var b = pos.filter(function(p){ return p.prev > 0 && p.precio > 0 && Math.abs(p.precio/p.prev-1) >= .05; }).sort(function(x, y){ return Math.abs(y.precio/y.prev-1) - Math.abs(x.precio/x.prev-1); })[0];
+    var said = tk.happened ? tk.happened.text : "", st0 = b && daily && daily.stocks && daily.stocks[b.t];
+    if(b && !(said && (new RegExp("\\b" + b.t + "\\b").test(said) || (st0 && said.indexOf(st0.h.split(" ")[0]) >= 0)))){ var ch = (b.precio/b.prev-1)*100;
+      L.push({id: ed + ":move:" + b.t + (ch>0?"+":"-"), cls: "big", t: "Breaking · " + b.t, w: "today", u: st0 && st0.u, body: '<div class="pd-k">BREAKING · ' + esc(b.t) + " " + (ch>0?"+":"−") + Math.abs(ch).toFixed(1) + '%</div><div class="pd-h1">' + esc(st0 ? st0.h : b.t + (ch>0?" jumps ":" drops ") + Math.abs(ch).toFixed(1) + "% today.") + '</div>' + (st0 ? '<div class="pd-m">' + esc(st0.s) + " · " + ago(st0.t) + '</div>' : "") +
+        '<div class="pd-note"><i>PATO</i><p>' + bold("Your position: " + (ch>0?"+":"−") + usd(b.sh*(b.precio-b.prev)) + " today.") + '</p></div>'}); }
+    CATS.forEach(function(c){ if(L.length >= MAX + 1 || want.indexOf(c[0]) < 0) return; var k = c[0], it, h;
+      if(k === "big"){ if(!big) return; L.push({id: "big:" + big.h, cls: "big", t: "Big news", w: ago(big.t) + " ago", u: big.u, body: '<div class="pd-k">BIG NEWS · WORLD</div><div class="pd-h1">' + esc(big.h) + '</div><div class="pd-m">' + esc(big.by && big.by.length ? big.by.join(" · ") : big.s) + '</div>' + note(notes.big)}); return; }
+      if(k === "game"){ var G = (daily && daily.games) || [], gi = daily && daily.take && daily.take.game >= 0 ? daily.take.game : 0, g = G[gi] || G[0]; if(!g) return;
+        var mine = bets.filter(function(x){ return ["won","lost","push"].indexOf(x.result) < 0 && (x.legs||[]).some(function(l){ var a = String(l.game||"").toLowerCase(); return a && g.name.toLowerCase().split(/ at | vs\.? /).some(function(t){ return t && a.indexOf(t.split(" ").pop()) >= 0; }); }); })[0];
+        L.push({id: ed + ":game:" + g.name, cls: "game", t: "Game of the day", w: g.league, body: '<div class="pd-k">GAME OF THE DAY · ' + esc(g.league.toUpperCase()) + '</div><div class="pd-h1">' + esc(g.name.replace(" at ", " vs ")) + '</div><div class="pd-m">' + esc([g.live ? "LIVE now" : g.t ? hr(g.t) + " (DR time)" : "", (g.tv||[]).join(", "), g.note].filter(Boolean).join(" · ")) + '</div>' +
+          (mine ? '<div class="pd-note"><i>YOUR BET</i><p>' + bold("You have RD$" + (Number(mine.stake)||0).toLocaleString("en-US") + " on this game.") + '</p></div>' : "")}); return; }
+      it = cats[k]; if(!it) return; h = k === "rd" && daily.take && daily.take.rd ? daily.take.rd : it.h;
+      L.push({id: ed + ":" + k + ":" + it.h, cls: k === "rd" ? "rd" : "", t: c[1], w: ago(it.t) + " ago", u: it.u, body: '<div class="pd-k">' + esc(c[1].replace("🇩🇴 ", "🇩🇴 ").toUpperCase()) + '</div><div class="pd-h1">' + esc(h) + '</div>' + (h !== it.h ? '<div class="pd-m" style="font-style:italic">' + esc(it.h) + '</div>' : '') + '<div class="pd-m">' + esc(it.s) + '</div>' + note(notes[k])}); });
+    L.push({id: "pick", cls: "", t: "Pato Daily", w: "your stories", pick: 1, body: '<div class="pd-k">' + (prefs && prefs.picked ? "YOUR STORIES" : "PICK WHAT YOU LIKE") + '</div><div class="pd-h1">' + (prefs && prefs.picked ? "That's today. Change what you see:" : "What do you want in your stories?") + '</div><div class="pd-chips" id="pdChips">' +
+      CATS.map(function(c){ return '<button type="button" data-k="' + c[0] + '"' + (want.indexOf(c[0])>=0 ? ' class="on"' : '') + '>' + c[1] + '</button>'; }).join("") + '</div><div class="pd-m">Up to ' + MAX + ' stories a day. Next edition at 7am.</div>'});
+    return L;
+  }
+  function note(t){ return t ? '<div class="pd-note"><i>PATO</i><p>' + bold(t) + '</p></div>' : ""; }
+  var seen = function(){ var s = ls("pd-seen2") || {}; return s.day === day() ? s : {day: day(), ids: {}}; };
+  function unseen(){ var s = seen(); return S.filter(function(x){ return !x.pick && !s.ids[x.id]; }); }
+  function render(){
+    // ticker (Stocks tab)
+    var T = (tick && tick.ticker) || (daily && daily.ticker) || [];
+    if(T.length){ var mine = pos.map(function(p){ return p.t; });
+      var one = T.map(function(i){ var tk = mine.filter(function(x){ return new RegExp("\\b"+x+"\\b").test(i.h); })[0];
+        return '<a data-u="' + esc(i.u) + '">' + (tk ? "<b>" + esc(tk) + "</b>" : "") + esc(i.h) + "</a>"; }).join("");
+      $("pnTrack").innerHTML = one + one; $("pnAt").textContent = " · " + hr((tick && tick.at) || daily.at).replace(/:\d\d/, ""); $("pnTick").hidden = false;
+      requestAnimationFrame(function(){ var w = $("pnTrack").scrollWidth / 2; $("pnTrack").style.setProperty("--pn-dur", Math.max(20, w / 45) + "s"); }); }
+    if(!$("pdV").hidden) return;
+    S = stories(); var u = unseen(), first = !(prefs && prefs.picked);
+    $("pdFab").hidden = !u.length && !first; $("pdN").textContent = u.length || ""; $("pdN").hidden = !u.length;
+    $("pdFab").classList.toggle("big", u.some(function(x){ return x.cls === "big"; }));
+  }
+  function show(i){
+    clearTimeout(timer); cur = Math.max(0, Math.min(i, S.length - 1)); var x = S[cur], s = seen();
+    if(!x.pick){ s.ids[x.id] = 1; ls("pd-seen2", s); }
+    $("pdS").className = "pd-s " + (x.cls||""); $("pdT").textContent = x.t; $("pdW").textContent = x.w || "";
+    $("pdBd").innerHTML = x.body + (x.u ? '<button type="button" class="pd-read" data-u="' + esc(x.u) + '">Read the story ›</button>' : "");
+    $("pdBars").innerHTML = S.map(function(_, j){ return '<i class="' + (j < cur ? "d" : j === cur ? "n" : "") + '"></i>'; }).join("");
+    $("pdFt").textContent = x.pick ? "Swipe down to go back" : "Tap for next · swipe down to go back";
+    var t = x.pick ? 0 : x.id.indexOf(":take") > 0 ? 14000 : 9000; $("pdS").style.setProperty("--pd-t", t/1000 + "s");
+    if(t) timer = setTimeout(function(){ if(!$("pdV").classList.contains("paused")) next(); }, t); else $("pdBars").lastChild.className = "d";
+  }
+  function next(){ if(cur >= S.length - 1) return close(); show(cur + 1); }
+  function openV(){ S = stories(); var u = unseen(), i = u.length ? S.indexOf(u[0]) : 0; if(!(prefs && prefs.picked) && !u.length) i = S.length - 1;
+    $("pdV").hidden = false; document.documentElement.style.overflow = "hidden"; show(i); }
+  function close(){ clearTimeout(timer); $("pdV").hidden = true; $("pdS").style.transform = ""; document.documentElement.style.overflow = "";
+    if(!(prefs && prefs.picked)) save(on()); render(); }
+  function save(o){ prefs = {on: o, picked: true}; try{ db.doc("prefs/news").set({on: o, picked: true, at: Date.now()}); }catch(_){} }
+  function wire(){
+    document.addEventListener("click", function(e){ var a = e.target.closest && e.target.closest("#pnTrack a, .pd-read"); if(a && a.dataset.u){ e.preventDefault(); e.stopPropagation(); open(a.dataset.u); } }, true);
+    // floating Pato: tap opens, drag moves (position remembered)
+    var fab = $("pdFab"), st = ls("pd-fab"), sx, sy, ox, oy, moved = 0;
+    var place = function(x, y){ x = Math.max(6, Math.min(innerWidth - 68, x)); y = Math.max(40, Math.min(innerHeight - 160, y)); fab.style.left = x + "px"; fab.style.top = y + "px"; fab.style.right = "auto"; fab.style.bottom = "auto"; return [x, y]; };
+    if(st && st.length === 2) place(st[0], st[1]);
+    fab.addEventListener("pointerdown", function(e){ moved = 0; sx = e.clientX; sy = e.clientY; var r = fab.getBoundingClientRect(); ox = r.left; oy = r.top; fab.setPointerCapture(e.pointerId); });
+    fab.addEventListener("pointermove", function(e){ if(sx == null) return; var dx = e.clientX - sx, dy = e.clientY - sy; if(!moved && Math.abs(dx) + Math.abs(dy) < 8) return; moved = 1; place(ox + dx, oy + dy); });
+    fab.addEventListener("pointerup", function(){ if(sx == null) return; sx = null; if(moved){ var r = fab.getBoundingClientRect(); ls("pd-fab", [r.left, r.top]); } else openV(); });
+    // viewer: tap right = next, tap left = back, hold = pause, swipe down = close
+    var V = $("pdV"), S0 = $("pdS"), ty, tx, t0, held;
+    $("pdX").onclick = function(e){ e.stopPropagation(); close(); };
+    V.addEventListener("click", function(e){ if(e.target === V) close(); });
+    S0.addEventListener("pointerdown", function(e){ if(e.target.closest("button")) return; ty = e.clientY; tx = e.clientX; t0 = Date.now(); held = setTimeout(function(){ V.classList.add("paused"); }, 250); });
+    S0.addEventListener("pointermove", function(e){ if(ty == null) return; var dy = e.clientY - ty; if(dy > 0) S0.style.transform = "translateY(" + dy + "px)"; });
+    S0.addEventListener("pointerup", function(e){ if(ty == null) return; clearTimeout(held); var dy = e.clientY - ty, dx = e.clientX - tx, long = Date.now() - t0 > 250; ty = null;
+      var was = V.classList.contains("paused"); V.classList.remove("paused");
+      if(dy > 90) return close(); S0.style.transform = "";
+      if(long || was || Math.abs(dx) > 30 || Math.abs(dy) > 30) { if(was && S[cur] && !S[cur].pick){ show(cur); } return; }
+      var r = S0.getBoundingClientRect(); if(e.clientX - r.left < r.width * .3) show(cur - 1); else next(); });
+    S0.addEventListener("click", function(e){ var b = e.target.closest("#pdChips [data-k]"); if(!b) return; e.stopPropagation(); var o = on().slice(), k = b.dataset.k, i = o.indexOf(k);
+      if(i >= 0) o.splice(i, 1); else o.push(k); save(o); b.classList.toggle("on"); ls("pd-daily", null); });
+    document.addEventListener("keydown", function(e){ if(V.hidden) return; if(e.key === "Escape") close(); if(e.key === "ArrowRight") next(); if(e.key === "ArrowLeft") show(cur - 1); });
+    document.addEventListener("visibilitychange", function(){ if(!document.hidden){ getDaily(false); getTick(); } });
+    setInterval(function(){ if(!document.hidden){ getDaily(false); getTick(); } }, 15*6e4);
+  }
+  if(!window.claude) return;
+  window.claude.use("db").then(function(d){
+    if(!d) return; db = d; me = window.MP_ME || {}; wire();
+    var ready = {pos: 0, bets: 0, prefs: 0}, go = function(k){ ready[k] = 1; if(ready.pos && ready.bets && ready.prefs){ render(); getDaily(false); } };
+    var again = function(k, was){ if(!ready[k]) return go(k); if(sig() !== was) getDaily(false); else render(); };
+    var setPos = function(list){ pos = list.filter(function(x){ return Number(x.sh) > 0 && x.t; }).map(function(x){ return {t: String(x.t).toUpperCase(), sh: Number(x.sh), precio: Number(x.precio)||0, prev: Number(x.prev)||0, costo: Number(x.costo)||0}; })
+      .reduce(function(m, x){ var o = m.filter(function(y){ return y.t === x.t; })[0]; if(o){ o.costo = (o.costo*o.sh + x.costo*x.sh)/(o.sh + x.sh || 1); o.sh += x.sh; } else m.push(x); return m; }, [])
+      .sort(function(a, b){ return b.sh*(b.precio||1) - a.sh*(a.precio||1); }); };
+    if(me.owner) db.doc("invest/ibkr").onSnapshot(function(s){ var was = sig(); setPos((s.exists && s.data().posiciones) || []); again("pos", was); }, function(){ go("pos"); });
+    else db.collection("holdings").onSnapshot(function(s){ var was = sig(); setPos(s.docs.map(function(x){ return x.data(); })); again("pos", was); }, function(){ go("pos"); });
+    db.collection("bets").onSnapshot(function(s){ bets = s.docs.map(function(x){ return x.data(); }).sort(function(a, b){ return String(b.fecha||"").localeCompare(String(a.fecha||"")); }).slice(0,60); if(!ready.bets) go("bets"); else render(); }, function(){ go("bets"); });
+    db.doc("prefs/news").onSnapshot(function(s){ var was = sig(); prefs = s.exists ? s.data() : null; again("prefs", was); }, function(){ go("prefs"); });
+  });
+})();
+
 </script>
 </body>
 </html>
