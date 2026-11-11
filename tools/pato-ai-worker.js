@@ -34,7 +34,7 @@ const sec = t => GN + "/headlines/section/topic/" + t + "?" + EN, srch = (q, l) 
 const CATS = {
   rd: GN + "?" + ES, business: sec("BUSINESS"), tech: sec("TECHNOLOGY"), politics: srch("politics OR Congress OR White House OR election"),
   crypto: srch("bitcoin OR ethereum OR crypto"), ent: sec("ENTERTAINMENT"), gaming: srch("video games OR PlayStation OR Xbox OR Nintendo OR esports"),
-  health: sec("HEALTH"), cars: srch("cars OR Tesla OR Ferrari OR automaker OR Formula 1"), fashion: srch("fashion OR sneakers OR Nike OR Louis Vuitton OR streetwear"),
+  health: sec("HEALTH"), cars: srch("cars OR Tesla OR Ferrari OR automaker OR Formula 1"), fashion: srch("luxury OR Rolex OR \"Patek Philippe\" OR \"Audemars Piguet\" OR Hermès OR \"Louis Vuitton\" OR Goyard OR sneakers OR streetwear"),
   poker: srch("poker WSOP OR \"World Series of Poker\" OR \"poker tournament\""), saving: srch("\"personal finance\" OR savings OR \"interest rates\""),
 };
 const LEAGUES = [["football/nfl", "NFL", 9], ["soccer/uefa.champions", "Champions League", 9], ["basketball/nba", "NBA", 8], ["mma/ufc", "UFC", 8], ["soccer/fifa.world", "World Cup", 10],
@@ -92,7 +92,8 @@ async function bundle(P) {
     ...want.map(k => feed(CATS[k], 7200)), ...tick.map(t => feed(srch(t + " stock"), 10800)), P.get("g") === "0" ? Promise.resolve([]) : games()]);
   const cats = {}; want.forEach((k, i) => { const it = pick(rest[i].items || [])[0]; if (it) cats[k] = it; });
   const stocks = {}; tick.forEach((t, i) => { const it = pick(rest[want.length + i].items || [])[0]; if (it) stocks[t] = it; });
-  const W = clean(world.items || [], 12).filter(i => i.n >= 3 && HUGE.test(i.h))[0] || null;
+  const WL = clean(world.items || [], 12), WH = WL.filter(i => i.n >= 3 && HUGE.test(i.h))[0];
+  const W = WH ? Object.assign({}, WH, { huge: true }) : (WL.slice().sort((x, y) => (y.n || 0) - (x.n || 0))[0] || null);   // Big news every day; huge = red
   const T = pick(top.items || []);
   return { at: top.at || Date.now(), day: edDay(), big: W, cats, stocks, games: rest[rest.length - 1] || [],
     ticker: T.filter(i => MOVERS.test(i.h)).concat(T).filter((v, i, a) => a.indexOf(v) === i).slice(0, 5) };
