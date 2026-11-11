@@ -26,7 +26,7 @@ async function verify(token) {
 
 // ---------- Pato Daily (Google News RSS + ESPN schedules, cached at Cloudflare's edge; one Haiku call per user per day for Pato's take) ----------
 const GN = "https://news.google.com/rss", EN = "hl=en-US&gl=US&ceid=US:en", ES = "hl=es-419&gl=DO&ceid=DO:es-419";
-const TRUSTED = /^(Reuters|Associated Press|AP News|CNBC|Bloomberg|Bloomberg\.com|Yahoo Finance|Yahoo|MarketWatch|The Wall Street Journal|WSJ|Financial Times|CNN|CNN Business|Business Insider|Barron's|Fox Business|Axios|The Verge|TechCrunch|Wired|Ars Technica|Engadget|CoinDesk|Cointelegraph|Decrypt|Forbes|ESPN|The Athletic|CBS Sports|NBC Sports|Yahoo Sports|Sports Illustrated|BBC|BBC News|The Guardian|NPR|The New York Times|The Washington Post|Politico|The Hill|NBC News|ABC News|CBS News|Al Jazeera|Variety|Billboard|Rolling Stone|The Hollywood Reporter|Deadline|IGN|Polygon|GameSpot|Kotaku|STAT|Healthline|Medical News Today|Car and Driver|MotorTrend|Road & Track|Top Gear|Vogue|GQ|Hypebeast|Highsnobiety|Business of Fashion|WWD|Elle|Diario Libre|Listín Diario|Listin Diario|El Día|El Dia|Hoy Digital|Periódico Hoy|N Digital|CDN|El Nuevo Diario|Noticias SIN|Acento|De Último Minuto|Diario Libre RD|PokerNews|Investopedia|Bloomberg Línea)$/i;
+const TRUSTED = /^(Reuters|Associated Press|The Associated Press|USA TODAY|USA Today|Yahoo News|Fortune|Newsweek|Sky News|The Independent|TIME|Time|Los Angeles Times|Investing\.com|AP News|CNBC|Bloomberg|Bloomberg\.com|Yahoo Finance|Yahoo|MarketWatch|The Wall Street Journal|WSJ|Financial Times|CNN|CNN Business|Business Insider|Barron's|Fox Business|Axios|The Verge|TechCrunch|Wired|Ars Technica|Engadget|CoinDesk|Cointelegraph|Decrypt|Forbes|ESPN|The Athletic|CBS Sports|NBC Sports|Yahoo Sports|Sports Illustrated|BBC|BBC News|The Guardian|NPR|The New York Times|The Washington Post|Politico|The Hill|NBC News|ABC News|CBS News|Al Jazeera|Variety|Billboard|Rolling Stone|The Hollywood Reporter|Deadline|IGN|Polygon|GameSpot|Kotaku|STAT|Healthline|Medical News Today|Car and Driver|MotorTrend|Road & Track|Top Gear|Vogue|GQ|Hypebeast|Highsnobiety|Business of Fashion|WWD|Elle|Diario Libre|Listín Diario|Listin Diario|El Día|El Dia|Hoy Digital|Periódico Hoy|N Digital|CDN|El Nuevo Diario|Noticias SIN|Acento|De Último Minuto|Diario Libre RD|PokerNews|Investopedia|Bloomberg Línea)$/i;
 const JUNK = /\b(opinion|sponsored|\d+ (stocks?|ways|things|reasons|picks|best)|top \d+|best .{0,30} to buy|should you (buy|sell)|is it time to|buy now|before it'?s too late|millionaire|prediction:|could make you rich|live updates?|quiz|podcast|horoscope|deal alert|% off|coupon|review:)\b/i;
 const MOVERS = /\b(fed|federal reserve|powell|rates?|inflation|cpi|jobs report|payrolls|s&p|nasdaq|dow|stocks?|wall street|bitcoin|crypto|dollar|earnings|oil|treasur(y|ies)|recession|tariffs?|ipo|market)\b/i;
 const HUGE = /\b(dead|dies|died|killed|deaths?|crash(es|ed)?|earthquake|hurricane|tsunami|wildfire|flood|war|invasion|invades|attack|explosion|shooting|terror|ceasefire|assassinat|resigns|impeach|coup|elected|wins (the )?election|state of emergency|pandemic|outbreak)\b/i;
@@ -61,7 +61,26 @@ async function cached(url, ttl, kind) {
   const txt = await r.text(); let body = txt; if (kind === "json") { try { body = JSON.parse(txt); } catch (e) { body = {}; } }
   return { at: Number(r.headers.get("x-at")) || Date.now(), body };
 }
-const feed = (url, ttl) => cached(url, ttl).then(f => ({ at: f.at, items: parse(f.body) })).catch(() => ({ at: Date.now(), items: [] }));
+// Google News blocks Cloudflare (503/429) at times, so every feed falls back to Bing News RSS for the same topic (Nov 11).
+const BQ = { BUSINESS: "business stock market economy", WORLD: "world news", TECHNOLOGY: "technology", ENTERTAINMENT: "entertainment celebrities movies music", HEALTH: "health medicine" };
+function bingUrl(url) {
+  if (url === GN + "?" + ES) return "https://www.bing.com/news/search?q=" + encodeURIComponent("República Dominicana") + "&format=rss&setlang=es&cc=DO&count=40";
+  let q = ""; const m = url.match(/\/topic\/([A-Z]+)/); if (m) q = BQ[m[1]] || m[1].toLowerCase();
+  else { try { q = (new URL(url).searchParams.get("q") || "").replace(/ when:\d+[dh]/, ""); } catch (e) {} }
+  return q ? "https://www.bing.com/news/search?q=" + encodeURIComponent(q) + "&format=rss&setlang=en&cc=US&count=40" : "";
+}
+function parseBing(xml) {
+  const it = [...String(xml).matchAll(/<item>([\s\S]*?)<\/item>/g)].map(m => {
+    const g = tag => { const r = m[1].match(new RegExp("<" + tag + "[^>]*>([\\s\\S]*?)</" + tag + ">", "i")); return r ? dec(r[1]) : ""; };
+    const l = g("link"), u = (() => { try { return new URL(l).searchParams.get("url") || l; } catch (e) { return l; } })(), im = g("News:Image").replace(/^http:/, "https:");
+    return { h: g("title"), s: g("News:Source"), u, t: Date.parse(g("pubDate")) || 0, img: im && !BADIMG.test(im) ? im + (im.includes("?") ? "&" : "?") + "w=800&h=450&c=7" : "" };
+  }).filter(i => i.h && i.u);
+  return it.map(i => { const w = new Set(words(i.h)), same = it.filter(j => j === i || words(j.h).filter(v => w.has(v)).length / Math.max(w.size, 1) >= 0.5);
+    const by = [...new Set(same.map(j => j.s).filter(x => TRUSTED.test(x)))]; return Object.assign(i, { n: by.length || 1, by: by.slice(0, 3), also: same.filter(j => j !== i).map(j => j.h).slice(0, 3) }); });
+}
+const feed = (url, ttl) => cached(url, ttl).then(f => ({ at: f.at, items: parse(f.body) })).catch(() => ({ at: Date.now(), items: [] }))
+  .then(async r => { if (r.items.length) return r; const b = bingUrl(url); if (!b) return r;
+    try { const f = await cached(b, ttl); return { at: f.at, items: parseBing(f.body) }; } catch (e) { return r; } });
 function clean(items, hours) {
   const now = Date.now(), seen = new Set();
   return items.filter(i => {
@@ -76,7 +95,8 @@ const CO = { GOOGL: "google|alphabet", GOOG: "google|alphabet", NVDA: "nvidia", 
 function top2(items, tick, busy) {
   const now = Date.now(), me = new RegExp("\\b(" + tick.map(t => t.toLowerCase() + (CO[t] ? "|" + CO[t] : "")).join("|") + ")", "i");
   const a = pick(items).map(i => { const mine = tick.length ? me.test(i.h) : false; return Object.assign({}, i, { mine, sc: (i.n || 1) * 10 + Math.max(0, 14 - (now - i.t) / 36e5) + (mine ? 25 : 0) }); }).sort((x, y) => y.sc - x.sc);
-  return a.slice(0, 1).concat(a.slice(1).filter(i => busy || i.n >= 5 || i.mine).slice(0, 1));
+  const w0 = a[0] ? new Set(words(a[0].h)) : new Set(), dup = i => words(i.h).filter(v => w0.has(v)).length / Math.max(w0.size, 1) >= 0.5;   // 2nd story must be a different story
+  return a.slice(0, 1).concat(a.slice(1).filter(i => !dup(i) && (busy || i.n >= 5 || i.mine)).slice(0, 1));
 }
 const drDay = () => new Date(Date.now() - 4 * 3600e3).toISOString().slice(0, 10), edDay = () => new Date(Date.now() - 11 * 3600e3).toISOString().slice(0, 10); // edition starts 7am DR
 async function games() {
@@ -204,8 +224,8 @@ export default {
     const url = new URL(req.url);
     if (req.method === "GET" && url.pathname === "/news" && url.searchParams.get("debug") === "1") {   // test link: how many stories each topic feed gives right now
       const ks = ["rd", "business", "tech", "politics", "crypto", "ent", "gaming", "health", "cars", "fashion"], out = {};
-      await Promise.all(ks.map(async k => { try { const f = await fetch(CATS[k], { headers: { "user-agent": "Mozilla/5.0 (compatible; PatoDaily/1.0)" } }), x = f.ok ? await f.text() : "", it = parse(x);
-        out[k] = { status: f.status, raw: it.length, fresh: pick(it).length, top2: top2(it, [], true).length }; } catch (e) { out[k] = { err: String(e.message || e).slice(0, 80) }; } }));
+      await Promise.all(ks.map(async k => { try { const it = (await feed(CATS[k], 7200)).items;
+        out[k] = { raw: it.length, fresh: pick(it).length, top2: top2(it, [], true).length, img: it.filter(i => i.img).length }; } catch (e) { out[k] = { err: String(e.message || e).slice(0, 80) }; } }));
       return json(out, 200, origin);
     }
     if (req.method === "GET" && url.pathname === "/news") {
@@ -219,7 +239,7 @@ export default {
       }
       if (!ORIGINS.includes(origin)) return json({ error: { type: "forbidden" } }, 403, origin);
       const u = url.searchParams.get("u") || "", h = (url.searchParams.get("h") || "").slice(0, 200);
-      if (!/^https:\/\/news\.google\.com\//.test(u)) return json({ img: "" }, 200, origin);   // only our own story links
+      if (!/^https:\/\//.test(u)) return json({ img: "" }, 200, origin);
       return json(await storyImg(u, h), 200, origin);
     }
     if (req.method !== "POST" || !ORIGINS.includes(origin)) return json({ error: { type: "forbidden" } }, 403, origin);
