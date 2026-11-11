@@ -1753,7 +1753,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261111150839";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261111152819";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -6590,20 +6590,22 @@ TRACKER DATA:
     return "k=" + k.join(",") + (pos.length ? "&t=" + encodeURIComponent(pos.slice(0,5).map(function(p){ return p.t; }).join(",")) : "") + (on().indexOf("game") < 0 ? "&g=0" : ""); }
   var sig = function(){ return q(); };
   function facts(){
+    var tu = 0, tb = 0;
     var st = pos.map(function(p){ var o = {ticker: p.t, shares: Math.round(p.sh*1e4)/1e4};
-      if(p.prev > 0 && p.precio > 0){ o.todayUsd = Math.round(p.sh*(p.precio-p.prev)*100)/100; o.todayPct = Math.round((p.precio/p.prev-1)*1e4)/100; }
-      if(p.costo > 0 && p.precio > 0) o.sinceBoughtPct = Math.round((p.precio/p.costo-1)*1e4)/100; return o; });
+      if(p.prev > 0 && p.precio > 0){ o.TODAY_changeUsd = Math.round(p.sh*(p.precio-p.prev)*100)/100; o.TODAY_changePct = Math.round((p.precio/p.prev-1)*1e4)/100; tu += p.sh*(p.precio-p.prev); tb += p.sh*p.prev; }
+      if(p.costo > 0 && p.precio > 0) o.SINCE_BOUGHT_gainPct = Math.round((p.precio/p.costo-1)*1e4)/100; if(p.regalo) o.freeShares = true; return o; });
+    var tot = tb > 0 ? {TODAY_changeUsd: Math.round(tu*100)/100, TODAY_changePct: Math.round(tu/tb*1e4)/100} : null;
     var open = bets.filter(function(b){ return ["won","lost","push"].indexOf(b.result) < 0; }).slice(0,5).map(function(b){ return {stakeRD: Number(b.stake)||0, legs: (b.legs||[]).map(function(l){ return [l.sport, l.game].filter(Boolean).join(": "); }).slice(0,3)}; });
     var done = bets.filter(function(b){ return b.result==="won"||b.result==="lost"; }).slice(0,6).map(function(b){ return {result: b.result, sport: ((b.legs||[])[0]||{}).sport||""}; });
-    return {stocks: st, bets: open.map(function(b){ b.open = true; return b; }).concat(done)};
+    return {stocks: st, total: tot, bets: open.map(function(b){ b.open = true; return b; }).concat(done)};
   }
   function getDaily(force){
     if(!base() || busy || !window.mpIdToken) return;
-    var st = ls("pd-daily"); if(!force && st && st.day === day() && st.sig === sig() && st.data && (st.data.take || Date.now() - (st.at||0) < 2*3600e3)){ daily = st.data; return render(); }
+    var st = ls("pd-daily2"); if(!force && st && st.day === day() && st.sig === sig() && st.data && (st.data.take || Date.now() - (st.at||0) < 2*3600e3)){ daily = st.data; return render(); }
     busy = 1;
     window.mpIdToken().then(function(tok){ return fetch(base() + "/daily?" + q(), {method: "POST", headers: {"content-type": "application/json", authorization: "Bearer " + tok}, body: JSON.stringify(facts())}); })
       .then(function(r){ return r.ok ? r.json() : null; }).then(function(d){ busy = 0; if(!d) return render(); daily = d; tick = {at: d.at, ticker: d.ticker, big: d.big};
-        ls("pd-daily", {day: day(), sig: sig(), at: Date.now(), data: d}); render(); }).catch(function(){ busy = 0; render(); });
+        ls("pd-daily2", {day: day(), sig: sig(), at: Date.now(), data: d}); render(); }).catch(function(){ busy = 0; render(); });
   }
   function getTick(){   // ticker + big news refresh every 2h (free, no AI)
     if(!base() || (tick && Date.now() - (tick.got||0) < 2*3600e3)) return;
@@ -6693,7 +6695,7 @@ TRACKER DATA:
       if(long || was || Math.abs(dx) > 30 || Math.abs(dy) > 30) { if(was && S[cur] && !S[cur].pick){ show(cur); } return; }
       var r = S0.getBoundingClientRect(); if(e.clientX - r.left < r.width * .3) show(cur - 1); else next(); });
     S0.addEventListener("click", function(e){ var b = e.target.closest("#pdChips [data-k]"); if(!b) return; e.stopPropagation(); var o = on().slice(), k = b.dataset.k, i = o.indexOf(k);
-      if(i >= 0) o.splice(i, 1); else o.push(k); save(o); b.classList.toggle("on"); ls("pd-daily", null); });
+      if(i >= 0) o.splice(i, 1); else o.push(k); save(o); b.classList.toggle("on"); ls("pd-daily2", null); });
     document.addEventListener("keydown", function(e){ if(V.hidden) return; if(e.key === "Escape") close(); if(e.key === "ArrowRight") next(); if(e.key === "ArrowLeft") show(cur - 1); });
     document.addEventListener("visibilitychange", function(){ if(!document.hidden){ getDaily(false); getTick(); } });
     setInterval(function(){ if(!document.hidden){ getDaily(false); getTick(); } }, 15*6e4);
@@ -6703,7 +6705,7 @@ TRACKER DATA:
     if(!d) return; db = d; me = window.MP_ME || {}; wire();
     var ready = {pos: 0, bets: 0, prefs: 0}, go = function(k){ ready[k] = 1; if(ready.pos && ready.bets && ready.prefs){ render(); getDaily(false); } };
     var again = function(k, was){ if(!ready[k]) return go(k); if(sig() !== was) getDaily(false); else render(); };
-    var setPos = function(list){ pos = list.filter(function(x){ return Number(x.sh) > 0 && x.t; }).map(function(x){ return {t: String(x.t).toUpperCase(), sh: Number(x.sh), precio: Number(x.precio)||0, prev: Number(x.prev)||0, costo: Number(x.costo)||0}; })
+    var setPos = function(list){ pos = list.filter(function(x){ return Number(x.sh) > 0 && x.t; }).map(function(x){ return {t: String(x.t).toUpperCase(), sh: Number(x.sh), precio: Number(x.precio)||0, prev: Number(x.prev)||0, costo: Number(x.costo)||0, regalo: !!x.regalo}; })
       .reduce(function(m, x){ var o = m.filter(function(y){ return y.t === x.t; })[0]; if(o){ o.costo = (o.costo*o.sh + x.costo*x.sh)/(o.sh + x.sh || 1); o.sh += x.sh; } else m.push(x); return m; }, [])
       .sort(function(a, b){ return b.sh*(b.precio||1) - a.sh*(a.precio||1); }); };
     if(me.owner) db.doc("invest/ibkr").onSnapshot(function(s){ var was = sig(); setPos((s.exists && s.data().posiciones) || []); again("pos", was); }, function(){ go("pos"); });
@@ -6712,7 +6714,6 @@ TRACKER DATA:
     db.doc("prefs/news").onSnapshot(function(s){ var was = sig(); prefs = s.exists ? s.data() : null; again("prefs", was); }, function(){ go("prefs"); });
   });
 })();
-
 </script>
 </body>
 </html>
