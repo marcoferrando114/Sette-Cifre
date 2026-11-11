@@ -1799,7 +1799,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261111211500";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261111213000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -6618,7 +6618,7 @@ TRACKER DATA:
 // Pato Daily (Nov 11): floating Pato on every tab opens today's stories on top (7am DR edition); ticker on Stocks.
 (function(){
   var $ = function(i){ return document.getElementById(i); }, db = null, me = {}, pos = [], bets = [], sports = [], prefs = null, daily = null, tick = null, busy = 0;
-  var CATS = [["big","Top story","🌎"],["rd","🇩🇴 Local","🇩🇴"],["business","Business","💼"],["tech","Tech","💡"],["politics","Politics","🏛️"],["crypto","Crypto","🪙"],
+  var CATS = [["big","Top story","🌎"],["rd","🇩🇴 DR","🇩🇴"],["business","Business","💼"],["tech","Tech","💡"],["politics","Politics","🏛️"],["crypto","Crypto","🪙"],
     ["ent","Entertainment","🎬"],["gaming","Gaming","🎮"],["health","Health","🩺"],["cars","Cars","🏎️"],["fashion","Luxury","💎"],["game","Sports","🏆"]];
   var FIX = ["big","rd"], DEF = ["business","tech","game"], TOP = 5, MAX = 9;   // Big news + Local always on; follow up to 5 topics
   // "This or that" (Nov 11, v3): real, proven money facts people half-know. Specific, no giveaway phrasing, a why with numbers. Same question for everyone each day.
@@ -6718,10 +6718,10 @@ TRACKER DATA:
     var cq = callQ(); if(cq) L.push({id: ed + ":call:" + cq.id, cls: "call", t: CALL, w: "today's money question", call: cq, body: ""});
     // section row (Marco: show which section you're on): short label per slide
     L.forEach(function(x){ var k = x.fk, c = k && CATS[ix(k)];
-      x.nav = x.call ? "⚔️ Duel" : k === "game" ? "⚽ Sports" : k === "big" ? "🌎 Top story" : k === "rd" ? "🇩🇴 Local" : c ? c[2] + " " + c[1] : /^Breaking/.test(x.t) ? "📈 " + x.t.replace("Breaking · ", "") : "🦆 Pato"; });
+      x.nav = x.call ? "⚔️ Duel" : k === "game" ? "⚽ Sports" : k === "big" ? "🌎 Top story" : k === "rd" ? "🇩🇴 DR" : c ? c[2] + " " + c[1] : /^Breaking/.test(x.t) ? "📈 " + x.t.replace("Breaking · ", "") : "🦆 Pato"; });
     // Pato's take page: "In today's edition" = what's coming, so the page is full and pulls you into the stories
     var nt = [tk.happened, tk.you, tk.watch].filter(function(r){ return r && r.text; }).length, up = L.slice(1).filter(function(x){ return x.ph || x.call; }).slice(0, nt >= 3 ? 3 : 6);
-    if(up.length) L[0].body += '<div class="pd-up"><i>IN TODAY\'S EDITION</i>' + up.map(function(x){ return '<div><b>' + esc(x.t) + '</b><span>' + esc(x.call ? x.call.q : x.ph) + '</span></div>'; }).join("") + '</div>';
+    if(0 && up.length) L[0].body += '<div class="pd-up"><i>IN TODAY\'S EDITION</i>' + up.map(function(x){ return '<div><b>' + esc(x.t) + '</b><span>' + esc(x.call ? x.call.q : x.ph) + '</span></div>'; }).join("") + '</div>';
     return L;
   }
   // ---------- This or that: one money question a day, then what % of Pato users got it right + why ----------
@@ -6791,10 +6791,10 @@ TRACKER DATA:
     $("pdFab").classList.toggle("big", u.some(function(x){ return x.cls === "big"; }));
   }
   // Story photos: the outlet's own preview image via the worker (/img), cached for the day; no photo = text page.
-  var IM = ls("pd-img2"); if(!IM || IM.day !== day()) IM = {day: day(), m: {}};
-  function PICS(){ var m = window.MP_ME; return !!(m && /^pato-?demo/i.test(m.email || "")); }   // trial: demo account only until Marco approves
+  var IM = ls("pd-img3"); if(!IM || IM.day !== day()) IM = {day: day(), m: {}};   // v3: never keep "no photo" answers, so a bad moment doesn't hide photos all day
+  function PICS(){ var m = window.MP_ME; return !!(m && (m.owner || /^pato-?demo/i.test(m.email || ""))); }   // trial: demo account only until Marco approves
   function pic(u, cb, h){ if(!u || !base() || !PICS() || (u in IM.m)) return; IM.m[u] = null;
-    fetch(base() + "/img?u=" + encodeURIComponent(u) + (h ? "&h=" + encodeURIComponent(h) : "")).then(function(r){ return r.ok ? r.json() : {}; }).then(function(d){ IM.m[u] = (d && d.img) || ""; if(IM.m[u]) ls("pd-img2", IM); if(cb) cb(); }).catch(function(){ delete IM.m[u]; }); }
+    fetch(base() + "/img?u=" + encodeURIComponent(u) + (h ? "&h=" + encodeURIComponent(h) : "")).then(function(r){ return r.ok ? r.json() : {}; }).then(function(d){ IM.m[u] = (d && d.img) || ""; if(IM.m[u]) ls("pd-img3", {day: IM.day, m: Object.keys(IM.m).reduce(function(o, k){ if(IM.m[k]) o[k] = IM.m[k]; return o; }, {})}); if(cb) cb(); }).catch(function(){ delete IM.m[u]; }); }
   function picHtml(x){ var im = PICS() && x.pic && IM.m[x.pic]; return im ? '<div class="pd-img"><img src="' + esc(im) + '" alt="" referrerpolicy="no-referrer" onerror="this.parentNode.remove()">' + (x.ps ? '<span>' + esc(x.ps) + '</span>' : '') + '</div>' : ''; }
   function show(i){
     clearTimeout(timer); cur = Math.max(0, Math.min(i, S.length - 1)); var x = S[cur], s = seen();
@@ -6806,8 +6806,8 @@ TRACKER DATA:
     var nv = $("pdNav"); if(nv){ nv.innerHTML = S.map(function(y, j){ return '<button type="button" data-j="' + j + '"' + (j === cur ? ' class="on"' : '') + '>' + esc(y.nav || y.t) + '</button>'; }).join(""); var onb = nv.querySelector(".on"); if(onb) nv.scrollLeft = Math.max(0, onb.offsetLeft - nv.clientWidth / 2 + onb.offsetWidth / 2); }
     if(x.pic && !(x.pic in IM.m)) pic(x.pic, function(){ if(S[cur] === x && !$("pdV").hidden && !$("pdBd").querySelector(".pd-img")) $("pdBd").insertAdjacentHTML("afterbegin", picHtml(x)); }, x.ph);
     $("pdFt").textContent = x.pick ? "Swipe down to go back" : "Tap for next · swipe down to go back";
-    var t = x.pick || (x.call && !callSt()) ? 0 : x.call ? 12000 : x.id.indexOf(":take") > 0 ? 14000 : 9000; $("pdS").style.setProperty("--pd-t", t/1000 + "s");
-    if(t) timer = setTimeout(function(){ if(!$("pdV").classList.contains("paused")) next(); }, t); else if(x.pick) $("pdBars").lastChild.className = "d";
+    var t = 0; /* no clock (Marco Nov 11): tap for next */ $("pdS").style.setProperty("--pd-t", t/1000 + "s");
+    if(t) timer = setTimeout(function(){ if(!$("pdV").classList.contains("paused")) next(); }, t); else $("pdBars").children[cur].className = "d";
   }
   function next(){ if(cur >= S.length - 1) return close(); show(cur + 1); }
   function openV(){ S = stories(); S.forEach(function(x){ pic(x.pic, null, x.ph); }); var u = unseen(), i = u.length ? S.indexOf(u[0]) : 0; if(!(prefs && prefs.picked) && !u.length) i = S.length - 1;
@@ -6820,7 +6820,7 @@ TRACKER DATA:
       w.addEventListener("change", function(e){ var c = e.target; if(!c.dataset || !c.dataset.k) return; var o = on().slice(), k = c.dataset.k, i = o.indexOf(k);
         if(c.checked && o.length >= TOP){ c.checked = false; $("pdTopM").textContent = "Max " + TOP + ". Turn one off first."; return; }
         if(c.checked && i < 0) o.push(k); if(!c.checked && i >= 0) o.splice(i, 1); save(o); ls("pd-daily5", null); $("pdTopM").textContent = "Saved. Your next stories use these."; }); }
-    var o = on(); w.innerHTML = '<span>Pato Daily topics</span>' + CATS.filter(function(c){ return FIX.indexOf(c[0]) < 0; }).map(function(c){ return '<label class="tg"><span>' + c[2] + ' ' + c[1] + '</span><input type="checkbox" data-k="' + c[0] + '"' + (o.indexOf(c[0]) >= 0 ? ' checked' : '') + '></label>'; }).join("") + '<div class="pd-tm" id="pdTopM">Up to ' + TOP + '. Top story and Local come every day.</div>'; }
+    var o = on(); w.innerHTML = '<span>Pato Daily topics</span>' + CATS.filter(function(c){ return FIX.indexOf(c[0]) < 0; }).map(function(c){ return '<label class="tg"><span>' + c[2] + ' ' + c[1] + '</span><input type="checkbox" data-k="' + c[0] + '"' + (o.indexOf(c[0]) >= 0 ? ' checked' : '') + '></label>'; }).join("") + '<div class="pd-tm" id="pdTopM">Up to ' + TOP + '. Top story and DR come every day.</div>'; }
   function save(o){ var fb = (prefs && prefs.fb) || {}; prefs = {on: o, picked: true, fb: fb}; try{ db.doc("prefs/news").set({on: o, picked: true, fb: fb, at: Date.now()}); }catch(_){} }
   function wire(){
     document.addEventListener("click", function(e){ var a = e.target.closest && e.target.closest("#pnTrack a, .pd-read, .pd-r2"); if(a && a.dataset.u){ e.preventDefault(); e.stopPropagation(); open(a.dataset.u); } }, true);
