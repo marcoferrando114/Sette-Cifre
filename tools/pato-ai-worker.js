@@ -69,7 +69,14 @@ function clean(items, hours) {
     seen.add(k); return true;
   });
 }
-const pick = items => { const a = clean(items, 24); return a.length ? a : clean(items, 72); };
+const pick = items => clean(items, 14);   // Marco: anything over 14h drops
+const CO = { GOOGL: "google|alphabet", GOOG: "google|alphabet", NVDA: "nvidia", META: "meta|facebook|instagram|whatsapp", AVGO: "broadcom", AAPL: "apple|iphone", MSFT: "microsoft", AMZN: "amazon", TSLA: "tesla|musk", IBKR: "interactive brokers", AMD: "\\bamd\\b", TSM: "tsmc", NFLX: "netflix", VUAA: "s&p 500" };
+// Importance: trusted outlets covering it x10 + freshness (0-14) + 25 if it names your stocks. 2nd story only if 5+ outlets or about you.
+function top2(items, tick) {
+  const now = Date.now(), me = new RegExp("\\b(" + tick.map(t => t.toLowerCase() + (CO[t] ? "|" + CO[t] : "")).join("|") + ")", "i");
+  const a = pick(items).map(i => { const mine = tick.length ? me.test(i.h) : false; return Object.assign({}, i, { mine, sc: (i.n || 1) * 10 + Math.max(0, 14 - (now - i.t) / 36e5) + (mine ? 25 : 0) }); }).sort((x, y) => y.sc - x.sc);
+  return a.slice(0, 1).concat(a.slice(1).filter(i => i.n >= 5 || i.mine).slice(0, 1));
+}
 const drDay = () => new Date(Date.now() - 4 * 3600e3).toISOString().slice(0, 10), edDay = () => new Date(Date.now() - 11 * 3600e3).toISOString().slice(0, 10); // edition starts 7am DR
 async function games() {
   const d = drDay().replace(/-/g, ""), out = [];
@@ -90,9 +97,9 @@ async function bundle(P) {
   const want = (P.get("k") || "rd,business,tech").split(",").filter(k => CATS[k]).slice(0, 8);
   const [top, world, ...rest] = await Promise.all([feed(sec("BUSINESS"), 7200), feed(sec("WORLD"), 3600),
     ...want.map(k => feed(CATS[k], 7200)), ...tick.map(t => feed(srch(t + " stock"), 10800)), P.get("g") === "0" ? Promise.resolve([]) : games()]);
-  const cats = {}; want.forEach((k, i) => { const it = pick(rest[i].items || [])[0]; if (it) cats[k] = it; });
+  const cats = {}; want.forEach((k, i) => { const it = top2(rest[i].items || [], tick); if (it.length) cats[k] = it; });
   const stocks = {}; tick.forEach((t, i) => { const it = pick(rest[want.length + i].items || [])[0]; if (it) stocks[t] = it; });
-  const WL = clean(world.items || [], 12), WH = WL.filter(i => i.n >= 3 && HUGE.test(i.h))[0];
+  const WL = clean(world.items || [], 14), WH = WL.filter(i => i.n >= 3 && HUGE.test(i.h))[0];
   const W = WH ? Object.assign({}, WH, { huge: true }) : (WL.slice().sort((x, y) => (y.n || 0) - (x.n || 0))[0] || null);   // Big news every day; huge = red
   const T = pick(top.items || []);
   return { at: top.at || Date.now(), day: edDay(), big: W, cats, stocks, games: rest[rest.length - 1] || [],
@@ -126,9 +133,9 @@ async function take(env, uid, body, b) {
   const key = "daily2:" + uid + ":" + b.day;
   if (env.LIMITS) { const hit = await env.LIMITS.get(key); if (hit) return JSON.parse(hit); }
   const user = JSON.stringify({ stocks: (body.stocks || []).slice(0, 8), total: body.total || null, bets: (body.bets || []).slice(0, 8), currency: "USD for stocks, RD$ for bets" }).slice(0, 3000);
-  const facts = JSON.stringify({ stockNews: b.stocks, marketTop: b.ticker.slice(0, 4).map(i => ({ h: i.h, s: i.s })), rd: b.cats.rd ? { h: b.cats.rd.h, s: b.cats.rd.s } : null,
+  const facts = JSON.stringify({ stockNews: b.stocks, marketTop: b.ticker.slice(0, 4).map(i => ({ h: i.h, s: i.s })), rd: b.cats.rd ? { h: b.cats.rd[0].h, s: b.cats.rd[0].s } : null,
     games: b.games.map(g => ({ league: g.league, name: g.name, note: g.note, tv: g.tv })),
-    cards: Object.fromEntries(Object.entries(b.cats).concat(b.big ? [["big", b.big]] : []).map(([k, v]) => [k, v.h])) }).slice(0, 6000);
+    cards: Object.fromEntries(Object.entries(b.cats).concat(b.big ? [["big", b.big]] : []).map(([k, v]) => [k, Array.isArray(v) ? v[0].h : v.h])) }).slice(0, 6000);
   const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST",
     headers: { "content-type": "application/json", "x-api-key": env.ANTHROPIC_KEY, "anthropic-version": "2023-06-01" },
     body: JSON.stringify({ model: "claude-haiku-5-5", max_tokens: 800, messages: [{ role: "user", content: TAKE + "\n\nUSER: " + user + "\n\nFACTS: " + facts + "\n\nGAMES are FACTS.games in order. CARDS are FACTS.cards." }] }) });

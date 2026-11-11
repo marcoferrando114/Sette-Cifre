@@ -1314,6 +1314,9 @@ html.mp-guest #p-stocks > #pnTick:not([hidden]){display:flex!important}
 .pd-note{margin-top:26px;border-top:1px solid rgba(227,188,106,.25);padding-top:14px}
 .pd-note i{font-style:normal;font-size:.66rem;font-weight:800;letter-spacing:.08em;color:#E3BC6A}
 .pd-note p{font-size:1rem;font-weight:600;line-height:1.35;margin:5px 0 0}
+.pd-two{margin-top:20px;padding-top:14px;border-top:1px solid rgba(255,255,255,.14)}
+.pd-h2{font-size:1.1rem;font-weight:750;line-height:1.3;margin-top:6px}
+.pd-r2{color:#E9C46A;font-weight:700;cursor:pointer}
 .pd-read{all:unset;cursor:pointer;display:inline-block;margin-top:22px;padding:10px 16px;border-radius:999px;background:rgba(255,255,255,.12);font-weight:700;font-size:.85rem}
 .pd-ft{padding:10px 16px 16px;text-align:center;font-size:.72rem;color:#9FB3A7}
 .pd-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
@@ -1753,7 +1756,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261111153738";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261111154229";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -6574,7 +6577,7 @@ TRACKER DATA:
   var $ = function(i){ return document.getElementById(i); }, db = null, me = {}, pos = [], bets = [], sports = [], prefs = null, daily = null, tick = null, busy = 0;
   var CATS = [["big","Big news","🌎"],["rd","🇩🇴 Local","🇩🇴"],["business","Business","💼"],["tech","Tech","💡"],["politics","Politics","🏛️"],["crypto","Crypto","🪙"],
     ["ent","Entertainment","🎬"],["gaming","Gaming","🎮"],["health","Health","🩺"],["cars","Cars","🏎️"],["fashion","Luxury","💎"],["game","Sports","🏆"]];
-  var FIX = ["big","rd"], DEF = ["business","tech","game"], TOP = 3, MAX = 7;   // Big news + Local always on; follow up to 3 topics
+  var FIX = ["big","rd"], DEF = ["business","tech","game"], TOP = 5, MAX = 9;   // Big news + Local always on; follow up to 5 topics
   var esc = function(t){ return String(t==null?"":t).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); };
   var drd = function(t){ return new Date((t||Date.now()) - 4*3600e3); };
   var day = function(){ return new Date(Date.now() - 11*3600e3).toISOString().slice(0,10); };   // edition flips at 7am DR
@@ -6636,8 +6639,10 @@ TRACKER DATA:
         var mine = bets.filter(function(x){ return ["won","lost","push"].indexOf(x.result) < 0 && (x.legs||[]).some(function(l){ var a = String(l.game||"").toLowerCase(); return a && g.name.toLowerCase().split(/ at | vs\.? /).some(function(t){ return t && a.indexOf(t.split(" ").pop()) >= 0; }); }); })[0];
         L.push({id: ed + ":game:" + g.name, cls: "game", t: "Sports", w: g.league, body: '<div class="pd-k">SPORTS · ' + esc(g.league.toUpperCase()) + '</div><div class="pd-h1">' + esc(g.name.replace(" at ", " vs ")) + '</div><div class="pd-m">' + esc([g.live ? "LIVE now" : g.t ? hr(g.t) + " (DR time)" : "", (g.tv||[]).join(", "), g.note].filter(Boolean).join(" · ")) + '</div>' +
           (mine ? '<div class="pd-note"><i>YOUR BET</i><p>' + bold("You have RD$" + (Number(mine.stake)||0).toLocaleString("en-US") + " on this game.") + '</p></div>' : "")}); return; }
-      it = cats[k]; if(!it) return; h = k === "rd" && daily.take && daily.take.rd ? daily.take.rd : it.h;
-      L.push({id: ed + ":" + k + ":" + it.h, cls: k === "rd" ? "rd" : "", t: c[1], w: ago(it.t) + " ago", u: it.u, body: '<div class="pd-k">' + esc(c[1].replace("🇩🇴 ", "🇩🇴 ").toUpperCase()) + '</div><div class="pd-h1">' + esc(h) + '</div>' + (h !== it.h ? '<div class="pd-m" style="font-style:italic">' + esc(it.h) + '</div>' : '') + '<div class="pd-m">' + esc(it.s) + '</div>' + note(notes[k])}); });
+      var A = [].concat(cats[k] || []); it = A[0]; if(!it) return; h = k === "rd" && daily.take && daily.take.rd ? daily.take.rd : it.h;
+      var by = function(x){ return esc(x.by && x.by.length > 1 ? x.by.join(" · ") : x.s) + " · " + ago(x.t) + " ago"; }, i2 = A[1];   // 1-2 stories per topic, ranked by the worker
+      L.push({id: ed + ":" + k + ":" + it.h, cls: k === "rd" ? "rd" : "", t: c[1], w: ago(it.t) + " ago", u: i2 ? "" : it.u, body: '<div class="pd-k">' + esc(c[1].toUpperCase()) + '</div><div class="pd-h1">' + esc(h) + '</div>' + (h !== it.h ? '<div class="pd-m" style="font-style:italic">' + esc(it.h) + '</div>' : '') + '<div class="pd-m">' + by(it) + (i2 ? ' · <a class="pd-r2" data-u="' + esc(it.u) + '">Read ›</a>' : '') + '</div>' + note(notes[k]) +
+        (i2 ? '<div class="pd-two"><div class="pd-k">ALSO</div><div class="pd-h2">' + esc(i2.h) + '</div><div class="pd-m">' + by(i2) + ' · <a class="pd-r2" data-u="' + esc(i2.u) + '">Read ›</a></div></div>' : '')}); });
     L.push({id: "pick", cls: "", t: "Pato Daily", w: "your stories", pick: 1, body: '<div class="pd-k">' + (prefs && prefs.picked ? "YOUR STORIES" : "PICK WHAT YOU LIKE") + '</div><div class="pd-h1">' + (prefs && prefs.picked ? "That's today. Change what you see:" : "What do you want in your stories?") + '</div><div class="pd-chips" id="pdChips">' +
       CATS.filter(function(c){ return FIX.indexOf(c[0]) < 0; }).map(function(c){ return '<button type="button" data-k="' + c[0] + '"' + (want.indexOf(c[0])>=0 ? ' class="on"' : '') + '>' + c[1] + '</button>'; }).join("") + '</div><div class="pd-m" id="pdPickM">Pick up to ' + TOP + '. Big news and Local come every day. Next edition at 7am.</div>'});
     return L;
@@ -6675,7 +6680,7 @@ TRACKER DATA:
     if(!(prefs && prefs.picked)) save(on()); render(); }
   function save(o){ prefs = {on: o, picked: true}; try{ db.doc("prefs/news").set({on: o, picked: true, at: Date.now()}); }catch(_){} }
   function wire(){
-    document.addEventListener("click", function(e){ var a = e.target.closest && e.target.closest("#pnTrack a, .pd-read"); if(a && a.dataset.u){ e.preventDefault(); e.stopPropagation(); open(a.dataset.u); } }, true);
+    document.addEventListener("click", function(e){ var a = e.target.closest && e.target.closest("#pnTrack a, .pd-read, .pd-r2"); if(a && a.dataset.u){ e.preventDefault(); e.stopPropagation(); open(a.dataset.u); } }, true);
     // floating Pato: tap opens, drag moves (position remembered)
     var fab = $("pdFab"), st = ls("pd-fab"), sx, sy, ox, oy, moved = 0;
     var place = function(x, y){ x = Math.max(6, Math.min(innerWidth - 68, x)); y = Math.max(40, Math.min(innerHeight - 160, y)); fab.style.left = x + "px"; fab.style.top = y + "px"; fab.style.right = "auto"; fab.style.bottom = "auto"; return [x, y]; };
