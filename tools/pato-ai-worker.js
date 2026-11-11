@@ -147,6 +147,35 @@ async function take(env, uid, body, b) {
   return out;
 }
 
+// Story photos (Nov 11): Google News link -> publisher article -> its og:image (the WhatsApp preview photo). Cached 24h, free.
+const BUA = { "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1", "accept-language": "en-US,en;q=0.9,es;q=0.8" };
+async function realUrl(u) {
+  const m = u.match(/^https:\/\/news\.google\.com\/(?:rss\/)?(?:articles|read)\/([^?/]+)/); if (!m) return u;
+  const id = m[1], pg = await fetch("https://news.google.com/rss/articles/" + id, { headers: BUA }).then(r => r.text());
+  const sg = (pg.match(/data-n-a-sg="([^"]+)"/) || [])[1], ts = (pg.match(/data-n-a-ts="([^"]+)"/) || [])[1]; if (!sg || !ts) return "";
+  const inner = JSON.stringify(["garturlreq", [["X", "X", ["X", "X"], null, null, 1, 1, "US:en", null, 1, null, null, null, null, null, 0, 1], "X", "X", 1, [1, 1, 1], 1, 1, null, 0, 0, null, 0], id, Number(ts), sg]);
+  const r = await fetch("https://news.google.com/_/DotsSplashUi/data/batchexecute", { method: "POST", headers: { ...BUA, "content-type": "application/x-www-form-urlencoded;charset=UTF-8" }, body: "f.req=" + encodeURIComponent(JSON.stringify([[["Fbv4je", inner, null, "generic"]]])) }).then(r => r.text());
+  const out = JSON.parse(JSON.parse(r.split("\n\n")[1])[0][2])[1]; return /^https?:\/\//.test(out) ? out : "";
+}
+async function storyImg(u) {
+  const key = new Request("https://pato-img.cache/v1?u=" + encodeURIComponent(u)), hit = await caches.default.match(key);
+  if (hit) return hit.json();
+  let img = "", src = "";
+  try {
+    src = await realUrl(u);
+    if (src) {
+      const r = await fetch(src, { headers: BUA, redirect: "follow" }), html = (await r.text()).slice(0, 300000);
+      const meta = n => { const a = html.match(new RegExp('<meta[^>]+(?:property|name)=["\']' + n + '["\'][^>]*content=["\']([^"\']+)', "i")) || html.match(new RegExp('<meta[^>]+content=["\']([^"\']+)["\'][^>]*(?:property|name)=["\']' + n + '["\']', "i")); return a ? dec(a[1]) : ""; };
+      img = meta("og:image:secure_url") || meta("og:image") || meta("twitter:image") || meta("twitter:image:src");
+      if (img) img = new URL(img, r.url || src).href.replace(/^http:/, "https:");
+      if (/logo|default|placeholder|blank|favicon|sprite|\.svg(\?|$)/i.test(img)) img = "";
+    }
+  } catch (e) { img = ""; }
+  const out = { img };
+  await caches.default.put(key, new Response(JSON.stringify(out), { headers: { "content-type": "application/json", "cache-control": "public, max-age=" + (img ? 86400 : 21600) } }));
+  return out;
+}
+
 export default {
   async fetch(req, env) {
     const origin = req.headers.get("origin") || "";
@@ -155,6 +184,12 @@ export default {
     if (req.method === "GET" && url.pathname === "/news") {
       if (!ORIGINS.includes(origin)) return json({ error: { type: "forbidden" } }, 403, origin);
       try { return json(await bundle(url.searchParams), 200, origin); } catch (e) { return json({ error: { type: "news_failed" } }, 502, origin); }
+    }
+    if (req.method === "GET" && url.pathname === "/img") {
+      if (!ORIGINS.includes(origin)) return json({ error: { type: "forbidden" } }, 403, origin);
+      const u = url.searchParams.get("u") || "";
+      if (!/^https:\/\/news\.google\.com\//.test(u)) return json({ img: "" }, 200, origin);   // only our own story links
+      return json(await storyImg(u), 200, origin);
     }
     if (req.method !== "POST" || !ORIGINS.includes(origin)) return json({ error: { type: "forbidden" } }, 403, origin);
     const uid = await verify((req.headers.get("authorization") || "").replace(/^Bearer /, "")).catch(() => null);
