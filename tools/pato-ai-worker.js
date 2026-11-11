@@ -202,6 +202,12 @@ export default {
     const origin = req.headers.get("origin") || "";
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(origin) });
     const url = new URL(req.url);
+    if (req.method === "GET" && url.pathname === "/news" && url.searchParams.get("debug") === "1") {   // test link: how many stories each topic feed gives right now
+      const ks = ["rd", "business", "tech", "politics", "crypto", "ent", "gaming", "health", "cars", "fashion"], out = {};
+      await Promise.all(ks.map(async k => { try { const f = await fetch(CATS[k], { headers: { "user-agent": "Mozilla/5.0 (compatible; PatoDaily/1.0)" } }), x = f.ok ? await f.text() : "", it = parse(x);
+        out[k] = { status: f.status, raw: it.length, fresh: pick(it).length, top2: top2(it, [], true).length }; } catch (e) { out[k] = { err: String(e.message || e).slice(0, 80) }; } }));
+      return json(out, 200, origin);
+    }
     if (req.method === "GET" && url.pathname === "/news") {
       if (!ORIGINS.includes(origin)) return json({ error: { type: "forbidden" } }, 403, origin);
       try { return json(await bundle(url.searchParams), 200, origin); } catch (e) { return json({ error: { type: "news_failed" } }, 502, origin); }
