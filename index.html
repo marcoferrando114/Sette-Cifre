@@ -1527,14 +1527,15 @@ html.mp-guest #pkSeg [data-v="league"],html.mp-guest:not(.tr-casino) #pkSeg [dat
 .pd-cover .pc-cta{margin:auto 22px calc(env(safe-area-inset-bottom,0px) + 28px);display:flex;gap:10px;padding-top:16px}
 .pd-cover .pc-cta button{all:unset;cursor:pointer;flex:1;text-align:center;padding:14px;border-radius:14px;font-weight:800}
 .pd-cover .pc-cta .go{background:#E8C06A;color:#13241B}.pd-cover .pc-cta .no{flex:.5;background:rgba(255,255,255,.08);color:#CFE0D6}
-#pdPeek{position:fixed;right:0;bottom:calc(96px + env(safe-area-inset-bottom,0px));width:92px;height:96px;overflow:hidden;z-index:40;pointer-events:none}
-#pdPeek .pd-fab{position:absolute;left:auto;top:auto;right:-4px;bottom:10px;pointer-events:auto;touch-action:manipulation;transform:translateX(30px) rotate(-10deg);transition:transform .6s cubic-bezier(.34,1.56,.64,1),opacity .3s}
-#pdPeek.out .pd-fab{transform:translateX(0) rotate(-4deg);animation:pdBob .9s ease-in-out .6s 2}
-#pdPeek.idle .pd-fab{transform:translateX(38px) rotate(-14deg);opacity:.75}
-#pdPeek .pd-fab img{transform:scaleX(-1)}
-#pdPeek .pd-fab b{right:auto;left:-2px}
-@keyframes pdBob{0%,100%{rotate:0deg}30%{rotate:-7deg}70%{rotate:5deg}}
-#pdBub{position:fixed;right:80px;bottom:calc(150px + env(safe-area-inset-bottom,0px));z-index:41;max-width:min(250px,64vw);background:#F6F1E4;color:#13241B;border-radius:16px 16px 4px 16px;padding:9px 12px 10px;font:500 .88rem/1.32 -apple-system,system-ui,sans-serif;box-shadow:0 10px 28px rgba(0,0,0,.4);opacity:0;transform:translate(18px,10px) scale(.85);transform-origin:100% 100%;transition:opacity .25s,transform .45s cubic-bezier(.34,1.56,.64,1);pointer-events:none;cursor:pointer}
+#pdPeek{position:fixed;right:8px;bottom:96px;width:96px;height:118px;overflow:hidden;z-index:40;pointer-events:none}
+#pdPeek .pd-fab{position:absolute;left:0;top:0;right:auto;bottom:auto;width:96px;height:112px;padding:0;border:0;border-radius:0;background:none!important;box-shadow:none;pointer-events:auto;touch-action:manipulation;transform:translateY(80px) rotate(-5deg);transform-origin:50% 100%;transition:transform .6s cubic-bezier(.34,1.56,.64,1);filter:drop-shadow(0 4px 10px rgba(0,0,0,.35))}
+#pdPeek .pd-fab svg{width:100%;height:100%;display:block;pointer-events:none}
+#pdPeek .pd-fab:active{filter:brightness(1.1)}
+#pdPeek.out .pd-fab{transform:translateY(6px) rotate(0deg);animation:pdBob .9s ease-in-out .6s 2}
+#pdPeek.idle .pd-fab{transform:translateY(90px) rotate(-5deg)}
+#pdPeek .pd-fab b{top:10px;right:14px;left:auto}
+@keyframes pdBob{0%,100%{rotate:0deg}30%{rotate:-6deg}70%{rotate:5deg}}
+#pdBub{position:fixed;right:22px;bottom:200px;z-index:41;max-width:min(250px,64vw);background:#F6F1E4;color:#13241B;border-radius:16px 16px 4px 16px;padding:9px 12px 10px;font:500 .88rem/1.32 -apple-system,system-ui,sans-serif;box-shadow:0 10px 28px rgba(0,0,0,.4);opacity:0;transform:translate(18px,10px) scale(.85);transform-origin:100% 100%;transition:opacity .25s,transform .45s cubic-bezier(.34,1.56,.64,1);pointer-events:none;cursor:pointer}
 #pdBub.on{opacity:1;transform:none;pointer-events:auto;transition-delay:.25s}
 #pdBub b{display:block;font-size:.66rem;font-weight:800;letter-spacing:.12em;color:#9A7424;margin-bottom:3px}
 #pdBub.big b{color:#C0392B}
@@ -1826,7 +1827,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261111231500";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261111232000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -6817,8 +6818,8 @@ TRACKER DATA:
     if(!$("pdV").hidden) return;
     S = stories(); var u = unseen(), first = !(prefs && prefs.picked);
     $("pdFab").hidden = !S.length; $("pdN").textContent = u.length || ""; $("pdN").hidden = !u.length;
-    var pw = $("pdPeek"); if(pw && !pw.classList.contains("out")) pw.className = u.length ? "" : "idle";
-    if(S.length && u.length && daily && !peeked){ peeked = 1; if(!cover()) setTimeout(peek, 1500); }
+    placePeek(); var pw = $("pdPeek"); if(pw && !pw.classList.contains("out")) pw.className = u.length ? "" : "idle";
+    if(S.length && u.length && daily && !peeked){ if(blocked()) setTimeout(render, 2000); else { peeked = 1; if(!cover()) setTimeout(peek, 1500); } }
     $("pdFab").classList.toggle("big", u.some(function(x){ return x.cls === "big"; }));
   }
   // Story photos: the outlet's own preview image via the worker (/img), cached for the day; no photo = text page.
@@ -6860,11 +6861,14 @@ TRACKER DATA:
       if(x.id.indexOf(":take") > 0){ if(tk.you && tk.you.text) L.push({i: i, k: "FOR YOU", h: tk.you.text}); return; }   // your money first
       L.push({i: i, big: x.cls === "big", k: x.call ? "⚔️ DAILY DUEL" : x.wild ? "🎲 WILDCARD" : (x.nav || x.t).toUpperCase(), h: x.call ? x.call.q : x.ph || (x.sh && x.sh.h) || x.t}); });
     return L; }
+  function blocked(){ return ["sfOffer", "sfLock", "mpGate", "sgSetup", "palSheet", "pdCover"].some(function(id){ var e = $(id); return e && !e.hidden && e.offsetParent !== null; }) || !$("pdV").hidden; }   // never peek over sign-in, Face ID, setup, settings
+  function placePeek(){ var w = $("pdPeek"), b = $("pdBub"), t = document.querySelector("nav.tabs"); if(!w) return; var r = t && t.getBoundingClientRect(), bt = r && r.height && r.top > innerHeight / 2 ? innerHeight - r.top - 1 : 96;   // duck rises from behind the tab bar
+    w.style.bottom = bt + "px"; if(b) b.style.bottom = bt + 104 + "px"; }
   function hidePeek(){ clearTimeout(pt); var b = $("pdBub"), w = $("pdPeek"); if(b) b.className = ""; if(w) w.className = unseen().length ? "" : "idle"; }
-  function peek(){ var w = $("pdPeek"), b = $("pdBub"); if(!w || !b || $("pdFab").hidden || !$("pdV").hidden || document.hidden || ($("palSheet") && !$("palSheet").hidden) || pc >= 10 || $("pdBub").classList.contains("on")) return;
+  function peek(){ var w = $("pdPeek"), b = $("pdBub"); if(!w || !b || $("pdFab").hidden || document.hidden || blocked() || pc >= 10 || $("pdBub").classList.contains("on")) return;
     var L = peekLines(); if(!L.length) return hidePeek(); var x = L[pk++ % L.length]; pc++;
     var h = String(x.h).replace(/\*\*/g, ""); if(h.length > 96) h = h.slice(0, 93).replace(/\s+\S*$/, "") + "…";
-    b.innerHTML = "<b>" + esc(x.k) + "</b>" + esc(h); b.dataset.i = x.i; w.className = "out"; b.className = "on" + (x.big ? " big" : "");
+    b.innerHTML = "<b>" + esc(x.k) + "</b>" + esc(h); b.dataset.i = x.i; placePeek(); w.className = "out"; b.className = "on" + (x.big ? " big" : "");
     clearTimeout(pt); pt = setTimeout(hidePeek, 6000); }
   // Morning cover (Marco Nov 11): first open of each edition = a front page; "Read" opens the stories, "Later" lets the duck take over
   function cover(){ if(ls("pd-cover") === day() || !daily || !$("pdV").hidden) return false; var big = (tick && tick.big) || daily.big; if(!big) return false;
@@ -6880,7 +6884,8 @@ TRACKER DATA:
   function wire(){
     // Peeking duck = the ONE way in (Marco Nov 11): tucked at the right edge, peeks out with a headline, tap = open at that story
     var fab = $("pdFab"), pw = document.createElement("div"), bub = document.createElement("div"); pw.id = "pdPeek"; bub.id = "pdBub";
-    fab.parentNode.insertBefore(pw, fab); pw.appendChild(fab); document.body.appendChild(bub);
+    fab.parentNode.insertBefore(pw, fab); pw.appendChild(fab); document.body.appendChild(bub); var fi = fab.querySelector("img"); if(fi) fi.outerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 140"><defs><linearGradient id="pdH" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#3E9A6C"/><stop offset="1" stop-color="#1F6A45"/></linearGradient></defs><path d="M40 140 C30 118 34 98 48 88 L96 88 C114 98 120 118 120 140 Z" fill="#A9714C"/><path d="M50 70 C46 80 46 86 48 90 L92 90 C94 84 92 74 88 68 Z" fill="url(#pdH)"/><rect x="46" y="86" width="48" height="6" rx="3" fill="#F3EFE6"/><path d="M50 37 Q26 39 9 48 Q27 55 50 53 Z" fill="#F2A94B"/><circle cx="70" cy="44" r="32" fill="url(#pdH)" stroke="#F3EFE6" stroke-opacity=".55" stroke-width="1.5"/><circle cx="56" cy="36" r="5.2" fill="#111"/><circle cx="54.6" cy="34.4" r="1.6" fill="#fff"/></svg>';
+    window.addEventListener("resize", placePeek);
     fab.addEventListener("click", function(){ openV(bub.classList.contains("on") ? Number(bub.dataset.i) : -1); });
     bub.addEventListener("click", function(){ openV(Number(bub.dataset.i)); });
     document.addEventListener("click", function(e){ if(e.target.closest && e.target.closest(".tabs [data-tab]")) setTimeout(peek, 700); }, true);
