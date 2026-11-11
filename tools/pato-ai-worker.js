@@ -220,6 +220,15 @@ export default {
     const uid = await verify((req.headers.get("authorization") || "").replace(/^Bearer /, "")).catch(() => null);
     if (!uid) return json({ error: { type: "authentication_error", message: "Sign in again" } }, 401, origin);
     let body; try { body = await req.json(); } catch (e) { return json({ error: { type: "invalid_request_error" } }, 400, origin); }
+    if (url.pathname === "/call") {   // "Call it": shared tally of how many Pato users called today's question right (one answer per user)
+      const q = String(body.q || "").replace(/[^a-z0-9]/gi, "").slice(0, 24); if (!q || !env.LIMITS) return json({ n: 0, right: 0 }, 200, origin);
+      const k = "call:" + q, cur = JSON.parse((await env.LIMITS.get(k)) || '{"n":0,"right":0}');
+      if (typeof body.right === "boolean" && !(await env.LIMITS.get("callv:" + q + ":" + uid))) {
+        cur.n++; if (body.right) cur.right++;
+        await env.LIMITS.put(k, JSON.stringify(cur), { expirationTtl: 259200 }); await env.LIMITS.put("callv:" + q + ":" + uid, "1", { expirationTtl: 259200 });
+      }
+      return json(cur, 200, origin);
+    }
     if (url.pathname === "/daily") {
       try { const b = await bundle(url.searchParams); return json({ ...b, take: await take(env, uid, body, b).catch(() => null) }, 200, origin); }
       catch (e) { return json({ error: { type: "news_failed" } }, 502, origin); }
