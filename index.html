@@ -1265,50 +1265,62 @@ html[data-palette^="goyard"] :is(.pk-three b,.pk-det .r b,.pk-ototal b){font-fam
 #pkNew .pk-det .r{padding:7px 0}
 #pkVOther .pk-ototal{margin:20px 0 10px}
 
-.pn-tick{display:flex;align-items:stretch;height:38px;margin:-12px -18px 14px;background:#E3BC6A;color:#13241B;overflow:hidden;font-size:.86rem;font-weight:600;border-radius:0}
-.pn-tick[hidden]{display:none}
+.pn-tick{display:flex;align-items:stretch;height:38px;margin:-12px -18px 14px;background:#E3BC6A;color:#13241B;overflow:hidden;font-size:.86rem;font-weight:600}
+.pn-tick[hidden]{display:none!important}
+html.mp-guest #p-stocks > #pnTick:not([hidden]){display:flex!important}
 .pn-lab{flex:none;display:flex;align-items:center;gap:6px;padding:0 10px 0 6px;background:#123326;color:#E3BC6A;font-weight:800;font-size:.72rem;letter-spacing:.08em;z-index:1}
 .pn-lab img{width:24px;height:24px;border-radius:6px}
 .pn-lab small{font-weight:600;color:#8FA597;letter-spacing:0;font-size:.68rem}
-.pn-run{flex:1;overflow:hidden;position:relative;display:flex;align-items:center}
+.pn-run{flex:1;overflow:hidden;display:flex;align-items:center}
 .pn-track{display:flex;white-space:nowrap;will-change:transform;animation:pnMove var(--pn-dur,40s) linear infinite}
 .pn-run:active .pn-track{animation-play-state:paused}
 .pn-track a{all:unset;cursor:pointer;padding:0 14px;border-right:1px solid rgba(0,0,0,.18)}
 .pn-track b{font-weight:800;margin-right:4px}
 @keyframes pnMove{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 @media (prefers-reduced-motion:reduce){.pn-track{animation-duration:120s}}
-.pn{margin:4px 0 14px}
-.pn[hidden]{display:none}
-.pn-h{display:flex;justify-content:space-between;align-items:baseline;margin:0 2px 8px}
-.pn-h b{font-family:var(--serif,Georgia,serif);font-size:1.2rem}
-.pn-h span{font-size:.78rem;color:var(--muted)}
-.pn-h button{all:unset;cursor:pointer;color:var(--muted);font-size:.78rem;margin-left:8px;text-decoration:underline}
-.pn-chips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 10px}
-.pn-chips[hidden]{display:none}
-.pn-chips button{all:unset;cursor:pointer;font-size:.8rem;padding:6px 12px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--muted)}
-.pn-chips button.on{background:#E3BC6A;border-color:#E3BC6A;color:#13241B;font-weight:600}
-.pn-cards{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -18px;padding:0 18px;scroll-padding:0 18px;scrollbar-width:none}
-.pn-cards::-webkit-scrollbar{display:none}
-.pn-c{all:unset;box-sizing:border-box;cursor:pointer;flex:none;width:84%;min-height:158px;scroll-snap-align:start;border-radius:22px;padding:16px;display:flex;flex-direction:column;justify-content:flex-end;position:relative;color:#fff;background:linear-gradient(160deg,#2E7D55,#173A2A)}
-.pn-c.g1{background:linear-gradient(160deg,#7A5A2A,#3A2A14)}.pn-c.g2{background:linear-gradient(160deg,#2B4F6E,#16283A)}.pn-c.g3{background:linear-gradient(160deg,#5B3A6E,#2A1A36)}
-.pn-c.take{background:linear-gradient(160deg,#1F4A35,#12261C);border:1px solid #E3BC6A;cursor:default}
-.pn-c .k{font-size:.68rem;font-weight:800;letter-spacing:.08em;color:#E3BC6A}
-.pn-c .t{font-size:1.08rem;font-weight:700;line-height:1.28;margin-top:4px}
-.pn-c .m{font-size:.75rem;color:#C9D8CF;margin-top:6px}
-.pn-c .e{position:absolute;top:12px;right:14px;font-size:1.6rem}
-.pn-c .who{position:absolute;top:12px;left:16px;display:flex;align-items:center;gap:8px;font-size:.68rem;font-weight:800;letter-spacing:.08em;color:#E3BC6A}
-.pn-c .who img{width:28px;height:28px;border-radius:8px}
-.pn-dots{display:flex;gap:5px;justify-content:center;margin-top:9px}
-.pn-dots i{width:6px;height:6px;border-radius:3px;background:var(--line);transition:width .2s}
-.pn-dots i.on{background:#E3BC6A;width:16px}
-#pnBox [hidden]{display:none!important}
-.pn-done{all:unset;box-sizing:border-box;width:100%;cursor:pointer;display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px 12px;font-weight:600;font-size:.92rem}
-.pn-done img{width:28px;height:28px;border-radius:8px}
-.pn-done span{margin-left:auto;font-weight:500;font-size:.75rem;color:var(--muted)}
-.pn-brk{all:unset;box-sizing:border-box;width:100%;cursor:pointer;display:block;margin-top:10px;border-radius:18px;padding:13px 15px;background:linear-gradient(160deg,#3A1D1A,#1F1210);border:1px solid #B8322A;color:#fff}
-.pn-brk .k{font-size:.68rem;font-weight:800;letter-spacing:.08em;color:#FF7A6B}
-.pn-brk .t{font-size:.98rem;font-weight:700;margin-top:4px;line-height:1.3}
-.pn-brk .m{font-size:.75rem;color:#C9B3AE;margin-top:5px}
+#pdTop [hidden],#pdBox [hidden]{display:none!important}
+.pd-top{margin:0 0 14px}.pd-top[hidden],.pd[hidden]{display:none}
+.pd-h{display:flex;justify-content:space-between;align-items:baseline;margin:0 2px 8px}
+.pd-h b{font-family:var(--serif,Georgia,serif);font-size:1.2rem}
+.pd-h span{font-size:.78rem;color:var(--muted)}
+.pd-h button{all:unset;cursor:pointer;color:var(--muted);font-size:.78rem;margin-left:8px;text-decoration:underline}
+.pd-pick{margin:0 0 12px}
+.pd-pick p{font-size:.85rem;font-weight:600;margin:0 2px 8px}
+.pd-chips{display:flex;flex-wrap:wrap;gap:6px}
+.pd-chips button{all:unset;cursor:pointer;font-size:.8rem;padding:6px 12px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--muted)}
+.pd-chips button.on{background:#E3BC6A;border-color:#E3BC6A;color:#13241B;font-weight:600}
+.pd-take{border:1px solid #E3BC6A;border-radius:22px;padding:14px 16px;background:linear-gradient(160deg,#1F4A35,#12261C);color:#fff}
+.pd-who{display:flex;align-items:center;gap:8px;font-size:.68rem;font-weight:800;letter-spacing:.08em;color:#E3BC6A;margin-bottom:6px}
+.pd-who img{width:26px;height:26px;border-radius:7px}
+.pd-ln{display:flex;gap:10px;padding:7px 0;border-top:1px solid rgba(227,188,106,.18)}
+.pd-ln:first-of-type{border-top:0}
+.pd-ln i{font-style:normal;font-size:.62rem;font-weight:800;color:#E3BC6A;letter-spacing:.06em;width:62px;flex:none;padding-top:3px}
+.pd-ln p{font-size:.9rem;line-height:1.36;font-weight:500;margin:0}
+.pd-ln p b{font-weight:700}
+.pd-src{font-size:.7rem;color:#8FA597;margin-top:2px}
+.pd-brk{all:unset;box-sizing:border-box;width:100%;cursor:pointer;display:block;margin-top:10px;border-radius:16px;padding:11px 14px;background:linear-gradient(160deg,#3A1D1A,#1F1210);border:1px solid #B8322A;color:#fff}
+.pd-brk .k{font-size:.66rem;font-weight:800;letter-spacing:.08em;color:#FF7A6B}
+.pd-brk .t{font-size:.92rem;font-weight:700;margin-top:3px;line-height:1.3}
+.pd{margin:14px 0 4px}
+.pd-cards{display:flex;gap:10px;overflow-x:auto;scroll-snap-type:x mandatory;margin:0 -18px;padding:0 18px;scroll-padding:0 18px;scrollbar-width:none}
+.pd-cards::-webkit-scrollbar{display:none}
+.pd-c{all:unset;box-sizing:border-box;cursor:pointer;flex:none;width:78%;min-height:146px;scroll-snap-align:start;border-radius:18px;padding:13px 14px;display:flex;flex-direction:column;justify-content:flex-end;position:relative;color:#fff}
+.pd-c .k{font-size:.64rem;font-weight:800;letter-spacing:.08em}
+.pd-c .t{font-size:.95rem;font-weight:700;line-height:1.28;margin-top:4px}
+.pd-c .m{font-size:.72rem;margin-top:5px;opacity:.75}
+.pd-c .e{position:absolute;top:11px;right:13px;font-size:1.35rem}
+.pd-c.big{background:linear-gradient(160deg,#3A1D1A,#1F1210);border:1px solid #B8322A}.pd-c.big .k{color:#FF7A6B}
+.pd-c.rd{background:linear-gradient(160deg,#1D2F4A,#101A2B);border:1px solid #3D5F8F}.pd-c.rd .k{color:#8FB6FF}
+.pd-c.c0{background:linear-gradient(160deg,#2E7D55,#173A2A)}.pd-c.c0 .k{color:#E3BC6A}
+.pd-c.c1{background:linear-gradient(160deg,#2B4F6E,#16283A)}.pd-c.c1 .k{color:#9FD3FF}
+.pd-c.c2{background:linear-gradient(160deg,#5B3A6E,#2A1A36)}.pd-c.c2 .k{color:#D9B8FF}
+.pd-c.game{background:linear-gradient(160deg,#7A5A2A,#3A2A14)}.pd-c.game .k{color:#E3BC6A}
+.pd-dots{display:flex;gap:5px;justify-content:center;margin-top:9px}
+.pd-dots i{width:6px;height:6px;border-radius:3px;background:var(--line);transition:width .2s}
+.pd-dots i.on{background:#E3BC6A;width:16px}
+.pd-done{all:unset;box-sizing:border-box;width:100%;cursor:pointer;display:flex;align-items:center;gap:10px;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:10px 12px;font-weight:600;font-size:.9rem}
+.pd-done img{width:26px;height:26px;border-radius:7px}
+.pd-done span{margin-left:auto;font-weight:500;font-size:.75rem;color:var(--muted)}
 </style>
 <style>
 html,body{overscroll-behavior-y:none}
@@ -1743,7 +1755,8 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261111045643";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261111143726";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+
 
 
 
@@ -1889,8 +1902,6 @@ html:not(.mp-guest) #s-gst{display:none!important}
     <button type="button" role="tab" data-tab="trends" id="tab-trends" aria-controls="p-trends"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5M4 19h16"/><path d="m7 15 4-4 3 3 5-6"/></svg><span>Trends</span></button>
   </nav>
 
-  <div class="pn-tick" id="pnTick" hidden><div class="pn-lab"><img src="icon-192.png?v=7" alt="">PATO NEWS<small id="pnAt"></small></div><div class="pn-run"><div class="pn-track" id="pnTrack"></div></div></div>
-
   <section class="remind" id="remind" aria-labelledby="rmTitle">
     <h2 id="rmTitle">Payment reminders</h2>
     <p class="muted" id="rmSub">Send a heads-up before the payment is due.</p>
@@ -1917,12 +1928,11 @@ html:not(.mp-guest) #s-gst{display:none!important}
   </div>
 
   <div class="tabp" role="tabpanel" id="p-savings" aria-labelledby="tab-savings" hidden>
-  <div class="pn" id="pnBox" hidden>
-    <div class="pn-h"><b>Today</b><span><span id="pnDate"></span><button type="button" id="pnEdit">Edit</button></span></div>
-    <div class="pn-chips" id="pnChips" hidden></div>
-    <div id="pnMain"><div class="pn-cards" id="pnCards"></div><div class="pn-dots" id="pnDots"></div></div>
-    <button type="button" class="pn-done" id="pnDone" hidden><img src="icon-192.png?v=7" alt="">You're caught up<span>Next edition 7am</span></button>
-    <div id="pnBrk"></div>
+  <div class="pd-top" id="pdTop" hidden>
+    <div class="pd-h"><b>Pato Daily</b><span><span id="pdDate"></span><button type="button" id="pdEdit">Edit</button></span></div>
+    <div class="pd-pick" id="pdPick" hidden><p id="pdPickT">Pick what you like</p><div class="pd-chips" id="pdChips"></div></div>
+    <div class="pd-take" id="pdTake"></div>
+    <div id="pdBrk"></div>
   </div>
   <div class="brief" id="brief" hidden><div class="br-h"><b>Today</b><span id="brDate"></span></div><div id="brRows"></div></div>
   <div class="psc" id="psc" hidden><div class="psc-h"><b>Pato score</b></div><div class="psc-gw"><div id="pscG"></div><div class="psc-num"><b id="pscNum">–</b><span id="pscBand"></span></div></div><p class="psc-mean" id="pscMean"></p><p class="psc-why" id="pscWhy"></p><div class="psc-bars" id="pscBars"></div><button type="button" class="psc-more" id="pscMore">See what's behind it</button><div class="psc-det" id="pscDet" hidden></div></div>
@@ -1938,6 +1948,11 @@ html:not(.mp-guest) #s-gst{display:none!important}
     <div class="done" id="done">You reached <span class="goalK">1M</span>. Goal complete.</div>
     <div class="proj num" id="proj">Calculating projection…</div>
     <div class="hitos num" id="hitos"></div>
+  </div>
+
+  <div class="pd" id="pdBox" hidden>
+    <div id="pdMain"><div class="pd-cards" id="pdCards"></div><div class="pd-dots" id="pdDots"></div></div>
+    <button type="button" class="pd-done" id="pdDone" hidden><img src="icon-192.png?v=7" alt="">You're caught up<span>Next edition 7am</span></button>
   </div>
 
   <section id="s-anotar">
@@ -2216,6 +2231,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
   </div>
 
   <div class="tabp" role="tabpanel" id="p-stocks" aria-labelledby="tab-stocks" hidden>
+  <div class="pn-tick" id="pnTick" hidden><div class="pn-lab"><img src="icon-192.png?v=7" alt="">PATO NEWS<small id="pnAt"></small></div><div class="pn-run"><div class="pn-track" id="pnTrack"></div></div></div>
   <section id="s-gst">
     <h2>Stocks</h2>
     <div class="st-big num" id="gstVal">US$0</div>
@@ -4039,7 +4055,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
       const tol = Math.min(10, Math.floor(gap/2));
       // each payment counts toward the nearest open date; a date is only done once ~90% of its amount came in
       // a payment tagged with its league week (late payments) belongs to that Monday only, never to a later one
-      const got = entries.filter(e=>e.type!=="out" && norm(e.source)===k).map(e=>({d:e.date||t, v:Number(e.amount)||0, s:e.semana||null}));
+      const got = entries.filter(e=>e.type!=="out" && !e.extra && norm(e.source)===k) /* extra:true = separate payment, never fills an expected date (Marco, Nov 11) */.map(e=>({d:e.date||t, v:Number(e.amount)||0, s:e.semana||null}));
       pokerOtra.filter(x=>norm(x.source)===k && x.monto>0).forEach(x=>got.push({d:x.fecha, v:x.monto, s:x.semana||null}));
       pagos.filter(x=>norm(x.nombre)===k).forEach(x=>got.push({d:x.fecha||t, v:Number(x.monto)||0}));
       got.sort((a,b)=>a.d.localeCompare(b.d)).forEach(g => {
@@ -6564,114 +6580,127 @@ TRACKER DATA:
 })();
 </script>
 <script>
-// Pato News (Nov 11): ticker every 2h, morning edition at 7am DR, breaking only for a 5%+ move in something you own.
+// Pato Daily (Nov 11): Pato's take once a day (7am DR edition), news cards under Road to 1M, ticker on Stocks.
 (function(){
-  var $ = function(i){ return document.getElementById(i); }, db = null, me = {}, pos = [], sports = [], prefs = null, data = null, fetchedAt = 0, busy = false;
-  var TOP = [["stocks","Stocks"],["sports","Sports"],["poker","Poker"],["crypto","Crypto"],["tech","Tech"],["saving","Saving"]];
-  var EMO = {stocks:"📈", sports:"🏟️", poker:"♠️", crypto:"🪙", tech:"💻", saving:"🐷", top:"🌎"};
+  var $ = function(i){ return document.getElementById(i); }, db = null, me = {}, pos = [], bets = [], sports = [], prefs = null, daily = null, tick = null, busy = 0;
+  var CATS = [["big","Big news","🌎"],["rd","🇩🇴 RD","🇩🇴"],["business","Business","💼"],["tech","Tech","💡"],["politics","Politics","🏛️"],["crypto","Crypto","🪙"],
+    ["ent","Entertainment","🎬"],["gaming","Gaming","🎮"],["health","Health","🩺"],["cars","Cars","🏎️"],["fashion","Fashion","👟"],["poker","Poker","♠️"],["game","Game of the day","🏆"]];
+  var DEF = ["big","rd","business","tech","game"], MAX = 6;
   var esc = function(t){ return String(t==null?"":t).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); };
-  var dr = function(t){ return new Date((t||Date.now()) - 4*3600e3); };            // Dominican time (UTC-4, no DST)
-  var day = function(){ var d = dr(); if(d.getUTCHours() < 7) d = new Date(d - 864e5); return d.toISOString().slice(0,10); };
-  var hr = function(t){ var h = dr(t).getUTCHours(); return (h%12||12) + (h<12?"am":"pm"); };
-  var ago = function(t){ if(!t) return ""; var m = Math.max(1, Math.round((Date.now()-t)/6e4)); return m < 60 ? m+"m" : Math.round(m/60)+"h"; };
+  var drd = function(t){ return new Date((t||Date.now()) - 4*3600e3); };
+  var day = function(){ return new Date(Date.now() - 11*3600e3).toISOString().slice(0,10); };   // edition flips at 7am DR
+  var hr = function(t){ var d = drd(t), h = d.getUTCHours(), m = d.getUTCMinutes(); return (h%12||12) + (m ? ":" + String(m).padStart(2,"0") : "") + (h<12?"am":"pm"); };
+  var ago = function(t){ if(!t) return ""; var m = Math.max(1, Math.round((Date.now()-t)/6e4)); return m < 60 ? m+"m" : m < 1440 ? Math.round(m/60)+"h" : Math.round(m/1440)+"d"; };
   var ls = function(k, v){ try{ if(v===undefined) return JSON.parse(localStorage.getItem(k)||"null"); localStorage.setItem(k, JSON.stringify(v)); }catch(e){ return null; } };
   var open = function(u){ if(u) window.open(u, "_blank", "noopener"); };
-  var usd = function(n){ return "US$" + Math.round(Math.abs(n)).toLocaleString("en-US"); };
-  function auto(){ var a = []; if(pos.length) a.push("stocks"); if(sports.length) a.push("sports");
-    var H = document.documentElement.classList; if(me.owner || H.contains("tr-poker")) a.push("poker");
-    if(!a.length) a = ["crypto","saving"]; return a; }
-  var topics = function(){ return (prefs && Array.isArray(prefs.on)) ? prefs.on : auto(); };
-  function sig(){ var t = topics(); return t.join(",") + "|" + (t.indexOf("stocks")>=0 ? pos.slice(0,3).map(function(p){ return p.t; }).join(",") : "") + "|" + (t.indexOf("sports")>=0 ? sports[0]||"" : ""); }
-  function query(){ var t = topics(), q = [];
-    if(t.indexOf("stocks")>=0 && pos.length) q.push("t=" + encodeURIComponent(pos.slice(0,3).map(function(p){ return p.t; }).join(",")));
-    if(t.indexOf("sports")>=0) q.push("s=" + encodeURIComponent(sports[0] || "NBA"));
-    var k = t.filter(function(x){ return ["poker","crypto","tech","saving"].indexOf(x)>=0; }); if(k.length) q.push("k=" + k.join(","));
-    return q.join("&"); }
-  function load(force){
-    var base = window.MP_AI_URL; if(!base || busy) return;
-    if(!force && data && Date.now() - fetchedAt < 2*3600e3) return render();
-    busy = true;
-    fetch(base.replace(/\/$/,"") + "/news?" + query()).then(function(r){ return r.ok ? r.json() : null; }).then(function(d){
-      busy = false; if(!d) return; data = d; fetchedAt = Date.now(); render(); }).catch(function(){ busy = false; });
+  var usd = function(n){ return "US$" + Math.abs(n).toLocaleString("en-US", {maximumFractionDigits: Math.abs(n) < 10 ? 2 : 0}); };
+  var bold = function(t){ return esc(t).replace(/((?:US|RD)\$[\d,.]+[kKmM]?|[+−-]?\d+(?:\.\d+)?%)/g, "<b>$1</b>"); };
+  var on = function(){ return prefs && Array.isArray(prefs.on) ? prefs.on : DEF; };
+  var base = function(){ return (window.MP_AI_URL || "").replace(/\/$/, ""); };
+  function q(){ var k = on().filter(function(x){ return x !== "big" && x !== "game"; }); if(k.indexOf("rd") < 0) k.unshift("rd");
+    return "k=" + k.join(",") + (pos.length ? "&t=" + encodeURIComponent(pos.slice(0,5).map(function(p){ return p.t; }).join(",")) : "") + (on().indexOf("game") < 0 ? "&g=0" : ""); }
+  var sig = function(){ return q(); };
+  function facts(){
+    var st = pos.map(function(p){ var o = {ticker: p.t, shares: Math.round(p.sh*1e4)/1e4};
+      if(p.prev > 0 && p.precio > 0){ o.todayUsd = Math.round(p.sh*(p.precio-p.prev)*100)/100; o.todayPct = Math.round((p.precio/p.prev-1)*1e4)/100; }
+      if(p.costo > 0 && p.precio > 0) o.sinceBoughtPct = Math.round((p.precio/p.costo-1)*1e4)/100; return o; });
+    var open = bets.filter(function(b){ return ["won","lost","push"].indexOf(b.result) < 0; }).slice(0,5).map(function(b){ return {stakeRD: Number(b.stake)||0, legs: (b.legs||[]).map(function(l){ return [l.sport, l.game].filter(Boolean).join(": "); }).slice(0,3)}; });
+    var done = bets.filter(function(b){ return b.result==="won"||b.result==="lost"; }).slice(0,6).map(function(b){ return {result: b.result, sport: ((b.legs||[])[0]||{}).sport||""}; });
+    return {stocks: st, bets: open.map(function(b){ b.open = true; return b; }).concat(done)};
   }
-  function take(){
-    var up = 0, n = 0; pos.forEach(function(p){ if(p.prev > 0 && p.precio > 0){ up += p.sh * (p.precio - p.prev); n++; } });
-    var top = (data && data.top && data.top.h) || "", t2 = /fed|rate|inflation|powell/i.test(top) ? " Fed news could move them." : "";
-    if(n && Math.abs(up) >= 1) return "Your stocks are " + (up>0?"up ":"down ") + usd(up) + " today." + t2;
-    if(n) return "Your stocks are flat today." + t2;
-    var L = sports.length ? ["Betting on " + sports[0] + " tonight? Set your limit before the first bet.", "Bets are fun money. Decide the amount before you start."] :
-      ["Saving a little every week beats saving a lot once.", "Pay yourself first: move money to savings the day you get paid.", "Small leaks sink big ships. Check one subscription today."];
-    return L[Number(day().slice(8)) % L.length];
+  function getDaily(force){
+    if(!base() || busy || !window.mpIdToken) return;
+    var st = ls("pd-daily"); if(!force && st && st.day === day() && st.sig === sig() && st.data && (st.data.take || Date.now() - (st.at||0) < 2*3600e3)){ daily = st.data; return render(); }
+    busy = 1;
+    window.mpIdToken().then(function(tok){ return fetch(base() + "/daily?" + q(), {method: "POST", headers: {"content-type": "application/json", authorization: "Bearer " + tok}, body: JSON.stringify(facts())}); })
+      .then(function(r){ return r.ok ? r.json() : null; }).then(function(d){ busy = 0; if(!d) return render(); daily = d; tick = {at: d.at, ticker: d.ticker, big: d.big};
+        ls("pd-daily", {day: day(), sig: sig(), at: Date.now(), data: d}); render(); }).catch(function(){ busy = 0; render(); });
   }
-  function edition(){
-    var k = day(), st = ls("pn-ed");
-    if(st && st.day === k && st.sig === sig() && st.cards) return st.cards;
-    if(!data) return st && st.cards || null;
-    var c = [];
-    (data.you||[]).slice(0,3).forEach(function(y){ c.push({k: (y.topic==="stocks" ? "FOR YOU · " : "") + String(y.label).toUpperCase(), topic: y.topic, h: y.item.h, s: y.item.s, u: y.item.u, t: y.item.t}); });
-    if(data.top) c.push({k: "TOP STORY", topic: "top", h: data.top.h, s: data.top.s, u: data.top.u, t: data.top.t});
-    ls("pn-ed", {day: k, sig: sig(), cards: c}); ls("pn-seen", {day: k, max: 0}); return c;
+  function getTick(){   // ticker + big news refresh every 2h (free, no AI)
+    if(!base() || (tick && Date.now() - (tick.got||0) < 2*3600e3)) return;
+    fetch(base() + "/news?k=business&g=0" + (pos.length ? "&t=" + encodeURIComponent(pos.slice(0,5).map(function(p){ return p.t; }).join(",")) : "")).then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(d){ if(!d) return; tick = {at: d.at, ticker: d.ticker, big: d.big, got: Date.now()}; render(); }).catch(function(){});
+  }
+  function fallback(){
+    var up = 0, n = 0; pos.forEach(function(p){ if(p.prev > 0 && p.precio > 0){ up += p.sh*(p.precio-p.prev); n++; } });
+    if(n) return {you: {text: Math.abs(up) < 1 ? "Your stocks are flat today." : "Your stocks are " + (up>0?"up ":"down ") + usd(up) + " today.", src: "From your stocks"}};
+    var L = ["Saving a little every week beats saving a lot once.", "Pay yourself first: move money to savings the day you get paid.", "Small leaks sink big ships. Check one subscription today."];
+    return {you: {text: L[Number(day().slice(8)) % L.length], src: "Pato"}};
   }
   function render(){
-    var box = $("pnBox"), tick = $("pnTick"); if(!box) return;
-    // ticker
-    var T = (data && data.ticker) || [];
-    if(T.length){ var tags = {}; pos.forEach(function(p){ tags[p.t] = 1; });
-      var one = T.map(function(i){ var tk = Object.keys(tags).filter(function(x){ return new RegExp("\\b"+x+"\\b").test(i.h); })[0];
+    var top = $("pdTop"), box = $("pdBox"); if(!top) return;
+    // ticker (Stocks tab)
+    var T = (tick && tick.ticker) || (daily && daily.ticker) || [];
+    if(T.length){ var mine = pos.map(function(p){ return p.t; });
+      var one = T.map(function(i){ var tk = mine.filter(function(x){ return new RegExp("\\b"+x+"\\b").test(i.h); })[0];
         return '<a data-u="' + esc(i.u) + '">' + (tk ? "<b>" + esc(tk) + "</b>" : "") + esc(i.h) + "</a>"; }).join("");
-      $("pnTrack").innerHTML = one + one; $("pnAt").textContent = " · " + hr(data.at);
-      tick.hidden = false; requestAnimationFrame(function(){ var w = $("pnTrack").scrollWidth / 2; $("pnTrack").style.setProperty("--pn-dur", Math.max(20, w / 45) + "s"); });
-    }
+      $("pnTrack").innerHTML = one + one; $("pnAt").textContent = " · " + hr((tick && tick.at) || daily.at).replace(/:\d\d/, ""); $("pnTick").hidden = false;
+      requestAnimationFrame(function(){ var w = $("pnTrack").scrollWidth / 2; $("pnTrack").style.setProperty("--pn-dur", Math.max(20, w / 45) + "s"); }); }
+    // Pato's take
+    var tk = (daily && daily.take) || fallback(), rows = [["HAPPENED", tk.happened], ["FOR YOU", tk.you], ["WATCH", tk.watch]].filter(function(r){ return r[1] && r[1].text; });
+    $("pdTake").innerHTML = '<div class="pd-who"><img src="icon-192.png?v=7" alt="">PATO\'S TAKE</div>' + rows.map(function(r){
+      return '<div class="pd-ln"><i>' + r[0] + '</i><div><p>' + bold(r[1].text) + '</p>' + (r[1].src ? '<div class="pd-src">' + esc(r[1].src) + '</div>' : '') + '</div></div>'; }).join("");
+    $("pdDate").textContent = drd().toLocaleDateString("en-US", {weekday:"short", month:"short", day:"numeric", timeZone:"UTC"});
+    // a stock you own moved 5%+ today
+    var b = pos.filter(function(p){ return p.prev > 0 && p.precio > 0 && Math.abs(p.precio/p.prev-1) >= .05; }).sort(function(x, y){ return Math.abs(y.precio/y.prev-1) - Math.abs(x.precio/x.prev-1); })[0];
+    var said = daily && daily.take && daily.take.happened ? daily.take.happened.text : "", st0 = b && daily && daily.stocks && daily.stocks[b.t];
+    if(b && said && (new RegExp("\\b" + b.t + "\\b").test(said) || (st0 && said.indexOf(st0.h.split(" ")[0]) >= 0))) b = null;   // Pato's take already covers it
+    if(b){ var ch = (b.precio/b.prev-1)*100, it = daily && daily.stocks && daily.stocks[b.t];
+      $("pdBrk").innerHTML = '<button type="button" class="pd-brk" data-u="' + esc(it ? it.u : "") + '"><div class="k">BREAKING · ' + esc(b.t) + " " + (ch>0?"+":"−") + Math.abs(ch).toFixed(1) + '%</div><div class="t">' + esc(it ? it.h.replace(/[.!?]?$/, ".") : b.t + (ch>0?" jumps ":" drops ") + Math.abs(ch).toFixed(1) + "% today.") + " Your position: " + (ch>0?"+":"−") + usd(b.sh*(b.precio-b.prev)) + ".</div></button>";
+    } else $("pdBrk").innerHTML = "";
+    top.hidden = false; chips();
     // cards
-    var cards = edition(); if(!cards){ box.hidden = true; return; }
-    var all = [{k: "PATO'S TAKE", take: 1, h: take()}].concat(cards).slice(0,5);
-    var d = dr(); $("pnDate").textContent = d.toLocaleDateString("en-US", {weekday:"short", month:"short", day:"numeric", timeZone:"UTC"});
-    $("pnCards").innerHTML = all.map(function(c, i){
-      if(c.take) return '<div class="pn-c take"><div class="who"><img src="icon-192.png?v=7" alt="">PATO\'S TAKE</div><div class="t">' + esc(c.h) + '</div><div class="m">From your numbers</div></div>';
-      return '<button type="button" class="pn-c g' + (i%4) + '" data-u="' + esc(c.u) + '"><span class="e">' + (EMO[c.topic]||"📰") + '</span><div class="k">' + esc(c.k) + '</div><div class="t">' + esc(c.h) + '</div><div class="m">' + esc(c.s) + (c.t ? " · " + ago(c.t) : "") + '</div></button>'; }).join("");
-    $("pnDots").innerHTML = all.map(function(_, i){ return '<i' + (i===0?' class="on"':'') + '></i>'; }).join("");
-    var seen = ls("pn-seen") || {}, done = seen.day === day() && seen.done;
-    $("pnMain").hidden = !!done; $("pnDone").hidden = !done; $("pnEdit").hidden = !!done;
-    // breaking: a stock you own moved 5%+ today
-    var b = pos.filter(function(p){ return p.prev > 0 && p.precio > 0 && Math.abs(p.precio/p.prev - 1) >= .05; }).sort(function(a, c){ return Math.abs(c.precio/c.prev) - Math.abs(a.precio/a.prev); })[0];
-    if(b){ var ch = (b.precio/b.prev - 1)*100, y = (data && data.you || []).filter(function(x){ return x.label === b.t; })[0];
-      var sh = Number(b.sh) >= 1 ? Math.round(b.sh*100)/100 + " shares" : "a piece of it";
-      $("pnBrk").innerHTML = '<button type="button" class="pn-brk" data-u="' + esc(y && y.item.u || "") + '"><div class="k">BREAKING · ' + esc(b.t) + " " + (ch>0?"+":"−") + Math.abs(ch).toFixed(1) + '%</div><div class="t">' + esc(y ? y.item.h.replace(/[.!?]?$/, ".") : b.t + (ch>0 ? " jumps " : " drops ") + Math.abs(ch).toFixed(1) + "% today.") + " You hold " + sh + '.</div>' + (y ? '<div class="m">' + esc(y.item.s) + " · " + ago(y.item.t) + "</div>" : "") + "</button>";
-    } else $("pnBrk").innerHTML = "";
-    box.hidden = false; chips();
+    var want = on(), cards = [], cats = (daily && daily.cats) || {}, big = (tick && tick.big) || (daily && daily.big);
+    CATS.forEach(function(c){ if(cards.length >= MAX || want.indexOf(c[0]) < 0) return; var k = c[0];
+      if(k === "big"){ if(big) cards.push({cls: "big", k: "BIG NEWS", e: c[2], h: big.h, m: (big.by && big.by.length ? big.by.join(" · ") : big.s) + " · " + ago(big.t), u: big.u}); return; }
+      if(k === "game"){ var G = (daily && daily.games) || [], gi = daily && daily.take && daily.take.game >= 0 ? daily.take.game : 0, g = G[gi] || G[0]; if(!g) return;
+        var mine = bets.filter(function(x){ return ["won","lost","push"].indexOf(x.result) < 0 && (x.legs||[]).some(function(l){ var a = String(l.game||"").toLowerCase(); return a && g.name.toLowerCase().split(/ at | vs\.? /).some(function(t){ return t && a.indexOf(t.split(" ").pop()) >= 0; }); }); })[0];
+        cards.push({cls: "game", k: "GAME OF THE DAY · " + g.league.toUpperCase(), e: c[2], h: g.name.replace(" at ", " vs ") + (g.live ? " · LIVE" : g.t ? ", " + hr(g.t) : ""), m: [(g.tv||[]).join(", "), mine ? "You bet RD$" + (Number(mine.stake)||0).toLocaleString("en-US") : ""].filter(Boolean).join(" · ") || g.note || "ESPN"}); return; }
+      var it = cats[k]; if(!it) return;
+      var h = k === "rd" && daily.take && daily.take.rd ? daily.take.rd : it.h;
+      cards.push({cls: k === "rd" ? "rd" : "c" + (cards.length % 3), k: c[1].replace("🇩🇴 ", "").toUpperCase(), e: c[2], h: h, m: it.s + " · " + ago(it.t), u: it.u}); });
+    if(!cards.length){ box.hidden = true; return; }
+    $("pdCards").innerHTML = cards.map(function(c){ return '<button type="button" class="pd-c ' + c.cls + '"' + (c.u ? ' data-u="' + esc(c.u) + '"' : '') + '><span class="e">' + c.e + '</span><div class="k">' + esc(c.k) + '</div><div class="t">' + esc(c.h) + '</div><div class="m">' + esc(c.m) + '</div></button>'; }).join("");
+    $("pdDots").innerHTML = cards.map(function(_, i){ return '<i' + (i===0?' class="on"':'') + '></i>'; }).join("");
+    var seen = ls("pd-seen") || {}, done = seen.day === day() && seen.done;
+    $("pdMain").hidden = !!done; $("pdDone").hidden = !done; box.hidden = false;
   }
-  function chips(){ var on = topics();
-    $("pnChips").innerHTML = TOP.map(function(t){ return '<button type="button" data-k="' + t[0] + '"' + (on.indexOf(t[0])>=0 ? ' class="on"' : '') + '>' + t[1] + '</button>'; }).join(""); }
+  function chips(){ var o = on(), first = !(prefs && prefs.picked);
+    $("pdPick").hidden = !(first || $("pdPick").dataset.open); $("pdPickT").textContent = first ? "Pick what you like" : "Up to " + MAX + " cards a day";
+    $("pdEdit").textContent = $("pdPick").hidden ? "Edit" : "Done";
+    $("pdChips").innerHTML = CATS.map(function(c){ return '<button type="button" data-k="' + c[0] + '"' + (o.indexOf(c[0])>=0 ? ' class="on"' : '') + '>' + c[1] + '</button>'; }).join(""); }
+  function save(o){ prefs = {on: o, picked: true}; try{ db.doc("prefs/news").set({on: o, picked: true, at: Date.now()}); }catch(_){} }
   function wire(){
-    document.addEventListener("click", function(e){ var a = e.target.closest && e.target.closest("#pnTrack a, #pnCards [data-u], #pnBrk [data-u]"); if(a && a.dataset.u){ e.preventDefault(); open(a.dataset.u); } });
-    $("pnEdit").onclick = function(){ $("pnChips").hidden = !$("pnChips").hidden; };
-    $("pnChips").onclick = function(e){ var b = e.target.closest("[data-k]"); if(!b) return; var on = topics().slice(), k = b.dataset.k, i = on.indexOf(k);
-      if(i>=0){ if(on.length===1) return; on.splice(i,1); } else on.push(k);
-      prefs = {on: on}; try{ db.doc("prefs/news").set({on: on, at: Date.now()}); }catch(_){} ls("pn-ed", null); chips(); load(true); };
-    $("pnDone").onclick = function(){ var s = ls("pn-seen") || {}; s.done = false; s.max = 0; ls("pn-seen", s); render(); };
-    $("pnCards").addEventListener("scroll", function(){ var el = $("pnCards"), w = el.firstElementChild ? el.firstElementChild.offsetWidth + 10 : 1, i = Math.round(el.scrollLeft / w), n = el.children.length;
-      [].forEach.call($("pnDots").children, function(d, j){ d.className = j===i ? "on" : ""; });
-      var s = ls("pn-seen") || {}; if(s.day !== day()) s = {day: day(), max: 0}; if(i > (s.max||0)){ s.max = i; ls("pn-seen", s); } }, {passive: true});
-    // after you've swiped to the last card, it shrinks to "You're caught up" the next time you come back
+    document.addEventListener("click", function(e){ var a = e.target.closest && e.target.closest("#pnTrack a, #pdCards [data-u], #pdBrk [data-u]"); if(a && a.dataset.u){ e.preventDefault(); open(a.dataset.u); } });
+    $("pdEdit").onclick = function(){ var P = $("pdPick");
+      if(!P.hidden){ var was = !(prefs && prefs.picked); delete P.dataset.open; if(was) save(on()); chips(); getDaily(false); return; }
+      P.dataset.open = "1"; chips(); };
+    $("pdChips").onclick = function(e){ var b = e.target.closest("[data-k]"); if(!b) return; var o = on().slice(), k = b.dataset.k, i = o.indexOf(k);
+      if(i >= 0) o.splice(i, 1); else o.push(k); save(o); $("pdPick").dataset.open = "1"; render(); };
+    $("pdDone").onclick = function(){ ls("pd-seen", {day: day(), max: 0}); render(); };
+    $("pdCards").addEventListener("scroll", function(){ var el = $("pdCards"), w = el.firstElementChild ? el.firstElementChild.offsetWidth + 10 : 1, i = Math.round(el.scrollLeft / w);
+      [].forEach.call($("pdDots").children, function(d, j){ d.className = j===i ? "on" : ""; });
+      var s = ls("pd-seen") || {}; if(s.day !== day()) s = {day: day(), max: 0}; if(i > (s.max||0)){ s.max = i; ls("pd-seen", s); } }, {passive: true});
     document.addEventListener("visibilitychange", function(){
-      if(document.hidden){ var s = ls("pn-seen") || {}, n = $("pnCards").children.length; if(s.day === day() && n && s.max >= n-1){ s.done = true; ls("pn-seen", s); } }
-      else load(false); });
-    setInterval(function(){ if(!document.hidden) load(false); }, 15*6e4);
+      if(document.hidden){ var s = ls("pd-seen") || {}, n = $("pdCards").children.length; if(s.day === day() && n > 1 && s.max >= n-1){ s.done = true; ls("pd-seen", s); } }
+      else { getDaily(false); getTick(); } });
+    setInterval(function(){ if(!document.hidden){ getDaily(false); getTick(); } }, 15*6e4);
   }
   if(!window.claude) return;
   window.claude.use("db").then(function(d){
     if(!d) return; db = d; me = window.MP_ME || {}; wire();
-    var ready = {pos: 0, bets: 0, prefs: 0}, go = function(k){ ready[k] = 1; if(ready.pos && ready.bets && ready.prefs) load(true); else if(data) render(); };
-    var setPos = function(list){ pos = list.filter(function(x){ return Number(x.sh) > 0 && x.t; }).map(function(x){ return {t: String(x.t).toUpperCase(), sh: Number(x.sh), precio: Number(x.precio)||0, prev: Number(x.prev)||0}; })
-      .reduce(function(m, x){ var o = m.filter(function(y){ return y.t === x.t; })[0]; if(o){ o.sh += x.sh; } else m.push(x); return m; }, []).sort(function(a, b){ return b.sh*(b.precio||1) - a.sh*(a.precio||1); }); };
-    if(me.owner) db.doc("invest/ibkr").onSnapshot(function(s){ var was = sig(); setPos(((s.exists && s.data().posiciones) || []).map(function(x){ return Object.assign({}, x, {t: x.t || x.ticker || x.sym}); })); ready.pos ? (sig()!==was ? load(true) : render()) : go("pos"); }, function(){ go("pos"); });
-    else db.collection("holdings").onSnapshot(function(s){ var was = sig(); setPos(s.docs.map(function(x){ return x.data(); })); ready.pos ? (sig()!==was ? load(true) : render()) : go("pos"); }, function(){ go("pos"); });
-    db.collection("bets").onSnapshot(function(s){ var c = {}; s.docs.map(function(x){ return x.data(); }).sort(function(a, b){ return String(b.fecha||"").localeCompare(String(a.fecha||"")); }).slice(0,60)
-      .forEach(function(b){ (b.legs||[]).forEach(function(l){ var k = String(l.sport||"").trim(); if(k) c[k] = (c[k]||0) + 1; }); });
-      sports = Object.keys(c).sort(function(a, b){ return c[b] - c[a]; }); if(!ready.bets) go("bets"); }, function(){ go("bets"); });
-    db.doc("prefs/news").onSnapshot(function(s){ prefs = s.exists ? s.data() : null; if(!ready.prefs) go("prefs"); }, function(){ go("prefs"); });
+    var ready = {pos: 0, bets: 0, prefs: 0}, go = function(k){ ready[k] = 1; if(ready.pos && ready.bets && ready.prefs){ render(); getDaily(false); } };
+    var again = function(k, was){ if(!ready[k]) return go(k); if(sig() !== was) getDaily(false); else render(); };
+    var setPos = function(list){ pos = list.filter(function(x){ return Number(x.sh) > 0 && x.t; }).map(function(x){ return {t: String(x.t).toUpperCase(), sh: Number(x.sh), precio: Number(x.precio)||0, prev: Number(x.prev)||0, costo: Number(x.costo)||0}; })
+      .reduce(function(m, x){ var o = m.filter(function(y){ return y.t === x.t; })[0]; if(o){ o.costo = (o.costo*o.sh + x.costo*x.sh)/(o.sh + x.sh || 1); o.sh += x.sh; } else m.push(x); return m; }, [])
+      .sort(function(a, b){ return b.sh*(b.precio||1) - a.sh*(a.precio||1); }); };
+    if(me.owner) db.doc("invest/ibkr").onSnapshot(function(s){ var was = sig(); setPos((s.exists && s.data().posiciones) || []); again("pos", was); }, function(){ go("pos"); });
+    else db.collection("holdings").onSnapshot(function(s){ var was = sig(); setPos(s.docs.map(function(x){ return x.data(); })); again("pos", was); }, function(){ go("pos"); });
+    db.collection("bets").onSnapshot(function(s){ bets = s.docs.map(function(x){ return x.data(); }).sort(function(a, b){ return String(b.fecha||"").localeCompare(String(a.fecha||"")); }).slice(0,60); if(!ready.bets) go("bets"); else render(); }, function(){ go("bets"); });
+    db.doc("prefs/news").onSnapshot(function(s){ var was = sig(); prefs = s.exists ? s.data() : null; again("prefs", was); }, function(){ go("prefs"); });
   });
 })();
+
 </script>
 </body>
 </html>
