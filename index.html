@@ -1314,13 +1314,34 @@ html.mp-guest #p-stocks > #pnTick:not([hidden]){display:flex!important}
 .pd-note{margin-top:26px;border-top:1px solid rgba(227,188,106,.25);padding-top:14px}
 .pd-note i{font-style:normal;font-size:.66rem;font-weight:800;letter-spacing:.08em;color:#E3BC6A}
 .pd-note p{font-size:1rem;font-weight:600;line-height:1.35;margin:5px 0 0}
-.pd-img{position:relative;margin:2px 0 16px;border-radius:14px;overflow:hidden;aspect-ratio:16/9;background:rgba(255,255,255,.06)}
+.pd-img{position:relative;margin:2px 0 16px;border-radius:14px;overflow:hidden;aspect-ratio:2/1;background:rgba(255,255,255,.06)}
 .pd-img img{width:100%;height:100%;object-fit:cover;display:block}
 .pd-img span{position:absolute;left:8px;bottom:8px;font-size:.66rem;font-weight:700;padding:3px 8px;border-radius:999px;background:rgba(0,0,0,.55);color:#fff}
 .pd-two{margin-top:20px;padding-top:14px;border-top:1px solid rgba(255,255,255,.14)}
 .pd-h2{font-size:1.1rem;font-weight:750;line-height:1.3;margin-top:6px}
 .pd-r2{color:#E9C46A;font-weight:700;cursor:pointer}
 .pd-read{all:unset;cursor:pointer;display:inline-block;margin-top:22px;padding:10px 16px;border-radius:999px;background:rgba(255,255,255,.12);font-weight:700;font-size:.85rem}
+.pd-know{margin-top:20px}
+.pd-know i{font-style:normal;font-size:.66rem;font-weight:800;letter-spacing:.08em;color:#9FB3A7}
+.pd-know ul{margin:6px 0 0;padding:0;list-style:none}
+.pd-know li{position:relative;padding-left:16px;font-size:.98rem;line-height:1.4;margin-top:6px;color:#E4ECE7}
+.pd-know li:before{content:"";position:absolute;left:2px;top:.62em;width:6px;height:6px;border-radius:50%;background:#E3BC6A}
+.pd-vs{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:18px 0 6px}
+.pd-team{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;min-width:0}
+.pd-team img,.pd-tl{width:84px;height:84px;object-fit:contain;filter:drop-shadow(0 4px 10px rgba(0,0,0,.35))}
+.pd-tl{display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(255,255,255,.12);font-weight:800;font-size:1.3rem}
+.pd-team b{font-size:1.05rem;font-weight:800;line-height:1.2}
+.pd-team small{font-size:.75rem;color:#9FB3A7}
+.pd-team em{font-style:normal;font-size:1.8rem;font-weight:800}
+.pd-at{font-weight:800;font-size:.85rem;color:#9FB3A7;letter-spacing:.06em}
+.pd-at i{font-style:normal;color:#fff;background:#D64545;padding:3px 8px;border-radius:999px}
+.pd-c{text-align:center}
+.pd-act{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:22px}
+.pd-act .pd-read{margin-top:0}
+.pd-ic{display:flex;gap:8px}
+.pd-fb,.pd-share{all:unset;cursor:pointer;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.1);font-size:1.05rem;color:#fff;transition:transform .15s}
+.pd-fb.on{background:rgba(227,188,106,.3);box-shadow:inset 0 0 0 1.5px #E3BC6A}
+.pd-fb:active,.pd-share:active{transform:scale(.9)}
 .pd-ft{padding:10px 16px 16px;text-align:center;font-size:.72rem;color:#9FB3A7}
 .pd-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
 .pd-chips button{all:unset;cursor:pointer;font-size:.88rem;padding:8px 13px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#CFE0D6}
@@ -1759,7 +1780,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261111155327";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261111172052";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -6607,11 +6628,11 @@ TRACKER DATA:
   }
   function getDaily(force){
     if(!base() || busy || !window.mpIdToken) return;
-    var st = ls("pd-daily2"); if(!force && st && st.day === day() && st.sig === sig() && st.data && (st.data.take || Date.now() - (st.at||0) < 2*3600e3)){ daily = st.data; return render(); }
+    var st = ls("pd-daily3"); if(!force && st && st.day === day() && st.sig === sig() && st.data && (st.data.take || Date.now() - (st.at||0) < 2*3600e3)){ daily = st.data; return render(); }
     busy = 1;
     window.mpIdToken().then(function(tok){ return fetch(base() + "/daily?" + q(), {method: "POST", headers: {"content-type": "application/json", authorization: "Bearer " + tok}, body: JSON.stringify(facts())}); })
       .then(function(r){ return r.ok ? r.json() : null; }).then(function(d){ busy = 0; if(!d) return render(); daily = d; tick = {at: d.at, ticker: d.ticker, big: d.big};
-        ls("pd-daily2", {day: day(), sig: sig(), at: Date.now(), data: d}); render(); }).catch(function(){ busy = 0; render(); });
+        ls("pd-daily3", {day: day(), sig: sig(), at: Date.now(), data: d}); render(); }).catch(function(){ busy = 0; render(); });
   }
   function getTick(){   // ticker + big news refresh every 2h (free, no AI)
     if(!base() || (tick && Date.now() - (tick.got||0) < 2*3600e3)) return;
@@ -6634,23 +6655,57 @@ TRACKER DATA:
     var b = pos.filter(function(p){ return p.prev > 0 && p.precio > 0 && Math.abs(p.precio/p.prev-1) >= .05; }).sort(function(x, y){ return Math.abs(y.precio/y.prev-1) - Math.abs(x.precio/x.prev-1); })[0];
     var said = tk.happened ? tk.happened.text : "", st0 = b && daily && daily.stocks && daily.stocks[b.t];
     if(b && !(said && (new RegExp("\\b" + b.t + "\\b").test(said) || (st0 && said.indexOf(st0.h.split(" ")[0]) >= 0)))){ var ch = (b.precio/b.prev-1)*100;
-      L.push({id: ed + ":move:" + b.t + (ch>0?"+":"-"), cls: "big", t: "Breaking · " + b.t, w: "today", u: st0 && st0.u, pic: st0 && st0.u, ph: st0 && st0.h, ps: st0 && st0.s, body: '<div class="pd-k">BREAKING · ' + esc(b.t) + " " + (ch>0?"+":"−") + Math.abs(ch).toFixed(1) + '%</div><div class="pd-h1">' + esc(st0 ? st0.h : b.t + (ch>0?" jumps ":" drops ") + Math.abs(ch).toFixed(1) + "% today.") + '</div>' + (st0 ? '<div class="pd-m">' + esc(st0.s) + " · " + ago(st0.t) + '</div>' : "") +
+      L.push({id: ed + ":move:" + b.t + (ch>0?"+":"-"), cls: "big", t: "Breaking · " + b.t, w: "today", sh: st0 ? {k: "Breaking · " + b.t, h: st0.h, s: st0.s, u: st0.u} : null, u: st0 && st0.u, pic: st0 && st0.u, ph: st0 && st0.h, ps: st0 && st0.s, body: '<div class="pd-k">BREAKING · ' + esc(b.t) + " " + (ch>0?"+":"−") + Math.abs(ch).toFixed(1) + '%</div><div class="pd-h1">' + esc(st0 ? st0.h : b.t + (ch>0?" jumps ":" drops ") + Math.abs(ch).toFixed(1) + "% today.") + '</div>' + (st0 ? '<div class="pd-m">' + esc(st0.s) + " · " + ago(st0.t) + '</div>' : "") +
         '<div class="pd-note"><i>PATO</i><p>' + bold("Your position: " + (ch>0?"+":"−") + usd(b.sh*(b.precio-b.prev)) + " today.") + '</p></div>'}); }
-    CATS.forEach(function(c){ if(L.length >= MAX + 1 || want.indexOf(c[0]) < 0) return; var k = c[0], it, h;
-      if(k === "big"){ if(!big) return; L.push({id: "big:" + big.h, cls: big.huge === false ? "" : "big", t: "Big news", w: ago(big.t) + " ago", u: big.u, pic: big.u, ph: big.h, ps: big.s, body: '<div class="pd-k">BIG NEWS · WORLD</div><div class="pd-h1">' + esc(big.h) + '</div><div class="pd-m">' + esc(big.by && big.by.length ? big.by.join(" · ") : big.s) + '</div>' + note(notes.big)}); return; }
+    var fb = (prefs && prefs.fb) || {}, ix = function(k){ return CATS.map(function(c){ return c[0]; }).indexOf(k); };   // 👍/👎 move topics up or down
+    FIX.concat(on().slice().sort(function(a, b){ return (fb[b]||0) - (fb[a]||0) || ix(a) - ix(b); })).map(function(k){ return CATS[ix(k)]; }).filter(Boolean).forEach(function(c){ if(L.length >= MAX + 1) return; var k = c[0], it, h;
+      if(k === "big"){ if(!big) return; L.push({id: "big:" + big.h, cls: big.huge === false ? "" : "big", t: "Big news", w: ago(big.t) + " ago", u: big.u, pic: big.u, ph: big.h, ps: big.s, fk: "big", sh: {k: "Big news", h: big.h, s: big.s, u: big.u, kn: knowArr("big")}, body: '<div class="pd-k">BIG NEWS · WORLD</div><div class="pd-h1">' + esc(big.h) + '</div><div class="pd-m">' + esc(big.by && big.by.length ? big.by.join(" · ") : big.s) + '</div>' + know("big") + note(notes.big)}); return; }
       if(k === "game"){ var G = (daily && daily.games) || [], gi = daily && daily.take && daily.take.game >= 0 ? daily.take.game : 0, g = G[gi] || G[0]; if(!g) return;
         var mine = bets.filter(function(x){ return ["won","lost","push"].indexOf(x.result) < 0 && (x.legs||[]).some(function(l){ var a = String(l.game||"").toLowerCase(); return a && g.name.toLowerCase().split(/ at | vs\.? /).some(function(t){ return t && a.indexOf(t.split(" ").pop()) >= 0; }); }); })[0];
-        L.push({id: ed + ":game:" + g.name, cls: "game", t: "Sports", w: g.league, body: '<div class="pd-k">SPORTS · ' + esc(g.league.toUpperCase()) + '</div><div class="pd-h1">' + esc(g.name.replace(" at ", " vs ")) + '</div><div class="pd-m">' + esc([g.live ? "LIVE now" : g.t ? hr(g.t) + " (DR time)" : "", (g.tv||[]).join(", "), g.note].filter(Boolean).join(" · ")) + '</div>' +
+        var TM = g.teams || [], vs = TM.length === 2 && TM[0].n && TM[1].n ? '<div class="pd-vs">' + TM.map(function(t){ return '<div class="pd-team">' + (t.logo ? '<img src="' + esc(t.logo) + '" alt="" onerror="this.outerHTML=\'<span class=pd-tl>' + esc(t.n.slice(0,3).toUpperCase()) + '</span>\'">' : '<span class="pd-tl">' + esc(t.n.slice(0,3).toUpperCase()) + '</span>') +
+          '<b>' + esc(t.n) + '</b>' + (g.live && t.score !== "" ? '<em>' + esc(t.score) + '</em>' : t.rec ? '<small>' + esc(t.rec) + '</small>' : '') + '</div>'; }).join('<div class="pd-at">' + (g.live ? '<i>LIVE</i>' : 'VS') + '</div>') + '</div>' : '<div class="pd-h1">' + esc(g.name.replace(" at ", " vs ")) + '</div>';
+        L.push({id: ed + ":game:" + g.name, cls: "game", t: "Sports", w: g.league, fk: "game", sh: {k: "Sports · " + g.league, h: g.name.replace(" at ", " vs ") + (g.t && !g.live ? " · " + hr(g.t) + " DR" : ""), s: (g.tv||[]).join(", "), u: ""}, body: '<div class="pd-k">SPORTS · ' + esc(g.league.toUpperCase()) + '</div>' + vs + '<div class="pd-m pd-c">' + esc([g.live ? "LIVE now" : g.t ? hr(g.t) + " (DR time)" : "", (g.tv||[]).join(", "), g.note].filter(Boolean).join(" · ")) + '</div>' +
           (mine ? '<div class="pd-note"><i>YOUR BET</i><p>' + bold("You have RD$" + (Number(mine.stake)||0).toLocaleString("en-US") + " on this game.") + '</p></div>' : "")}); return; }
       var A = [].concat(cats[k] || []); it = A[0]; if(!it) return; h = k === "rd" && daily.take && daily.take.rd ? daily.take.rd : it.h;
       var by = function(x){ return esc(x.by && x.by.length > 1 ? x.by.join(" · ") : x.s) + " · " + ago(x.t) + " ago"; }, i2 = A[1];   // 1-2 stories per topic, ranked by the worker
-      L.push({id: ed + ":" + k + ":" + it.h, cls: k === "rd" ? "rd" : "", t: c[1], w: ago(it.t) + " ago", u: i2 ? "" : it.u, pic: it.u, ph: it.h, ps: it.s, body: '<div class="pd-k">' + esc(c[1].toUpperCase()) + '</div><div class="pd-h1">' + esc(h) + '</div>' + (h !== it.h ? '<div class="pd-m" style="font-style:italic">' + esc(it.h) + '</div>' : '') + '<div class="pd-m">' + by(it) + (i2 ? ' · <a class="pd-r2" data-u="' + esc(it.u) + '">Read ›</a>' : '') + '</div>' + note(notes[k]) +
+      L.push({id: ed + ":" + k + ":" + it.h, cls: k === "rd" ? "rd" : "", t: c[1], w: ago(it.t) + " ago", u: i2 ? "" : it.u, pic: it.u, ph: it.h, ps: it.s, fk: k, sh: {k: c[1], h: h, s: it.s, u: it.u, kn: knowArr(k)}, body: '<div class="pd-k">' + esc(c[1].toUpperCase()) + '</div><div class="pd-h1">' + esc(h) + '</div>' + (h !== it.h ? '<div class="pd-m" style="font-style:italic">' + esc(it.h) + '</div>' : '') + '<div class="pd-m">' + by(it) + (i2 ? ' · <a class="pd-r2" data-u="' + esc(it.u) + '">Read ›</a>' : '') + '</div>' + know(k) + note(notes[k]) +
         (i2 ? '<div class="pd-two"><div class="pd-k">ALSO</div><div class="pd-h2">' + esc(i2.h) + '</div><div class="pd-m">' + by(i2) + ' · <a class="pd-r2" data-u="' + esc(i2.u) + '">Read ›</a></div></div>' : '')}); });
     L.push({id: "pick", cls: "", t: "Pato Daily", w: "your stories", pick: 1, body: '<div class="pd-k">' + (prefs && prefs.picked ? "YOUR STORIES" : "PICK WHAT YOU LIKE") + '</div><div class="pd-h1">' + (prefs && prefs.picked ? "That's today. Change what you see:" : "What do you want in your stories?") + '</div><div class="pd-chips" id="pdChips">' +
       CATS.filter(function(c){ return FIX.indexOf(c[0]) < 0; }).map(function(c){ return '<button type="button" data-k="' + c[0] + '"' + (want.indexOf(c[0])>=0 ? ' class="on"' : '') + '>' + c[1] + '</button>'; }).join("") + '</div><div class="pd-m" id="pdPickM">Pick up to ' + TOP + '. Big news and Local come every day. Next edition at 7am.</div>'});
     return L;
   }
   function note(t){ return t ? '<div class="pd-note"><i>PATO</i><p>' + bold(t) + '</p></div>' : ""; }
+  function knowArr(k){ var K = daily && daily.take && daily.take.know && daily.take.know[k]; return Array.isArray(K) ? K.filter(Boolean).slice(0, 2) : []; }
+  function know(k){ var K = knowArr(k); return K.length ? '<div class="pd-know"><i>WHAT TO KNOW</i><ul>' + K.map(function(t){ return '<li>' + bold(t) + '</li>'; }).join("") + '</ul></div>' : ""; }
+  var SHARE = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>';
+  function act(x){ if(x.pick || (!x.u && !x.sh)) return ""; var f = (ls("pd-fb") || {})[x.id];
+    return '<div class="pd-act">' + (x.u ? '<button type="button" class="pd-read" data-u="' + esc(x.u) + '">Read the story ›</button>' : '<span></span>') + '<span class="pd-ic">' +
+      (x.fk ? '<button type="button" class="pd-fb' + (f === 1 ? ' on' : '') + '" data-fb="1" aria-label="More like this">👍</button><button type="button" class="pd-fb' + (f === -1 ? ' on' : '') + '" data-fb="-1" aria-label="Less like this">👎</button>' : '') +
+      (x.sh ? '<button type="button" class="pd-share" aria-label="Share">' + SHARE + '</button>' : '') + '</span></div>'; }
+  // Share: a clean Pato card image (WhatsApp, IG, etc.) + the link
+  var duck = new Image(); duck.src = "icon-192.png?v=7";
+  function wrap(g, t, w){ var out = [], line = ""; String(t).split(/\s+/).forEach(function(wd){ var tr = line ? line + " " + wd : wd; if(g.measureText(tr).width > w && line){ out.push(line); line = wd; } else line = tr; }); if(line) out.push(line); return out; }
+  function card(x){ var c = document.createElement("canvas"), W = 1080, H = 1350; c.width = W; c.height = H; var g = c.getContext("2d"), F = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+    var gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, "#1F4D3A"); gr.addColorStop(1, "#0B1913"); g.fillStyle = gr; g.fillRect(0, 0, W, H);
+    try{ g.save(); g.beginPath(); g.roundRect ? g.roundRect(80, 80, 112, 112, 26) : g.rect(80, 80, 112, 112); g.clip(); g.drawImage(duck, 80, 80, 112, 112); g.restore(); }catch(_){}
+    g.fillStyle = "#fff"; g.font = "800 50px " + F; g.fillText("Pato Daily", 222, 135);
+    g.fillStyle = "#9FB3A7"; g.font = "500 34px " + F; g.fillText(drd().toLocaleDateString("en-US", {timeZone: "UTC", weekday: "long", month: "long", day: "numeric"}), 222, 182);
+    var y = 330; g.fillStyle = "#E9C46A"; g.font = "800 34px " + F; g.fillText(String(x.sh.k).replace(/🇩🇴\s*/, "").toUpperCase(), 80, y);
+    g.fillStyle = "#fff"; g.font = "800 74px " + F; var hl = wrap(g, x.sh.h, W - 160).slice(0, 7); y += 40; hl.forEach(function(l){ y += 90; g.fillText(l, 80, y); });
+    if(x.sh.s){ y += 60; g.fillStyle = "#9FB3A7"; g.font = "500 34px " + F; g.fillText(x.sh.s, 80, y); }
+    if(x.sh.kn && x.sh.kn.length && y < 980){ y += 70; g.fillStyle = "rgba(255,255,255,.14)"; g.fillRect(80, y, W - 160, 2); y += 30;
+      g.font = "500 38px " + F; g.fillStyle = "#DCE7E0"; x.sh.kn.forEach(function(t){ wrap(g, "• " + t, W - 160).slice(0, 2).forEach(function(l){ if(y > 1150) return; y += 52; g.fillText(l, 80, y); }); y += 12; }); }
+    g.fillStyle = "#E9C46A"; g.fillRect(80, H - 150, 70, 6); g.fillStyle = "#fff"; g.font = "700 36px " + F; g.fillText("Your money news, daily, on Pato", 80, H - 90);
+    return c; }
+  function share(x){ if(!x || !x.sh) return; var u = x.sh.u || (location.origin + location.pathname), text = x.sh.h + "\n\nvia Pato Daily 🦆", f = null;
+    try{ var d = card(x).toDataURL("image/png"), bin = atob(d.split(",")[1]), a = new Uint8Array(bin.length); for(var i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i); f = new File([a], "pato-daily.png", {type: "image/png"}); }catch(_){}
+    var V = $("pdV"); V.classList.add("paused"); var done = function(){ V.classList.remove("paused"); if(!V.hidden) show(cur); };
+    if(f && navigator.canShare && navigator.canShare({files: [f]})) return navigator.share({files: [f], text: text + "\n" + u}).then(done, done);
+    if(navigator.share) return navigator.share({text: text, url: u}).then(done, done);
+    done(); open("https://wa.me/?text=" + encodeURIComponent(text + "\n" + u)); }
+  function vote(x, v){ if(!x || !x.fk) return; var F = ls("pd-fb") || {}, was = F[x.id] || 0, now = was === v ? 0 : v; F[x.id] = now; ls("pd-fb", F);
+    var fb = Object.assign({}, (prefs && prefs.fb) || {}); fb[x.fk] = (fb[x.fk] || 0) - was + now; prefs = Object.assign({}, prefs || {}, {fb: fb}); save(on());
+    [].forEach.call($("pdBd").querySelectorAll(".pd-fb"), function(b){ b.classList.toggle("on", Number(b.dataset.fb) === now); }); }
   var seen = function(){ var s = ls("pd-seen2") || {}; return s.day === day() ? s : {day: day(), ids: {}}; };
   function unseen(){ var s = seen(); return S.filter(function(x){ return !x.pick && !s.ids[x.id]; }); }
   function render(){
@@ -6676,7 +6731,7 @@ TRACKER DATA:
     clearTimeout(timer); cur = Math.max(0, Math.min(i, S.length - 1)); var x = S[cur], s = seen();
     if(!x.pick){ s.ids[x.id] = 1; ls("pd-seen2", s); }
     $("pdS").className = "pd-s " + (x.cls||""); $("pdT").textContent = x.t; $("pdW").textContent = x.w || "";
-    $("pdBd").innerHTML = picHtml(x) + x.body + (x.u ? '<button type="button" class="pd-read" data-u="' + esc(x.u) + '">Read the story ›</button>' : "");
+    $("pdBd").innerHTML = picHtml(x) + x.body + act(x);
     $("pdBars").innerHTML = S.map(function(_, j){ return '<i class="' + (j < cur ? "d" : j === cur ? "n" : "") + '"></i>'; }).join("");
     if(x.pic && !(x.pic in IM.m)) pic(x.pic, function(){ if(S[cur] === x && !$("pdV").hidden && !$("pdBd").querySelector(".pd-img")) $("pdBd").insertAdjacentHTML("afterbegin", picHtml(x)); }, x.ph);
     $("pdFt").textContent = x.pick ? "Swipe down to go back" : "Tap for next · swipe down to go back";
@@ -6688,7 +6743,7 @@ TRACKER DATA:
     $("pdV").hidden = false; document.documentElement.style.overflow = "hidden"; show(i); }
   function close(){ clearTimeout(timer); $("pdV").hidden = true; $("pdS").style.transform = ""; document.documentElement.style.overflow = "";
     if(!(prefs && prefs.picked)) save(on()); render(); }
-  function save(o){ prefs = {on: o, picked: true}; try{ db.doc("prefs/news").set({on: o, picked: true, at: Date.now()}); }catch(_){} }
+  function save(o){ var fb = (prefs && prefs.fb) || {}; prefs = {on: o, picked: true, fb: fb}; try{ db.doc("prefs/news").set({on: o, picked: true, fb: fb, at: Date.now()}); }catch(_){} }
   function wire(){
     document.addEventListener("click", function(e){ var a = e.target.closest && e.target.closest("#pnTrack a, .pd-read, .pd-r2"); if(a && a.dataset.u){ e.preventDefault(); e.stopPropagation(); open(a.dataset.u); } }, true);
     // floating Pato: tap opens, drag moves (position remembered)
@@ -6701,6 +6756,7 @@ TRACKER DATA:
     // viewer: tap right = next, tap left = back, hold = pause, swipe down = close
     var V = $("pdV"), S0 = $("pdS"), ty, tx, t0, held;
     $("pdX").onclick = function(e){ e.stopPropagation(); close(); };
+    S0.addEventListener("click", function(e){ var b = e.target.closest(".pd-share, .pd-fb"); if(!b) return; e.stopPropagation(); if(b.classList.contains("pd-share")) share(S[cur]); else vote(S[cur], Number(b.dataset.fb)); });
     V.addEventListener("click", function(e){ if(e.target === V) close(); });
     S0.addEventListener("pointerdown", function(e){ if(e.target.closest("button")) return; ty = e.clientY; tx = e.clientX; t0 = Date.now(); held = setTimeout(function(){ V.classList.add("paused"); }, 250); });
     S0.addEventListener("pointermove", function(e){ if(ty == null) return; var dy = e.clientY - ty; if(dy > 0) S0.style.transform = "translateY(" + dy + "px)"; });
@@ -6711,7 +6767,7 @@ TRACKER DATA:
       var r = S0.getBoundingClientRect(); if(e.clientX - r.left < r.width * .3) show(cur - 1); else next(); });
     S0.addEventListener("click", function(e){ var b = e.target.closest("#pdChips [data-k]"); if(!b) return; e.stopPropagation(); var o = on().slice(), k = b.dataset.k, i = o.indexOf(k);
       if(i < 0 && o.length >= TOP){ var m = $("pdPickM"); if(m) m.textContent = "Max " + TOP + ". Tap one to remove it first."; return; }
-      if(i >= 0) o.splice(i, 1); else o.push(k); save(o); b.classList.toggle("on"); ls("pd-daily2", null); });
+      if(i >= 0) o.splice(i, 1); else o.push(k); save(o); b.classList.toggle("on"); ls("pd-daily3", null); });
     document.addEventListener("keydown", function(e){ if(V.hidden) return; if(e.key === "Escape") close(); if(e.key === "ArrowRight") next(); if(e.key === "ArrowLeft") show(cur - 1); });
     document.addEventListener("visibilitychange", function(){ if(!document.hidden){ getDaily(false); getTick(); } });
     setInterval(function(){ if(!document.hidden){ getDaily(false); getTick(); } }, 15*6e4);
