@@ -1107,6 +1107,7 @@ input[type="date"]::-webkit-date-and-time-value{min-width:0}
 input[type="date"]::-webkit-datetime-edit{min-width:0;overflow:hidden}
 section form,section .grid{max-width:100%;min-width:0}
 section .grid>div,#s-anotar .full{overflow:hidden;padding:4px;margin:-4px}
+#s-anotar:not(.open){display:none}#s-anotar h2{display:flex;justify-content:space-between;align-items:center}#anClose{all:unset;cursor:pointer;font-size:.85rem;font-weight:500;color:var(--muted)}
 section input,section select{max-width:100%;box-sizing:border-box}
 /* v275 polish */
 /* v310 stocks */
@@ -1697,7 +1698,8 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261110235956";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261111000321";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+
 
 
 
@@ -1884,7 +1886,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
   </div>
 
   <section id="s-anotar">
-    <h2>Log a transaction</h2>
+    <h2>Log a transaction<button type="button" id="anClose" onclick="this.closest('section').classList.remove('open')">Close</button></h2>
     <div class="seg" role="group" aria-label="Transaction type">
       <button type="button" id="tIn" aria-pressed="true">Deposit</button>
       <button type="button" id="tOut" aria-pressed="false">Withdrawal</button>
@@ -2515,7 +2517,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
   $("date").value = today();
   function syncSave(){ $("save").disabled = !db || parseAmt($("amount").value)<=0 || (type==="out" && !$("why").value) || (type!=="out" && $("source").value===REP && !$("rep").value); }
   function prefill(src, amt, date){
-    showTab("savings");
+    showTab("savings"); $("s-anotar").classList.add("open");
     setType("in");
     setTimeout(()=>{ try{ syncSplit(); }catch(e){} },0); setSource(src);
     $("amount").value = amt ? Math.round(amt).toLocaleString("en-US") : "";
@@ -2594,7 +2596,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
       if(type==="in" && src==="Rakeback de la liga"){ const weeks = ligaWeeks(ligaDebt()), x = weeks.find(y=>y.semana===semana); if(x && x.monto>0){ x.monto = Math.max(0, x.monto - amount); await saveLigaWeeks(weeks); } }
       weekTouched = false;
       const wasType = type;
-      $("amount").value=""; $("note").value=""; $("toSav").value=""; $("why").value=""; $("rep").value=""; $("date").value=today(); setType("in"); syncSplit();
+      $("amount").value=""; $("note").value=""; $("toSav").value=""; $("why").value=""; $("rep").value=""; $("date").value=today(); setType("in"); syncSplit(); $("s-anotar").classList.remove("open");
       const metaT = Number(config.meta)||1000000;
       const newTot = entries.reduce((t,e)=>t+(e.type==="out"?-e.amount:e.amount),0);
       sfx(wasType==="out" ? "out" : "in");
@@ -6351,7 +6353,7 @@ TRACKER DATA:
     setTimeout(function(){
       if(out){ go("tab-loans"); var dt = document.querySelector("#s-loans details.newloan"); if(dt) dt.open = true; set("lName", who); set("lAmt", a.toLocaleString("en-US")); setTimeout(function(){ var e = $("lName"); if(e) e.scrollIntoView({behavior:"smooth", block:"center"}); }, 80); if(window.mpToast) window.mpToast("Check it and tap Add loan", ""); }
       else if(tab === "tab-loans"){ go("tab-loans"); if(window.mpToast) window.mpToast("Tap ✓ next to " + (who || "their name"), "to log the payment"); }
-      else { go("tab-savings"); go("tIn"); set("amount", a.toLocaleString("en-US")); if(d.date) set("date", d.date); setTimeout(function(){ var e = $("amount"); if(e) e.scrollIntoView({behavior:"smooth", block:"center"}); }, 80); if(window.mpToast) window.mpToast("Pick who paid you and tap Log deposit", ""); }
+      else { go("tab-savings"); var an = $("s-anotar"); if(an) an.classList.add("open"); go("tIn"); set("amount", a.toLocaleString("en-US")); if(d.date) set("date", d.date); setTimeout(function(){ var e = $("amount"); if(e) e.scrollIntoView({behavior:"smooth", block:"center"}); }, 80); if(window.mpToast) window.mpToast("Pick who paid you and tap Log deposit", ""); }
     }, 350);
   };
   function texts(){
