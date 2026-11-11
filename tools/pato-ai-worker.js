@@ -121,11 +121,24 @@ async function games() {
       const teams = (c.competitors || []).slice().sort((x, y) => (x.homeAway === "away" ? -1 : 0) - (y.homeAway === "away" ? -1 : 0)).slice(0, 2).map(x => {
         const t = x.team || {}, a = x.athlete || {}, rec = ((x.records || [])[0] || {}).summary || "";
         return { n: t.shortDisplayName || t.displayName || a.shortName || a.displayName || "", logo: t.logo || (a.flag && a.flag.href) || "", rec, score: st === "in" ? x.score || "" : "" }; });
-      out.push({ league: name, name: e.name || e.shortName, short: e.shortName, t: Date.parse(e.date) || 0, tv: tv.slice(0, 2), note, live: st === "in", teams,
+      out.push({ path, id: e.id, league: name, name: e.name || e.shortName, short: e.shortName, t: Date.parse(e.date) || 0, tv: tv.slice(0, 2), note, live: st === "in", teams,
         score: w + (nat ? 2 : 0) + ranked + (/final|championship|playoff|semifinal|title|main event|derby|clasico|clásico/i.test(note + " " + e.name) ? 4 : 0) });
     });
   }).catch(() => null)));
-  return out.sort((a, b) => b.score - a.score).slice(0, 8);
+  const top = out.sort((a, b) => b.score - a.score).slice(0, 8);
+  await Promise.all(top.slice(0, 3).map(g => gameInfo(g)));   // injury report + starting lineups for the biggest games (Marco Nov 11)
+  return top;
+}
+async function gameInfo(g) {
+  try {
+    const f = await cached("https://site.api.espn.com/apis/site/v2/sports/" + g.path + "/summary?event=" + g.id, 1800, "json"), b = f.body || {};
+    const inj = (b.injuries || []).map(t => ({ team: (t.team || {}).shortDisplayName || (t.team || {}).displayName || "",
+      out: (t.injuries || []).filter(i => /out|doubtful|questionable|day-to-day/i.test(i.status || "")).slice(0, 4).map(i => ({ n: ((i.athlete || {}).shortName || (i.athlete || {}).displayName || ""), st: i.status })) })).filter(t => t.team && t.out.length);
+    const lu = (b.rosters || []).map(t => ({ team: (t.team || {}).shortDisplayName || (t.team || {}).displayName || "",
+      xi: (t.roster || []).filter(r => r.starter).slice(0, 11).map(r => ((r.athlete || {}).shortName || (r.athlete || {}).displayName || "")) })).filter(t => t.team && t.xi.length);
+    if (inj.length) g.inj = inj; if (lu.length) g.lineup = lu;
+  } catch (e) {}
+  delete g.path; delete g.id;
 }
 async function bundle(P) {
   const tick = (P.get("t") || "").toUpperCase().split(",").filter(x => /^[A-Z.]{1,6}$/.test(x)).slice(0, 5);
