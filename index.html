@@ -1796,7 +1796,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261111194000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261111194500";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -6650,10 +6650,10 @@ TRACKER DATA:
   var open = function(u){ if(u) window.open(u, "_blank", "noopener"); };
   var usd = function(n){ return "US$" + Math.abs(n).toLocaleString("en-US", {maximumFractionDigits: Math.abs(n) < 10 ? 2 : 0}); };
   var bold = function(t){ return esc(t).replace(/((?:US|RD)\$[\d,.]+[kKmM]?|[+−-]?\d+(?:\.\d+)?%)/g, "<b>$1</b>"); };
-  var on = function(){ return prefs && Array.isArray(prefs.on) ? prefs.on.filter(function(x){ return FIX.indexOf(x) < 0 && CATS.some(function(c){ return c[0] === x; }); }).slice(0, TOP) : DEF; };
+  var on = function(){ if(!(prefs && Array.isArray(prefs.on)) && PICS()) return ["business","tech","crypto","game","fashion"]; return prefs && Array.isArray(prefs.on) ? prefs.on.filter(function(x){ return FIX.indexOf(x) < 0 && CATS.some(function(c){ return c[0] === x; }); }).slice(0, TOP) : DEF; };
   var base = function(){ return (window.MP_AI_URL || "").replace(/\/$/, ""); };
   function q(){ var k = on().filter(function(x){ return x !== "big" && x !== "game"; }); if(k.indexOf("rd") < 0) k.unshift("rd");
-    return "k=" + k.join(",") + (pos.length ? "&t=" + encodeURIComponent(pos.slice(0,5).map(function(p){ return p.t; }).join(",")) : "") + (on().indexOf("game") < 0 ? "&g=0" : ""); }
+    return "k=" + k.join(",") + (pos.length ? "&t=" + encodeURIComponent(pos.slice(0,5).map(function(p){ return p.t; }).join(",")) : "") + (on().indexOf("game") < 0 ? "&g=0" : "") + (PICS() ? "&busy=1" : ""); }
   var sig = function(){ return q(); };
   function facts(){
     var tu = 0, tb = 0;

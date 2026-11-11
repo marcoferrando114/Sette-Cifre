@@ -73,10 +73,10 @@ function clean(items, hours) {
 const pick = items => clean(items, 14);   // Marco: anything over 14h drops
 const CO = { GOOGL: "google|alphabet", GOOG: "google|alphabet", NVDA: "nvidia", META: "meta|facebook|instagram|whatsapp", AVGO: "broadcom", AAPL: "apple|iphone", MSFT: "microsoft", AMZN: "amazon", TSLA: "tesla|musk", IBKR: "interactive brokers", AMD: "\\bamd\\b", TSM: "tsmc", NFLX: "netflix", VUAA: "s&p 500" };
 // Importance: trusted outlets covering it x10 + freshness (0-14) + 25 if it names your stocks. 2nd story only if 5+ outlets or about you.
-function top2(items, tick) {
+function top2(items, tick, busy) {
   const now = Date.now(), me = new RegExp("\\b(" + tick.map(t => t.toLowerCase() + (CO[t] ? "|" + CO[t] : "")).join("|") + ")", "i");
   const a = pick(items).map(i => { const mine = tick.length ? me.test(i.h) : false; return Object.assign({}, i, { mine, sc: (i.n || 1) * 10 + Math.max(0, 14 - (now - i.t) / 36e5) + (mine ? 25 : 0) }); }).sort((x, y) => y.sc - x.sc);
-  return a.slice(0, 1).concat(a.slice(1).filter(i => i.n >= 5 || i.mine).slice(0, 1));
+  return a.slice(0, 1).concat(a.slice(1).filter(i => busy || i.n >= 5 || i.mine).slice(0, 1));
 }
 const drDay = () => new Date(Date.now() - 4 * 3600e3).toISOString().slice(0, 10), edDay = () => new Date(Date.now() - 11 * 3600e3).toISOString().slice(0, 10); // edition starts 7am DR
 async function games() {
@@ -101,7 +101,7 @@ async function bundle(P) {
   const want = (P.get("k") || "rd,business,tech").split(",").filter(k => CATS[k]).slice(0, 8);
   const [top, world, ...rest] = await Promise.all([feed(sec("BUSINESS"), 7200), feed(sec("WORLD"), 3600),
     ...want.map(k => feed(CATS[k], 7200)), ...tick.map(t => feed(srch(t + " stock"), 10800)), P.get("g") === "0" ? Promise.resolve([]) : games()]);
-  const cats = {}; want.forEach((k, i) => { const it = top2(rest[i].items || [], tick); if (it.length) cats[k] = it; });
+  const cats = {}; want.forEach((k, i) => { const it = top2(rest[i].items || [], tick, P.get("busy") === "1"); if (it.length) cats[k] = it; });
   const stocks = {}; tick.forEach((t, i) => { const it = pick(rest[want.length + i].items || [])[0]; if (it) stocks[t] = it; });
   const WL = clean(world.items || [], 14), WH = WL.filter(i => i.n >= 3 && HUGE.test(i.h))[0];
   const W = WH ? Object.assign({}, WH, { huge: true }) : (WL.slice().sort((x, y) => (y.n || 0) - (x.n || 0))[0] || null);   // Big news every day; huge = red
@@ -173,7 +173,7 @@ async function bingImg(h, log) {
   const items = [...x.matchAll(/<item>([\s\S]*?)<\/item>/g)].map(m => { const g = t => { const a = m[1].match(new RegExp("<" + t + "[^>]*>([\\s\\S]*?)</" + t + ">", "i")); return a ? dec(a[1]) : ""; }; return { t: g("title"), l: g("link"), i: g("News:Image") }; });
   log.push("bing " + r.status + " " + (r.headers.get("content-type") || "").slice(0, 20) + " " + x.length + " items:" + items.length + " " + (items.length ? "" : x.slice(0, 60).replace(/\s+/g, " ")));
   const want = new Set(words(h)), score = it => words(it.t).filter(v => want.has(v)).length / Math.max(want.size, 1);
-  const good = items.map(it => Object.assign(it, { sc: score(it) })).filter(it => it.sc >= 0.5).sort((x, y) => y.sc - x.sc);
+  const good = items.map(it => Object.assign(it, { sc: score(it) })).filter(it => it.sc >= 0.5 || (it.sc >= 0.35 && it.sc * want.size >= 3)).sort((x, y) => y.sc - x.sc);
   const th = good.find(it => it.i);   // Bing's own thumbnail for the story, if it has one
   if (th) { const u = th.i.replace(/^http:/, "https:"); if (!BADIMG.test(u)) return u + (u.includes("?") ? "&" : "?") + "w=800&h=450&c=7"; }
   for (const it of good.slice(0, 3)) {   // else the outlet's own preview photo, trying up to 3 outlets covering it
@@ -188,12 +188,12 @@ async function bingImg(h, log) {
   return "";
 }
 async function storyImg(u, h, debug) {
-  const key = new Request("https://pato-img.cache/v4?u=" + encodeURIComponent(u)), hit = debug ? null : await caches.default.match(key);
+  const key = new Request("https://pato-img.cache/v5?u=" + encodeURIComponent(u)), hit = debug ? null : await caches.default.match(key);
   if (hit) return hit.json();
   const log = []; let img = "", src = "";
   if (h) { try { img = await bingImg(h, log); } catch (e) { log.push("bing err " + e.message); } }
   const out = { img };
-  await caches.default.put(key, new Response(JSON.stringify(out), { headers: { "content-type": "application/json", "cache-control": "public, max-age=" + (img ? 86400 : 3600) } }));
+  await caches.default.put(key, new Response(JSON.stringify(out), { headers: { "content-type": "application/json", "cache-control": "public, max-age=" + (img ? 86400 : 900) } }));
   return debug ? { img, src, log } : out;
 }
 
