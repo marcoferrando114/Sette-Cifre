@@ -147,45 +147,34 @@ async function take(env, uid, body, b) {
   return out;
 }
 
-// Story photos (Nov 11): Google News link -> publisher article -> its og:image (the WhatsApp preview photo); backup: Bing News thumbnail for the headline. Cached, free.
-const BUA = { "user-agent": "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1", "accept-language": "en-US,en;q=0.9,es;q=0.8", "cookie": "CONSENT=YES+cb; SOCS=CAI" };
-async function realUrl(u, log) {
-  const m = u.match(/^https:\/\/news\.google\.com\/(?:rss\/)?(?:articles|read)\/([^?/]+)/); if (!m) return u;
-  const id = m[1]; let sg = "", ts = "";
-  for (const b of ["https://news.google.com/articles/", "https://news.google.com/rss/articles/"]) {
-    const r = await fetch(b + id + "?hl=en-US&gl=US&ceid=US:en", { headers: BUA, redirect: "follow" }), pg = await r.text();
-    log.push("gpage " + r.status + " " + pg.length + " " + String(r.url || "").slice(0, 50));
-    if (r.url && !/(^|\.)google\.com$/.test(new URL(r.url).hostname)) return r.url;   // went straight to the outlet
-    sg = (pg.match(/data-n-a-sg="([^"]+)"/) || [])[1]; ts = (pg.match(/data-n-a-ts="([^"]+)"/) || [])[1]; if (sg && ts) break;
-  }
-  if (!sg || !ts) { log.push("no sig"); return ""; }
-  const inner = JSON.stringify(["garturlreq", [["X", "X", ["X", "X"], null, null, 1, 1, "US:en", null, 1, null, null, null, null, null, 0, 1], "X", "X", 1, [1, 1, 1], 1, 1, null, 0, 0, null, 0], id, Number(ts), sg]);
-  const r = await fetch("https://news.google.com/_/DotsSplashUi/data/batchexecute", { method: "POST", headers: { ...BUA, "content-type": "application/x-www-form-urlencoded;charset=UTF-8" }, body: "f.req=" + encodeURIComponent(JSON.stringify([[["Fbv4je", inner, null, "generic"]]])) }), t = await r.text();
-  log.push("batch " + r.status + " " + t.length);
-  try { const out = JSON.parse(JSON.parse(t.split("\n\n")[1])[0][2])[1]; return /^https?:\/\//.test(out) ? out : ""; } catch (e) { log.push("batch parse: " + t.slice(0, 80)); return ""; }
-}
+// Story photos (Nov 11): Bing News RSS finds the same story -> Bing's thumbnail, else the outlet's own preview photo (og:image).
+// Honest user agent only; if an outlet refuses, try another outlet covering the story, else the page stays text-only.
+const PUA = { "user-agent": "PatoDaily/1.0 (news link preview; +https://marcoferrando114.github.io/Sette-Cifre/)", "accept-language": "en-US,en;q=0.9,es;q=0.8" };
 const BADIMG = /logo|default|placeholder|blank|favicon|sprite|\.svg(\?|$)|google\.com\/images|gstatic/i;
 async function ogImg(src, log) {
-  const r = await fetch(src, { headers: BUA, redirect: "follow" }), html = (await r.text()).slice(0, 400000);
+  const r = await fetch(src, { headers: { ...PUA, accept: "text/html,*/*" }, redirect: "follow" });
+  if (!r.ok) { log.push("article " + r.status + " (outlet refused)"); return ""; }
+  const html = (await r.text()).slice(0, 400000);
   const meta = n => { const a = html.match(new RegExp('<meta[^>]+(?:property|name)=["\']' + n + '["\'][^>]*content=["\']([^"\']+)', "i")) || html.match(new RegExp('<meta[^>]+content=["\']([^"\']+)["\'][^>]*(?:property|name)=["\']' + n + '["\']', "i")); return a ? dec(a[1]) : ""; };
   let img = meta("og:image:secure_url") || meta("og:image") || meta("twitter:image") || meta("twitter:image:src");
   if (img) img = new URL(img, r.url || src).href.replace(/^http:/, "https:");
-  log.push("article " + r.status + " " + html.length + " img:" + (img ? img.slice(0, 60) : "none"));
-  return BADIMG.test(img) ? "" : img;
+  log.push("article 200 img:" + (img ? img.slice(0, 60) : "none"));
+  return img && !BADIMG.test(img) ? img : "";
 }
 // Bing News: find the same story (best headline match), then use the outlet's own photo, else Bing's thumbnail.
 const words = t => String(t).toLowerCase().replace(/[^a-z0-9áéíóúñü ]/g, " ").split(/\s+/).filter(w => w.length > 3);
 async function bingImg(h, log) {
-  const r = await fetch("https://www.bing.com/news/search?q=" + encodeURIComponent(h.slice(0, 120)) + "&format=rss&setlang=en", { headers: { "user-agent": "Mozilla/5.0 (compatible; PatoDaily/1.0; RSS reader)", "accept": "application/rss+xml, application/xml;q=0.9, */*;q=0.5" } }), x = await r.text();
+  const r = await fetch("https://www.bing.com/news/search?q=" + encodeURIComponent(h.slice(0, 120)) + "&format=rss&setlang=en", { headers: { ...PUA, accept: "application/rss+xml, application/xml;q=0.9, */*;q=0.5" } }), x = await r.text();
   const items = [...x.matchAll(/<item>([\s\S]*?)<\/item>/g)].map(m => { const g = t => { const a = m[1].match(new RegExp("<" + t + "[^>]*>([\\s\\S]*?)</" + t + ">", "i")); return a ? dec(a[1]) : ""; }; return { t: g("title"), l: g("link"), i: g("News:Image") }; });
   log.push("bing " + r.status + " " + (r.headers.get("content-type") || "").slice(0, 20) + " " + x.length + " items:" + items.length + " " + (items.length ? "" : x.slice(0, 60).replace(/\s+/g, " ")));
-  const want = new Set(words(h)); let best = null, bs = 0;
-  items.forEach(it => { const w = words(it.t), hit = w.filter(v => want.has(v)).length / Math.max(want.size, 1); if (hit > bs) { bs = hit; best = it; } });
-  if (best && bs >= 0.5) {
-    const real = (() => { try { return new URL(best.l).searchParams.get("url") || best.l; } catch (e) { return best.l; } })();
-    log.push("match " + bs.toFixed(2) + " " + real.slice(0, 60));
+  const want = new Set(words(h)), score = it => words(it.t).filter(v => want.has(v)).length / Math.max(want.size, 1);
+  const good = items.map(it => Object.assign(it, { sc: score(it) })).filter(it => it.sc >= 0.5).sort((x, y) => y.sc - x.sc);
+  const th = good.find(it => it.i);   // Bing's own thumbnail for the story, if it has one
+  if (th) { const u = th.i.replace(/^http:/, "https:"); if (!BADIMG.test(u)) return u + (u.includes("?") ? "&" : "?") + "w=800&h=450&c=7"; }
+  for (const it of good.slice(0, 3)) {   // else the outlet's own preview photo, trying up to 3 outlets covering it
+    const real = (() => { try { return new URL(it.l).searchParams.get("url") || it.l; } catch (e) { return it.l; } })();
+    log.push("match " + it.sc.toFixed(2) + " " + real.slice(0, 60));
     try { const og = real && !/bing\.com/.test(real) ? await ogImg(real, log) : ""; if (og) return og; } catch (e) { log.push("og err " + e.message); }
-    if (best.i) { const u = best.i.replace(/^http:/, "https:"); if (!BADIMG.test(u)) return u + (u.includes("?") ? "&" : "?") + "w=800&h=450&c=7"; }
   }
   if (!items.length) {   // got the web page instead of RSS: use its first news thumbnail
     const m = x.match(/\/th\?id=(OVFT\.[A-Za-z0-9_\-.]+)/); log.push("html thumb " + (m ? "yes" : "no"));
@@ -194,11 +183,10 @@ async function bingImg(h, log) {
   return "";
 }
 async function storyImg(u, h, debug) {
-  const key = new Request("https://pato-img.cache/v3?u=" + encodeURIComponent(u)), hit = debug ? null : await caches.default.match(key);
+  const key = new Request("https://pato-img.cache/v4?u=" + encodeURIComponent(u)), hit = debug ? null : await caches.default.match(key);
   if (hit) return hit.json();
   const log = []; let img = "", src = "";
-  if (h) { try { img = await bingImg(h, log); } catch (e) { log.push("bing err " + e.message); } }   // Bing first: Google blocks Cloudflare (429)
-  if (!img) { try { src = await realUrl(u, log); if (src) img = await ogImg(src, log); } catch (e) { log.push("google err " + e.message); } }
+  if (h) { try { img = await bingImg(h, log); } catch (e) { log.push("bing err " + e.message); } }
   const out = { img };
   await caches.default.put(key, new Response(JSON.stringify(out), { headers: { "content-type": "application/json", "cache-control": "public, max-age=" + (img ? 86400 : 3600) } }));
   return debug ? { img, src, log } : out;
