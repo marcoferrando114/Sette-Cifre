@@ -1511,6 +1511,22 @@ html.sg-on #sfOffer,html.sg-on .tabs{display:none!important}
 #sgSetup .sg-chips>.on{border-color:var(--mango);background:color-mix(in srgb,var(--mango) 18%,transparent)}
 #sgSetup .sg-chips>.fixed{cursor:default;opacity:.85}
 html.mp-guest #pkSeg [data-v="league"],html.mp-guest:not(.tr-casino) #pkSeg [data-v="ar"],html.mp-guest:not(.tr-poker) #pkSeg [data-v="ot"],html.mp-guest:not(.tr-bets) #pkSeg [data-v="sb"]{display:none!important}
+.pd-cover{position:fixed;inset:0;z-index:120;background:#0E1A14;color:#fff;display:flex;flex-direction:column;font-family:-apple-system,system-ui,sans-serif;opacity:0;transform:scale(1.03);transition:opacity .35s,transform .35s}
+.pd-cover.on{opacity:1;transform:none}
+.pd-cover .pc-ph{position:relative;flex:0 0 52%;background:linear-gradient(160deg,#1F4A35,#0E1A14 70%) center/cover}
+.pd-cover .pc-ph::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(14,26,20,.6) 0%,rgba(14,26,20,0) 28%,rgba(14,26,20,.15) 60%,#0E1A14 100%)}
+.pd-cover .pc-top{position:absolute;top:calc(env(safe-area-inset-top,0px) + 16px);left:20px;right:20px;z-index:2;display:flex;align-items:center;gap:10px}
+.pd-cover .pc-top img{width:34px;height:34px;border-radius:50%}.pd-cover .pc-top b{font-size:1.05rem}.pd-cover .pc-top small{display:block;color:#E8C06A;font-size:.78rem;font-weight:600}
+.pd-cover .pc-src{position:absolute;right:14px;bottom:64px;z-index:2;font-size:.7rem;background:rgba(0,0,0,.5);padding:3px 8px;border-radius:999px;color:#ddd}
+.pd-cover .pc-bd{padding:0 22px;margin-top:-56px;position:relative;z-index:2}
+.pd-cover .pc-k{color:#E8C06A;font-size:.74rem;font-weight:800;letter-spacing:.14em}
+.pd-cover h2{font-size:1.7rem;line-height:1.15;margin:8px 0 14px;font-weight:800}
+.pd-cover .pc-tk{display:flex;gap:10px;align-items:flex-start;background:rgba(232,192,106,.1);border:1px solid rgba(232,192,106,.25);border-radius:14px;padding:12px;font-size:.95rem;line-height:1.4;color:#E4ECE7}
+.pd-cover .pc-tk img{width:26px;height:26px;border-radius:50%;flex:none}.pd-cover .pc-tk b{color:#E8C06A}
+.pd-cover .pc-in{margin-top:14px;color:#9FB3A7;font-size:.85rem}
+.pd-cover .pc-cta{margin:auto 22px calc(env(safe-area-inset-bottom,0px) + 28px);display:flex;gap:10px;padding-top:16px}
+.pd-cover .pc-cta button{all:unset;cursor:pointer;flex:1;text-align:center;padding:14px;border-radius:14px;font-weight:800}
+.pd-cover .pc-cta .go{background:#E8C06A;color:#13241B}.pd-cover .pc-cta .no{flex:.5;background:rgba(255,255,255,.08);color:#CFE0D6}
 #pdPeek{position:fixed;right:0;bottom:calc(96px + env(safe-area-inset-bottom,0px));width:92px;height:96px;overflow:hidden;z-index:40;pointer-events:none}
 #pdPeek .pd-fab{position:absolute;left:auto;top:auto;right:-4px;bottom:10px;pointer-events:auto;touch-action:manipulation;transform:translateX(30px) rotate(-10deg);transition:transform .6s cubic-bezier(.34,1.56,.64,1),opacity .3s}
 #pdPeek.out .pd-fab{transform:translateX(0) rotate(-4deg);animation:pdBob .9s ease-in-out .6s 2}
@@ -1810,7 +1826,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261111230500";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261111231500";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -6802,7 +6818,7 @@ TRACKER DATA:
     S = stories(); var u = unseen(), first = !(prefs && prefs.picked);
     $("pdFab").hidden = !S.length; $("pdN").textContent = u.length || ""; $("pdN").hidden = !u.length;
     var pw = $("pdPeek"); if(pw && !pw.classList.contains("out")) pw.className = u.length ? "" : "idle";
-    if(S.length && u.length && !peeked){ peeked = 1; setTimeout(peek, 1500); }
+    if(S.length && u.length && daily && !peeked){ peeked = 1; if(!cover()) setTimeout(peek, 1500); }
     $("pdFab").classList.toggle("big", u.some(function(x){ return x.cls === "big"; }));
   }
   // Story photos: the outlet's own preview image via the worker (/img), cached for the day; no photo = text page.
@@ -6850,6 +6866,17 @@ TRACKER DATA:
     var h = String(x.h).replace(/\*\*/g, ""); if(h.length > 96) h = h.slice(0, 93).replace(/\s+\S*$/, "") + "…";
     b.innerHTML = "<b>" + esc(x.k) + "</b>" + esc(h); b.dataset.i = x.i; w.className = "out"; b.className = "on" + (x.big ? " big" : "");
     clearTimeout(pt); pt = setTimeout(hidePeek, 6000); }
+  // Morning cover (Marco Nov 11): first open of each edition = a front page; "Read" opens the stories, "Later" lets the duck take over
+  function cover(){ if(ls("pd-cover") === day() || !daily || !$("pdV").hidden) return false; var big = (tick && tick.big) || daily.big; if(!big) return false;
+    ls("pd-cover", day()); var tk = daily.take || fallback(), line = (tk.you && tk.you.text) || (tk.happened && tk.happened.text) || "";
+    var also = S.filter(function(x){ return x.nav && !/Pato|Top story/.test(x.nav); }).map(function(x){ return x.nav; }).slice(0, 4).join(" · ");
+    var im = PICS() && (IM.m[big.u] || big.img), c = document.createElement("div"); c.id = "pdCover"; c.className = "pd-cover";
+    c.innerHTML = '<div class="pc-ph"' + (im ? ' style="background-image:url(\'' + esc(im) + '\')"' : '') + '><div class="pc-top"><img src="icon-192.png?v=7" alt=""><div><b>Pato Daily</b><small>' + esc(drd().toLocaleDateString("en-US", {timeZone: "UTC", weekday: "long", month: "long", day: "numeric"})) + ' · 7am edition</small></div></div>' + (im && big.s ? '<span class="pc-src">' + esc(big.s) + '</span>' : '') + '</div>' +
+      '<div class="pc-bd"><div class="pc-k">🌎 TOP STORY</div><h2>' + esc(big.h) + '</h2>' + (line ? '<div class="pc-tk"><img src="icon-192.png?v=7" alt=""><div>' + bold(line) + '</div></div>' : '') + (also ? '<div class="pc-in">Also today: ' + esc(also) + '</div>' : '') + '</div>' +
+      '<div class="pc-cta"><button type="button" class="go">Read today\'s edition</button><button type="button" class="no">Later</button></div>';
+    document.body.appendChild(c); document.documentElement.style.overflow = "hidden"; requestAnimationFrame(function(){ c.classList.add("on"); });
+    var done = function(read){ c.classList.remove("on"); document.documentElement.style.overflow = ""; setTimeout(function(){ c.remove(); }, 350); if(read) openV(0); else setTimeout(peek, 1200); };
+    c.querySelector(".go").onclick = function(){ done(1); }; c.querySelector(".no").onclick = function(){ done(0); }; return true; }
   function wire(){
     // Peeking duck = the ONE way in (Marco Nov 11): tucked at the right edge, peeks out with a headline, tap = open at that story
     var fab = $("pdFab"), pw = document.createElement("div"), bub = document.createElement("div"); pw.id = "pdPeek"; bub.id = "pdBub";
