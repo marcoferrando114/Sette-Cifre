@@ -1698,7 +1698,8 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261111000321";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261111000719";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+
 
 
 
@@ -6183,8 +6184,8 @@ TRACKER DATA:
 
   // tap: a small sheet with "Take a photo" and a line to type it (Marco, Nov 9: "500 valet tip")
   function chooser(){
-    open('<h3>Log something</h3><p class="sub">A photo of a receipt, bet slip, transfer or investment, or just type it.</p><div class="bt"><button type="button" class="primary" id="snapPhoto">Take a photo</button></div>' +
-      '<div class="snap-type"><input id="snapText" placeholder="Or type it: 500 valet tip" autocomplete="off" enterkeyhint="send"><button type="button" class="secondary" id="snapSend" aria-label="Log it">Log</button></div>' +
+    open('<h3>Add to Pato</h3><p class="sub">Snap a receipt, transfer, investment or bet.</p><div class="bt"><button type="button" class="primary" id="snapPhoto">Take a photo</button></div>' +
+      '<div class="snap-type"><input id="snapText" placeholder="Describe it, like 500 on dinner" autocomplete="off" enterkeyhint="send"><button type="button" class="secondary" id="snapSend" aria-label="Log it">Log</button></div>' +
       '<button type="button" class="snap-x" id="snapCancel">Cancel</button>');
     $("snapPhoto").onclick = function(){ close(); $("snapFile").click(); };
     var send = function(){ var t = $("snapText").value.trim(); if(t.length < 2){ $("snapText").focus(); return; } close(); read({text:t}); };
