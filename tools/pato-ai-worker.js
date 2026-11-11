@@ -173,17 +173,32 @@ async function ogImg(src, log) {
   log.push("article " + r.status + " " + html.length + " img:" + (img ? img.slice(0, 60) : "none"));
   return BADIMG.test(img) ? "" : img;
 }
+// Bing News: find the same story (best headline match), then use the outlet's own photo, else Bing's thumbnail.
+const words = t => String(t).toLowerCase().replace(/[^a-z0-9áéíóúñü ]/g, " ").split(/\s+/).filter(w => w.length > 3);
 async function bingImg(h, log) {
-  const r = await fetch("https://www.bing.com/news/search?q=" + encodeURIComponent(h.slice(0, 120)) + "&format=rss", { headers: BUA }), x = await r.text();
-  const m = x.match(/<News:Image>([^<]+)<\/News:Image>/i); log.push("bing " + r.status + " " + x.length + " " + (m ? "img" : "none"));
-  if (!m) return ""; const u = dec(m[1]).replace(/^http:/, "https:"); return BADIMG.test(u) ? "" : u + (u.includes("?") ? "&" : "?") + "w=800&h=450&c=7";
+  const r = await fetch("https://www.bing.com/news/search?q=" + encodeURIComponent(h.slice(0, 120)) + "&format=rss&setlang=en", { headers: { "user-agent": "Mozilla/5.0 (compatible; PatoDaily/1.0; RSS reader)", "accept": "application/rss+xml, application/xml;q=0.9, */*;q=0.5" } }), x = await r.text();
+  const items = [...x.matchAll(/<item>([\s\S]*?)<\/item>/g)].map(m => { const g = t => { const a = m[1].match(new RegExp("<" + t + "[^>]*>([\\s\\S]*?)</" + t + ">", "i")); return a ? dec(a[1]) : ""; }; return { t: g("title"), l: g("link"), i: g("News:Image") }; });
+  log.push("bing " + r.status + " " + (r.headers.get("content-type") || "").slice(0, 20) + " " + x.length + " items:" + items.length + " " + (items.length ? "" : x.slice(0, 60).replace(/\s+/g, " ")));
+  const want = new Set(words(h)); let best = null, bs = 0;
+  items.forEach(it => { const w = words(it.t), hit = w.filter(v => want.has(v)).length / Math.max(want.size, 1); if (hit > bs) { bs = hit; best = it; } });
+  if (best && bs >= 0.5) {
+    const real = (() => { try { return new URL(best.l).searchParams.get("url") || best.l; } catch (e) { return best.l; } })();
+    log.push("match " + bs.toFixed(2) + " " + real.slice(0, 60));
+    try { const og = real && !/bing\.com/.test(real) ? await ogImg(real, log) : ""; if (og) return og; } catch (e) { log.push("og err " + e.message); }
+    if (best.i) { const u = best.i.replace(/^http:/, "https:"); if (!BADIMG.test(u)) return u + (u.includes("?") ? "&" : "?") + "w=800&h=450&c=7"; }
+  }
+  if (!items.length) {   // got the web page instead of RSS: use its first news thumbnail
+    const m = x.match(/\/th\?id=(OVFT\.[A-Za-z0-9_\-.]+)/); log.push("html thumb " + (m ? "yes" : "no"));
+    if (m) return "https://www.bing.com/th?id=" + m[1] + "&w=800&h=450&c=7";
+  }
+  return "";
 }
 async function storyImg(u, h, debug) {
-  const key = new Request("https://pato-img.cache/v2?u=" + encodeURIComponent(u)), hit = debug ? null : await caches.default.match(key);
+  const key = new Request("https://pato-img.cache/v3?u=" + encodeURIComponent(u)), hit = debug ? null : await caches.default.match(key);
   if (hit) return hit.json();
   const log = []; let img = "", src = "";
-  try { src = await realUrl(u, log); if (src) img = await ogImg(src, log); } catch (e) { log.push("google err " + e.message); }
-  if (!img && h) { try { img = await bingImg(h, log); } catch (e) { log.push("bing err " + e.message); } }
+  if (h) { try { img = await bingImg(h, log); } catch (e) { log.push("bing err " + e.message); } }   // Bing first: Google blocks Cloudflare (429)
+  if (!img) { try { src = await realUrl(u, log); if (src) img = await ogImg(src, log); } catch (e) { log.push("google err " + e.message); } }
   const out = { img };
   await caches.default.put(key, new Response(JSON.stringify(out), { headers: { "content-type": "application/json", "cache-control": "public, max-age=" + (img ? 86400 : 3600) } }));
   return debug ? { img, src, log } : out;
