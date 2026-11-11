@@ -1793,7 +1793,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261111172751";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261111172935";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -6617,34 +6617,38 @@ TRACKER DATA:
   var FIX = ["big","rd"], DEF = ["business","tech","game"], TOP = 5, MAX = 9;   // Big news + Local always on; follow up to 5 topics
   // "This or that" (Nov 11): one two-way money question a day, same for everyone (so "% of Pato users" works). Evergreen facts only, no live prices.
   var QZ = [
-    {id:"t01", q:"A stock drops 50%. To get back to even, does it need to rise 50% or 100%?", o:["50%","100%"], a:1, w:"After a 50% drop, US$100 is US$50. To get back to US$100 it has to double. Losses hurt more than gains help."},
     {id:"t02", q:"Over the long run: index fund or top hedge funds?", o:["Index fund","Hedge funds"], a:0, w:"In 2008 Warren Buffett bet US$1 million that an S&P 500 index fund would beat a group of hedge funds over 10 years. The index fund won by a lot, mostly because of fees."},
     {id:"t03", q:"Over many decades, which grew more: US stocks or gold?", o:["US stocks","Gold"], a:0, w:"Stocks are pieces of companies that earn profits and pay dividends. Gold doesn't produce anything, so over long periods stocks have grown much more."},
-    {id:"t04", q:"Start investing at 25 or at 35 with the same monthly amount. Does the early starter end with 10% more or 2× more at 65?", o:["10% more","2× more"], a:1, w:"At 8% a year, 10 extra years of compounding more than doubles the result. Time in the market beats amount."},
-    {id:"t05", q:"A loan at 2% a month: closer to 2% a year or 27% a year?", o:["2% a year","27% a year"], a:1, w:"2% × 12 months is 24%, and with interest on interest it's about 27%. Monthly rates look small on purpose."},
     {id:"t06", q:"Roulette red or black: true 50/50, or does the casino have the edge?", o:["True 50/50","Casino edge"], a:1, w:"The 0 and 00 slots make it 18 wins out of 38. The casino keeps about 5.3% of every bet over time."},
-    {id:"t07", q:"Betting at -110 odds: do you break even winning 50% or 52.4% of your bets?", o:["50%","52.4%"], a:1, w:"You risk 110 to win 100, so you need 52.4% just to break even. That extra 2.4% is the sportsbook's cut."},
     {id:"t08", q:"Day traders who kept at it for 300+ days: did most make money or lose money?", o:["Made money","Lost money"], a:1, w:"A big study in Brazil found about 97% of them lost money, and under 1% earned more than minimum wage."},
     {id:"t09", q:"Owning 1 stock or an index fund of 500 stocks: which is riskier?", o:["1 stock","500-stock fund"], a:0, w:"One company can crash and take your money with it. With 500, one bad company barely moves the total."},
-    {id:"t10", q:"A stock falls 10% one day and rises 10% the next. Back to even or down 1%?", o:["Back to even","Down 1%"], a:1, w:"US$100 → US$90 → US$99. The 10% gain is on a smaller amount, so you're down 1%."},
-    {id:"t11", q:"Savings earn 2% and inflation is 4%. Is your money gaining or losing buying power?", o:["Gaining","Losing"], a:1, w:"You have more pesos, but prices rose faster. You can buy about 2% less than a year ago."},
     {id:"t12", q:"Bitcoin supply: capped at 21 million, or no limit?", o:["21 million cap","No limit"], a:0, w:"Bitcoin's code caps supply at 21 million coins. That built-in scarcity is a big reason people compare it to gold."},
-    {id:"t13", q:"A 10-for-1 stock split: does your investment get bigger or stay the same?", o:["Bigger","Same"], a:1, w:"1 share at US$1,000 becomes 10 shares at US$100. Same pie, more slices."},
-    {id:"t14", q:"A 1% yearly fee for 30 years: does it cost you about 1% or about 25% of the final value?", o:["About 1%","About 25%"], a:1, w:"Fees compound too. 0.99 to the 30th power is about 0.74, so roughly a quarter goes to fees."},
-    {id:"t15", q:"RD$200 a day on snacks and coffee: about RD$24,000 or RD$73,000 a year?", o:["RD$24,000","RD$73,000"], a:1, w:"200 × 365 = RD$73,000. Small daily spends are the easiest to miss."},
     {id:"t16", q:"Blackjack with perfect basic strategy: is the house edge under 1% or about 5%?", o:["Under 1%","About 5%"], a:0, w:"Basic strategy brings it to around 0.5%, one of the best odds in a casino. Most players don't play perfectly, so they lose more."},
     {id:"t17", q:"S&P 500 long-run average: about 10% a year or about 25% a year?", o:["About 10%","About 25%"], a:0, w:"About 10% a year with dividends, but with big swings. Some years are -30%, others +30%."},
     {id:"t18", q:"Central bank raises rates: do loan rates go up or down?", o:["Up","Down"], a:0, w:"Banks borrow at higher rates, so loans, cards and mortgages get pricier. Savings rates usually rise too."},
     {id:"t19", q:"Big credit card balance: paying the minimum clears it in months or years?", o:["Months","Years"], a:1, w:"Card rates are often 50%+ a year in the DR. Minimum payments mostly cover interest and barely touch the balance."},
-    {id:"t20", q:"RD$10,000 at 10% for 3 years with interest on interest: RD$13,000 or RD$13,310?", o:["RD$13,000","RD$13,310"], a:1, w:"11,000 → 12,100 → 13,310. That extra 310 is compounding, and it grows faster every year."},
     {id:"t21", q:"Investing the same amount every month, or waiting for the perfect dip?", o:["Every month","Wait for the dip"], a:0, w:"It's called dollar-cost averaging. People who wait for dips often miss gains, because nobody times the bottom."},
     {id:"t22", q:"The 2008 crisis: started with tech stocks or with bad US home loans?", o:["Tech stocks","Home loans"], a:1, w:"Banks gave mortgages to people who couldn't pay, then bundled and sold them worldwide. When homeowners defaulted, banks took huge losses."},
-    {id:"t23", q:"At 8% a year, does money double in about 9 years or 15 years?", o:["9 years","15 years"], a:0, w:"Rule of 72: divide 72 by the yearly return. 72 ÷ 8 = 9 years."},
     {id:"t24", q:"A 'bear market' means prices fell 5% or 20% from the top?", o:["5%","20%"], a:1, w:"20%+ from the peak is a bear market. A 10% drop is called a correction."},
     {id:"t25", q:"Emergency fund: 1 month of expenses or 3 to 6 months?", o:["1 month","3 to 6 months"], a:1, w:"3 to 6 months covers a job loss or surprise bill without debt or selling investments at a bad time."},
     {id:"t26", q:"First Bitcoin block: mined in 2009 or 2013?", o:["2009","2013"], a:0, w:"January 2009, by the anonymous Satoshi Nakamoto, a few months after the 2008 crisis."},
-    {id:"t27", q:"P/E of 20: you pay US$20 per US$1 of yearly profit, or the stock is up 20%?", o:["US$20 per US$1 of profit","Up 20%"], a:0, w:"Price divided by earnings. A higher P/E means investors expect more growth, or the stock is pricier."},
     {id:"t28", q:"Reinvesting dividends: a small part or a big part of long-run stock returns?", o:["Small part","Big part"], a:1, w:"Over decades, reinvested dividends make up a large share of total stock returns, because they buy more shares that pay more dividends."},
+    {id:"t29", q:"Which company is older: Coca-Cola or Ford?", o:["Coca-Cola","Ford"], a:0, w:"Coca-Cola was created in 1886, Ford in 1903. Coke has been selling the same core product for almost 140 years."},
+    {id:"t30", q:"Nike's original name: Blue Ribbon Sports or Air Sports?", o:["Blue Ribbon Sports","Air Sports"], a:0, w:"Phil Knight started by reselling Japanese running shoes as Blue Ribbon Sports in 1964. It became Nike in 1971."},
+    {id:"t31", q:"Amazon's very first product: books or electronics?", o:["Books","Electronics"], a:0, w:"Jeff Bezos started Amazon in 1994 as an online bookstore from his garage. Books were easy to ship and there were millions of titles."},
+    {id:"t32", q:"Netflix started with streaming or DVDs by mail?", o:["Streaming","DVDs by mail"], a:1, w:"Netflix mailed DVDs in red envelopes for about 10 years before streaming. It even offered to sell itself to Blockbuster, who said no."},
+    {id:"t33", q:"In 2010, someone bought 2 pizzas with Bitcoin. Did they pay 10 Bitcoin or 10,000 Bitcoin?", o:["10 Bitcoin","10,000 Bitcoin"], a:1, w:"May 22 is now 'Bitcoin Pizza Day'. Those 10,000 coins would be worth hundreds of millions of dollars today."},
+    {id:"t34", q:"Warren Buffett made most of his fortune before 60 or after 60?", o:["Before 60","After 60"], a:1, w:"He had a few billion at 60. Over 95% of his wealth came after, because compounding gets huge in the later years."},
+    {id:"t35", q:"Over the last 20 years, the Dominican peso got stronger or weaker against the US dollar?", o:["Stronger","Weaker"], a:1, w:"It went from around 33 pesos per dollar in the mid-2000s to over 60 today. That's why many Dominicans save or invest part of their money in dollars."},
+    {id:"t36", q:"Money sent home by Dominicans abroad: a big source of dollars for the DR, or a small one?", o:["Big","Small"], a:0, w:"Remittances bring in around US$10 billion a year, one of the country's biggest sources of dollars, next to tourism."},
+    {id:"t37", q:"Which country's central bank holds the most gold: USA or China?", o:["USA","China"], a:0, w:"The US holds about 8,000 tonnes, much of it in Fort Knox. That's more than the next two countries combined."},
+    {id:"t38", q:"Warren Buffett's company is a top owner of Coca-Cola or Pepsi?", o:["Coca-Cola","Pepsi"], a:0, w:"Berkshire Hathaway has owned a big chunk of Coca-Cola since 1988. The dividends alone now pay back far more than it cost."},
+    {id:"t39", q:"The board game Monopoly was first made to show that landlords are bad, or to teach people to get rich?", o:["Landlords are bad","Get rich"], a:0, w:"It started in 1904 as The Landlord's Game by Lizzie Magie, to show how renting makes owners rich and tenants poor. The idea got flipped."},
+    {id:"t40", q:"The first general credit card: Diners Club or Visa?", o:["Diners Club","Visa"], a:0, w:"Diners Club launched in 1950 after its founder forgot his wallet at a restaurant. Visa came years later."},
+    {id:"t41", q:"Most pro fund managers who pick stocks: beat the S&P 500 over 15 years, or lose to it?", o:["Beat it","Lose to it"], a:1, w:"Around 9 out of 10 lose to the simple index over 15 years, after fees. That's why index funds got so popular."},
+    {id:"t42", q:"Bigger yearly sales: Walmart or Apple?", o:["Walmart","Apple"], a:0, w:"Walmart sells more than any company in the world, over US$600 billion a year. Apple makes more profit though."},
+    {id:"t43", q:"Starbucks first sold coffee beans or lattes?", o:["Coffee beans","Lattes"], a:0, w:"From 1971 it only sold beans and equipment. Howard Schultz pushed for Italian-style coffee bars in the 80s, and that's what made it huge."},
+    {id:"t44", q:"Which card network is used more around the world: Visa or Mastercard?", o:["Visa","Mastercard"], a:0, w:"Visa handles more card payments worldwide than Mastercard. Neither lends you money; your bank does. They just move the payment."},
   ];
   var esc = function(t){ return String(t==null?"":t).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); };
   var drd = function(t){ return new Date((t||Date.now()) - 4*3600e3); };
@@ -6724,12 +6728,12 @@ TRACKER DATA:
   function callQ(){ return QZ.length ? QZ[Math.floor(Date.parse(day()) / 864e5) % QZ.length] : null; }
   function callSt(){ var c = ls("pd-call"); return c && c.day === day() ? c : null; }
   function callBody(q){ var c = callSt(), A = c && c.q === q.id ? c : null;
-    var h = '<div class="pd-k">' + esc(CALL.toUpperCase()) + '</div><div class="pd-h1">' + esc(q.q) + '</div><div class="pd-opts">' + q.o.map(function(o, i){
+    var h = '<div class="pd-k">' + esc(CALL.toUpperCase()) + '</div><div class="pd-h1">' + esc(q.q) + '</div><div class="pd-opts">' + (Math.floor(Date.parse(day()) / 864e5) % 2 ? [1, 0] : [0, 1]).map(function(i){ var o = q.o[i];
       var cls = A ? (i === q.a ? " ok" : i === A.a ? " no" : " dim") : ""; return '<button type="button" class="pd-opt' + cls + '" data-i="' + i + '"' + (A ? ' disabled' : '') + '>' + esc(o) + (A && i === q.a ? ' <span>✓</span>' : A && i === A.a ? ' <span>✕</span>' : '') + '</button>'; }).join("") + '</div>';
     if(!A) return h + '<div class="pd-m pd-c">Tap your pick.</div>';
     var pct = A.n >= 5 ? Math.round(A.right / A.n * 100) : null;
     h += '<div class="pd-res"><b>' + (A.a === q.a ? "You got it." : "Not this time.") + '</b>' + (pct != null ? '<div class="pd-pct"><em>' + pct + '%</em><span>of Pato users got it right</span></div>' : '<div class="pd-m">You\'re one of the first to answer today.</div>') + '</div>';
-    return h + '<div class="pd-know"><i>WHY</i><p class="pd-why">' + bold(q.w) + '</p></div>'; }
+    return h + '<div class="pd-know"><i>WHY</i><p class="pd-why">' + esc(q.w) + '</p></div>'; }
   function callSync(q, right){ if(!base() || !window.mpIdToken) return;
     window.mpIdToken().then(function(tok){ return fetch(base() + "/call", {method: "POST", headers: {"content-type": "application/json", authorization: "Bearer " + tok}, body: JSON.stringify(right == null ? {q: q.id + day().replace(/-/g, "")} : {q: q.id + day().replace(/-/g, ""), right: right})}); })
       .then(function(r){ return r.ok ? r.json() : null; }).then(function(d){ var c = callSt(); if(!d || !c || c.q !== q.id) return; c.n = d.n; c.right = d.right; ls("pd-call", c);
