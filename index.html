@@ -1511,6 +1511,7 @@ html.sg-on #sfOffer,html.sg-on .tabs{display:none!important}
 #sgSetup .sg-chips>.on{border-color:var(--mango);background:color-mix(in srgb,var(--mango) 18%,transparent)}
 #sgSetup .sg-chips>.fixed{cursor:default;opacity:.85}
 html.mp-guest #pkSeg [data-v="league"],html.mp-guest:not(.tr-casino) #pkSeg [data-v="ar"],html.mp-guest:not(.tr-poker) #pkSeg [data-v="ot"],html.mp-guest:not(.tr-bets) #pkSeg [data-v="sb"]{display:none!important}
+.pd-duck{position:absolute;top:6px;right:54px;z-index:5;width:32px;height:32px;padding:0;border:0;border-radius:50%;background:none;cursor:pointer}.pd-duck[hidden],.pd-edge[hidden]{display:none}.pd-duck img{width:100%;height:100%;border-radius:50%;display:block}.pd-duck.new{box-shadow:0 0 0 2px #E8C06A,0 0 14px 3px rgba(232,192,106,.75);animation:pdGlow 1.8s ease-in-out infinite}@keyframes pdGlow{50%{box-shadow:0 0 0 2px #E8C06A,0 0 4px 1px rgba(232,192,106,.25)}}.pd-edge{position:fixed;left:0;top:42%;z-index:39;width:24px;height:66px;padding:0;border:0;border-radius:0 14px 14px 0;background:#E8C06A;display:grid;place-items:center;box-shadow:0 4px 14px rgba(0,0,0,.35);transition:transform .2s;cursor:pointer}.pd-edge img{width:17px;height:17px;border-radius:50%}.pd-edge.new::after{content:"";position:absolute;top:-3px;right:-3px;width:9px;height:9px;border-radius:50%;background:#FF5A4A}.pd-pull{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 8px);z-index:60;transform:translate(-50%,calc(-70px + var(--p,0) * 70px));opacity:var(--p,0);display:flex;align-items:center;gap:8px;padding:6px 14px 6px 6px;border-radius:999px;background:#13261C;color:#E8C06A;font-weight:700;font-size:.85rem;box-shadow:0 6px 18px rgba(0,0,0,.4);pointer-events:none;white-space:nowrap}.pd-pull img{width:26px;height:26px;border-radius:50%}.pd-pull.go{background:#E8C06A;color:#13261C}
 #pdTopics{flex-basis:100%;max-width:340px;margin:6px auto 0;text-align:left}#pdTopics>span{display:block;text-align:center;margin-bottom:4px}#pdTopics .tg{display:flex;align-items:center;justify-content:space-between;padding:9px 4px;border-bottom:1px solid color-mix(in srgb,var(--ink) 10%,transparent);color:var(--ink);font-size:.95rem}#pdTopics .tg input{width:20px;height:20px;accent-color:var(--mango)}#pdTopics .pd-tm{font-size:.8rem;opacity:.7;text-align:center;padding:8px 0 2px}
 #sgTabs{flex-basis:100%;max-width:340px;margin:6px auto 0;text-align:left}
 #sgTabs>span{display:block;text-align:center;margin-bottom:4px}
@@ -1799,7 +1800,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261111213000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261111220000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -6787,11 +6788,15 @@ TRACKER DATA:
       requestAnimationFrame(function(){ var w = $("pnTrack").scrollWidth / 2; $("pnTrack").style.setProperty("--pn-dur", Math.max(20, w / 45) + "s"); }); }
     if(!$("pdV").hidden) return;
     S = stories(); var u = unseen(), first = !(prefs && prefs.picked);
-    $("pdFab").hidden = !u.length && !first && !PICS(); $("pdN").textContent = u.length || ""; $("pdN").hidden = !u.length;
+    $("pdFab").hidden = !u.length && !first && !PICS() || DEMO(); $("pdN").textContent = u.length || ""; $("pdN").hidden = !u.length;
+    var dk = $("pdDuck"), eg = $("pdEdge"), pb = $("palBtn");   // try-out (demo only): duck by the gear + left-edge tab
+    if(dk){ dk.hidden = !DEMO() || !S.length; dk.classList.toggle("new", !!u.length); if(pb && !dk.hidden){ var a = pb.getBoundingClientRect(), b = dk.getBoundingClientRect(); if(a.width){ dk.style.top = (dk.offsetTop + a.top - b.top) + "px"; dk.style.right = "auto"; dk.style.left = (dk.offsetLeft + a.left - 42 - b.left) + "px"; } } }
+    if(eg){ eg.hidden = !DEMO() || !S.length; eg.classList.toggle("new", !!u.length); }
     $("pdFab").classList.toggle("big", u.some(function(x){ return x.cls === "big"; }));
   }
   // Story photos: the outlet's own preview image via the worker (/img), cached for the day; no photo = text page.
   var IM = ls("pd-img3"); if(!IM || IM.day !== day()) IM = {day: day(), m: {}};   // v3: never keep "no photo" answers, so a bad moment doesn't hide photos all day
+  function DEMO(){ var m = window.MP_ME; return !!(m && /^pato-?demo/i.test(m.email || "")); }
   function PICS(){ var m = window.MP_ME; return !!(m && (m.owner || /^pato-?demo/i.test(m.email || ""))); }   // trial: demo account only until Marco approves
   function pic(u, cb, h){ if(!u || !base() || !PICS() || (u in IM.m)) return; IM.m[u] = null;
     fetch(base() + "/img?u=" + encodeURIComponent(u) + (h ? "&h=" + encodeURIComponent(h) : "")).then(function(r){ return r.ok ? r.json() : {}; }).then(function(d){ IM.m[u] = (d && d.img) || ""; if(IM.m[u]) ls("pd-img3", {day: IM.day, m: Object.keys(IM.m).reduce(function(o, k){ if(IM.m[k]) o[k] = IM.m[k]; return o; }, {})}); if(cb) cb(); }).catch(function(){ delete IM.m[u]; }); }
@@ -6823,6 +6828,20 @@ TRACKER DATA:
     var o = on(); w.innerHTML = '<span>Pato Daily topics</span>' + CATS.filter(function(c){ return FIX.indexOf(c[0]) < 0; }).map(function(c){ return '<label class="tg"><span>' + c[2] + ' ' + c[1] + '</span><input type="checkbox" data-k="' + c[0] + '"' + (o.indexOf(c[0]) >= 0 ? ' checked' : '') + '></label>'; }).join("") + '<div class="pd-tm" id="pdTopM">Up to ' + TOP + '. Top story and DR come every day.</div>'; }
   function save(o){ var fb = (prefs && prefs.fb) || {}; prefs = {on: o, picked: true, fb: fb}; try{ db.doc("prefs/news").set({on: o, picked: true, fb: fb, at: Date.now()}); }catch(_){} }
   function wire(){
+    // Ways in, try-out on the demo account (Marco Nov 11 wants to see 1 pull down, 2 edge swipe, 3 glowing duck)
+    var pb = $("palBtn"), dk = document.createElement("button"); dk.type = "button"; dk.id = "pdDuck"; dk.className = "pd-duck"; dk.hidden = true; dk.setAttribute("aria-label", "Pato Daily"); dk.innerHTML = '<img src="icon-192.png?v=7" alt="">';
+    if(pb) pb.parentNode.insertBefore(dk, pb); else document.body.appendChild(dk); dk.onclick = function(){ openV(); };
+    var eg = document.createElement("button"); eg.type = "button"; eg.id = "pdEdge"; eg.className = "pd-edge"; eg.hidden = true; eg.setAttribute("aria-label", "Pato Daily"); eg.innerHTML = '<img src="icon-192.png?v=7" alt="">'; document.body.appendChild(eg); eg.onclick = function(){ openV(); };
+    var pl = document.createElement("div"); pl.id = "pdPull"; pl.className = "pd-pull"; pl.innerHTML = '<img src="icon-192.png?v=7" alt=""><span>Pull for Pato Daily</span>'; document.body.appendChild(pl);
+    var ts = null, busyUi = function(){ return !$("pdV").hidden || ($("palSheet") && !$("palSheet").hidden) || !S.length; };
+    document.addEventListener("touchstart", function(e){ ts = null; if(!DEMO() || busyUi() || e.touches.length > 1) return; var t = e.touches[0];
+      ts = {x: t.clientX, y: t.clientY, top: (window.scrollY || document.documentElement.scrollTop || 0) <= 0, edge: t.clientX < 30}; }, {passive: true});
+    document.addEventListener("touchmove", function(e){ if(!ts) return; var t = e.touches[0], dx = t.clientX - ts.x, dy = t.clientY - ts.y;
+      if(ts.edge){ if(dx > 0 && Math.abs(dy) < 70) eg.style.transform = "translateX(" + Math.min(dx, 90) + "px)"; return; }
+      if(ts.top && dy > 0 && Math.abs(dx) < 50 && (window.scrollY || 0) <= 0){ var k = Math.min(dy / 110, 1); pl.style.setProperty("--p", k); pl.classList.toggle("go", k >= 1); pl.lastChild.textContent = k >= 1 ? "Let go to open" : "Pull for Pato Daily"; } }, {passive: true});
+    document.addEventListener("touchend", function(e){ if(!ts) return; var t = e.changedTouches[0], dx = t.clientX - ts.x, dy = t.clientY - ts.y, o = ts; ts = null;
+      eg.style.transform = ""; pl.style.setProperty("--p", 0); pl.classList.remove("go");
+      if(o.edge ? dx > 70 && Math.abs(dy) < 70 : o.top && dy > 110 && Math.abs(dx) < 50) openV(); }, {passive: true});
     document.addEventListener("click", function(e){ var a = e.target.closest && e.target.closest("#pnTrack a, .pd-read, .pd-r2"); if(a && a.dataset.u){ e.preventDefault(); e.stopPropagation(); open(a.dataset.u); } }, true);
     // floating Pato: tap opens, drag moves (position remembered)
     var fab = $("pdFab"), st = ls("pd-fab"), sx, sy, ox, oy, moved = 0;
