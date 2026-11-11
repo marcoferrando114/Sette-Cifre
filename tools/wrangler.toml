@@ -1,0 +1,10 @@
+# Pato AI server (Cloudflare worker "pato-ai"). GitHub deploys it automatically when tools/pato-ai-worker.js changes.
+name = "pato-ai"
+main = "pato-ai-worker.js"
+compatibility_date = "2024-09-23"
+workers_dev = true
+keep_vars = true   # keep the variables and secrets set in the Cloudflare dashboard (ANTHROPIC_KEY, OWNER_UID, DAILY...)
+
+[[kv_namespaces]]
+binding = "LIMITS"
+id = "1b3dc8d572c64e46a714ec50c34d4abc"
