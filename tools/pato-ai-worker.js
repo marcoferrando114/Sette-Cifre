@@ -45,7 +45,8 @@ function parse(xml) {
     const g = tag => { const r = m[1].match(new RegExp("<" + tag + "[^>]*>([\\s\\S]*?)</" + tag + ">")); return r ? dec(r[1]) : ""; };
     const src = g("source"); let title = g("title"); if (src && title.endsWith(" - " + src)) title = title.slice(0, -(src.length + 3));
     const desc = g("description"), cover = new Set([src, ...[...desc.matchAll(/<font[^>]*>([^<]+)<\/font>/g)].map(x => dec(x[1]))].filter(s => TRUSTED.test(s)));
-    return { h: title, s: src, u: g("link"), t: Date.parse(g("pubDate")) || 0, n: cover.size, by: [...cover].slice(0, 3) };
+    const also = [...desc.matchAll(/<a [^>]*>([^<]+)<\/a>/g)].map(x => dec(x[1])).filter(t => t && t !== title).slice(0, 3);   // other outlets' headlines = extra facts for "What to know"
+    return { h: title, s: src, u: g("link"), t: Date.parse(g("pubDate")) || 0, n: cover.size, by: [...cover].slice(0, 3), also };
   });
 }
 async function cached(url, ttl, kind) {
@@ -86,7 +87,10 @@ async function games() {
       const c = (e.competitions || [])[0] || {}, tv = (c.broadcasts || []).flatMap(b => b.names || []), note = ((c.notes || [])[0] || {}).headline || "";
       const ranked = (c.competitors || []).filter(x => x.curatedRank && x.curatedRank.current && x.curatedRank.current <= 10).length;
       const nat = tv.some(n => /ESPN|ABC|TNT|NBC|CBS|FOX|Prime|Netflix|Peacock|TBS|Paramount/i.test(n));
-      out.push({ league: name, name: e.name || e.shortName, short: e.shortName, t: Date.parse(e.date) || 0, tv: tv.slice(0, 2), note, live: st === "in",
+      const teams = (c.competitors || []).slice().sort((x, y) => (x.homeAway === "away" ? -1 : 0) - (y.homeAway === "away" ? -1 : 0)).slice(0, 2).map(x => {
+        const t = x.team || {}, a = x.athlete || {}, rec = ((x.records || [])[0] || {}).summary || "";
+        return { n: t.shortDisplayName || t.displayName || a.shortName || a.displayName || "", logo: t.logo || (a.flag && a.flag.href) || "", rec, score: st === "in" ? x.score || "" : "" }; });
+      out.push({ league: name, name: e.name || e.shortName, short: e.shortName, t: Date.parse(e.date) || 0, tv: tv.slice(0, 2), note, live: st === "in", teams,
         score: w + (nat ? 2 : 0) + ranked + (/final|championship|playoff|semifinal|title|main event|derby|clasico|clásico/i.test(note + " " + e.name) ? 4 : 0) });
     });
   }).catch(() => null)));
@@ -106,7 +110,7 @@ async function bundle(P) {
     ticker: T.filter(i => MOVERS.test(i.h)).concat(T).filter((v, i, a) => a.indexOf(v) === i).slice(0, 5) };
 }
 const TAKE = `You are Pato, the money buddy inside a finance app for young Dominicans. Write today's "Pato's take" for ONE user from the facts below.
-Return ONLY JSON: {"happened":{"text":"","src":""},"you":{"text":"","src":""},"watch":{"text":"","src":""},"game":0,"rd":"","notes":{}}
+Return ONLY JSON: {"happened":{"text":"","src":""},"you":{"text":"","src":""},"watch":{"text":"","src":""},"game":0,"rd":"","notes":{},"know":{}}
 Rules:
 - happened: the one news story that matters most for this user's money today (their stocks first, then markets). src = the outlet name given.
 - you: what it means for THEM using ONLY the numbers in USER. "Today" numbers come ONLY from TODAY_* fields. SINCE_BOUGHT_gainPct is the total gain since they bought; never call it today's move. If nothing moved much, say it was a quiet day and give their real total.TODAY change. src = "From your stocks" (or "From your bets").
@@ -114,7 +118,8 @@ Rules:
 - Never invent numbers, dates, or events. Never tell them to buy or sell. No emojis. Max 22 words per line. Plain, friendly English, like texting a smart friend.
 - game: index (0-based) of the biggest match in GAMES for a young Dominican audience (stakes, stars, rivalry, playoffs; MLB/NBA/soccer stars from DR count extra). If the user has an open bet on one, prefer it unless another is clearly bigger. -1 if GAMES is empty.
 - rd: the RD headline translated to short natural English (keep names), or "" if none.
-- notes: for each key in CARDS, one line (max 14 words) on whether that story touches THIS user's money (their stocks, bets, savings in RD$). Be honest: if it doesn't, say so briefly ("No effect on your money today."). Never invent effects.`;
+- notes: for each key in CARDS, one line (max 14 words) on whether that story touches THIS user's money (their stocks, bets, savings in RD$). Be honest: if it doesn't, say so briefly ("No effect on your money today."). Never invent effects.
+- know: for each key in CARDS, exactly 2 short lines (max 16 words each) a young reader needs to get the story: line 1 = what happened in plain words, line 2 = why it matters or the context. Use ONLY facts in that card's h and also headlines plus widely known background (who a famous person or company is). Never invent numbers, names, quotes, or outcomes. English even if the headline is Spanish.`;
 // Every number in "For you" must be one of the user's real numbers; otherwise use a plain line built from the numbers.
 function check(out, body) {
   const today = new Set(), since = new Set(), other = new Set(), put = (S, v) => { if (typeof v === "number" && isFinite(v)) { const a = Math.abs(v); [0, 1, 2].forEach(d => S.add(a.toFixed(d))); } };
@@ -130,15 +135,15 @@ function check(out, body) {
   return out;
 }
 async function take(env, uid, body, b) {
-  const key = "daily2:" + uid + ":" + b.day;
+  const key = "daily3:" + uid + ":" + b.day;
   if (env.LIMITS) { const hit = await env.LIMITS.get(key); if (hit) return JSON.parse(hit); }
   const user = JSON.stringify({ stocks: (body.stocks || []).slice(0, 8), total: body.total || null, bets: (body.bets || []).slice(0, 8), currency: "USD for stocks, RD$ for bets" }).slice(0, 3000);
   const facts = JSON.stringify({ stockNews: b.stocks, marketTop: b.ticker.slice(0, 4).map(i => ({ h: i.h, s: i.s })), rd: b.cats.rd ? { h: b.cats.rd[0].h, s: b.cats.rd[0].s } : null,
     games: b.games.map(g => ({ league: g.league, name: g.name, note: g.note, tv: g.tv })),
-    cards: Object.fromEntries(Object.entries(b.cats).concat(b.big ? [["big", b.big]] : []).map(([k, v]) => [k, Array.isArray(v) ? v[0].h : v.h])) }).slice(0, 6000);
+    cards: Object.fromEntries(Object.entries(b.cats).concat(b.big ? [["big", b.big]] : []).map(([k, v]) => { const i = Array.isArray(v) ? v[0] : v; return [k, { h: i.h, also: (i.also || []).slice(0, 3) }]; })) }).slice(0, 9000);
   const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST",
     headers: { "content-type": "application/json", "x-api-key": env.ANTHROPIC_KEY, "anthropic-version": "2023-06-01" },
-    body: JSON.stringify({ model: "claude-haiku-5-5", max_tokens: 800, messages: [{ role: "user", content: TAKE + "\n\nUSER: " + user + "\n\nFACTS: " + facts + "\n\nGAMES are FACTS.games in order. CARDS are FACTS.cards." }] }) });
+    body: JSON.stringify({ model: "claude-haiku-5-5", max_tokens: 1500, messages: [{ role: "user", content: TAKE + "\n\nUSER: " + user + "\n\nFACTS: " + facts + "\n\nGAMES are FACTS.games in order. CARDS are FACTS.cards." }] }) });
   if (!r.ok) return null;
   const j = await r.json(), txt = ((j.content || []).find(c => c.type === "text") || {}).text || "", m = txt.match(/\{[\s\S]*\}/);
   let out = null; try { out = JSON.parse(m[0]); } catch (e) { return null; }
