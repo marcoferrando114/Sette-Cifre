@@ -1829,7 +1829,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261111234500";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261111235000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -6903,7 +6903,7 @@ TRACKER DATA:
   function placePeek(){ var w = $("pdPeek"), b = $("pdBub"), t = document.querySelector("nav.tabs"); if(!w) return; var r = t && t.getBoundingClientRect(), bt = r && r.height && r.top > innerHeight / 2 ? innerHeight - r.top - 10 : 86;   // duck rises from behind the tab bar
     w.style.bottom = bt + "px"; if(b) b.style.bottom = bt + 112 + "px"; }
   function hidePeek(){ clearTimeout(pt); var b = $("pdBub"), w = $("pdPeek"); if(b) b.className = ""; if(w) w.className = unseen().length ? "" : "idle"; }
-  function peek(){ var w = $("pdPeek"), b = $("pdBub"); if(!w || !b || $("pdFab").hidden || document.hidden || blocked() || pc >= 10 || $("pdBub").classList.contains("on")) return;
+  function peek(){ var w = $("pdPeek"), b = $("pdBub"); if(!w || !b || $("pdFab").hidden || document.hidden || blocked() || w.classList.contains("dive") || pc >= 10 || $("pdBub").classList.contains("on")) return;
     var L = peekLines(); if(!L.length) return hidePeek(); var x = L[pk++ % L.length]; pc++;
     var h = String(x.h).replace(/\*\*/g, ""); if(h.length > 96) h = h.slice(0, 93).replace(/\s+\S*$/, "") + "…";
     b.innerHTML = "<b>" + esc(x.k) + "</b>" + esc(h); b.dataset.i = x.i; placePeek(); w.className = "out"; b.className = "on" + (x.big ? " big" : "");
@@ -6929,7 +6929,8 @@ TRACKER DATA:
     bub.addEventListener("click", function(){ openV(Number(bub.dataset.i)); });
     document.addEventListener("click", function(e){ if(e.target.closest && e.target.closest(".tabs [data-tab]")) setTimeout(peek, 700); }, true);
     setInterval(peek, 45000);
-    var sc = null; window.addEventListener("scroll", function(){ var w = $("pdPeek"); if(!w) return; if(!w.classList.contains("dive")){ hidePeek(); w.classList.add("dive"); } clearTimeout(sc); sc = setTimeout(function(){ w.classList.remove("dive"); }, 900); }, {passive: true});   // duck dives while you scroll, so it never sits on your numbers
+    var sc = null, dive = function(){ var w = $("pdPeek"); if(!w) return; if(!w.classList.contains("dive")){ hidePeek(); w.classList.add("dive"); } clearTimeout(sc); sc = setTimeout(function(){ w.classList.remove("dive"); }, 4000); };   // Marco: wait 4s after you stop scrolling before the duck comes back
+    window.addEventListener("scroll", dive, {passive: true}); document.addEventListener("touchmove", function(){ if($("pdV").hidden) dive(); }, {passive: true});   // duck dives while you scroll, so it never sits on your numbers
     // viewer: tap right = next, tap left = back, hold = pause, swipe down = close
     var V = $("pdV"), S0 = $("pdS"), ty, tx, t0, held;
     $("pdX").onclick = function(e){ e.stopPropagation(); close(); };
