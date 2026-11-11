@@ -1511,6 +1511,7 @@ html.sg-on #sfOffer,html.sg-on .tabs{display:none!important}
 #sgSetup .sg-chips>.on{border-color:var(--mango);background:color-mix(in srgb,var(--mango) 18%,transparent)}
 #sgSetup .sg-chips>.fixed{cursor:default;opacity:.85}
 html.mp-guest #pkSeg [data-v="league"],html.mp-guest:not(.tr-casino) #pkSeg [data-v="ar"],html.mp-guest:not(.tr-poker) #pkSeg [data-v="ot"],html.mp-guest:not(.tr-bets) #pkSeg [data-v="sb"]{display:none!important}
+#pdTopics{flex-basis:100%;max-width:340px;margin:6px auto 0;text-align:left}#pdTopics>span{display:block;text-align:center;margin-bottom:4px}#pdTopics .tg{display:flex;align-items:center;justify-content:space-between;padding:9px 4px;border-bottom:1px solid color-mix(in srgb,var(--ink) 10%,transparent);color:var(--ink);font-size:.95rem}#pdTopics .tg input{width:20px;height:20px;accent-color:var(--mango)}#pdTopics .pd-tm{font-size:.8rem;opacity:.7;text-align:center;padding:8px 0 2px}
 #sgTabs{flex-basis:100%;max-width:340px;margin:6px auto 0;text-align:left}
 #sgTabs>span{display:block;text-align:center;margin-bottom:4px}
 #sgTabs .tg{display:flex;align-items:center;justify-content:space-between;padding:9px 4px;border-bottom:1px solid color-mix(in srgb,var(--ink) 10%,transparent);color:var(--ink);font-size:.95rem}
@@ -1798,7 +1799,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261111203500";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261111211500";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -6652,7 +6653,7 @@ TRACKER DATA:
   var open = function(u){ if(u) window.open(u, "_blank", "noopener"); };
   var usd = function(n){ return "US$" + Math.abs(n).toLocaleString("en-US", {maximumFractionDigits: Math.abs(n) < 10 ? 2 : 0}); };
   var bold = function(t){ return esc(t).replace(/((?:US|RD)\$[\d,.]+[kKmM]?|[+−-]?\d+(?:\.\d+)?%)/g, "<b>$1</b>"); };
-  var on = function(){ if(PICS()){ var mine = prefs && Array.isArray(prefs.on) ? prefs.on.filter(function(x){ return FIX.indexOf(x) < 0 && CATS.some(function(c){ return c[0] === x; }); }) : []; return mine.concat(["business","tech","crypto","game","fashion"].filter(function(x){ return mine.indexOf(x) < 0; })).slice(0, TOP); }   // demo: always a full busy day (5 topics)
+  var on = function(){ if(PICS() && !(prefs && prefs.picked)){ var mine = prefs && Array.isArray(prefs.on) ? prefs.on.filter(function(x){ return FIX.indexOf(x) < 0 && CATS.some(function(c){ return c[0] === x; }); }) : []; return mine.concat(["business","tech","crypto","game","fashion"].filter(function(x){ return mine.indexOf(x) < 0; })).slice(0, TOP); }   // demo: always a full busy day (5 topics)
     return prefs && Array.isArray(prefs.on) ? prefs.on.filter(function(x){ return FIX.indexOf(x) < 0 && CATS.some(function(c){ return c[0] === x; }); }).slice(0, TOP) : DEF; };
   var base = function(){ return (window.MP_AI_URL || "").replace(/\/$/, ""); };
   function q(){ var k = on().filter(function(x){ return x !== "big" && x !== "game"; }); if(k.indexOf("rd") < 0) k.unshift("rd");
@@ -6715,11 +6716,9 @@ TRACKER DATA:
       L.push({id: ed + ":" + k + ":" + it.h, cls: k === "rd" ? "rd" : "", t: c[1], w: ago(it.t) + " ago", u: i2 ? "" : it.u, pic: it.u, ph: it.h, ps: it.s, fk: k, sh: {k: c[1], h: h, s: it.s, u: it.u, kn: knowArr(k)}, body: '<div class="pd-k">' + esc(c[1].toUpperCase()) + '</div><div class="pd-h1">' + esc(h) + '</div>' + (h !== it.h ? '<div class="pd-m" style="font-style:italic">' + esc(it.h) + '</div>' : '') + '<div class="pd-m">' + by(it) + (i2 ? ' · <a class="pd-r2" data-u="' + esc(it.u) + '">Read ›</a>' : '') + '</div>' + know(k) + note(notes[k]) +
         (i2 ? '<div class="pd-two"><div class="pd-k">ALSO</div><div class="pd-h2">' + esc(i2.h) + '</div><div class="pd-m">' + by(i2) + ' · <a class="pd-r2" data-u="' + esc(i2.u) + '">Read ›</a></div></div>' : '')}); });
     var cq = callQ(); if(cq) L.push({id: ed + ":call:" + cq.id, cls: "call", t: CALL, w: "today's money question", call: cq, body: ""});
-    L.push({id: "pick", cls: "", t: "Pato Daily", w: "your stories", pick: 1, body: '<div class="pd-k">' + (prefs && prefs.picked ? "YOUR STORIES" : "PICK WHAT YOU LIKE") + '</div><div class="pd-h1">' + (prefs && prefs.picked ? "That's today. Change what you see:" : "What do you want in your stories?") + '</div><div class="pd-chips" id="pdChips">' +
-      CATS.filter(function(c){ return FIX.indexOf(c[0]) < 0; }).map(function(c){ return '<button type="button" data-k="' + c[0] + '"' + (want.indexOf(c[0])>=0 ? ' class="on"' : '') + '>' + c[1] + '</button>'; }).join("") + '</div><div class="pd-m" id="pdPickM">Pick up to ' + TOP + '. Top story and Local come every day. Next edition at 7am.</div>'});
     // section row (Marco: show which section you're on): short label per slide
     L.forEach(function(x){ var k = x.fk, c = k && CATS[ix(k)];
-      x.nav = x.call ? "⚔️ Duel" : x.pick ? "✏️ Topics" : k === "game" ? "⚽ Sports" : k === "big" ? "🌎 Top story" : k === "rd" ? "🇩🇴 Local" : c ? c[2] + " " + c[1] : /^Breaking/.test(x.t) ? "📈 " + x.t.replace("Breaking · ", "") : "🦆 Pato"; });
+      x.nav = x.call ? "⚔️ Duel" : k === "game" ? "⚽ Sports" : k === "big" ? "🌎 Top story" : k === "rd" ? "🇩🇴 Local" : c ? c[2] + " " + c[1] : /^Breaking/.test(x.t) ? "📈 " + x.t.replace("Breaking · ", "") : "🦆 Pato"; });
     // Pato's take page: "In today's edition" = what's coming, so the page is full and pulls you into the stories
     var nt = [tk.happened, tk.you, tk.watch].filter(function(r){ return r && r.text; }).length, up = L.slice(1).filter(function(x){ return x.ph || x.call; }).slice(0, nt >= 3 ? 3 : 6);
     if(up.length) L[0].body += '<div class="pd-up"><i>IN TODAY\'S EDITION</i>' + up.map(function(x){ return '<div><b>' + esc(x.t) + '</b><span>' + esc(x.call ? x.call.q : x.ph) + '</span></div>'; }).join("") + '</div>';
@@ -6815,6 +6814,13 @@ TRACKER DATA:
     $("pdV").hidden = false; document.documentElement.style.overflow = "hidden"; show(i); }
   function close(){ clearTimeout(timer); $("pdV").hidden = true; $("pdS").style.transform = ""; document.documentElement.style.overflow = "";
     if(!(prefs && prefs.picked)) save(on()); render(); }
+  // Topics live in Settings (Marco Nov 11: picking topics is a setting, not a daily slide)
+  function topicsRow(){ var sh = $("palSheet"); if(!sh) return; var w = $("pdTopics");
+    if(!w){ w = document.createElement("div"); w.id = "pdTopics"; var t = $("sgTabs"); if(t) sh.insertBefore(w, t); else sh.appendChild(w);
+      w.addEventListener("change", function(e){ var c = e.target; if(!c.dataset || !c.dataset.k) return; var o = on().slice(), k = c.dataset.k, i = o.indexOf(k);
+        if(c.checked && o.length >= TOP){ c.checked = false; $("pdTopM").textContent = "Max " + TOP + ". Turn one off first."; return; }
+        if(c.checked && i < 0) o.push(k); if(!c.checked && i >= 0) o.splice(i, 1); save(o); ls("pd-daily5", null); $("pdTopM").textContent = "Saved. Your next stories use these."; }); }
+    var o = on(); w.innerHTML = '<span>Pato Daily topics</span>' + CATS.filter(function(c){ return FIX.indexOf(c[0]) < 0; }).map(function(c){ return '<label class="tg"><span>' + c[2] + ' ' + c[1] + '</span><input type="checkbox" data-k="' + c[0] + '"' + (o.indexOf(c[0]) >= 0 ? ' checked' : '') + '></label>'; }).join("") + '<div class="pd-tm" id="pdTopM">Up to ' + TOP + '. Top story and Local come every day.</div>'; }
   function save(o){ var fb = (prefs && prefs.fb) || {}; prefs = {on: o, picked: true, fb: fb}; try{ db.doc("prefs/news").set({on: o, picked: true, fb: fb, at: Date.now()}); }catch(_){} }
   function wire(){
     document.addEventListener("click", function(e){ var a = e.target.closest && e.target.closest("#pnTrack a, .pd-read, .pd-r2"); if(a && a.dataset.u){ e.preventDefault(); e.stopPropagation(); open(a.dataset.u); } }, true);
@@ -6838,9 +6844,6 @@ TRACKER DATA:
       if(dy > 90) return close(); S0.style.transform = "";
       if(long || was || Math.abs(dx) > 30 || Math.abs(dy) > 30) { if(was && S[cur] && !S[cur].pick){ show(cur); } return; }
       var r = S0.getBoundingClientRect(); if(e.clientX - r.left < r.width * .3) show(cur - 1); else next(); });
-    S0.addEventListener("click", function(e){ var b = e.target.closest("#pdChips [data-k]"); if(!b) return; e.stopPropagation(); var o = on().slice(), k = b.dataset.k, i = o.indexOf(k);
-      if(i < 0 && o.length >= TOP){ var m = $("pdPickM"); if(m) m.textContent = "Max " + TOP + ". Tap one to remove it first."; return; }
-      if(i >= 0) o.splice(i, 1); else o.push(k); save(o); b.classList.toggle("on"); ls("pd-daily5", null); });
     document.addEventListener("keydown", function(e){ if(V.hidden) return; if(e.key === "Escape") close(); if(e.key === "ArrowRight") next(); if(e.key === "ArrowLeft") show(cur - 1); });
     document.addEventListener("visibilitychange", function(){ if(!document.hidden){ getDaily(false); getTick(); } });
     setInterval(function(){ if(!document.hidden){ getDaily(false); getTick(); } }, 15*6e4);
@@ -6856,7 +6859,7 @@ TRACKER DATA:
     if(me.owner) db.doc("invest/ibkr").onSnapshot(function(s){ var was = sig(); setPos((s.exists && s.data().posiciones) || []); again("pos", was); }, function(){ go("pos"); });
     else db.collection("holdings").onSnapshot(function(s){ var was = sig(); setPos(s.docs.map(function(x){ return x.data(); })); again("pos", was); }, function(){ go("pos"); });
     db.collection("bets").onSnapshot(function(s){ bets = s.docs.map(function(x){ return x.data(); }).sort(function(a, b){ return String(b.fecha||"").localeCompare(String(a.fecha||"")); }).slice(0,60); if(!ready.bets) go("bets"); else render(); }, function(){ go("bets"); });
-    db.doc("prefs/news").onSnapshot(function(s){ var was = sig(); prefs = s.exists ? s.data() : null; again("prefs", was); }, function(){ go("prefs"); });
+    db.doc("prefs/news").onSnapshot(function(s){ var was = sig(); prefs = s.exists ? s.data() : null; topicsRow(); again("prefs", was); }, function(){ go("prefs"); });
   });
 })();
 </script>
