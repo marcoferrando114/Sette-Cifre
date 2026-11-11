@@ -78,9 +78,9 @@ function parseBing(xml) {
   return it.map(i => { const w = new Set(words(i.h)), same = it.filter(j => j === i || words(j.h).filter(v => w.has(v)).length / Math.max(w.size, 1) >= 0.5);
     const by = [...new Set(same.map(j => j.s).filter(x => TRUSTED.test(x)))]; return Object.assign(i, { n: new Set(same.map(j => j.s).filter(Boolean)).size || 1, by: by.slice(0, 3), also: same.filter(j => j !== i).map(j => j.h).slice(0, 3) }); });
 }
-const feed = (url, ttl) => cached(url, ttl).then(f => ({ at: f.at, items: parse(f.body) })).catch(() => ({ at: Date.now(), items: [] }))
-  .then(async r => { if (r.items.length) return r; const b = bingUrl(url); if (!b) return r;
-    try { return await bingFeed(b, ttl); } catch (e) { return r; } });
+// Bing first (its stories come with a photo), Google News when Bing has nothing (Nov 11, Marco: photos on every story).
+const gfeed = (url, ttl) => cached(url, ttl).then(f => ({ at: f.at, items: parse(f.body) })).catch(() => ({ at: Date.now(), items: [] }));
+const feed = async (url, ttl) => { const b = bingUrl(url); if (b) { try { const r = await bingFeed(b, ttl); if (pick(r.items).length) return r; } catch (e) {} } return gfeed(url, ttl); };
 // Bing: one request at a time (bursts come back empty), only cache answers that have stories, retry once.
 let bingQ = Promise.resolve();
 const bingGet = u => (bingQ = bingQ.catch(() => {}).then(() => new Promise(r => setTimeout(r, 120))).then(() => fetch(u, { headers: { ...PUA, accept: "application/rss+xml, application/xml;q=0.9, */*;q=0.5" } })).then(f => f.ok ? f.text() : ""));
@@ -166,7 +166,7 @@ function check(out, body) {
   return out;
 }
 async function take(env, uid, body, b) {
-  const key = "daily4:" + uid + ":" + b.day;
+  const key = "daily5:" + uid + ":" + b.day;
   if (env.LIMITS) { const hit = await env.LIMITS.get(key); if (hit) return JSON.parse(hit); }
   const user = JSON.stringify({ stocks: (body.stocks || []).slice(0, 8), total: body.total || null, bets: (body.bets || []).slice(0, 8), currency: "USD for stocks, RD$ for bets" }).slice(0, 3000);
   const facts = JSON.stringify({ stockNews: b.stocks, marketTop: b.ticker.slice(0, 4).map(i => ({ h: i.h, s: i.s })), rd: b.cats.rd ? { h: b.cats.rd[0].h, s: b.cats.rd[0].s } : null,
