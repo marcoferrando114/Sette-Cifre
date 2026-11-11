@@ -64,28 +64,39 @@ async function cached(url, ttl, kind) {
 // Google News blocks Cloudflare (503/429) at times, so every feed falls back to Bing News RSS for the same topic (Nov 11).
 const BQ = { BUSINESS: "business stock market economy", WORLD: "world news", TECHNOLOGY: "technology", ENTERTAINMENT: "entertainment celebrities movies music", HEALTH: "health medicine" };
 function bingUrl(url) {
-  if (url === GN + "?" + ES) return "https://www.bing.com/news/search?q=" + encodeURIComponent("República Dominicana") + "&format=rss&setlang=es&cc=DO&count=40";
+  if (url === GN + "?" + ES) return "https://www.bing.com/news/search?q=" + encodeURIComponent("República Dominicana") + "&format=rss&setlang=es&cc=DO&count=40&qft=interval%3d%227%22&qft=sortbydate%3d%221%22";
   let q = ""; const m = url.match(/\/topic\/([A-Z]+)/); if (m) q = BQ[m[1]] || m[1].toLowerCase();
   else { try { q = (new URL(url).searchParams.get("q") || "").replace(/ when:\d+[dh]/, ""); } catch (e) {} }
-  return q ? "https://www.bing.com/news/search?q=" + encodeURIComponent(q) + "&format=rss&setlang=en&cc=US&count=40" : "";
+  return q ? "https://www.bing.com/news/search?q=" + encodeURIComponent(q) + "&format=rss&setlang=en&cc=US&count=40&qft=sortbydate%3d%221%22" : "";
 }
 function parseBing(xml) {
   const it = [...String(xml).matchAll(/<item>([\s\S]*?)<\/item>/g)].map(m => {
     const g = tag => { const r = m[1].match(new RegExp("<" + tag + "[^>]*>([\\s\\S]*?)</" + tag + ">", "i")); return r ? dec(r[1]) : ""; };
     const l = g("link"), u = (() => { try { return new URL(l).searchParams.get("url") || l; } catch (e) { return l; } })(), im = g("News:Image").replace(/^http:/, "https:");
-    return { h: g("title"), s: g("News:Source"), u, t: Date.parse(g("pubDate")) || 0, img: im && !BADIMG.test(im) ? im + (im.includes("?") ? "&" : "?") + "w=800&h=450&c=7" : "" };
+    return { bing: 1, h: g("title"), s: g("News:Source"), u, t: Date.parse(g("pubDate")) || 0, img: im && !BADIMG.test(im) ? im + (im.includes("?") ? "&" : "?") + "w=800&h=450&c=7" : "" };
   }).filter(i => i.h && i.u);
   return it.map(i => { const w = new Set(words(i.h)), same = it.filter(j => j === i || words(j.h).filter(v => w.has(v)).length / Math.max(w.size, 1) >= 0.5);
-    const by = [...new Set(same.map(j => j.s).filter(x => TRUSTED.test(x)))]; return Object.assign(i, { n: by.length || 1, by: by.slice(0, 3), also: same.filter(j => j !== i).map(j => j.h).slice(0, 3) }); });
+    const by = [...new Set(same.map(j => j.s).filter(x => TRUSTED.test(x)))]; return Object.assign(i, { n: new Set(same.map(j => j.s).filter(Boolean)).size || 1, by: by.slice(0, 3), also: same.filter(j => j !== i).map(j => j.h).slice(0, 3) }); });
 }
 const feed = (url, ttl) => cached(url, ttl).then(f => ({ at: f.at, items: parse(f.body) })).catch(() => ({ at: Date.now(), items: [] }))
   .then(async r => { if (r.items.length) return r; const b = bingUrl(url); if (!b) return r;
-    try { const f = await cached(b, ttl); return { at: f.at, items: parseBing(f.body) }; } catch (e) { return r; } });
+    try { return await bingFeed(b, ttl); } catch (e) { return r; } });
+// Bing: one request at a time (bursts come back empty), only cache answers that have stories, retry once.
+let bingQ = Promise.resolve();
+const bingGet = u => (bingQ = bingQ.catch(() => {}).then(() => new Promise(r => setTimeout(r, 120))).then(() => fetch(u, { headers: { ...PUA, accept: "application/rss+xml, application/xml;q=0.9, */*;q=0.5" } })).then(f => f.ok ? f.text() : ""));
+async function bingFeed(u, ttl) {
+  const key = new Request(u + "&pv=2"), hit = await caches.default.match(key);
+  if (hit) return { at: Number(hit.headers.get("x-at")) || Date.now(), items: parseBing(await hit.text()) };
+  let x = await bingGet(u), items = parseBing(x);
+  if (!items.length) { x = await bingGet(u); items = parseBing(x); }
+  if (items.length) await caches.default.put(key, new Response(x, { headers: { "cache-control": "public, max-age=" + ttl, "x-at": String(Date.now()) } }));
+  return { at: Date.now(), items };
+}
 function clean(items, hours) {
   const now = Date.now(), seen = new Set();
   return items.filter(i => {
     const k = i.h.toLowerCase().replace(/[^a-z0-9 ]/g, "").split(" ").slice(0, 6).join(" ");
-    if (!i.h || !TRUSTED.test(i.s) || JUNK.test(i.h) || seen.has(k) || (i.t && now - i.t > hours * 3600e3)) return false;
+    if (!i.h || !(i.bing || TRUSTED.test(i.s)) || JUNK.test(i.h) || seen.has(k) || (i.t && now - i.t > hours * 3600e3)) return false;
     seen.add(k); return true;
   });
 }
