@@ -120,13 +120,14 @@ async function games() {
       const nat = tv.some(n => /ESPN|ABC|TNT|NBC|CBS|FOX|Prime|Netflix|Peacock|TBS|Paramount/i.test(n));
       const teams = (c.competitors || []).slice().sort((x, y) => (x.homeAway === "away" ? -1 : 0) - (y.homeAway === "away" ? -1 : 0)).slice(0, 2).map(x => {
         const t = x.team || {}, a = x.athlete || {}, rec = ((x.records || [])[0] || {}).summary || "";
-        return { n: t.shortDisplayName || t.displayName || a.shortName || a.displayName || "", logo: t.logo || (a.flag && a.flag.href) || "", rec, score: st === "in" ? x.score || "" : "" }; });
-      out.push({ path, id: e.id, league: name, name: e.name || e.shortName, short: e.shortName, t: Date.parse(e.date) || 0, tv: tv.slice(0, 2), note, live: st === "in", teams,
+        return { n: t.shortDisplayName || t.displayName || a.shortName || a.displayName || "", ab: t.abbreviation || "", logo: t.logo || (a.flag && a.flag.href) || "", rec, score: st === "in" ? x.score || "" : "" }; });
+      const o0 = (c.odds || [])[0];
+      out.push({ path, id: e.id, odds0: o0 ? { line: o0.details || "", ou: o0.overUnder || "", ml: [(o0.awayTeamOdds || {}).moneyLine, (o0.homeTeamOdds || {}).moneyLine], by: (o0.provider || {}).name || "" } : null, league: name, name: e.name || e.shortName, short: e.shortName, t: Date.parse(e.date) || 0, tv: tv.slice(0, 2), note, live: st === "in", teams,
         score: w + (nat ? 2 : 0) + ranked + (/final|championship|playoff|semifinal|title|main event|derby|clasico|clásico/i.test(note + " " + e.name) ? 4 : 0) });
     });
   }).catch(() => null)));
   const top = out.sort((a, b) => b.score - a.score).slice(0, 8);
-  await Promise.all(top.slice(0, 3).map(g => gameInfo(g)));   // injury report + starting lineups for the biggest games (Marco Nov 11)
+  await Promise.all(top.map(g => gameInfo(g)));   // all shown games get the full card (Marco Nov 11: odds, form, key players, injuries)   // injury report + starting lineups for the biggest games (Marco Nov 11)
   return top;
 }
 async function gameInfo(g) {
@@ -137,8 +138,20 @@ async function gameInfo(g) {
     const lu = (b.rosters || []).map(t => ({ team: (t.team || {}).shortDisplayName || (t.team || {}).displayName || "",
       xi: (t.roster || []).filter(r => r.starter).slice(0, 11).map(r => ((r.athlete || {}).shortName || (r.athlete || {}).displayName || "")) })).filter(t => t.team && t.xi.length);
     if (inj.length) g.inj = inj; if (lu.length) g.lineup = lu;
+    // away team first everywhere, like g.teams
+    const nm = x => ((x || {}).shortDisplayName || (x || {}).displayName || (x || {}).abbreviation || "");
+    const ord = g.teams.map(t => t.n), side = n => { const i = ord.indexOf(n); return i < 0 ? 9 : i; };
+    const pc = (b.pickcenter || [])[0], o = pc ? { line: pc.details || "", ou: pc.overUnder || "", ml: [(pc.awayTeamOdds || {}).moneyLine, (pc.homeTeamOdds || {}).moneyLine], by: (pc.provider || {}).name || "" } : g.odds0;
+    if (o && (o.line || o.ou || o.ml.some(v => v != null))) g.odds = { line: String(o.line || ""), ou: o.ou ? String(o.ou) : "", ml: o.ml.map(v => v == null ? "" : (Number(v) > 0 ? "+" : "") + v), by: o.by };
+    const pr = b.predictor || {}, pa = parseFloat((pr.awayTeam || {}).gameProjection), ph = parseFloat((pr.homeTeam || {}).gameProjection);
+    if (isFinite(pa) && isFinite(ph) && pa + ph > 50) g.win = [Math.round(pa), Math.round(ph)];
+    const form = (b.lastFiveGames || []).map(t => ({ team: nm(t.team), r: (t.events || []).slice(0, 5).map(e => (e.gameResult || "").charAt(0)).filter(Boolean).join("") })).filter(t => t.team && t.r).sort((x, y) => side(x.team) - side(y.team));
+    if (form.length) g.form = form;
+    const stars = (b.leaders || []).map(t => { const L = ((t.leaders || [])[0]) || {}, a = (L.leaders || [])[0]; return a && a.athlete ? { team: nm(t.team), n: a.athlete.shortName || a.athlete.displayName || "", v: a.displayValue || "", s: L.shortDisplayName || L.abbreviation || L.displayName || "" } : null; }).filter(x => x && x.n).sort((x, y) => side(x.team) - side(y.team));
+    if (stars.length) g.stars = stars.slice(0, 2);
   } catch (e) {}
-  delete g.path; delete g.id;
+  if (!g.odds && g.odds0) g.odds = { line: String(g.odds0.line || ""), ou: g.odds0.ou ? String(g.odds0.ou) : "", ml: g.odds0.ml.map(v => v == null ? "" : (Number(v) > 0 ? "+" : "") + v), by: g.odds0.by };
+  delete g.path; delete g.id; delete g.odds0;
 }
 async function bundle(P) {
   const tick = (P.get("t") || "").toUpperCase().split(",").filter(x => /^[A-Z.]{1,6}$/.test(x)).slice(0, 5);
