@@ -1800,7 +1800,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261111220000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261111215000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -1885,7 +1885,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 
 
 <div id="mpGate" hidden><form class="g" id="mpGateForm"><img src="icon-192.png?v=7" alt=""><h1>Pato</h1><p id="mpGateSub">Sign in</p>
-<input type="email" id="mpEmail" autocomplete="username" inputmode="email" placeholder="Email" aria-label="Email" required>
+<input type="text" autocapitalize="off" autocorrect="off" spellcheck="false" id="mpEmail" autocomplete="username" inputmode="email" placeholder="Email" aria-label="Email" required>
 <input type="password" id="mpPass" autocomplete="current-password" placeholder="Password" aria-label="Password" required>
 <button class="primary" type="submit" id="mpGateGo">Open</button><div class="hint" id="mpGateMsg" aria-live="polite"></div>
 <button type="button" class="lnk" id="mpForgot">Forgot password</button><br><button type="button" class="lnk" id="mpSwitch">Create an account</button></form></div>
@@ -1905,7 +1905,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 <label class="f">Games</label>
 <div class="sg-chips"><button type="button" data-k="poker">♠️ Poker</button><button type="button" data-k="casino">🎰 Casino</button><button type="button" data-k="bets">⚽ Sports bets</button></div>
 <button class="primary" type="submit">Start</button><div class="hint" id="sgMsg" aria-live="polite"></div></form></div>
-<script src="mp-firebase.js?v=8"></script>
+<script src="mp-firebase.js?v=9"></script>
 <script src="faceid.js?v=2" defer></script>
 <script src="sync.js?v=6" defer></script>
 <div id="sdProbe" aria-hidden="true" style="position:fixed;left:0;bottom:0;width:1px;height:1px;pointer-events:none;visibility:hidden"></div>
