@@ -1357,6 +1357,7 @@ html.mp-guest #p-stocks > #pnTick:not([hidden]){display:flex!important}
 .pd-s.call{background:linear-gradient(170deg,#23304F 0%,#0C1120 80%);border-color:#3D5A9A}
 .pd-done .pd-h1{font-size:1.2rem;line-height:1.25}.pd-done .pd-opt{padding:11px 16px;font-size:.95rem}.pd-done .pd-opts{gap:8px}.pd-done .pd-res{margin-top:12px}.pd-done .pd-why{font-size:.92rem;line-height:1.4}
 .pd-tk{font-size:.9rem;line-height:1.4;margin:10px 0 0;padding:9px 12px;border-radius:12px;background:rgba(232,192,106,.12);color:#F3E6C4}.pd-tk b{color:#E8C06A;margin-right:4px}.pd-done .pd-pct em{font-size:2.2rem}.pd-done .pd-pct{margin-top:2px}.pd-done .pd-know{margin-top:10px}
+.pd-next{margin-top:12px;width:100%;box-sizing:border-box;background:rgba(232,192,106,.16);color:#F3E6C4}
 .pd-ft{padding:10px 16px 16px;text-align:center;font-size:.72rem;color:#9FB3A7}
 .pd-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
 .pd-chips button{all:unset;cursor:pointer;font-size:.88rem;padding:8px 13px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#CFE0D6}
@@ -1795,7 +1796,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261111192500";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261111194000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -6715,7 +6716,9 @@ TRACKER DATA:
   }
   // ---------- This or that: one money question a day, then what % of Pato users got it right + why ----------
   var CALL = "Daily duel";   // story name (Marco picked Nov 11; was "This or that")
-  function callQ(){ return QZ.length ? QZ[Math.floor(Date.parse(day()) / 864e5) % QZ.length] : null; }
+  function callQ(){ if(!QZ.length) return null;
+    if(PICS()){ var D = QZ.filter(function(q){ return q.t; }).concat(QZ.filter(function(q){ return !q.t; })); return D[(Number(ls("pd-dq")) || 0) % D.length]; }   // demo: walk every duel, upgraded ones first
+    return QZ[Math.floor(Date.parse(day()) / 864e5) % QZ.length]; }
   function callSt(){ var c = ls("pd-call"); return c && c.day === day() ? c : null; }
   function callBody(q){ var c = callSt(), A = c && c.q === q.id ? c : null;
     var h = (A ? '<div class="pd-done">' : '') + '<div class="pd-k">' + esc(CALL.toUpperCase()) + '</div><div class="pd-h1">' + esc(q.q) + '</div><div class="pd-opts">' + (Math.floor(Date.parse(day()) / 864e5) % 2 ? [1, 0] : [0, 1]).map(function(i){ var o = q.o[i];
@@ -6723,12 +6726,12 @@ TRACKER DATA:
     if(!A) return h + '<div class="pd-m pd-c">Tap your pick.</div>';
     var pct = A.n >= 5 ? Math.round(A.right / A.n * 100) : null;
     h += '<div class="pd-res"><b>' + (A.a === q.a ? "You got it." : "Not this time.") + '</b>' + (pct != null ? '<div class="pd-pct"><em>' + pct + '%</em><span>of Pato users got it right</span></div>' : '<div class="pd-m">You\'re one of the first to answer today.</div>') + '</div>';
-    return h + '<div class="pd-know"><i>WHY</i><p class="pd-why">' + esc(q.w) + '</p>' + (q.t ? '<p class="pd-tk"><b>For you</b> ' + esc(q.t) + '</p>' : '') + '</div></div>'; }
+    return h + '<div class="pd-know"><i>WHY</i><p class="pd-why">' + esc(q.w) + '</p>' + (q.t ? '<p class="pd-tk"><b>For you</b> ' + esc(q.t) + '</p>' : '') + '</div>' + (PICS() ? '<button type="button" class="pd-opt pd-next">Try another duel <span>›</span></button>' : '') + '</div>'; }
   function callSync(q, right){ if(!base() || !window.mpIdToken) return;
     window.mpIdToken().then(function(tok){ return fetch(base() + "/call", {method: "POST", headers: {"content-type": "application/json", authorization: "Bearer " + tok}, body: JSON.stringify(right == null ? {q: q.id + day().replace(/-/g, "")} : {q: q.id + day().replace(/-/g, ""), right: right})}); })
       .then(function(r){ return r.ok ? r.json() : null; }).then(function(d){ var c = callSt(); if(!d || !c || c.q !== q.id) return; c.n = d.n; c.right = d.right; ls("pd-call", c);
         var x = S[cur]; if(x && x.call === q && !$("pdV").hidden) $("pdBd").innerHTML = callBody(q); }).catch(function(){}); }
-  function callPick(x, i){ var q = x.call; if(!q || callSt()) return; var right = i === q.a; ls("pd-call", {day: day(), q: q.id, a: i, n: 0, right: 0}); show(cur); callSync(q, right); }
+  function callPick(x, i){ var q = x.call, c0 = callSt(); if(!q || (c0 && c0.q === q.id)) return; var right = i === q.a; ls("pd-call", {day: day(), q: q.id, a: i, n: 0, right: 0}); show(cur); callSync(q, right); }
   function note(t){ return t ? '<div class="pd-note"><i>PATO</i><p>' + bold(t) + '</p></div>' : ""; }
   function knowArr(k){ var K = daily && daily.take && daily.take.know && daily.take.know[k]; return Array.isArray(K) ? K.filter(Boolean).slice(0, 2) : []; }
   function know(k){ var K = knowArr(k); return K.length ? '<div class="pd-know"><i>WHAT TO KNOW</i><ul>' + K.map(function(t){ return '<li>' + bold(t) + '</li>'; }).join("") + '</ul></div>' : ""; }
@@ -6812,7 +6815,7 @@ TRACKER DATA:
     // viewer: tap right = next, tap left = back, hold = pause, swipe down = close
     var V = $("pdV"), S0 = $("pdS"), ty, tx, t0, held;
     $("pdX").onclick = function(e){ e.stopPropagation(); close(); };
-    S0.addEventListener("click", function(e){ var b = e.target.closest(".pd-share, .pd-fb, .pd-opt"); if(!b) return; e.stopPropagation(); if(b.classList.contains("pd-opt")) return callPick(S[cur], Number(b.dataset.i)); if(b.classList.contains("pd-share")) share(S[cur]); else vote(S[cur], Number(b.dataset.fb)); });
+    S0.addEventListener("click", function(e){ var b = e.target.closest(".pd-share, .pd-fb, .pd-opt"); if(!b) return; e.stopPropagation(); if(b.classList.contains("pd-next")){ ls("pd-dq", (Number(ls("pd-dq")) || 0) + 1); S[cur].call = callQ(); show(cur); return; } if(b.classList.contains("pd-opt")) return callPick(S[cur], Number(b.dataset.i)); if(b.classList.contains("pd-share")) share(S[cur]); else vote(S[cur], Number(b.dataset.fb)); });
     V.addEventListener("click", function(e){ if(e.target === V) close(); });
     S0.addEventListener("pointerdown", function(e){ if(e.target.closest("button")) return; ty = e.clientY; tx = e.clientX; t0 = Date.now(); held = setTimeout(function(){ V.classList.add("paused"); }, 250); });
     S0.addEventListener("pointermove", function(e){ if(ty == null) return; var dy = e.clientY - ty; if(dy > 0) S0.style.transform = "translateY(" + dy + "px)"; });
