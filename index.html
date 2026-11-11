@@ -1796,7 +1796,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261111195500";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261111200000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -6768,6 +6768,8 @@ TRACKER DATA:
   var seen = function(){ var s = ls("pd-seen2") || {}; return s.day === day() ? s : {day: day(), ids: {}}; };
   function unseen(){ var s = seen(); return S.filter(function(x){ return !x.pick && !s.ids[x.id]; }); }
   function render(){
+    if(daily){ var all = [daily.big].concat(Object.keys(daily.cats || {}).reduce(function(m, k){ return m.concat(daily.cats[k]); }, []), Object.keys(daily.stocks || {}).map(function(k){ return daily.stocks[k]; }));
+      all.forEach(function(x){ if(x && x.img && x.u && !IM.m[x.u]) IM.m[x.u] = x.img; }); }   // Bing stories come with their photo
     // ticker (Stocks tab)
     var T = (tick && tick.ticker) || (daily && daily.ticker) || [];
     if(T.length){ var mine = pos.map(function(p){ return p.t; });
