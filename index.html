@@ -1359,6 +1359,7 @@ html.mp-guest #p-stocks > #pnTick:not([hidden]){display:flex!important}
 .pd-tk{font-size:.9rem;line-height:1.4;margin:10px 0 0;padding:9px 12px;border-radius:12px;background:rgba(232,192,106,.12);color:#F3E6C4}.pd-tk b{color:#E8C06A;margin-right:4px}.pd-done .pd-pct em{font-size:2.2rem}.pd-done .pd-pct{margin-top:2px}.pd-done .pd-know{margin-top:10px}
 .pd-next{margin-top:12px;width:100%;box-sizing:border-box;background:rgba(232,192,106,.16);color:#F3E6C4}
 .pd-up{margin-top:22px;padding-top:16px;border-top:1px solid rgba(255,255,255,.12)}.pd-up>i{display:block;font-style:normal;font-size:.7rem;letter-spacing:.12em;font-weight:800;color:#9FB3A7;margin-bottom:8px}.pd-up div{display:flex;flex-direction:column;gap:2px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06)}.pd-up div:last-child{border-bottom:0}.pd-up b{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:#E8C06A}.pd-up span{font-size:.95rem;line-height:1.35;color:#E4ECE7;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pd-nav{display:flex;gap:6px;overflow-x:auto;padding:10px 14px 0;scrollbar-width:none;-webkit-overflow-scrolling:touch}.pd-nav::-webkit-scrollbar{display:none}.pd-nav button{all:unset;flex:none;cursor:pointer;font-size:.74rem;font-weight:700;padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);white-space:nowrap}.pd-nav button.on{background:#E8C06A;color:#1A1405}.pd-inj p{margin:6px 0 0;font-size:.92rem;line-height:1.4;color:#E4ECE7}.pd-inj b{color:#E8C06A;margin-right:4px}
 .pd-ft{padding:10px 16px 16px;text-align:center;font-size:.72rem;color:#9FB3A7}
 .pd-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
 .pd-chips button{all:unset;cursor:pointer;font-size:.88rem;padding:8px 13px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#CFE0D6}
@@ -1797,7 +1798,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261111202500";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261111203500";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -6611,12 +6612,12 @@ TRACKER DATA:
 })();
 </script>
 <button type="button" class="pd-fab" id="pdFab" hidden aria-label="Pato Daily"><img src="icon-192.png?v=7" alt=""><b id="pdN"></b></button>
-<div class="pd-v" id="pdV" hidden><div class="pd-s" id="pdS"><div class="pd-bars" id="pdBars"></div><div class="pd-hd"><img src="icon-192.png?v=7" alt=""><div><b id="pdT"></b><small id="pdW"></small></div><button type="button" id="pdX" aria-label="Close">✕</button></div><div class="pd-bd" id="pdBd"></div><div class="pd-ft" id="pdFt">Tap for next · swipe down to go back</div></div></div>
+<div class="pd-v" id="pdV" hidden><div class="pd-s" id="pdS"><div class="pd-bars" id="pdBars"></div><div class="pd-nav" id="pdNav"></div><div class="pd-hd"><img src="icon-192.png?v=7" alt=""><div><b id="pdT"></b><small id="pdW"></small></div><button type="button" id="pdX" aria-label="Close">✕</button></div><div class="pd-bd" id="pdBd"></div><div class="pd-ft" id="pdFt">Tap for next · swipe down to go back</div></div></div>
 <script>
 // Pato Daily (Nov 11): floating Pato on every tab opens today's stories on top (7am DR edition); ticker on Stocks.
 (function(){
   var $ = function(i){ return document.getElementById(i); }, db = null, me = {}, pos = [], bets = [], sports = [], prefs = null, daily = null, tick = null, busy = 0;
-  var CATS = [["big","Big news","🌎"],["rd","🇩🇴 Local","🇩🇴"],["business","Business","💼"],["tech","Tech","💡"],["politics","Politics","🏛️"],["crypto","Crypto","🪙"],
+  var CATS = [["big","Top story","🌎"],["rd","🇩🇴 Local","🇩🇴"],["business","Business","💼"],["tech","Tech","💡"],["politics","Politics","🏛️"],["crypto","Crypto","🪙"],
     ["ent","Entertainment","🎬"],["gaming","Gaming","🎮"],["health","Health","🩺"],["cars","Cars","🏎️"],["fashion","Luxury","💎"],["game","Sports","🏆"]];
   var FIX = ["big","rd"], DEF = ["business","tech","game"], TOP = 5, MAX = 9;   // Big news + Local always on; follow up to 5 topics
   // "This or that" (Nov 11, v3): real, proven money facts people half-know. Specific, no giveaway phrasing, a why with numbers. Same question for everyone each day.
@@ -6699,13 +6700,15 @@ TRACKER DATA:
       L.push({id: ed + ":move:" + b.t + (ch>0?"+":"-"), cls: "big", t: "Breaking · " + b.t, w: "today", sh: st0 ? {k: "Breaking · " + b.t, h: st0.h, s: st0.s, u: st0.u} : null, u: st0 && st0.u, pic: st0 && st0.u, ph: st0 && st0.h, ps: st0 && st0.s, body: '<div class="pd-k">BREAKING · ' + esc(b.t) + " " + (ch>0?"+":"−") + Math.abs(ch).toFixed(1) + '%</div><div class="pd-h1">' + esc(st0 ? st0.h : b.t + (ch>0?" jumps ":" drops ") + Math.abs(ch).toFixed(1) + "% today.") + '</div>' + (st0 ? '<div class="pd-m">' + esc(st0.s) + " · " + ago(st0.t) + '</div>' : "") +
         '<div class="pd-note"><i>PATO</i><p>' + bold("Your position: " + (ch>0?"+":"−") + usd(b.sh*(b.precio-b.prev)) + " today.") + '</p></div>'}); }
     var fb = (prefs && prefs.fb) || {}, ix = function(k){ return CATS.map(function(c){ return c[0]; }).indexOf(k); };   // 👍/👎 move topics up or down
-    FIX.concat(on().slice().sort(function(a, b){ return (fb[b]||0) - (fb[a]||0) || ix(a) - ix(b); })).map(function(k){ return CATS[ix(k)]; }).filter(Boolean).forEach(function(c){ if(L.length >= MAX + 1) return; var k = c[0], it, h;
-      if(k === "big"){ if(!big) return; L.push({id: "big:" + big.h, cls: big.huge === false ? "" : "big", t: "Big news", w: ago(big.t) + " ago", u: big.u, pic: big.u, ph: big.h, ps: big.s, fk: "big", sh: {k: "Big news", h: big.h, s: big.s, u: big.u, kn: knowArr("big")}, body: '<div class="pd-k">BIG NEWS · WORLD</div><div class="pd-h1">' + esc(big.h) + '</div><div class="pd-m">' + esc(big.by && big.by.length ? big.by.join(" · ") : big.s) + '</div>' + know("big") + note(notes.big)}); return; }
+    (function(){ var T = on().slice().sort(function(a, b){ return (fb[b]||0) - (fb[a]||0) || on().indexOf(a) - on().indexOf(b); }); return ["big"].concat(T.filter(function(k){ return k !== "game"; }), ["rd"], T.indexOf("game") >= 0 ? ["game"] : []); })().map(function(k){ return CATS[ix(k)]; }).filter(Boolean).forEach(function(c){ if(L.length >= MAX + 1) return; var k = c[0], it, h;
+      if(k === "big"){ if(!big) return; L.push({id: "big:" + big.h, cls: big.huge === false ? "" : "big", t: "Top story", w: ago(big.t) + " ago", u: big.u, pic: big.u, ph: big.h, ps: big.s, fk: "big", sh: {k: "Top story", h: big.h, s: big.s, u: big.u, kn: knowArr("big")}, body: '<div class="pd-k">TOP STORY · WORLD</div><div class="pd-h1">' + esc(big.h) + '</div><div class="pd-m">' + esc(big.by && big.by.length ? big.by.join(" · ") : big.s) + '</div>' + know("big") + note(notes.big)}); return; }
       if(k === "game"){ var G = (daily && daily.games) || [], gi = daily && daily.take && daily.take.game >= 0 ? daily.take.game : 0, g = G[gi] || G[0]; if(!g) return;
         var mine = bets.filter(function(x){ return ["won","lost","push"].indexOf(x.result) < 0 && (x.legs||[]).some(function(l){ var a = String(l.game||"").toLowerCase(); return a && g.name.toLowerCase().split(/ at | vs\.? /).some(function(t){ return t && a.indexOf(t.split(" ").pop()) >= 0; }); }); })[0];
         var TM = g.teams || [], vs = TM.length === 2 && TM[0].n && TM[1].n ? '<div class="pd-vs">' + TM.map(function(t){ return '<div class="pd-team">' + (t.logo ? '<img src="' + esc(t.logo) + '" alt="" onerror="this.outerHTML=\'<span class=pd-tl>' + esc(t.n.slice(0,3).toUpperCase()) + '</span>\'">' : '<span class="pd-tl">' + esc(t.n.slice(0,3).toUpperCase()) + '</span>') +
           '<b>' + esc(t.n) + '</b>' + (g.live && t.score !== "" ? '<em>' + esc(t.score) + '</em>' : t.rec ? '<small>' + esc(t.rec) + '</small>' : '') + '</div>'; }).join('<div class="pd-at">' + (g.live ? '<i>LIVE</i>' : 'VS') + '</div>') + '</div>' : '<div class="pd-h1">' + esc(g.name.replace(" at ", " vs ")) + '</div>';
         L.push({id: ed + ":game:" + g.name, cls: "game", t: "Sports", w: g.league, fk: "game", sh: {k: "Sports · " + g.league, h: g.name.replace(" at ", " vs ") + (g.t && !g.live ? " · " + hr(g.t) + " DR" : ""), s: (g.tv||[]).join(", "), u: ""}, body: '<div class="pd-k">SPORTS · ' + esc(g.league.toUpperCase()) + '</div>' + vs + '<div class="pd-m pd-c">' + esc([g.live ? "LIVE now" : g.t ? hr(g.t) + " (DR time)" : "", (g.tv||[]).join(", "), g.note].filter(Boolean).join(" · ")) + '</div>' +
+          (g.inj && g.inj.length ? '<div class="pd-know pd-inj"><i>INJURY REPORT</i>' + g.inj.map(function(t){ return '<p><b>' + esc(t.team) + '</b> ' + esc(t.out.map(function(o){ return o.n + " (" + o.st + ")"; }).join(", ")) + '</p>'; }).join("") + '</div>' : '') +
+          (g.lineup && g.lineup.length ? '<div class="pd-know pd-inj"><i>STARTING LINEUPS</i>' + g.lineup.map(function(t){ return '<p><b>' + esc(t.team) + '</b> ' + esc(t.xi.join(", ")) + '</p>'; }).join("") + '</div>' : '') +
           (mine ? '<div class="pd-note"><i>YOUR BET</i><p>' + bold("You have RD$" + (Number(mine.stake)||0).toLocaleString("en-US") + " on this game.") + '</p></div>' : "")}); return; }
       var A = [].concat(cats[k] || []); it = A[0]; if(!it) return; h = k === "rd" && daily.take && daily.take.rd ? daily.take.rd : it.h;
       var by = function(x){ return esc(x.by && x.by.length > 1 ? x.by.join(" · ") : x.s) + " · " + ago(x.t) + " ago"; }, i2 = A[1];   // 1-2 stories per topic, ranked by the worker
@@ -6713,7 +6716,10 @@ TRACKER DATA:
         (i2 ? '<div class="pd-two"><div class="pd-k">ALSO</div><div class="pd-h2">' + esc(i2.h) + '</div><div class="pd-m">' + by(i2) + ' · <a class="pd-r2" data-u="' + esc(i2.u) + '">Read ›</a></div></div>' : '')}); });
     var cq = callQ(); if(cq) L.push({id: ed + ":call:" + cq.id, cls: "call", t: CALL, w: "today's money question", call: cq, body: ""});
     L.push({id: "pick", cls: "", t: "Pato Daily", w: "your stories", pick: 1, body: '<div class="pd-k">' + (prefs && prefs.picked ? "YOUR STORIES" : "PICK WHAT YOU LIKE") + '</div><div class="pd-h1">' + (prefs && prefs.picked ? "That's today. Change what you see:" : "What do you want in your stories?") + '</div><div class="pd-chips" id="pdChips">' +
-      CATS.filter(function(c){ return FIX.indexOf(c[0]) < 0; }).map(function(c){ return '<button type="button" data-k="' + c[0] + '"' + (want.indexOf(c[0])>=0 ? ' class="on"' : '') + '>' + c[1] + '</button>'; }).join("") + '</div><div class="pd-m" id="pdPickM">Pick up to ' + TOP + '. Big news and Local come every day. Next edition at 7am.</div>'});
+      CATS.filter(function(c){ return FIX.indexOf(c[0]) < 0; }).map(function(c){ return '<button type="button" data-k="' + c[0] + '"' + (want.indexOf(c[0])>=0 ? ' class="on"' : '') + '>' + c[1] + '</button>'; }).join("") + '</div><div class="pd-m" id="pdPickM">Pick up to ' + TOP + '. Top story and Local come every day. Next edition at 7am.</div>'});
+    // section row (Marco: show which section you're on): short label per slide
+    L.forEach(function(x){ var k = x.fk, c = k && CATS[ix(k)];
+      x.nav = x.call ? "⚔️ Duel" : x.pick ? "✏️ Topics" : k === "game" ? "⚽ Sports" : k === "big" ? "🌎 Top story" : k === "rd" ? "🇩🇴 Local" : c ? c[2] + " " + c[1] : /^Breaking/.test(x.t) ? "📈 " + x.t.replace("Breaking · ", "") : "🦆 Pato"; });
     // Pato's take page: "In today's edition" = what's coming, so the page is full and pulls you into the stories
     var nt = [tk.happened, tk.you, tk.watch].filter(function(r){ return r && r.text; }).length, up = L.slice(1).filter(function(x){ return x.ph || x.call; }).slice(0, nt >= 3 ? 3 : 6);
     if(up.length) L[0].body += '<div class="pd-up"><i>IN TODAY\'S EDITION</i>' + up.map(function(x){ return '<div><b>' + esc(x.t) + '</b><span>' + esc(x.call ? x.call.q : x.ph) + '</span></div>'; }).join("") + '</div>';
@@ -6798,6 +6804,7 @@ TRACKER DATA:
     $("pdBd").innerHTML = x.call ? callBody(x.call) : picHtml(x) + x.body + act(x);
     if(x.call && callSt() && callSt().n === 0) callSync(x.call, null);
     $("pdBars").innerHTML = S.map(function(_, j){ return '<i class="' + (j < cur ? "d" : j === cur ? "n" : "") + '"></i>'; }).join("");
+    var nv = $("pdNav"); if(nv){ nv.innerHTML = S.map(function(y, j){ return '<button type="button" data-j="' + j + '"' + (j === cur ? ' class="on"' : '') + '>' + esc(y.nav || y.t) + '</button>'; }).join(""); var onb = nv.querySelector(".on"); if(onb) nv.scrollLeft = Math.max(0, onb.offsetLeft - nv.clientWidth / 2 + onb.offsetWidth / 2); }
     if(x.pic && !(x.pic in IM.m)) pic(x.pic, function(){ if(S[cur] === x && !$("pdV").hidden && !$("pdBd").querySelector(".pd-img")) $("pdBd").insertAdjacentHTML("afterbegin", picHtml(x)); }, x.ph);
     $("pdFt").textContent = x.pick ? "Swipe down to go back" : "Tap for next · swipe down to go back";
     var t = x.pick || (x.call && !callSt()) ? 0 : x.call ? 12000 : x.id.indexOf(":take") > 0 ? 14000 : 9000; $("pdS").style.setProperty("--pd-t", t/1000 + "s");
@@ -6823,7 +6830,8 @@ TRACKER DATA:
     $("pdX").onclick = function(e){ e.stopPropagation(); close(); };
     S0.addEventListener("click", function(e){ var b = e.target.closest(".pd-share, .pd-fb, .pd-opt"); if(!b) return; e.stopPropagation(); if(b.classList.contains("pd-next")){ ls("pd-dq", (Number(ls("pd-dq")) || 0) + 1); S[cur].call = callQ(); show(cur); return; } if(b.classList.contains("pd-opt")) return callPick(S[cur], Number(b.dataset.i)); if(b.classList.contains("pd-share")) share(S[cur]); else vote(S[cur], Number(b.dataset.fb)); });
     V.addEventListener("click", function(e){ if(e.target === V) close(); });
-    S0.addEventListener("pointerdown", function(e){ if(e.target.closest("button")) return; ty = e.clientY; tx = e.clientX; t0 = Date.now(); held = setTimeout(function(){ V.classList.add("paused"); }, 250); });
+    var NV = $("pdNav"); if(NV) NV.addEventListener("click", function(e){ var b = e.target.closest("button[data-j]"); if(!b) return; e.stopPropagation(); show(Number(b.dataset.j)); });
+    S0.addEventListener("pointerdown", function(e){ if(e.target.closest("button, #pdNav")) return; ty = e.clientY; tx = e.clientX; t0 = Date.now(); held = setTimeout(function(){ V.classList.add("paused"); }, 250); });
     S0.addEventListener("pointermove", function(e){ if(ty == null) return; var dy = e.clientY - ty; if(dy > 0) S0.style.transform = "translateY(" + dy + "px)"; });
     S0.addEventListener("pointerup", function(e){ if(ty == null) return; clearTimeout(held); var dy = e.clientY - ty, dx = e.clientX - tx, long = Date.now() - t0 > 250; ty = null;
       var was = V.classList.contains("paused"); V.classList.remove("paused");
