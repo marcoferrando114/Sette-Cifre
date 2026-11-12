@@ -179,7 +179,7 @@ async function bundle(P) {
 const TAKE = `You are Pato, the money buddy inside a finance app for young Dominicans. Write today's "Pato's take" for ONE user from the facts below.
 Return ONLY JSON: {"pato":{"line":"","tip":""},"happened":{"text":"","src":""},"you":{"text":"","src":""},"watch":{"text":"","src":""},"game":0,"rd":"","notes":{},"know":{}}
 Rules:
-- pato: the heart of the app. Pato (a duck who is the user's sharp, warm money friend) talks straight to THEM. line = ONE memorable sentence (max 28 words) that shows Pato really knows their money today: connect two of their real numbers (savings vs goal, spending pace vs limit, stocks today or since bought, bets record) into one insight they would not notice alone. tip = ONE specific, well-thought move for the next days, with a number from USER (e.g. a daily spending amount, a saving target, skipping a bet). Never tell them to buy or sell a specific stock or bet. Use ONLY numbers that appear in USER (you may round). Skip any data that is missing. Sound human, a little witty, never preachy. No emojis.
+- pato: the heart of the app. Pato (a duck who is the user's sharp, warm money friend) talks straight to THEM. line = ONE memorable sentence (max 30 words) that shows Pato really knows their money: connect two of their real numbers (savings vs goal, spending pace vs limit, stocks since bought, portfolio concentration, bets record) into an insight or a piece of real financial knowledge they would not notice alone (e.g. concentration risk, compounding, cost averaging, emergency fund, the cost of a spending habit). NEVER just recap today's gain or loss. tip = ONE specific, well-thought move for the next days, with a number from USER (e.g. a daily spending amount, a saving target, skipping a bet). Never tell them to buy or sell a specific stock or bet. Use ONLY numbers that appear in USER (you may round). Skip any data that is missing. Sound human, a little witty, never preachy. No emojis.
 - happened: the one news story that matters most for this user's money today (their stocks first, then markets). src = the outlet name given.
 - you: what it means for THEM using ONLY the numbers in USER. "Today" numbers come ONLY from TODAY_* fields. SINCE_BOUGHT_gainPct is the total gain since they bought; never call it today's move. If nothing moved much, say it was a quiet day and give their real total.TODAY change. src = "From your stocks" (or "From your bets").
 - watch: one concrete thing coming up (an earnings date, a game they bet on, a Fed meeting) that appears in the facts. If none, a short useful money habit. src = outlet or "Pato".
@@ -239,6 +239,23 @@ async function brief(env, it) {
   let out = null; try { out = JSON.parse(m[0]); } catch (e) { return null; }
   out = { facts: (out.facts || []).filter(x => typeof x === "string" && x.trim()).slice(0, 3), why: typeof out.why === "string" ? out.why : "" };
   await env.LIMITS.put(k, JSON.stringify(out), { expirationTtl: 172800 }); return out;
+}
+// Big move insight (Marco Nov 11: "the user needs to feel you're giving great financial advice or knowledge", not a recap of the day). One call per user, stock, day and direction.
+const INSIGHT = `You are Pato, a sharp, warm money friend inside a finance app for young investors. One of the user's stocks moved a lot today. Using ONLY the numbers in DATA, write JSON {"line":""}: max 2 sentences, 45 words total.
+Give real insight, not a recap of today's move: e.g. what their concentration means (weightPct), where they stand vs their average cost, what an upcoming event (DATA.event) means for volatility, how to think about a dip or a jump with a plan (cost averaging, position size, not chasing, not panic selling). You may share widely known general knowledge about how markets work. Never say "buy" or "sell" this stock as an instruction; frame it as how a smart investor thinks about it. Never invent numbers, dates, news or targets. Plain English, no emojis.`;
+async function insight(env, uid, d) {
+  const t = String(d.t || "").toUpperCase().replace(/[^A-Z.]/g, "").slice(0, 6); if (!t || !env.ANTHROPIC_KEY) return null;
+  const k = "ins1:" + uid + ":" + drDay() + ":" + t + ":" + (Number(d.chPct) < 0 ? "dn" : "up"); if (env.LIMITS) { const hit = await env.LIMITS.get(k); if (hit) return JSON.parse(hit); }
+  const data = { ticker: t, company: String(d.co || "").slice(0, 40), todayPct: Number(d.chPct), todayUsd: Number(d.usd), shares: Number(d.sh), avgCostUsd: Number(d.avg) || null, priceUsd: Number(d.px), sinceBoughtPct: Number(d.since), positionUsd: Number(d.val), weightPct: Number(d.w), otherStocksTodayUsd: Number(d.oth), event: d.ev ? String(d.ev).slice(0, 60) : null, headline: d.h ? String(d.h).slice(0, 160) : null };
+  const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "content-type": "application/json", "x-api-key": env.ANTHROPIC_KEY, "anthropic-version": "2023-06-01" },
+    body: JSON.stringify({ model: "claude-haiku-5-5", max_tokens: 300, messages: [{ role: "user", content: INSIGHT + "\n\nDATA: " + JSON.stringify(data) }] }) }).catch(() => null);
+  if (!r || !r.ok) return null;
+  const j = await r.json(), txt = ((j.content || []).find(c => c.type === "text") || {}).text || "", m = txt.match(/\{[\s\S]*\}/);
+  let out = null; try { out = JSON.parse(m[0]); } catch (e) { return null; }
+  const ok = new Set(); Object.values(data).forEach(v => { if (typeof v === "number" && isFinite(v)) { const a = Math.abs(v); [0, 1, 2].forEach(n => ok.add(a.toFixed(n))); ok.add(String(Math.round(a))); } });
+  const nums = [...String(out.line || "").matchAll(/(\d[\d,]*(?:\.\d+)?)/g)].map(x => x[1].replace(/,/g, "")).filter(n => Number(n) > 1 && !/^(19|20)\d\d$/.test(n));
+  if (!out.line || nums.some(n => !ok.has(Number(n).toFixed(n.includes(".") ? Math.min(2, n.split(".")[1].length) : 0)) && !ok.has(String(Math.round(Number(n)))))) return null;   // every number must be theirs
+  out = { line: String(out.line).slice(0, 320) }; if (env.LIMITS) await env.LIMITS.put(k, JSON.stringify(out), { expirationTtl: 172800 }); return out;
 }
 // Story photos (Nov 11): Bing News RSS finds the same story -> Bing's thumbnail, else the outlet's own preview photo (og:image).
 // Honest user agent only; if an outlet refuses, try another outlet covering the story, else the page stays text-only.
@@ -323,6 +340,7 @@ export default {
       }
       return json(cur, 200, origin);
     }
+    if (url.pathname === "/insight") { try { return json((await insight(env, uid, body)) || {}, 200, origin); } catch (e) { return json({}, 200, origin); } }
     if (url.pathname === "/daily") {
       try { const b = await bundle(url.searchParams); if (b.big) b.big.brief = await brief(env, b.big).catch(() => null); return json({ ...b, take: await take(env, uid, body, b).catch(() => null) }, 200, origin); }
       catch (e) { return json({ error: { type: "news_failed" } }, 502, origin); }
