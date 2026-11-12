@@ -2054,7 +2054,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261112231410";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261112232649";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -7252,7 +7252,7 @@ TRACKER DATA:
     if(g.form && g.form.length) h += '<div class="pd-know pd-inj"><i>LAST 5 GAMES</i>' + g.form.map(function(t){ return '<p class="pd-form"><b>' + esc(t.team) + '</b><span>' + t.r.split("").map(function(r){ return '<u class="' + (r === "W" ? "w" : r === "L" ? "l" : "d") + '">' + esc(r) + '</u>'; }).join("") + '</span></p>'; }).join("") + '</div>';
     if(g.stars && g.stars.length) h += '<div class="pd-know pd-inj"><i>PLAYERS TO WATCH</i>' + g.stars.map(function(x){ return '<p><b>' + esc(x.team) + '</b> ' + esc(x.n) + (x.v ? ' · ' + esc(x.v) + (x.s ? ' ' + esc(x.s) : '') : '') + '</p>'; }).join("") + '</div>';
     return h; }
-  function plain(x){ return x && x.pl ? '<div class="pd-know"><i>IN PLAIN WORDS</i><p style="margin:6px 0 0;font-size:1rem;line-height:1.4;color:#fff">' + esc(x.pl) + '</p></div>' : ""; }   // Nov 12: one short line saying what the story means, from the worker
+  function plain(x){ return x && x.pl ? '<div class="pd-know"><i>CONTEXT</i><p style="margin:6px 0 0;font-size:1rem;line-height:1.4;color:#fff">' + esc(x.pl) + '</p></div>' : ""; }   // Nov 12: one short line saying what the story means, from the worker
   function hnm(h){ var m = String(h).match(/^([A-Z][a-z]+(?: [A-Z][a-z]+)+): (.{20,})$/); return m ? {n: m[1], t: m[2]} : null; }
   function note(t){ return t ? '<div class="pd-note"><i>PATO</i><p>' + bold(t) + '</p></div>' : ""; }
   function knowArr(k){ if(FR[k]) return []; var K = daily && daily.take && daily.take.know && daily.take.know[k]; return Array.isArray(K) ? K.filter(Boolean).slice(0, 2) : []; }
