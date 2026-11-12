@@ -210,6 +210,25 @@ function pickMarkets(M, tick) { const me = tick.length ? new RegExp("\\b(" + tic
 function marketFor(M, h) { if (!h) return null; const w = new Set(String(h).match(/\b[A-Z][a-zA-Z]{3,}\b/g) || []); if (w.size < 1) return null; let best = null, bn = 0;
   M.forEach(m => { const mw = String(m.t + " " + m.q).match(/\b[A-Z][a-zA-Z]{3,}\b/g) || [], n = [...new Set(mw)].filter(x => w.has(x)).length; if (n >= 2 && n > bn && m.p >= 3 && m.p <= 97) { bn = n; best = m; } });
   return best ? { q: best.multi ? best.t + ": " + best.q : best.q, p: best.p, end: best.end, u: best.u } : null; }
+// Launches + Rising companies (Marco Nov 12: "product releases" and "underground companies before they break through"): big launches this week, startups raising at big valuations
+const LAUNCH = /\b(launch(es|ed)?|unveil(s|ed)?|debuts?|introduc(es|ed)|releases?|rolls? out|now available|goes on sale|first look|announc(es|ed) (new|its))\b/i, NOTLAUNCH = /\b(missile|rocket attack|investigation|lawsuit|probe|campaign against|offensive|strikes?)\b/i;
+const RAISE = /\b(rais(es|ed)|funding|valuation|valued at|series [a-f]|seed round|unicorn|backed|investors? pour|in talks to raise)\b/i, MONEY = /\$\s?\d[\d.,]*\s?(million|billion|bn|m|b|trillion)\b/i;
+const BIGCO = /^(Apple|Google|Alphabet|Microsoft|Amazon|Meta|Nvidia|OpenAI|Anthropic|xAI|Tesla|Samsung|Sony|Nintendo|SoftBank)\b/;
+const simw = (a, b) => { const A = new Set(words(a)), B = new Set(words(b)); return [...A].filter(w => B.has(w)).length / Math.max(Math.min(A.size, B.size), 1); };
+const amt = s => { const m = String(s).match(/\$\s?(\d[\d.,]*)\s?(million|billion|bn|m|b|trillion)\b/i); if (!m) return 0; const v = parseFloat(m[1].replace(/,/g, "")), u = m[2].toLowerCase(); return v * (u[0] === "t" ? 1e12 : u[0] === "b" ? 1e9 : 1e6); };
+function launches(items, tick) { const me = tick.length ? new RegExp("\\b(" + tick.map(t => t + (CO[t] ? "|" + CO[t] : "")).join("|") + ")\\b", "i") : null, now = Date.now(), out = [];
+  clean(items, 72).filter(i => LAUNCH.test(i.h) && !NOTLAUNCH.test(i.h) && !HUGE.test(i.h)).map(i => Object.assign({}, i, { mine: !!(me && me.test(i.h)), sc: (i.n || 1) * 10 + Math.max(0, 24 - (now - i.t) / 36e5) / 2 + (me && me.test(i.h) ? 20 : 0) + (TASTE.test(i.h) ? 6 : 0) }))
+    .sort((a, b) => b.sc - a.sc).forEach(i => { if (out.length < 4 && !out.some(o => simw(o.h, i.h) >= 0.5)) out.push({ h: i.h, s: i.s, u: i.u, t: i.t, n: i.n, d: i.d || "", mine: i.mine }); });
+  return out; }
+function rising(items) { const now = Date.now(), out = [];
+  clean(items, 72).filter(i => RAISE.test(i.h) && MONEY.test(i.h) && !BIGCO.test(i.h) && !/\b(fund (closes|raises)|ETF|bond|IPO priced|government|city|county|charity)\b/i.test(i.h)).map(i => {
+    const h = i.h, v = h.match(/(?:valu(?:ed|ation) (?:at|of)|at a|\bto)\s+(\$\s?\d[\d.,]*\s?(?:million|billion|bn|m|b|trillion))/i) || h.match(/(\$\s?\d[\d.,]*\s?(?:million|billion|bn|m|b|trillion))\s+valuation/i), r = h.match(/(?:rais(?:es|ed)|secures?|lands?|closes?|nabs?|gets?)\s+(\$\s?\d[\d.,]*\s?(?:million|billion|bn|m|b|trillion))/i);
+    const val = v ? v[1].replace(/\s+/g, " ") : "", raised = r ? r[1].replace(/\s+/g, " ") : "", co = (h.match(/^([A-Z][\w.&'-]*(?:\s[A-Z][\w.&'-]*){0,2})(?=,|\s(?:raises|raised|secures|lands|closes|nabs|gets|is|hits|valued|in talks|seeks|reaches|doubles|triples))/) || [])[1] || "";
+    return Object.assign({}, i, { co, val, raised, sc: Math.log10(Math.max(amt(val), amt(raised), 1)) * 4 + (i.n || 1) * 6 + Math.max(0, 24 - (now - i.t) / 36e5) / 3 + (val ? 6 : 0) + (/\b(AI|robot|quantum|defense|space|fintech|crypto|chips?)\b/i.test(h) ? 4 : 0) }); })
+    .sort((a, b) => b.sc - a.sc).forEach(i => { if (out.length < 4 && !out.some(o => (o.co && o.co === i.co) || simw(o.h, i.h) >= 0.5)) out.push({ h: i.h, s: i.s, u: i.u, t: i.t, n: i.n, d: i.d || "", co: i.co, val: i.val, raised: i.raised }); });
+  return out; }
+const LQ = srch("(launches OR unveils OR debuts OR \"release date\" OR \"now available\") (Apple OR Google OR Samsung OR Nvidia OR OpenAI OR Tesla OR Meta OR Microsoft OR Sony OR Nintendo OR Anthropic OR Amazon OR Ferrari OR Nike OR iPhone OR PlayStation)").replace(" when:1d", " when:3d").replace("when%3A1d", "when%3A3d");
+const RQ = srch("startup (raises OR \"valued at\" OR valuation OR \"funding round\" OR \"Series A\" OR \"Series B\" OR \"Series C\" OR unicorn)").replace("when%3A1d", "when%3A3d");
 async function bundle(P) {
   const tick = (P.get("t") || "").toUpperCase().split(",").filter(x => /^[A-Z.]{1,6}$/.test(x)).slice(0, 5);
   const want = (P.get("k") || "rd,business,tech").split(",").filter(k => CATS[k]).slice(0, 8);
@@ -229,9 +248,9 @@ async function bundle(P) {
   const bw = B ? new Set(words(B.h)) : new Set(), MORE = pool.filter(i => i && i.h && i !== B && words(i.h).filter(v => bw.has(v)).length / Math.max(bw.size, 1) < 0.5).sort((x, y) => bs(y) - bs(x))
     .filter((v, i, a) => a.findIndex(o => o.h === v.h || words(o.h).filter(w => new Set(words(v.h)).has(w)).length / Math.max(words(v.h).length, 1) >= 0.5) === i).slice(0, 10)
     .map(i => ({ h: i.h, s: i.s, u: i.u, t: i.t, n: i.n, by: i.by, d: i.d || "" }));
-  const MK = await markets().catch(() => []);
+  const [MK, LF, RF] = await Promise.all([markets().catch(() => []), feed(LQ, 10800).catch(() => ({})), feed(RQ, 10800).catch(() => ({}))]);
   if (W) W.mk = marketFor(MK, W.h); Object.keys(cats).forEach(k => { const it = cats[k][0]; if (it) it.mk = marketFor(MK, it.h); });
-  return { at: top.at || Date.now(), day: edDay(), big: W, calls: CL, more: MORE, preds: pickMarkets(MK, tick), cats, stocks, games: rest[rest.length - 1] || [],
+  return { at: top.at || Date.now(), day: edDay(), big: W, calls: CL, more: MORE, preds: pickMarkets(MK, tick), launch: launches(LF.items || [], tick), rising: rising(RF.items || []), cats, stocks, games: rest[rest.length - 1] || [],
     ticker: T.filter(i => MOVERS.test(i.h)).concat(T).filter((v, i, a) => a.indexOf(v) === i).slice(0, 5) };
 }
 const TAKE = `You are Pato, the money buddy inside a finance app for young Dominicans. Write today's "Pato's take" for ONE user from the facts below.
