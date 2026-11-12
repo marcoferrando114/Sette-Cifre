@@ -209,7 +209,11 @@ async function bundle(P) {
   const W = B ? Object.assign({}, B, { huge: (B.n || 0) >= 3 && HUGE.test(B.h), mine: !!(me && me.test(B.h)) }) : null;
   const CL = pick(rest[want.length + tick.length].items || []).filter(i => CALLS.test(i.h)).map(i => Object.assign({}, i, { mine: !!(me && me.test(i.h)) })).sort((x, y) => (y.mine - x.mine) || ((y.n || 1) - (x.n || 1)))[0] || null;
   const T = pick(top.items || []);
-  return { at: top.at || Date.now(), day: edDay(), big: W, calls: CL, cats, stocks, games: rest[rest.length - 1] || [],
+  // "More from the world" (Marco Nov 12: every drop has at least 2 new stories; "find the biggest recent story you can"): next-biggest stories worldwide
+  const bw = B ? new Set(words(B.h)) : new Set(), MORE = pool.filter(i => i && i.h && i !== B && words(i.h).filter(v => bw.has(v)).length / Math.max(bw.size, 1) < 0.5).sort((x, y) => bs(y) - bs(x))
+    .filter((v, i, a) => a.findIndex(o => o.h === v.h || words(o.h).filter(w => new Set(words(v.h)).has(w)).length / Math.max(words(v.h).length, 1) >= 0.5) === i).slice(0, 10)
+    .map(i => ({ h: i.h, s: i.s, u: i.u, t: i.t, n: i.n, by: i.by, d: i.d || "" }));
+  return { at: top.at || Date.now(), day: edDay(), big: W, calls: CL, more: MORE, cats, stocks, games: rest[rest.length - 1] || [],
     ticker: T.filter(i => MOVERS.test(i.h)).concat(T).filter((v, i, a) => a.indexOf(v) === i).slice(0, 5) };
 }
 const TAKE = `You are Pato, the money buddy inside a finance app for young Dominicans. Write today's "Pato's take" for ONE user from the facts below.

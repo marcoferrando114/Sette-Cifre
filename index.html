@@ -2000,7 +2000,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261112161500";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261112171500";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -6922,9 +6922,16 @@ TRACKER DATA:
   function slot(){ var h = drd().getUTCHours(); if(h < 7) return 4; for(var i = DROPS.length - 1; i >= 0; i--) if(h >= DROPS[i]) return i; return 0; }
   function hh(h){ return (h % 12 || 12) + ":00 " + (h < 12 ? "AM" : "PM"); }
   function clock(){ var sl = slot(); return "Updated " + hh(DROPS[sl]) + " · next " + hh(DROPS[(sl + 1) % DROPS.length]); }
-  function getDrop(){ var sl = slot(); if(!base() || !sl || (drop && drop.day === day() && drop.slot === sl && drop.sig === sig()) || getDrop.busy) return; getDrop.busy = 1;
+  // Live between drops (Marco Nov 12): every 20 min check for things that can't wait: huge breaking news (3+ outlets), Pato's pick graded, more world stories. The rest waits for the next drop.
+  function getDrop(){ var sl = slot(), same = drop && drop.day === day() && drop.slot === sl && drop.sig === sig(); if(!base() || getDrop.busy || (same && Date.now() - (drop.got || 0) < 20*6e4)) return; if(!sl && !same && !(drop && drop.day === day())) return; getDrop.busy = 1;
     fetch(base() + "/news?" + q().replace("&busy=1", "") + "&busy=1").then(function(r){ return r.ok ? r.json() : null; })
-      .then(function(d){ getDrop.busy = 0; if(!d || !d.cats) return; drop = {day: day(), slot: sl, sig: sig(), d: d}; ls("pd-drop3", drop); render(); }).catch(function(){ getDrop.busy = 0; }); }
+      .then(function(d){ getDrop.busy = 0; if(!d || !d.cats) return;
+        if(same || !sl){ var o = drop.d, LA = ls("pd-live") || {}; if(LA.day !== day()) LA = {day: day(), n: 0, at: 0};
+          // Marco: "live alerts can't be too much": only huge breaking news, at most 2 a day, 3+ hours apart. Everything else waits for the next drop.
+          if(d.big && d.big.huge && (d.big.n || 0) >= 3 && (!o.big || o.big.h !== d.big.h) && LA.n < 2 && Date.now() - LA.at > 3*3600e3){ o.big = d.big; LA.n++; LA.at = Date.now(); ls("pd-live", LA); }
+          if(d.pick) o.pick = d.pick; drop.got = Date.now(); }   // the pick's record updates quietly (no alert)
+        else drop = {day: day(), slot: sl, sig: sig(), d: d, got: Date.now()};
+        ls("pd-drop3", drop); render(); }).catch(function(){ getDrop.busy = 0; }); }
   function about(t, it){ if(!it || !it.h) return null; var re = CO[t] || new RegExp("\\b" + t + "\\b"); return re.test(it.h) ? it : null; }   // a stock's news must name that company (Marco: no Costco story on IBKR)
   function pickNew(k, list){ var s = seen().ids, out = [], used = {};   // newest-unseen first; never the same story twice in a day
     list.forEach(function(x){ if(x && x.h && !used[x.h]){ used[x.h] = 1; out.push(x); } });
@@ -6948,7 +6955,7 @@ TRACKER DATA:
     Object.keys(cats0).concat(dd ? Object.keys(dd.cats || {}) : []).forEach(function(k){ if(cats[k]) return; var A = pickNew(k, [].concat(dd && dd.cats && dd.cats[k] || [], cats0[k] || []));
       cats[k] = A; if(A[0] && ![].concat(cats0[k] || []).some(function(x){ return x.h === A[0].h; })) FR[k] = 1; });   // FR = swapped in by a drop: no morning AI lines for it
     var nt0 = (daily && daily.take && daily.take.notes) || {}; Object.keys(nt0).forEach(function(k){ if(!FR[k]) notes[k] = nt0[k]; });
-    var big = pickNew("big", [dd && dd.big, tick && tick.big, daily && daily.big])[0]; if(big && daily && daily.big && big.h !== daily.big.h) FR.big = 1;
+    var big = pickNew("big", [dd && dd.big, !dd && tick && tick.big, daily && daily.big])[0];   // the 2-hour ticker refresh never sneaks in a new Breaking (live alerts are capped) if(big && daily && daily.big && big.h !== daily.big.h) FR.big = 1;
     if(dd && dd.games && dd.games.length) FR.game = 1;
     var tk = (daily && daily.take) || fallback(), MV = null;
     L.push({id: ed + ":take", cls: "take", t: "Pato's take", w: "Updated " + hh(DROPS[slot()]), body: ""}); var TK = L[L.length - 1];
@@ -6988,6 +6995,15 @@ TRACKER DATA:
       var i = L.map(function(x){ return x.fk; }).indexOf("big"), j = L.reduce(function(m, x, k){ return /:co:|:move:/.test(x.id) ? k : m; }, i);
       L.splice(j >= 0 ? j + 1 : 1, 0, {id: "calls:" + c.h, cls: "", t: "Analyst call", w: ago(c.t) + " ago", u: c.u, pic: c.u, ph: c.h, ps: c.s, nav: "🧠 Analysts", sh: {k: "Analyst call", h: c.h, s: c.s, u: c.u},
         body: '<div class="pd-k">🧠 WHAT ANALYSTS SAY' + (c.mine ? ' · ABOUT YOUR STOCK' : '') + '</div><div class="pd-h1">' + esc(c.h) + '</div><div class="pd-m">' + esc(c.by && c.by.length > 1 ? c.by.join(" · ") : c.s) + ' · ' + ago(c.t) + ' ago</div>' + note("An analyst call is an opinion with reasons, not a sure thing. Read the why, then check it against your own plan.")}); })();
+    // Marco Nov 12: every drop brings at least 2 new stories; if the topics ran dry, add the biggest recent stories worldwide you haven't seen
+    var sn0 = seen().ids, fresh = L.filter(function(x){ return !/:take$/.test(x.id) && !x.call && !sn0[x.id]; }).length;
+    var fk0 = day() + ":" + slot(), FL = ls("pd-fill"); if(!FL || FL.k !== fk0) FL = {k: fk0, hs: null};   // filler is chosen once per drop, so it's never an endless feed
+    if(FL.hs || fresh < 2){ var usedH = {}, MO = [].concat(dd && dd.more || [], daily && daily.more || []), got = [];
+      if(FL.hs) MO = MO.filter(function(it){ return it && FL.hs.indexOf(it.h) >= 0; }); else { L.forEach(function(x){ if(x.ph) usedH[x.ph] = 1; }); }
+      MO.forEach(function(it){ if(!it || !it.h || usedH[it.h] || (!FL.hs && (fresh >= 2 || sn0[ed + ":more:" + it.h]))) return; usedH[it.h] = 1; fresh++; got.push(it.h);
+        var ai = /\b(AI|artificial intelligence|OpenAI|ChatGPT)\b/.test(it.h);
+        L.push({id: ed + ":more:" + it.h, cls: "", t: ai ? "AI news" : "World", w: ago(it.t) + " ago", u: it.u, pic: it.u, ph: it.h, ps: it.s, nav: ai ? "🤖 AI news" : "🌍 World", sh: {k: "World", h: it.h, s: it.s, u: it.u},
+          body: '<div class="pd-k">' + (ai ? "AI NEWS" : "WORLD") + '</div><div class="pd-h1' + ((it.n || 0) >= 4 ? ' pd-hx' : '') + '">' + esc(it.h) + '</div>' + (it.d ? '<div class="pd-m" style="margin-top:12px;font-size:.95rem;line-height:1.45;color:#CFE0D6">' + esc(it.d.length > 230 ? it.d.slice(0, 227).replace(/\s+\S*$/, "") + "…" : it.d) + '</div>' : '') + '<div class="pd-m">' + esc(it.by && it.by.length > 1 ? it.by.join(" · ") : it.s) + ' · ' + ago(it.t) + ' ago</div>'}); }); if(!FL.hs && got.length){ FL.hs = got; ls("pd-fill", FL); } }
     // section row (Marco: show which section you're on): short label per slide
     L.forEach(function(x){ var k = x.fk, c = k && CATS[ix(k)];
       x.nav = x.nav ? x.nav : x.call ? "⚔️ Duel" : x.wild ? "🎲 Wildcard" : k === "game" ? "⚽ Sports" : k === "big" ? "🚨 Breaking" : k === "rd" ? "🇩🇴 DR" : c ? c[2] + " " + c[1] : /^Big move/.test(x.t) ? "📈 Big move" : "🦆 Pato"; });
