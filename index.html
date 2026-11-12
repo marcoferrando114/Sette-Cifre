@@ -1322,6 +1322,15 @@ html.mp-guest #p-stocks > #pnTick:not([hidden]){display:flex!important}
 .pd-r2{color:#E9C46A;font-weight:700;cursor:pointer}
 .pd-read{all:unset;cursor:pointer;display:inline-block;margin-top:22px;padding:10px 16px;border-radius:999px;background:rgba(255,255,255,.12);font-weight:700;font-size:.85rem}
 .pd-know{margin-top:20px}
+.pd-s.take .pd-bd{display:flex;flex-direction:column;justify-content:center;padding-bottom:70px}
+.pd-one{font-size:1.75rem;font-weight:800;line-height:1.28;letter-spacing:-.01em;margin-top:16px}.pd-one b{color:#F3D38F}
+.pd-nx{margin-top:22px;font-size:.9rem;color:#C9D8CF;padding:10px 14px;border-radius:14px;background:rgba(255,255,255,.07);align-self:flex-start}.pd-nx b{color:#fff}
+.pd-also p{display:grid;grid-template-columns:auto 1fr;column-gap:8px;margin:8px 0 0;padding:9px 12px;border-radius:12px;background:rgba(255,255,255,.07)}.pd-also span{grid-row:1/3;align-self:center;font-size:.64rem;font-weight:800;letter-spacing:.05em;color:#E8C06A;text-transform:uppercase;min-width:54px}.pd-also b{font-size:.9rem;color:#fff!important;margin:0!important}.pd-also small{font-size:.74rem;color:#B9A88A}
+.pd-new{display:inline-block;margin-right:6px;padding:1px 7px;border-radius:999px;background:#FF5A4A;color:#fff;font-size:.62rem;font-weight:850;letter-spacing:.06em;vertical-align:2px}
+.pd-old{display:inline-block;margin-right:6px;padding:1px 7px;border-radius:999px;background:rgba(255,255,255,.12);color:#B8C7BE;font-size:.62rem;font-weight:700;vertical-align:2px}
+.pd-nav button.nw{color:#fff;background:rgba(255,255,255,.14);position:relative;padding-right:18px}.pd-nav button.nw::after{content:"";position:absolute;right:8px;top:50%;width:6px;height:6px;margin-top:-3px;border-radius:50%;background:#FF5A4A}
+.pd-nav button.sn{opacity:.45}
+.pd-bars i.nw{background:rgba(232,192,106,.75)}
 .pd-brk.mv{background:rgba(227,188,106,.18);color:#F3D38F}
 .pd-brkrow{display:flex;align-items:center;gap:10px}.pd-ago{font-size:.78rem;font-weight:700;color:#FF9A8C}
 .pd-bigh{font-size:1.85rem;font-weight:900;line-height:1.16;letter-spacing:-.01em;margin-top:14px}
@@ -1857,7 +1866,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261112011000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261112013000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -6757,7 +6766,7 @@ TRACKER DATA:
   function hh(h){ return (h % 12 || 12) + ":00 " + (h < 12 ? "AM" : "PM"); }
   function clock(){ var sl = slot(); return "Updated " + hh(DROPS[sl]) + " · next " + hh(DROPS[(sl + 1) % DROPS.length]); }
   function getDrop(){ var sl = slot(); if(!base() || !sl || (drop && drop.day === day() && drop.slot === sl && drop.sig === sig()) || getDrop.busy) return; getDrop.busy = 1;
-    fetch(base() + "/news?" + q().replace("&busy=1", "") + "&busy=1" + (sl < 3 ? "&g=0" : "")).then(function(r){ return r.ok ? r.json() : null; })
+    fetch(base() + "/news?" + q().replace("&busy=1", "") + "&busy=1").then(function(r){ return r.ok ? r.json() : null; })
       .then(function(d){ getDrop.busy = 0; if(!d || !d.cats) return; drop = {day: day(), slot: sl, sig: sig(), d: d}; ls("pd-drop2", drop); render(); }).catch(function(){ getDrop.busy = 0; }); }
   function pickNew(k, list){ var s = seen().ids, out = [], used = {};   // newest-unseen first; never the same story twice in a day
     list.forEach(function(x){ if(x && x.h && !used[x.h]){ used[x.h] = 1; out.push(x); } });
@@ -6782,9 +6791,9 @@ TRACKER DATA:
       cats[k] = A; if(A[0] && ![].concat(cats0[k] || []).some(function(x){ return x.h === A[0].h; })) FR[k] = 1; });   // FR = swapped in by a drop: no morning AI lines for it
     var nt0 = (daily && daily.take && daily.take.notes) || {}; Object.keys(nt0).forEach(function(k){ if(!FR[k]) notes[k] = nt0[k]; });
     var big = pickNew("big", [dd && dd.big, tick && tick.big, daily && daily.big])[0]; if(big && daily && daily.big && big.h !== daily.big.h) FR.big = 1;
-    if(dd && dd.games && dd.games.length && drop.slot >= 3) FR.game = 1;
+    if(dd && dd.games && dd.games.length) FR.game = 1;
     var tk = (daily && daily.take) || fallback(), MV = null;
-    L.push({id: ed + ":take", cls: "", t: "Pato's take", w: slot() ? "Updated " + hh(DROPS[slot()]) : "7am edition", body: takeBody(tk, big, FR.game ? dd.games : daily && daily.games)});
+    L.push({id: ed + ":take", cls: "take", t: "Pato's take", w: slot() ? "Updated " + hh(DROPS[slot()]) : "7am edition", body: ""}); var TK = L[L.length - 1];
     var b = pos.filter(function(p){ return p.prev > 0 && p.precio > 0 && Math.abs(p.precio/p.prev-1) >= .05; }).sort(function(x, y){ return Math.abs(y.precio/y.prev-1) - Math.abs(x.precio/x.prev-1); })[0];
     var said = tk.happened ? tk.happened.text : "", st0 = b && daily && daily.stocks && daily.stocks[b.t];
     if(b && !(said && (new RegExp("\\b" + b.t + "\\b").test(said) || (st0 && said.indexOf(st0.h.split(" ")[0]) >= 0)))){ var ch = (b.precio/b.prev-1)*100;
@@ -6795,17 +6804,19 @@ TRACKER DATA:
         L.push({id: "big:" + big.h, hot: big.huge !== false, cls: "big brk", t: "Breaking", w: ago(big.t) + " ago", u: big.u, pic: big.u, ph: big.h, ps: big.s, fk: "big", sh: {k: "Breaking", h: big.h, s: big.s, u: big.u, kn: knowArr("big")},
           body: '<div class="pd-brkrow"><span class="pd-brk"><span class="pd-dot"></span>BREAKING</span><span class="pd-ago">' + esc(ago(big.t)) + ' ago</span></div><div class="pd-bigh">' + esc(big.h) + '</div>' +
             (BY.length ? '<div class="pd-by"><small>' + (Math.max(BY.length, big.n || 0) > 1 ? "Covered by " + Math.max(BY.length, big.n || 0) + " outlets" : "Source") + '</small>' + BY.slice(0, 4).map(function(o){ return '<span>' + esc(o) + '</span>'; }).join("") + '</div>' : '') + know("big") + (function(){ var A = (big.also || []).filter(function(t){ return t && t !== big.h; }).slice(0, 3); return A.length ? '<div class="pd-know pd-dev"><i>THE DEVELOPING STORY</i><ul>' + A.map(function(t){ return '<li>' + esc(t) + '</li>'; }).join("") + '</ul></div>' : ''; })() + note(notes.big)}); return; }
-      if(k === "game"){ var pg = pickGame(FR.game ? dd.games : daily && daily.games, !FR.game), g = pg && pg.g, mine = pg && pg.mine; if(!g) return;
+      if(k === "game"){ var pg = pickGame(FR.game ? dd.games : daily && daily.games), g = pg && pg.g, mine = pg && pg.mine; if(!g) return;
         var TM = g.teams || [], vs = TM.length === 2 && TM[0].n && TM[1].n ? '<div class="pd-vs">' + TM.map(function(t){ return '<div class="pd-team">' + (t.logo ? '<img src="' + esc(t.logo) + '" alt="" onerror="this.outerHTML=\'<span class=pd-tl>' + esc(t.n.slice(0,3).toUpperCase()) + '</span>\'">' : '<span class="pd-tl">' + esc(t.n.slice(0,3).toUpperCase()) + '</span>') +
           '<b>' + esc(t.n) + '</b>' + (g.live && t.score !== "" ? '<em>' + esc(t.score) + '</em>' : t.rec ? '<small>' + esc(t.rec) + '</small>' : '') + '</div>'; }).join('<div class="pd-at">' + (g.live ? '<i>LIVE</i>' : 'VS') + '</div>') + '</div>' : '<div class="pd-h1">' + esc(g.name.replace(" at ", " vs ")) + '</div>';
         L.push({id: ed + ":game:" + g.name, cls: "game", t: "Sports", w: g.league, fk: "game", sh: {k: "Sports · " + g.league, h: g.name.replace(" at ", " vs ") + (g.t && !g.live ? " · " + hr(g.t) + " DR" : ""), s: (g.tv||[]).join(", "), u: ""}, body: '<div class="pd-k">SPORTS · ' + esc(g.league.toUpperCase()) + '</div>' + vs + '<div class="pd-m pd-c">' + esc([g.live ? "LIVE now" : g.t ? hr(g.t) + " (DR time)" : "", (g.tv||[]).join(", "), g.note].filter(Boolean).join(" · ")) + '</div>' +
           gameMore(g) + (g.inj && g.inj.length ? '<div class="pd-know pd-inj"><i>INJURY REPORT</i>' + g.inj.map(function(t){ return '<p><b>' + esc(t.team) + '</b> ' + esc(t.out.map(function(o){ return o.n + " (" + o.st + ")"; }).join(", ")) + '</p>'; }).join("") + '</div>' : '') +
           (g.lineup && g.lineup.length ? '<div class="pd-know pd-inj"><i>STARTING LINEUPS</i>' + g.lineup.map(function(t){ return '<p><b>' + esc(t.team) + '</b> ' + esc(t.xi.join(", ")) + '</p>'; }).join("") + '</div>' : '') +
+          (pg.more.length ? '<div class="pd-know pd-also"><i>ALSO TODAY</i>' + pg.more.map(function(x){ return '<p><span>' + esc(x.league) + '</span><b>' + esc(x.name.replace(" at ", " vs ")) + '</b><small>' + esc([x.live ? "LIVE" : x.t ? hr(x.t) : "", x.odds && x.odds.line ? x.odds.line : ""].filter(Boolean).join(" · ")) + '</small></p>'; }).join("") + '</div>' : '') +
           (mine ? '<div class="pd-note"><i>YOUR BET</i><p>' + bold("You have RD$" + (Number(mine.stake)||0).toLocaleString("en-US") + " on this game.") + '</p></div>' : "")}); return; }
       var A = [].concat(cats[k] || []); it = A[0]; if(!it) return; h = k === "rd" && !FR.rd && daily.take && daily.take.rd ? daily.take.rd : it.h;
       var by = function(x){ return esc(x.by && x.by.length > 1 ? x.by.join(" · ") : x.s) + " · " + ago(x.t) + " ago"; }, i2 = A[1];   // 1-2 stories per topic, ranked by the worker
       L.push({id: ed + ":" + k + ":" + it.h, id2: i2 ? ed + ":" + k + ":" + i2.h : "", cls: k === "rd" ? "rd" : "", t: c[1], w: ago(it.t) + " ago", u: i2 ? "" : it.u, pic: it.u, ph: it.h, ps: it.s, fk: k, sh: {k: c[1], h: h, s: it.s, u: it.u, kn: knowArr(k)}, body: '<div class="pd-k">' + esc(c[1].toUpperCase()) + '</div><div class="pd-h1">' + esc(h) + '</div>' + (h !== it.h ? '<div class="pd-m" style="font-style:italic">' + esc(it.h) + '</div>' : '') + '<div class="pd-m">' + by(it) + (i2 ? ' · <a class="pd-r2" data-u="' + esc(it.u) + '">Read ›</a>' : '') + '</div>' + know(k) + note(notes[k]) +
         (i2 ? '<div class="pd-two"><div class="pd-k">ALSO</div><div class="pd-h2">' + esc(i2.h) + '</div><div class="pd-m">' + by(i2) + ' · <a class="pd-r2" data-u="' + esc(i2.u) + '">Read ›</a></div></div>' : '')}); });
+    TK.body = takeBody(tk, big, null, MV && MV.t.replace("Big move · ", ""));
     if(MV){ var bi = L.map(function(x){ return x.fk; }).indexOf("big"); L.splice(bi >= 0 ? bi + 1 : 1, 0, MV); }   // Breaking news first, then your stock's big move
     var cq = callQ(), cs = callSt(); if(cq && !(cs && cs.q === cq.id && $("pdV").hidden)) L.push({id: ed + ":call:" + cq.id, cls: "call", t: CALL, w: "today's money question", call: cq, body: ""});
     var W = WILD(); L.forEach(function(x){ if(W && x.fk === W){ var c = CATS[ix(W)]; x.wild = 1; x.t = "Wildcard · " + c[1]; x.body = x.body.replace('<div class="pd-k">', '<div class="pd-k">🎲 WILDCARD · '); } });
@@ -6844,30 +6855,33 @@ TRACKER DATA:
   var dlabel = function(ymd){ var d = new Date(ymd + "T12:00:00Z"); return WD[d.getUTCDay()] + " " + MO[d.getUTCMonth()] + " " + d.getUTCDate(); };
   var pct = function(n){ return (n > 0 ? "+" : n < 0 ? "−" : "") + Math.abs(n).toFixed(Math.abs(n) < 10 ? 1 : 0) + "%"; };
   var sgn = function(n){ return (n > 0 ? "+" : n < 0 ? "−" : "") + usd(n); };
-  function pickGame(G, ai){ G = G || []; var gi = ai && daily && daily.take && daily.take.game >= 0 ? daily.take.game : 0, gs = G.map(sportScore), gx = Math.max.apply(null, gs.concat([0])); if(gx > 0) gi = gs.indexOf(gx); var g = G[gi] || G[0]; if(!g) return null;
-    var mine = bets.filter(function(x){ return ["won","lost","push"].indexOf(x.result) < 0 && (x.legs||[]).some(function(l){ var a = String(l.game||"").toLowerCase(); return a && g.name.toLowerCase().split(/ at | vs\.? /).some(function(t){ return t && a.indexOf(t.split(" ").pop()) >= 0; }); }); })[0];
-    return {g: g, mine: mine}; }
-  function takeBody(tk, big, G){
-    var h = '<div class="pd-k">PATO\'S TAKE · ' + esc(dlabel(day()).toUpperCase()) + '</div>', mv = pos.filter(function(p){ return p.prev > 0 && p.precio > 0; });
-    if(mv.length){ var up = 0, b0 = 0, val = 0, c0 = 0, g0 = 0;
+  // Sports (Marco Nov 11): the day's big games, rotated each drop (7/11/3/7/11), different sports in turn; your bets first. A game shows once a day.
+  function betOn(g){ return bets.filter(function(x){ return ["won","lost","push"].indexOf(x.result) < 0 && (x.legs||[]).some(function(l){ var a = String(l.game||"").toLowerCase(); return a && g.name.toLowerCase().split(/ at | vs\.? /).some(function(t){ return t && a.indexOf(t.split(" ").pop()) >= 0; }); }); })[0]; }
+  function rot(G){ var by = {}, lg = []; (G || []).slice().sort(function(a, b){ return (betOn(b) ? 1 : 0) - (betOn(a) ? 1 : 0) || sportScore(b) - sportScore(a); }).forEach(function(g){ if(!by[g.league]){ by[g.league] = []; lg.push(g.league); } by[g.league].push(g); });
+    var out = [], k = 0; while(out.length < (G || []).length && k < 20){ lg.forEach(function(l){ if(by[l][k]) out.push(by[l][k]); }); k++; } return out; }
+  function pickGame(G){ G = rot(G); if(!G.length) return null; var sl = slot(), st = ls("pd-games"); if(!st || st.day !== day()) st = {day: day(), by: {}};
+    var nm = st.by[sl], g = nm && G.filter(function(x){ return x.name === nm; })[0];
+    if(!g){ var used = Object.keys(st.by).filter(function(k){ return Number(k) !== sl; }).map(function(k){ return st.by[k]; }), last = st.by[Object.keys(st.by).filter(function(k){ return Number(k) !== sl; }).sort().pop()];
+      var lastLg = (G.filter(function(x){ return x.name === last; })[0] || {}).league, fresh = G.filter(function(x){ return used.indexOf(x.name) < 0; });
+      g = fresh.filter(function(x){ return x.live; })[0] || fresh.filter(function(x){ return x.league !== lastLg; })[0] || fresh[0] || G[sl % G.length]; st.by[sl] = g.name; ls("pd-games", st); }
+    return {g: g, mine: betOn(g), more: G.filter(function(x){ return x !== g; }).slice(0, 3)}; }
+  // Pato's take (Marco Nov 11): ONE constructive sentence. Never repeats another slide (no news, no game, no Big-move ticker).
+  function takeBody(tk, big, G, skip){
+    var h = '<div class="pd-k">PATO\'S TAKE · ' + esc(dlabel(day()).toUpperCase()) + '</div>', mv = pos.filter(function(p){ return p.prev > 0 && p.precio > 0; }), line = "";
+    if(mv.length){ var up = 0, b0 = 0, c0 = 0, g0 = 0;
       mv.forEach(function(p){ up += p.sh*(p.precio-p.prev); b0 += p.sh*p.prev; });
-      pos.forEach(function(p){ if(p.precio > 0) val += p.sh*p.precio; if(p.precio > 0 && p.costo > 0 && !p.regalo){ c0 += p.sh*p.costo; g0 += p.sh*(p.precio-p.costo); } });
-      var pc = b0 > 0 ? up/b0*100 : 0, cls = Math.abs(pc) < .05 ? "" : up > 0 ? "up" : "dn", mx = Math.max.apply(null, mv.map(function(p){ return Math.abs(p.precio/p.prev-1); }).concat([.001]));
-      h += '<div class="pd-hero"><small>' + (Math.abs(pc) < .3 ? "Quiet day for your stocks" : "Your stocks today") + '</small><div><b class="' + cls + '">' + (Math.abs(up) < .5 ? "US$0" : sgn(up)) + '</b><em class="' + cls + '">' + pct(pc) + '</em></div></div>';
-      h += '<div class="pd-mv">' + mv.slice().sort(function(x, y){ return Math.abs(y.precio/y.prev-1) - Math.abs(x.precio/x.prev-1); }).slice(0, 4).map(function(p){ var r = p.precio/p.prev-1, c = r > 0 ? "up" : r < 0 ? "dn" : "";
-        return '<div><span>' + esc(p.t) + '</span><i><u class="' + c + '" style="width:' + Math.max(4, Math.round(Math.abs(r)/mx*100)) + '%"></u></i><em class="' + c + '">' + pct(r*100) + '</em><b>' + sgn(p.sh*(p.precio-p.prev)) + '</b></div>'; }).join("") + '</div>';
-      h += '<div class="pd-m">Worth ' + usd(val) + (c0 > 0 ? ' · ' + pct(g0/c0*100) + ' since you bought' : '') + '</div>';
-    } else if(tk.you && tk.you.text) h += '<div class="pd-hero tip"><small>' + esc(tk.you.src || "Pato") + '</small><p>' + bold(tk.you.text) + '</p></div>';
-    var R3 = [], now = new Date(Date.now() - 4*3600e3).toISOString().slice(0, 10);
-    var hap = tk.happened && tk.happened.text ? {t: tk.happened.text, s: tk.happened.src} : big && big.h ? {t: big.h, s: big.s} : null;
-    if(hap) R3.push(["📰", "THE NEWS", hap.t, hap.s]);
-    var ev = evs.filter(function(e){ return e.fecha >= now && e.t && pos.some(function(p){ return p.t === e.t; }); }).sort(function(a, b){ return a.fecha.localeCompare(b.fecha); })[0];
-    if(ev){ var dd2 = Math.round((Date.parse(ev.fecha + "T12:00:00Z") - Date.parse(now + "T12:00:00Z"))/864e5); R3.push(["🗓️", "COMING UP", ev.t + " · " + (ev.txt || "event") + " · " + (ev.est ? "~" : "") + dlabel(ev.fecha), dd2 === 0 ? "Today" : dd2 === 1 ? "Tomorrow" : "In " + dd2 + " days"]); }
-    else if(tk.watch && tk.watch.text) R3.push(["👀", "WATCH", tk.watch.text, tk.watch.src]);
-    var pg = on().indexOf("game") >= 0 && pickGame(G, true); if(pg && pg.g){ var g = pg.g;
-      R3.push([g.live ? "🔴" : "🏆", g.live ? "LIVE NOW" : "GAME OF THE DAY", g.name.replace(" at ", " vs ") + (g.t && !g.live ? " · " + hr(g.t) : ""), pg.mine ? "You have RD$" + (Number(pg.mine.stake)||0).toLocaleString("en-US") + " on it" : [g.league].concat(g.odds && g.odds.line ? ["Line " + g.odds.line] : []).join(" · ")]); }
-    if(!R3.length) R3.push(["💡", "PATO'S TIP", fallback().you.text, "Pato"]);
-    return h + '<div class="pd-3">' + R3.slice(0, 3).map(function(r){ return '<div><span>' + r[0] + '</span><div><i>' + r[1] + '</i><p>' + bold(r[2]) + '</p>' + (r[3] ? '<small>' + esc(r[3]) + '</small>' : '') + '</div></div>'; }).join("") + '</div>';
+      pos.forEach(function(p){ if(p.precio > 0 && p.costo > 0 && !p.regalo){ c0 += p.sh*p.costo; g0 += p.sh*(p.precio-p.costo); } });
+      var pc = b0 > 0 ? up/b0*100 : 0, since = c0 > 0 ? g0/c0*100 : null;
+      var lead = mv.slice().sort(function(x, y){ return Math.abs(y.sh*(y.precio-y.prev)) - Math.abs(x.sh*(x.precio-x.prev)); })[0], ln = lead && lead.t !== skip && Math.abs(lead.sh*(lead.precio-lead.prev)) >= Math.abs(up)*.5 && (up > 0) === (lead.precio > lead.prev) ? ", mostly from " + lead.t : "";
+      var sv = since == null ? "" : Math.abs(since).toFixed(1) + "%";
+      if(Math.abs(pc) < .3) line = "Quiet day for your stocks. " + (since == null ? "Quiet days are part of the plan." : since >= 0 ? "You're up " + sv + " on what you paid, and quiet days let that keep growing." : "You're " + sv + " below what you paid, and patience is how that turns around.");
+      else if(up > 0) line = "Your stocks made " + usd(up) + " today" + ln + ". " + (since == null ? "Good day to stay the course." : since >= 0 ? "Everything you own is now " + sv + " above what you paid." : "That gets you closer to even: you're " + sv + " below what you paid.");
+      else line = "Your stocks are down " + usd(up) + " today" + ln + ". " + (since == null ? "Dips are normal, your plan matters more than one day." : since >= 0 ? "You're still up " + sv + " on what you paid, so this is a normal dip." : "Dips are normal, your plan matters more than one day.");
+    } else line = (tk.you && tk.you.text) || fallback().you.text;
+    h += '<div class="pd-one">' + bold(line) + '</div>';
+    var now = new Date(Date.now() - 4*3600e3).toISOString().slice(0, 10), ev = evs.filter(function(e){ return e.fecha >= now && e.t && pos.some(function(p){ return p.t === e.t; }); }).sort(function(a, b){ return a.fecha.localeCompare(b.fecha); })[0];
+    if(ev){ var d2 = Math.round((Date.parse(ev.fecha + "T12:00:00Z") - Date.parse(now + "T12:00:00Z"))/864e5); if(d2 <= 14) h += '<div class="pd-nx">🗓️ Next: <b>' + esc(ev.t + " " + (ev.txt || "event").toLowerCase()) + '</b> · ' + (ev.est ? "~" : "") + esc(dlabel(ev.fecha)) + ' · ' + (d2 === 0 ? "today" : d2 === 1 ? "tomorrow" : "in " + d2 + " days") + '</div>'; }
+    return h;
   }
   var CONAME = {AAPL:"Apple",TSLA:"Tesla",NVDA:"Nvidia",AMZN:"Amazon",GOOGL:"Alphabet (Google)",GOOG:"Alphabet (Google)",META:"Meta",MSFT:"Microsoft",NFLX:"Netflix",AVGO:"Broadcom",AMD:"AMD",TSM:"TSMC",IBKR:"Interactive Brokers",VUAA:"S&P 500 fund",DIS:"Disney",NKE:"Nike",KO:"Coca-Cola",JPM:"JPMorgan",V:"Visa",MA:"Mastercard"};
   function breakBody(b, ch, st0){ var up = ch > 0, L = window.ST_LOGOS && window.ST_LOGOS[b.t], g = b.sh*(b.precio-b.prev), all = pos.filter(function(p){ return p.prev > 0 && p.precio > 0; }), tot = 0;
@@ -6947,21 +6961,22 @@ TRACKER DATA:
   function pic(u, cb, h){ if(!u || !base() || !PICS() || (u in IM.m)) return; IM.m[u] = null;
     fetch(base() + "/img?u=" + encodeURIComponent(u) + (h ? "&h=" + encodeURIComponent(h) : "")).then(function(r){ return r.ok ? r.json() : {}; }).then(function(d){ IM.m[u] = (d && d.img) || ""; if(IM.m[u]) ls("pd-img3", {day: IM.day, m: Object.keys(IM.m).reduce(function(o, k){ if(IM.m[k]) o[k] = IM.m[k]; return o; }, {})}); if(cb) cb(); }).catch(function(){ delete IM.m[u]; }); }
   function picHtml(x){ var im = PICS() && x.pic && IM.m[x.pic]; return im ? '<div class="pd-img"><img src="' + esc(im) + '" alt="" referrerpolicy="no-referrer" onerror="this.parentNode.remove()">' + (x.ps ? '<span>' + esc(x.ps) + '</span>' : '') + '</div>' : ''; }
+  var NEW = {};   // what was unread when you opened: those chips get a dot, the slide gets a NEW tag
   function show(i){
     clearTimeout(timer); cur = Math.max(0, Math.min(i, S.length - 1)); var x = S[cur], s = seen();
     if(!x.pick){ s.ids[x.id] = 1; if(x.id2) s.ids[x.id2] = 1; ls("pd-seen2", s); }
-    $("pdS").className = "pd-s " + (x.cls||""); $("pdT").textContent = x.t; $("pdW").textContent = x.w || "";
+    $("pdS").className = "pd-s " + (x.cls||""); $("pdT").innerHTML = (NEW[x.id] ? '<span class="pd-new">NEW</span>' : (x.pick ? '' : '<span class="pd-old">✓ Seen</span>')) + esc(x.t); $("pdW").textContent = x.w || "";
     $("pdBd").innerHTML = x.call ? callBody(x.call) : picHtml(x) + x.body + act(x);
     if(x.call && callSt() && callSt().n === 0) callSync(x.call, null);
-    $("pdBars").innerHTML = S.map(function(_, j){ return '<i class="' + (j < cur ? "d" : j === cur ? "n" : "") + '"></i>'; }).join("");
-    var nv = $("pdNav"); if(nv){ nv.innerHTML = S.map(function(y, j){ return '<button type="button" data-j="' + j + '"' + (j === cur ? ' class="on"' : '') + '>' + esc(y.nav || y.t) + '</button>'; }).join(""); var onb = nv.querySelector(".on"); if(onb) nv.scrollLeft = Math.max(0, onb.offsetLeft - nv.clientWidth / 2 + onb.offsetWidth / 2); }
+    $("pdBars").innerHTML = S.map(function(y, j){ return '<i class="' + (j === cur ? "n" : s.ids[y.id] ? "d" : "nw") + '"></i>'; }).join("");
+    var nv = $("pdNav"); if(nv){ nv.innerHTML = S.map(function(y, j){ var sn = s.ids[y.id] && j !== cur && !NEW[y.id]; return '<button type="button" data-j="' + j + '" class="' + (j === cur ? 'on' : '') + (NEW[y.id] && j !== cur && !s.ids[y.id] ? ' nw' : '') + (sn || (NEW[y.id] && s.ids[y.id] && j !== cur) ? ' sn' : '') + '">' + esc(y.nav || y.t) + '</button>'; }).join(""); var onb = nv.querySelector(".on"); if(onb) nv.scrollLeft = Math.max(0, onb.offsetLeft - nv.clientWidth / 2 + onb.offsetWidth / 2); }
     if(x.pic && !(x.pic in IM.m)) pic(x.pic, function(){ if(S[cur] === x && !$("pdV").hidden && !$("pdBd").querySelector(".pd-img")) $("pdBd").insertAdjacentHTML("afterbegin", picHtml(x)); }, x.ph);
-    $("pdFt").textContent = "🕒 " + clock() + " · tap for next";
+    var ul = unseen().length; $("pdFt").textContent = ul ? "🕒 " + ul + " new · " + clock() + " · tap for next" : "✓ You're all caught up · next drop " + hh(DROPS[(slot() + 1) % DROPS.length]);
     var t = 0; /* no clock (Marco Nov 11): tap for next */ $("pdS").style.setProperty("--pd-t", t/1000 + "s");
     if(t) timer = setTimeout(function(){ if(!$("pdV").classList.contains("paused")) next(); }, t); else $("pdBars").children[cur].className = "d";
   }
   function next(){ if(cur >= S.length - 1) return close(); show(cur + 1); }
-  function openV(at){ S = stories(); S.forEach(function(x){ pic(x.pic, null, x.ph); }); hidePeek(); var u = unseen(), i = at >= 0 && at < S.length ? at : u.length ? S.indexOf(u[0]) : 0; if(!(prefs && prefs.picked) && !u.length) i = S.length - 1;
+  function openV(at){ S = stories(); S.forEach(function(x){ pic(x.pic, null, x.ph); }); hidePeek(); var u = unseen(); NEW = {}; u.forEach(function(x){ NEW[x.id] = 1; }); var i = at >= 0 && at < S.length ? at : u.length ? S.indexOf(u[0]) : 0; if(!(prefs && prefs.picked) && !u.length) i = S.length - 1;
     $("pdV").hidden = false; document.documentElement.style.overflow = "hidden"; show(i); }
   function close(){ clearTimeout(timer); $("pdV").hidden = true; $("pdS").style.transform = ""; document.documentElement.style.overflow = "";
     if(!(prefs && prefs.picked)) save(on()); render(); }
