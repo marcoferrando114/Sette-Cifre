@@ -276,11 +276,10 @@ async function bundle(P, env) {
   const tick = (P.get("t") || "").toUpperCase().split(",").filter(x => /^[A-Z.]{1,6}$/.test(x)).slice(0, 5);
   const want = (P.get("k") || "rd,business,tech").split(",").filter(k => CATS[k]).slice(0, 8);
   const [top, world, ...rest] = await Promise.all([kfeed(env, sec("BUSINESS"), 200), kfeed(env, sec("WORLD"), 75),
-    ...want.map(k => kfeed(env, CATS[k], 200)), ...tick.map(t => feed(srch(t + " stock"), 10800)), kfeed(env, AQ, 200)]);
+    ...want.map(k => kfeed(env, CATS[k], 200)), ...tick.map(t => kfeed(env, srch(t + " stock"), 180)), kfeed(env, AQ, 200)]);
   const N1 = SUBN;
   const [LF, RF] = await Promise.all([kfeed(env, LQ, 200), kfeed(env, RQ, 200)]);
   const [MK, GM] = await Promise.all([kvFresh(env, "mk2", 90, markets), P.get("g") === "0" ? Promise.resolve([]) : kvFresh(env, "gm2:" + drDay(), 60, games)]); rest.push(GM); const N2 = SUBN;
-  const cats = {}; want.forEach((k, i) => { const it = top2(rest[i].items || [], tick, P.get("busy") === "1"); if (it.length) cats[k] = it; });
   const stocks = {}; tick.forEach((t, i) => { const it = pick(rest[want.length + i].items || [])[0]; if (it) stocks[t] = it; });
   // Breaking (Marco Nov 11): the story that matters most to YOU today: big world events, scandals about the people behind your companies, major accidents, analyst calls on your stocks.
   const WL = clean(world.items || [], 14), me = tick.length ? new RegExp("\\b(" + tick.map(t => t.toLowerCase() + (CO[t] ? "|" + CO[t] : "")).join("|") + ")", "i") : null, now = Date.now();
@@ -298,7 +297,8 @@ async function bundle(P, env) {
   const CAPS = t => new Set((String(t).replace(/['’]s\b/g, "").match(/\b[A-Z][a-zA-Z]{2,}\b/g) || []).filter(w => !/^(The|And|For|With|After|Over|Says?|New|How|What|Why|Its|This|That|From|Into|Amid|CEO|Stock|Stocks)$/.test(w)));
   const EVT = /\b(resign\w*|oust\w*|affair|scandal|spy|fired|steps? down|probe|indict\w*|arrest\w*|crash\w*|quake|earthquake|hurricane|collaps\w*|plunge\w*|drops?|falls?|tumbl\w*|sinks?|soar\w*|surg\w*|jumps?|ceasefire|attack\w*|explosion|shooting|out at)\b/i;
   const same = (a, b) => { if (!a || !b) return false; if (simw(a, b) >= 0.5) return true; const A = CAPS(a), B = CAPS(b), n = [...A].filter(w => B.has(w)).length; return n >= 2 || (n >= 1 && EVT.test(a) && EVT.test(b)); };   // same name + both about an event = same story
-  const shown = W ? [W.h] : []; Object.keys(cats).forEach(k => { cats[k] = cats[k].filter(it => !shown.some(h => same(h, it.h))); if (cats[k].length) cats[k].forEach(it => shown.push(it.h)); else delete cats[k]; });
+  // Nov 12 fix: skip stories already shown BEFORE ranking, so a category falls back to its next-best story instead of disappearing
+  const shown = W ? [W.h] : [], cats = {}; want.forEach((k, i) => { const it = top2((rest[i].items || []).filter(x => x && x.h && !shown.some(h => same(h, x.h))), tick, P.get("busy") === "1"); if (it.length) { cats[k] = it; it.forEach(x => shown.push(x.h)); } });
   MORE = MORE.filter(it => !shown.some(h => same(h, it.h)));
   if (W) W.mk = marketFor(MK, W.h); Object.keys(cats).forEach(k => { const it = cats[k][0]; if (it) it.mk = marketFor(MK, it.h); });
   return { at: top.at || Date.now(), day: edDay(), big: W, calls: CL, more: MORE, preds: pickMarkets(MK, tick), launch: launches(LF.items || [], tick), rising: rising(RF.items || []), cats, stocks, games: rest[rest.length - 1] || [],
