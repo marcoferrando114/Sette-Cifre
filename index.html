@@ -1333,9 +1333,12 @@ html.mp-guest #p-stocks > #pnTick:not([hidden]){display:flex!important}
 .pd-img span{z-index:1}
 .pd-one.lg{font-size:1.32rem;line-height:1.28}.pd-one.xl{font-size:1.12rem;line-height:1.32}
 .pd-pick{border-color:rgba(120,200,255,.35);background:linear-gradient(160deg,rgba(60,110,170,.25),rgba(20,40,60,.2))}.pd-pick i{color:#8CC8FF}.pd-rec{margin-top:10px;padding-top:9px;border-top:1px solid rgba(140,200,255,.2);font-size:.82rem;color:#CFE0D6}.pd-rec b{color:#8CC8FF}.pd-pick small{display:block;margin-top:6px;font-size:.78rem;color:#9FB3A7}
-/* Instagram-style cover (Marco Nov 12 examples): tall photo, category tag + bold headline sitting on the photo */
-.pd-bd>.pd-img:has(+ .pd-k){aspect-ratio:4/5;margin-bottom:-132px}.pd-bd>.pd-img:has(+ .pd-k)::after{height:62%;background:linear-gradient(to top,rgba(16,32,24,1) 8%,rgba(16,32,24,.75) 45%,transparent)}
-.pd-bd>.pd-img+.pd-k,.pd-bd>.pd-img+.pd-k+.pd-h1,.pd-bd>.pd-img+.pd-k~*{position:relative;z-index:1}.pd-bd>.pd-img+.pd-k+.pd-h1{text-shadow:0 2px 12px rgba(0,0,0,.5)}.pd-bd>.pd-img:has(+ .pd-k) span{bottom:auto;top:12px;left:12px}
+/* Pato's own story look (Marco Nov 12: "our own unique look", not Instagram): framed photo with the duck-bill corner, gold category stamp pinned on the edge, serif headline with a gold rule */
+.pd-bd>.pd-img:has(+ .pd-k){margin:-6px 0 0;aspect-ratio:16/10;border-radius:22px 22px 22px 6px;box-shadow:0 0 0 1.5px rgba(227,188,106,.55),0 14px 34px rgba(0,0,0,.45)}.pd-bd>.pd-img:has(+ .pd-k)::after{height:30%;background:linear-gradient(to top,rgba(0,0,0,.35),transparent)}
+.pd-bd>.pd-img:has(+ .pd-k) span{left:auto;right:10px;bottom:10px}
+.pd-bd>.pd-img+.pd-k{position:relative;z-index:2;display:block;width:fit-content;margin:-15px 0 0 14px;padding:7px 13px 7px 11px;border-radius:14px 14px 14px 4px;background:#E3BC6A;color:#13241B;font-size:.68rem;letter-spacing:.12em;box-shadow:0 6px 16px rgba(0,0,0,.35)}
+.pd-bd>.pd-img+.pd-k::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:#13241B;margin-right:7px;vertical-align:1px}
+.pd-bd>.pd-img+.pd-k+.pd-h1{font-family:var(--serif,Georgia,serif);font-size:1.62rem;line-height:1.2;margin-top:16px}.pd-bd>.pd-img+.pd-k+.pd-h1::after{content:"";display:block;width:44px;height:3px;border-radius:3px;background:#E3BC6A;margin-top:12px}
 #pdFab.shine svg{animation:pdShine 1.8s ease-in-out infinite}@keyframes pdShine{0%,100%{filter:drop-shadow(0 0 2px rgba(243,211,143,.4))}50%{filter:drop-shadow(0 0 12px rgba(243,211,143,.95)) brightness(1.12)}}
 #pdFab.shine::before{content:"✦";position:absolute;left:4px;top:-4px;font-size:15px;color:#FFE7A8;text-shadow:0 0 8px #F3D38F;animation:pdTw 1.8s ease-in-out infinite;pointer-events:none;z-index:2}@keyframes pdTw{0%,100%{opacity:.2;transform:scale(.7) rotate(0)}50%{opacity:1;transform:scale(1.15) rotate(25deg)}}
 .pn-lab{padding:0 8px 0 6px;gap:4px}.pn-lab small{font-size:.64rem}
@@ -1997,7 +2000,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261112151500";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261112161500";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
