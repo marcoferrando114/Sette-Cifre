@@ -57,9 +57,9 @@ function parse(xml) {
     return { h: title, s: src, u: g("link"), t: Date.parse(g("pubDate")) || 0, n: cover.size, by: [...cover].slice(0, 3), also };
   });
 }
-async function cached(url, ttl, kind) {
+async function cached(url, ttl, kind, nocache) {
   const cache = caches.default, key = new Request(url);
-  let r = await cache.match(key);
+  let r = nocache ? null : await cache.match(key);
   if (!r) {
     const f = await xf(url, { headers: { "user-agent": "Mozilla/5.0 (compatible; PatoDaily/1.0)" } });
     if (!f.ok) return { at: Date.now(), body: kind === "json" ? {} : "" };
@@ -87,13 +87,24 @@ function parseBing(xml) {
     const by = [...new Set(same.map(j => j.s).filter(x => TRUSTED.test(x)))]; return Object.assign(i, { n: new Set(same.map(j => j.s).filter(Boolean)).size || 1, by: by.slice(0, 3), also: same.filter(j => j !== i).map(j => j.h).slice(0, 3) }); });
 }
 // Bing first (its stories come with a photo), Google News when Bing has nothing (Nov 11, Marco: photos on every story).
-const gfeed = (url, ttl) => cached(url, ttl).then(f => ({ at: f.at, items: parse(f.body) })).catch(() => ({ at: Date.now(), items: [] }));
-const feed = async (url, ttl) => { const b = bingUrl(url); if (b) { try { const r = await bingFeed(b, ttl); if (pick(r.items).length) return r; } catch (e) {} } return gfeed(url, ttl); };
+const gfeed = (url, ttl, nc) => cached(url, ttl, "", nc).then(f => ({ at: f.at, items: parse(f.body) })).catch(() => ({ at: Date.now(), items: [] }));
+const feed = async (url, ttl, nc) => { const b = bingUrl(url); if (b) { try { const r = await bingFeed(b, ttl, nc); if (pick(r.items).length) return r; } catch (e) {} } return gfeed(url, ttl, nc); };
+// Drops are prepared ahead (Marco Nov 12: "we need to be efficient"): the cron fetches every shared topic once before each drop and keeps it in KV; /news only reads it.
+// If a source fails, the last good stories stay. Fresh for 200 min (drops are 3h apart), so a missed cron only means one live fetch.
+const fkey = u => "fd2:" + u.replace(/^https?:\/\//, "").replace(/[^a-z0-9]+/gi, "").slice(-180);
+async function kfeed(env, url, mins) {
+  const kv = env && env.LIMITS; let old = null;
+  if (kv) { try { old = await kv.get(fkey(url), "json"); } catch (e) {} if (old && Date.now() - old.at < mins * 6e4) return old; }
+  const r = await feed(url, 7200).catch(() => ({ items: [] }));
+  if (pick(r.items || []).length) { const v = { at: Date.now(), items: (r.items || []).slice(0, 30) }; if (kv) await kv.put(fkey(url), JSON.stringify(v), { expirationTtl: 172800 }).catch(() => {}); return v; }
+  return old || r;
+}
+async function refreshFeed(env, url) { const r = await feed(url, 7200, true).catch(() => ({ items: [] })); if (env.LIMITS && pick(r.items || []).length) await env.LIMITS.put(fkey(url), JSON.stringify({ at: Date.now(), items: r.items.slice(0, 30) }), { expirationTtl: 172800 }); return (r.items || []).length; }
 // Bing: one request at a time (bursts come back empty), only cache answers that have stories, retry once.
 let bingQ = Promise.resolve();
 const bingGet = u => (bingQ = bingQ.catch(() => {}).then(() => new Promise(r => setTimeout(r, 120))).then(() => xf(u, { headers: { ...PUA, accept: "application/rss+xml, application/xml;q=0.9, */*;q=0.5" } })).then(f => f.ok ? f.text() : ""));
-async function bingFeed(u, ttl) {
-  const key = new Request(u + "&pv=2"), hit = await caches.default.match(key);
+async function bingFeed(u, ttl, nc) {
+  const key = new Request(u + "&pv=2"), hit = nc ? null : await caches.default.match(key);
   if (hit) return { at: Number(hit.headers.get("x-at")) || Date.now(), items: parseBing(await hit.text()) };
   let x = await bingGet(u), items = parseBing(x);
   if (!items.length) { x = await bingGet(u); items = parseBing(x); }
@@ -247,14 +258,17 @@ async function kvFresh(env, key, mins, make) {
   if (v && v.length) { if (kv) await kv.put(key, JSON.stringify({ at: Date.now(), v }), { expirationTtl: 86400 }).catch(() => {}); return v; }
   return old ? old.v : [];
 }
+const AQ = srch("analysts upgrade stock buy rating");
+// The shared topics every drop needs (same for all users); the cron splits them in two runs before each drop
+const SHARED = () => [sec("BUSINESS"), sec("WORLD"), ...Object.values(CATS), AQ, LQ, RQ];
 async function bundle(P, env) {
   const tick = (P.get("t") || "").toUpperCase().split(",").filter(x => /^[A-Z.]{1,6}$/.test(x)).slice(0, 5);
   const want = (P.get("k") || "rd,business,tech").split(",").filter(k => CATS[k]).slice(0, 8);
-  const [top, world, ...rest] = await Promise.all([feed(sec("BUSINESS"), 7200), feed(sec("WORLD"), 3600),
-    ...want.map(k => feed(CATS[k], 7200)), ...tick.map(t => feed(srch(t + " stock"), 10800)), feed(srch("analysts upgrade stock buy rating"), 10800)]);
+  const [top, world, ...rest] = await Promise.all([kfeed(env, sec("BUSINESS"), 200), kfeed(env, sec("WORLD"), 75),
+    ...want.map(k => kfeed(env, CATS[k], 200)), ...tick.map(t => feed(srch(t + " stock"), 10800)), kfeed(env, AQ, 200)]);
   const N1 = SUBN;
-  const [LF, RF] = await Promise.all([feed(LQ, 10800).catch(() => ({})), feed(RQ, 10800).catch(() => ({}))]);
-  const [MK, GM] = await Promise.all([kvFresh(env, "mk2", 45, markets), P.get("g") === "0" ? Promise.resolve([]) : kvFresh(env, "gm2:" + drDay(), 30, games)]); rest.push(GM); const N2 = SUBN;
+  const [LF, RF] = await Promise.all([kfeed(env, LQ, 200), kfeed(env, RQ, 200)]);
+  const [MK, GM] = await Promise.all([kvFresh(env, "mk2", 90, markets), P.get("g") === "0" ? Promise.resolve([]) : kvFresh(env, "gm2:" + drDay(), 60, games)]); rest.push(GM); const N2 = SUBN;
   const cats = {}; want.forEach((k, i) => { const it = top2(rest[i].items || [], tick, P.get("busy") === "1"); if (it.length) cats[k] = it; });
   const stocks = {}; tick.forEach((t, i) => { const it = pick(rest[want.length + i].items || [])[0]; if (it) stocks[t] = it; });
   // Breaking (Marco Nov 11): the story that matters most to YOU today: big world events, scandals about the people behind your companies, major accidents, analyst calls on your stocks.
@@ -406,12 +420,21 @@ async function storyImg(u, h, debug) {
 
 export default {
   // every 15 min (tools/wrangler.toml crons): refresh games and predictions in their own run, so /news only reads them
-  async scheduled(ev, env, ctx) { SUBN = 0; ctx.waitUntil(Promise.all([kvFresh(env, "mk2", 0, markets), kvFresh(env, "gm2:" + drDay(), 0, games)])); },
+  // Every 15 min. At :30 and :45 before each drop (7, 10, 1, 4, 7, 10 DR = 11, 14, 17, 20, 23, 2 UTC) it prepares the drop's news; other runs refresh games, predictions and world news.
+  async scheduled(ev, env, ctx) { SUBN = 0; const d = new Date(ev.scheduledTime || Date.now()), m = Math.floor(d.getUTCMinutes() / 15) * 15, pre = [10, 13, 16, 19, 22, 1].includes(d.getUTCHours()) && m >= 30;
+    if (pre) { const L = SHARED(), half = Math.ceil(L.length / 2), part = m === 30 ? L.slice(0, half) : L.slice(half);
+      ctx.waitUntil((async () => { for (const u of part) await refreshFeed(env, u).catch(() => 0); })()); return; }
+    ctx.waitUntil(Promise.all([kvFresh(env, "mk2", 0, markets), kvFresh(env, "gm2:" + drDay(), 0, games), m === 0 ? refreshFeed(env, sec("WORLD")).catch(() => 0) : null])); },
   async fetch(req, env) {
     SUBN = 0;
     const origin = req.headers.get("origin") || "";
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(origin) });
     const url = new URL(req.url);
+    if (req.method === "GET" && url.pathname === "/news" && url.searchParams.get("debug") === "kv") {   // test link: how old each prepared topic is
+      const out = {}; for (const u of SHARED()) { const v = await env.LIMITS.get(fkey(u), "json").catch(() => null); out[fkey(u).slice(-34)] = v ? { min: Math.round((Date.now() - v.at) / 6e4), n: v.items.length } : null; }
+      for (const k of ["mk2", "gm2:" + drDay()]) { const v = await env.LIMITS.get(k, "json").catch(() => null); out[k] = v ? { min: Math.round((Date.now() - v.at) / 6e4), n: v.v.length } : null; }
+      return json(out, 200, origin);
+    }
     if (req.method === "GET" && url.pathname === "/news" && url.searchParams.get("debug") === "net") {   // test link: can the server reach ESPN and Polymarket right now
       const T = ["https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=" + drDay().replace(/-/g, ""), "https://gamma-api.polymarket.com/events?active=true&closed=false&order=volume24hr&ascending=false&limit=120"], out = [];
       for (const u of T) { try { const r = await fetch(u, { headers: { "user-agent": "Mozilla/5.0 (compatible; PatoDaily/1.0)" } }), t = await r.text(); out.push({ u: u.slice(8, 40), st: r.status, len: t.length, head: t.slice(0, 120) }); } catch (e) { out.push({ u: u.slice(8, 40), err: String(e.message || e).slice(0, 120) }); } }
