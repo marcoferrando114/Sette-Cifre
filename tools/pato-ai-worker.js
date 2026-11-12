@@ -359,20 +359,20 @@ async function take(env, uid, body, b) {
 }
 
 // "In plain words" (Marco Nov 12: some headlines are jargon, e.g. NGX / Seplat / MTN, or a name nobody knows). One cheap batched call per new set of headlines, shared by everyone and kept in KV.
-const PLAIN = `For each numbered news headline, write ONE plain-English line (max 18 words) that tells a 20-year-old who does not follow this topic what happened and who or what the names are (for example "NGX is Nigeria's stock exchange. Seplat is an oil company and MTN a phone company."). Use ONLY the headline and widely known general knowledge about the companies, people and places named. Never invent numbers, causes or outcomes. If a headline is already clear to anyone, or you are unsure, return "". Return ONLY JSON like {"0":"...","1":""}.`;
+const PLAIN = `For each numbered news headline, decide if a 20-year-old who does not follow the topic would be confused by it: politics, world events, foreign markets or companies, unfamiliar names, jargon. If yes, write BACKGROUND context: 1 or 2 short sentences (max 40 words) saying who or what is involved and why it is happening or why it matters, e.g. what an institution is, who a person is, what led to this. Use ONLY the headline and widely known general knowledge. Never invent numbers, causes, quotes or outcomes; if unsure, return "". If the headline is already clear to anyone (sports results, product launches, simple company news), return "". Return ONLY JSON like {"0":"...","1":""}.`;
 async function plainAll(env, b) {
   if (!env.ANTHROPIC_KEY || !env.LIMITS || !b || !b.cats) return;
   const items = []; Object.values(b.cats).forEach(a => (a || []).slice(0, 2).forEach(it => { if (it && it.h) items.push(it); }));
   if (!items.length) return;
   const hk = it => it.h.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 60);
-  let M = {}; try { M = JSON.parse((await env.LIMITS.get("pl1")) || "{}"); } catch (e) { M = {}; }
+  let M = {}; try { M = JSON.parse((await env.LIMITS.get("pl2")) || "{}"); } catch (e) { M = {}; }
   const miss = items.filter(it => !(hk(it) in M));
   if (miss.length) {
     const list = miss.slice(0, 16), r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "content-type": "application/json", "x-api-key": env.ANTHROPIC_KEY, "anthropic-version": "2023-06-01" },
-      body: JSON.stringify({ model: "claude-haiku-5-5", max_tokens: 900, messages: [{ role: "user", content: PLAIN + "\n\nHEADLINES:\n" + list.map((it, i) => i + ". " + it.h + " (" + (it.s || "") + ")").join("\n") }] }) }).catch(() => null);
+      body: JSON.stringify({ model: "claude-haiku-5-5", max_tokens: 1400, messages: [{ role: "user", content: PLAIN + "\n\nHEADLINES:\n" + list.map((it, i) => i + ". " + it.h + " (" + (it.s || "") + ")").join("\n") }] }) }).catch(() => null);
     if (r && r.ok) {
       const j = await r.json(), txt = ((j.content || []).find(c => c.type === "text") || {}).text || "", m = txt.match(/\{[\s\S]*\}/); let o = null; try { o = JSON.parse(m[0]); } catch (e) { o = null; }
-      if (o) { list.forEach((it, i) => { M[hk(it)] = typeof o[i] === "string" ? o[i].trim().slice(0, 160) : ""; }); const ks = Object.keys(M); if (ks.length > 220) ks.slice(0, ks.length - 220).forEach(k => delete M[k]); await env.LIMITS.put("pl1", JSON.stringify(M), { expirationTtl: 604800 }); }
+      if (o) { list.forEach((it, i) => { M[hk(it)] = typeof o[i] === "string" ? o[i].trim().slice(0, 300) : ""; }); const ks = Object.keys(M); if (ks.length > 220) ks.slice(0, ks.length - 220).forEach(k => delete M[k]); await env.LIMITS.put("pl2", JSON.stringify(M), { expirationTtl: 604800 }); }
     }
   }
   items.forEach(it => { const t = M[hk(it)]; if (t) it.pl = t; });
