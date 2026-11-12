@@ -1322,6 +1322,7 @@ html.mp-guest #p-stocks > #pnTick:not([hidden]){display:flex!important}
 .pd-r2{color:#E9C46A;font-weight:700;cursor:pointer}
 .pd-read{all:unset;cursor:pointer;display:inline-block;margin-top:22px;padding:10px 16px;border-radius:999px;background:rgba(255,255,255,.12);font-weight:700;font-size:.85rem}
 .pd-know{margin-top:20px}
+.pd-sep{flex:none;align-self:center;font-size:.64rem;font-weight:800;letter-spacing:.06em;color:rgba(255,255,255,.45);padding:0 2px 0 8px;border-left:1px solid rgba(255,255,255,.2);margin-left:4px;white-space:nowrap;text-transform:uppercase}
 .pd-s.take .pd-bd{display:flex;flex-direction:column;justify-content:center;padding-bottom:70px}
 .pd-one{font-size:1.75rem;font-weight:800;line-height:1.28;letter-spacing:-.01em;margin-top:16px}.pd-one b{color:#F3D38F}
 .pd-nx{margin-top:22px;font-size:.9rem;color:#C9D8CF;padding:10px 14px;border-radius:14px;background:rgba(255,255,255,.07);align-self:flex-start}.pd-nx b{color:#fff}
@@ -1866,7 +1867,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261112013000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261112014500";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -6770,7 +6771,7 @@ TRACKER DATA:
       .then(function(d){ getDrop.busy = 0; if(!d || !d.cats) return; drop = {day: day(), slot: sl, sig: sig(), d: d}; ls("pd-drop2", drop); render(); }).catch(function(){ getDrop.busy = 0; }); }
   function pickNew(k, list){ var s = seen().ids, out = [], used = {};   // newest-unseen first; never the same story twice in a day
     list.forEach(function(x){ if(x && x.h && !used[x.h]){ used[x.h] = 1; out.push(x); } });
-    var un = out.filter(function(x){ return !s[(k === "big" ? "big:" : day() + ":" + k + ":") + x.h]; });
+    var un = out.filter(function(x){ return !s[(k === "big" ? "big:" : k === "calls" ? "calls:" : day() + ":" + k + ":") + x.h]; });
     return un.length ? un : out.slice(0, 1); }
   function getTick(){   // ticker + big news refresh every 2h (free, no AI)
     if(!base() || (tick && Date.now() - (tick.got||0) < 2*3600e3)) return;
@@ -6825,6 +6826,10 @@ TRACKER DATA:
       var it = ST[pk], i = Math.max(L.map(function(x){ return x.fk; }).indexOf("big"), MV ? L.indexOf(MV) : -1);
       L.splice(i >= 0 ? i + 1 : 1, 0, {id: ed + ":co:" + it.h, cls: "", t: "Your companies · " + pk, w: ago(it.t) + " ago", u: it.u, pic: it.u, ph: it.h, ps: it.s, nav: "📈 " + pk, sh: {k: pk, h: it.h, s: it.s, u: it.u},
         body: '<div class="pd-k">📈 ' + esc(pk) + (own.indexOf(pk) >= 0 ? ' · YOU OWN IT' : ' · YOU FOLLOW IT') + '</div><div class="pd-h1">' + esc(it.h) + '</div><div class="pd-m">' + esc(it.s) + ' · ' + ago(it.t) + ' ago</div>'}); })();
+    (function(){ if(!pos.length) return; var c = pickNew("calls", [dd && dd.calls, daily && daily.calls].filter(Boolean))[0]; if(!c || !c.h) return;   // Marco Nov 11: "a report of analysts saying now is a good time to buy Micron, and why"
+      var i = L.map(function(x){ return x.fk; }).indexOf("big"), j = L.reduce(function(m, x, k){ return /:co:|:move:/.test(x.id) ? k : m; }, i);
+      L.splice(j >= 0 ? j + 1 : 1, 0, {id: "calls:" + c.h, cls: "", t: "Analyst call", w: ago(c.t) + " ago", u: c.u, pic: c.u, ph: c.h, ps: c.s, nav: "🧠 Analysts", sh: {k: "Analyst call", h: c.h, s: c.s, u: c.u},
+        body: '<div class="pd-k">🧠 WHAT ANALYSTS SAY' + (c.mine ? ' · ABOUT YOUR STOCK' : '') + '</div><div class="pd-h1">' + esc(c.h) + '</div><div class="pd-m">' + esc(c.by && c.by.length > 1 ? c.by.join(" · ") : c.s) + ' · ' + ago(c.t) + ' ago</div>' + note("An analyst call is an opinion with reasons, not a sure thing. Read the why, then check it against your own plan.")}); })();
     // section row (Marco: show which section you're on): short label per slide
     L.forEach(function(x){ var k = x.fk, c = k && CATS[ix(k)];
       x.nav = x.nav ? x.nav : x.call ? "⚔️ Duel" : x.wild ? "🎲 Wildcard" : k === "game" ? "⚽ Sports" : k === "big" ? "🚨 Breaking" : k === "rd" ? "🇩🇴 DR" : c ? c[2] + " " + c[1] : /^Big move/.test(x.t) ? "📈 " + x.t.replace("Big move · ", "") : "🦆 Pato"; });
@@ -6969,14 +6974,16 @@ TRACKER DATA:
     $("pdBd").innerHTML = x.call ? callBody(x.call) : picHtml(x) + x.body + act(x);
     if(x.call && callSt() && callSt().n === 0) callSync(x.call, null);
     $("pdBars").innerHTML = S.map(function(y, j){ return '<i class="' + (j === cur ? "n" : s.ids[y.id] ? "d" : "nw") + '"></i>'; }).join("");
-    var nv = $("pdNav"); if(nv){ nv.innerHTML = S.map(function(y, j){ var sn = s.ids[y.id] && j !== cur && !NEW[y.id]; return '<button type="button" data-j="' + j + '" class="' + (j === cur ? 'on' : '') + (NEW[y.id] && j !== cur && !s.ids[y.id] ? ' nw' : '') + (sn || (NEW[y.id] && s.ids[y.id] && j !== cur) ? ' sn' : '') + '">' + esc(y.nav || y.t) + '</button>'; }).join(""); var onb = nv.querySelector(".on"); if(onb) nv.scrollLeft = Math.max(0, onb.offsetLeft - nv.clientWidth / 2 + onb.offsetWidth / 2); }
+    var nv = $("pdNav"); if(nv){ nv.innerHTML = S.map(function(y, j){ var sn = s.ids[y.id] && j !== cur && !NEW[y.id]; return (j > 0 && !NEW[y.id] && NEW[S[j - 1].id] ? '<span class="pd-sep">✓ Seen</span>' : '') + '<button type="button" data-j="' + j + '" class="' + (j === cur ? 'on' : '') + (NEW[y.id] && j !== cur && !s.ids[y.id] ? ' nw' : '') + (sn || (NEW[y.id] && s.ids[y.id] && j !== cur) ? ' sn' : '') + '">' + esc(y.nav || y.t) + '</button>'; }).join(""); var onb = nv.querySelector(".on"); if(onb) nv.scrollLeft = Math.max(0, onb.offsetLeft - nv.clientWidth / 2 + onb.offsetWidth / 2); }
     if(x.pic && !(x.pic in IM.m)) pic(x.pic, function(){ if(S[cur] === x && !$("pdV").hidden && !$("pdBd").querySelector(".pd-img")) $("pdBd").insertAdjacentHTML("afterbegin", picHtml(x)); }, x.ph);
     var ul = unseen().length; $("pdFt").textContent = ul ? "🕒 " + ul + " new · " + clock() + " · tap for next" : "✓ You're all caught up · next drop " + hh(DROPS[(slot() + 1) % DROPS.length]);
     var t = 0; /* no clock (Marco Nov 11): tap for next */ $("pdS").style.setProperty("--pd-t", t/1000 + "s");
     if(t) timer = setTimeout(function(){ if(!$("pdV").classList.contains("paused")) next(); }, t); else $("pdBars").children[cur].className = "d";
   }
   function next(){ if(cur >= S.length - 1) return close(); show(cur + 1); }
-  function openV(at){ S = stories(); S.forEach(function(x){ pic(x.pic, null, x.ph); }); hidePeek(); var u = unseen(); NEW = {}; u.forEach(function(x){ NEW[x.id] = 1; }); var i = at >= 0 && at < S.length ? at : u.length ? S.indexOf(u[0]) : 0; if(!(prefs && prefs.picked) && !u.length) i = S.length - 1;
+  function openV(at){ S = stories(); var want = at >= 0 && S[at] ? S[at].id : ""; S.forEach(function(x){ pic(x.pic, null, x.ph); }); hidePeek(); var u = unseen(); NEW = {}; u.forEach(function(x){ NEW[x.id] = 1; });
+    S = S.filter(function(x){ return NEW[x.id]; }).concat(S.filter(function(x){ return !NEW[x.id]; })); if(want) at = S.map(function(x){ return x.id; }).indexOf(want);   // organized: everything new first, then what you already saw (Marco Nov 11)
+    var i = at >= 0 && at < S.length ? at : u.length ? S.indexOf(u[0]) : 0; if(!(prefs && prefs.picked) && !u.length) i = S.length - 1;
     $("pdV").hidden = false; document.documentElement.style.overflow = "hidden"; show(i); }
   function close(){ clearTimeout(timer); $("pdV").hidden = true; $("pdS").style.transform = ""; document.documentElement.style.overflow = "";
     if(!(prefs && prefs.picked)) save(on()); render(); }

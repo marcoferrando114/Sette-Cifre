@@ -29,6 +29,8 @@ const GN = "https://news.google.com/rss", EN = "hl=en-US&gl=US&ceid=US:en", ES =
 const TRUSTED = /^(Reuters|Associated Press|The Associated Press|USA TODAY|USA Today|Yahoo News|Fortune|Newsweek|Sky News|The Independent|TIME|Time|Los Angeles Times|Investing\.com|AP News|CNBC|Bloomberg|Bloomberg\.com|Yahoo Finance|Yahoo|MarketWatch|The Wall Street Journal|WSJ|Financial Times|CNN|CNN Business|Business Insider|Barron's|Fox Business|Axios|The Verge|TechCrunch|Wired|Ars Technica|Engadget|CoinDesk|Cointelegraph|Decrypt|Forbes|ESPN|The Athletic|CBS Sports|NBC Sports|Yahoo Sports|Sports Illustrated|BBC|BBC News|The Guardian|NPR|The New York Times|The Washington Post|Politico|The Hill|NBC News|ABC News|CBS News|Al Jazeera|Variety|Billboard|Rolling Stone|The Hollywood Reporter|Deadline|IGN|Polygon|GameSpot|Kotaku|STAT|Healthline|Medical News Today|Car and Driver|MotorTrend|Road & Track|Top Gear|Vogue|GQ|Hypebeast|Highsnobiety|Business of Fashion|WWD|Elle|Diario Libre|Listín Diario|Listin Diario|El Día|El Dia|Hoy Digital|Periódico Hoy|N Digital|CDN|El Nuevo Diario|Noticias SIN|Acento|De Último Minuto|Diario Libre RD|PokerNews|Investopedia|Bloomberg Línea)$/i;
 const JUNK = /\b(opinion|sponsored|\d+ (stocks?|ways|things|reasons|picks|best)|top \d+|best .{0,30} to buy|should you (buy|sell)|is it time to|buy now|before it'?s too late|millionaire|prediction:|could make you rich|live updates?|quiz|podcast|horoscope|deal alert|% off|coupon|review:)\b/i;
 const MOVERS = /\b(fed|federal reserve|powell|rates?|inflation|cpi|jobs report|payrolls|s&p|nasdaq|dow|stocks?|wall street|bitcoin|crypto|dollar|earnings|oil|treasur(y|ies)|recession|tariffs?|ipo|market)\b/i;
+const DRAMA = /\b(affair|scandal|fired|ousted|steps? down|resign(s|ed)?|lawsuit|sued|indicted|charged|arrested|probe|investigat|fraud|leak(ed)?|recall|bankrupt|layoffs?|misconduct|accused)\b/i;
+const CALLS = /\b(upgrades?|upgraded|downgrades?|downgraded|price target|buy rating|top pick|outperform|overweight|analysts? (say|see|expect|bullish))\b/i;
 const HUGE = /\b(dead|dies|died|killed|deaths?|crash(es|ed)?|earthquake|hurricane|tsunami|wildfire|flood|war|invasion|invades|attack|explosion|shooting|terror|ceasefire|assassinat|resigns|impeach|coup|elected|wins (the )?election|state of emergency|pandemic|outbreak)\b/i;
 const sec = t => GN + "/headlines/section/topic/" + t + "?" + EN, srch = (q, l) => GN + "/search?q=" + encodeURIComponent(q + " when:1d") + "&" + (l || EN);
 const CATS = {
@@ -38,7 +40,7 @@ const CATS = {
   poker: srch("poker WSOP OR \"World Series of Poker\" OR \"poker tournament\""), saving: srch("\"personal finance\" OR savings OR \"interest rates\""),
 };
 const LEAGUES = [["football/nfl", "NFL", 9], ["soccer/uefa.champions", "Champions League", 9], ["basketball/nba", "NBA", 8], ["mma/ufc", "UFC", 8], ["soccer/fifa.world", "World Cup", 10],
-  ["soccer/esp.1", "LaLiga", 7], ["soccer/eng.1", "Premier League", 7], ["baseball/mlb", "MLB", 6], ["tennis/atp", "Tennis", 6], ["tennis/wta", "Tennis", 5], ["soccer/usa.1", "MLS", 4], ["hockey/nhl", "NHL", 4], ["football/college-football", "College football", 5], ["racing/f1", "F1", 6]];
+  ["soccer/esp.1", "LaLiga", 7], ["soccer/eng.1", "Premier League", 7], ["soccer/ita.1", "Serie A", 6], ["soccer/ger.1", "Bundesliga", 6], ["soccer/uefa.europa", "Europa League", 6], ["soccer/fifa.friendly", "Soccer friendly", 4], ["baseball/mlb", "MLB", 6], ["tennis/atp", "Tennis", 6], ["tennis/wta", "Tennis", 5], ["soccer/usa.1", "MLS", 4], ["hockey/nhl", "NHL", 4], ["football/college-football", "College football", 5], ["racing/f1", "F1", 6]];
 const dec = t => t.replace(/<!\[CDATA\[|\]\]>/g, "").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&nbsp;/g, " ").trim();
 function parse(xml) {
   return [...String(xml).matchAll(/<item>([\s\S]*?)<\/item>/g)].map(m => {
@@ -101,7 +103,7 @@ function clean(items, hours) {
   });
 }
 const pick = items => clean(items, 14);   // Marco: anything over 14h drops
-const CO = { GOOGL: "google|alphabet", GOOG: "google|alphabet", NVDA: "nvidia", META: "meta|facebook|instagram|whatsapp", AVGO: "broadcom", AAPL: "apple|iphone", MSFT: "microsoft", AMZN: "amazon", TSLA: "tesla|musk", IBKR: "interactive brokers", AMD: "\\bamd\\b", TSM: "tsmc", NFLX: "netflix", VUAA: "s&p 500" };
+const CO = { GOOGL: "google|alphabet|pichai", GOOG: "google|alphabet|pichai", NVDA: "nvidia|jensen huang", META: "meta|facebook|instagram|whatsapp|zuckerberg", AVGO: "broadcom|hock tan", AAPL: "apple|iphone|tim cook", MSFT: "microsoft|nadella", AMZN: "amazon|jassy|bezos", TSLA: "tesla|musk", MU: "micron", IBKR: "interactive brokers", AMD: "\\bamd\\b", TSM: "tsmc", NFLX: "netflix", VUAA: "s&p 500" };
 // Importance: trusted outlets covering it x10 + freshness (0-14) + 25 if it names your stocks. 2nd story only if 5+ outlets or about you.
 function top2(items, tick, busy) {
   const now = Date.now(), me = new RegExp("\\b(" + tick.map(t => t.toLowerCase() + (CO[t] ? "|" + CO[t] : "")).join("|") + ")", "i");
@@ -126,8 +128,10 @@ async function games() {
         score: w + (nat ? 2 : 0) + ranked + (/final|championship|playoff|semifinal|title|main event|derby|clasico|clásico/i.test(note + " " + e.name) ? 4 : 0) });
     });
   }).catch(() => null)));
-  const top = out.sort((a, b) => b.score - a.score).slice(0, 8);
-  await Promise.all(top.map(g => gameInfo(g)));   // all shown games get the full card (Marco Nov 11: odds, form, key players, injuries)   // injury report + starting lineups for the biggest games (Marco Nov 11)
+  const srt = out.sort((a, b) => b.score - a.score), seenL = new Set(), one = [], more = [];   // best game of each league first, so the day mixes sports (Marco Nov 11)
+  srt.forEach(g => { if (seenL.has(g.league)) more.push(g); else { seenL.add(g.league); one.push(g); } });
+  const top = one.concat(more).slice(0, 10);
+  await Promise.all(top.slice(0, 8).map(g => gameInfo(g))); top.slice(8).forEach(g => { if (g.odds0) g.odds = { line: String(g.odds0.line || ""), ou: g.odds0.ou ? String(g.odds0.ou) : "", ml: [], by: g.odds0.by }; delete g.path; delete g.id; delete g.odds0; });   // all shown games get the full card (Marco Nov 11: odds, form, key players, injuries)   // injury report + starting lineups for the biggest games (Marco Nov 11)
   return top;
 }
 async function gameInfo(g) {
@@ -157,13 +161,18 @@ async function bundle(P) {
   const tick = (P.get("t") || "").toUpperCase().split(",").filter(x => /^[A-Z.]{1,6}$/.test(x)).slice(0, 5);
   const want = (P.get("k") || "rd,business,tech").split(",").filter(k => CATS[k]).slice(0, 8);
   const [top, world, ...rest] = await Promise.all([feed(sec("BUSINESS"), 7200), feed(sec("WORLD"), 3600),
-    ...want.map(k => feed(CATS[k], 7200)), ...tick.map(t => feed(srch(t + " stock"), 10800)), P.get("g") === "0" ? Promise.resolve([]) : games()]);
+    ...want.map(k => feed(CATS[k], 7200)), ...tick.map(t => feed(srch(t + " stock"), 10800)), feed(srch("analysts upgrade stock buy rating"), 10800), P.get("g") === "0" ? Promise.resolve([]) : games()]);
   const cats = {}; want.forEach((k, i) => { const it = top2(rest[i].items || [], tick, P.get("busy") === "1"); if (it.length) cats[k] = it; });
   const stocks = {}; tick.forEach((t, i) => { const it = pick(rest[want.length + i].items || [])[0]; if (it) stocks[t] = it; });
-  const WL = clean(world.items || [], 14), WH = WL.filter(i => i.n >= 3 && HUGE.test(i.h))[0];
-  const W = WH ? Object.assign({}, WH, { huge: true }) : (WL.slice().sort((x, y) => (y.n || 0) - (x.n || 0))[0] || null);   // Big news every day; huge = red
+  // Breaking (Marco Nov 11): the story that matters most to YOU today: big world events, scandals about the people behind your companies, major accidents, analyst calls on your stocks.
+  const WL = clean(world.items || [], 14), me = tick.length ? new RegExp("\\b(" + tick.map(t => t.toLowerCase() + (CO[t] ? "|" + CO[t] : "")).join("|") + ")", "i") : null, now = Date.now();
+  const pool = WL.concat(pick(top.items || []), ...tick.map((t, i) => pick(rest[want.length + i].items || []).slice(0, 3)));
+  const bs = i => (i.n || 1) * 10 + Math.max(0, 14 - (now - i.t) / 36e5) + (HUGE.test(i.h) ? 25 : 0) + (DRAMA.test(i.h) ? 18 : 0) + (me && me.test(i.h) ? 30 : 0) + (CALLS.test(i.h) && me && me.test(i.h) ? 10 : 0);
+  const B = pool.filter(i => i && i.h).sort((x, y) => bs(y) - bs(x))[0] || null;
+  const W = B ? Object.assign({}, B, { huge: (B.n || 0) >= 3 && HUGE.test(B.h), mine: !!(me && me.test(B.h)) }) : null;
+  const CL = pick(rest[want.length + tick.length].items || []).filter(i => CALLS.test(i.h)).map(i => Object.assign({}, i, { mine: !!(me && me.test(i.h)) })).sort((x, y) => (y.mine - x.mine) || ((y.n || 1) - (x.n || 1)))[0] || null;
   const T = pick(top.items || []);
-  return { at: top.at || Date.now(), day: edDay(), big: W, cats, stocks, games: rest[rest.length - 1] || [],
+  return { at: top.at || Date.now(), day: edDay(), big: W, calls: CL, cats, stocks, games: rest[rest.length - 1] || [],
     ticker: T.filter(i => MOVERS.test(i.h)).concat(T).filter((v, i, a) => a.indexOf(v) === i).slice(0, 5) };
 }
 const TAKE = `You are Pato, the money buddy inside a finance app for young Dominicans. Write today's "Pato's take" for ONE user from the facts below.
