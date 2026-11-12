@@ -1322,6 +1322,11 @@ html.mp-guest #p-stocks > #pnTick:not([hidden]){display:flex!important}
 .pd-r2{color:#E9C46A;font-weight:700;cursor:pointer}
 .pd-read{all:unset;cursor:pointer;display:inline-block;margin-top:22px;padding:10px 16px;border-radius:999px;background:rgba(255,255,255,.12);font-weight:700;font-size:.85rem}
 .pd-know{margin-top:20px}
+.pd-brk.mv{background:rgba(227,188,106,.18);color:#F3D38F}
+.pd-brkrow{display:flex;align-items:center;gap:10px}.pd-ago{font-size:.78rem;font-weight:700;color:#FF9A8C}
+.pd-bigh{font-size:1.85rem;font-weight:900;line-height:1.16;letter-spacing:-.01em;margin-top:14px}
+.pd-by{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:14px}.pd-by small{width:100%;font-size:.7rem;font-weight:700;color:#C9A9A3;letter-spacing:.04em}.pd-by span{padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.09);font-size:.76rem;font-weight:700}
+.pd-s.brk .pd-img{aspect-ratio:4/3;margin-bottom:18px}.pd-s.brk .pd-know li:before{background:#FF7A6B}
 .pd-hero{margin-top:16px}.pd-hero small{display:block;font-size:.78rem;color:#9FB3A7;font-weight:600}
 .pd-hero>div{display:flex;align-items:baseline;gap:10px;margin-top:2px}.pd-hero b{font-size:2.6rem;font-weight:850;letter-spacing:-.02em;line-height:1.1}.pd-hero em{font-style:normal;font-size:1.05rem;font-weight:800}
 .pd-hero.tip p{font-size:1.25rem;font-weight:750;line-height:1.3;margin:6px 0 0}.pd-hero.tip p b{color:#F3D38F}
@@ -1852,7 +1857,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261112001500";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261112010500";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -6672,7 +6677,7 @@ TRACKER DATA:
 // Pato Daily (Nov 11): floating Pato on every tab opens today's stories on top (7am DR edition); ticker on Stocks.
 (function(){
   var $ = function(i){ return document.getElementById(i); }, db = null, me = {}, evs = [], pos = [], bets = [], sports = [], prefs = null, daily = null, tick = null, busy = 0;
-  var CATS = [["big","Top story","🌎"],["rd","🇩🇴 DR","🇩🇴"],["business","Business","💼"],["tech","Tech","💡"],["politics","Politics","🏛️"],["crypto","Crypto","🪙"],
+  var CATS = [["big","Breaking","🚨"],["rd","🇩🇴 DR","🇩🇴"],["business","Business","💼"],["tech","Tech","💡"],["politics","Politics","🏛️"],["crypto","Crypto","🪙"],
     ["ent","Entertainment","🎬"],["gaming","Gaming","🎮"],["health","Health","🩺"],["cars","Cars","🏎️"],["fashion","Luxury","💎"],["game","Sports","🏆"]];
   var FIX = ["big","rd"], DEF = ["business","tech","game"], TOP = 5, MAX = 11;   // Big news + Local always on; follow up to 5 topics
   // "This or that" (Nov 11, v3): real, proven money facts people half-know. Specific, no giveaway phrasing, a why with numbers. Same question for everyone each day.
@@ -6778,15 +6783,18 @@ TRACKER DATA:
     var nt0 = (daily && daily.take && daily.take.notes) || {}; Object.keys(nt0).forEach(function(k){ if(!FR[k]) notes[k] = nt0[k]; });
     var big = pickNew("big", [dd && dd.big, tick && tick.big, daily && daily.big])[0]; if(big && daily && daily.big && big.h !== daily.big.h) FR.big = 1;
     if(dd && dd.games && dd.games.length && drop.slot >= 3) FR.game = 1;
-    var tk = (daily && daily.take) || fallback();
+    var tk = (daily && daily.take) || fallback(), MV = null;
     L.push({id: ed + ":take", cls: "", t: "Pato's take", w: slot() ? "Updated " + hh(DROPS[slot()]) : "7am edition", body: takeBody(tk, big, FR.game ? dd.games : daily && daily.games)});
     var b = pos.filter(function(p){ return p.prev > 0 && p.precio > 0 && Math.abs(p.precio/p.prev-1) >= .05; }).sort(function(x, y){ return Math.abs(y.precio/y.prev-1) - Math.abs(x.precio/x.prev-1); })[0];
     var said = tk.happened ? tk.happened.text : "", st0 = b && daily && daily.stocks && daily.stocks[b.t];
     if(b && !(said && (new RegExp("\\b" + b.t + "\\b").test(said) || (st0 && said.indexOf(st0.h.split(" ")[0]) >= 0)))){ var ch = (b.precio/b.prev-1)*100;
-      L.push({id: ed + ":move:" + b.t + (ch>0?"+":"-"), cls: "big", t: "Breaking · " + b.t, w: "today", sh: st0 ? {k: "Breaking · " + b.t, h: st0.h, s: st0.s, u: st0.u} : null, u: st0 && st0.u, pic: st0 && st0.u, ph: st0 && st0.h, ps: st0 && st0.s, body: breakBody(b, ch, st0)}); }
+      MV = ({id: ed + ":move:" + b.t + (ch>0?"+":"-"), cls: "", t: "Big move · " + b.t, w: "today", nav: "📈 " + b.t, sh: st0 ? {k: "Big move · " + b.t, h: st0.h, s: st0.s, u: st0.u} : null, u: st0 && st0.u, pic: st0 && st0.u, ph: st0 && st0.h, ps: st0 && st0.s, body: breakBody(b, ch, st0)}); }
     var fb = (prefs && prefs.fb) || {}, ix = function(k){ return CATS.map(function(c){ return c[0]; }).indexOf(k); };   // 👍/👎 move topics up or down
     (function(){ var T = on().slice().sort(function(a, b){ return (fb[b]||0) - (fb[a]||0) || on().indexOf(a) - on().indexOf(b); }); return ["big"].concat(T.filter(function(k){ return k !== "game"; }), WILD() ? [WILD()] : [], ["rd"], T.indexOf("game") >= 0 ? ["game"] : []); })().map(function(k){ return CATS[ix(k)]; }).filter(Boolean).forEach(function(c){ if(L.length >= MAX + 1) return; var k = c[0], it, h;
-      if(k === "big"){ if(!big) return; L.push({id: "big:" + big.h, cls: big.huge === false ? "" : "big", t: "Top story", w: ago(big.t) + " ago", u: big.u, pic: big.u, ph: big.h, ps: big.s, fk: "big", sh: {k: "Top story", h: big.h, s: big.s, u: big.u, kn: knowArr("big")}, body: '<div class="pd-k">TOP STORY · WORLD</div><div class="pd-h1">' + esc(big.h) + '</div><div class="pd-m">' + esc(big.by && big.by.length ? big.by.join(" · ") : big.s) + '</div>' + know("big") + note(notes.big)}); return; }
+      if(k === "big"){ if(!big) return; var BY = big.by && big.by.length ? big.by : [big.s].filter(Boolean);   // Breaking = the news of the day (Marco Nov 11), front-page look every day
+        L.push({id: "big:" + big.h, hot: big.huge !== false, cls: "big brk", t: "Breaking", w: ago(big.t) + " ago", u: big.u, pic: big.u, ph: big.h, ps: big.s, fk: "big", sh: {k: "Breaking", h: big.h, s: big.s, u: big.u, kn: knowArr("big")},
+          body: '<div class="pd-brkrow"><span class="pd-brk"><span class="pd-dot"></span>BREAKING</span><span class="pd-ago">' + esc(ago(big.t)) + ' ago</span></div><div class="pd-bigh">' + esc(big.h) + '</div>' +
+            (BY.length ? '<div class="pd-by"><small>' + (Math.max(BY.length, big.n || 0) > 1 ? "Covered by " + Math.max(BY.length, big.n || 0) + " outlets" : "Source") + '</small>' + BY.slice(0, 4).map(function(o){ return '<span>' + esc(o) + '</span>'; }).join("") + '</div>' : '') + know("big") + (function(){ var A = (big.also || []).filter(function(t){ return t && t !== big.h; }).slice(0, 3); return A.length ? '<div class="pd-know pd-dev"><i>THE DEVELOPING STORY</i><ul>' + A.map(function(t){ return '<li>' + esc(t) + '</li>'; }).join("") + '</ul></div>' : ''; })() + note(notes.big)}); return; }
       if(k === "game"){ var pg = pickGame(FR.game ? dd.games : daily && daily.games, !FR.game), g = pg && pg.g, mine = pg && pg.mine; if(!g) return;
         var TM = g.teams || [], vs = TM.length === 2 && TM[0].n && TM[1].n ? '<div class="pd-vs">' + TM.map(function(t){ return '<div class="pd-team">' + (t.logo ? '<img src="' + esc(t.logo) + '" alt="" onerror="this.outerHTML=\'<span class=pd-tl>' + esc(t.n.slice(0,3).toUpperCase()) + '</span>\'">' : '<span class="pd-tl">' + esc(t.n.slice(0,3).toUpperCase()) + '</span>') +
           '<b>' + esc(t.n) + '</b>' + (g.live && t.score !== "" ? '<em>' + esc(t.score) + '</em>' : t.rec ? '<small>' + esc(t.rec) + '</small>' : '') + '</div>'; }).join('<div class="pd-at">' + (g.live ? '<i>LIVE</i>' : 'VS') + '</div>') + '</div>' : '<div class="pd-h1">' + esc(g.name.replace(" at ", " vs ")) + '</div>';
@@ -6798,16 +6806,17 @@ TRACKER DATA:
       var by = function(x){ return esc(x.by && x.by.length > 1 ? x.by.join(" · ") : x.s) + " · " + ago(x.t) + " ago"; }, i2 = A[1];   // 1-2 stories per topic, ranked by the worker
       L.push({id: ed + ":" + k + ":" + it.h, id2: i2 ? ed + ":" + k + ":" + i2.h : "", cls: k === "rd" ? "rd" : "", t: c[1], w: ago(it.t) + " ago", u: i2 ? "" : it.u, pic: it.u, ph: it.h, ps: it.s, fk: k, sh: {k: c[1], h: h, s: it.s, u: it.u, kn: knowArr(k)}, body: '<div class="pd-k">' + esc(c[1].toUpperCase()) + '</div><div class="pd-h1">' + esc(h) + '</div>' + (h !== it.h ? '<div class="pd-m" style="font-style:italic">' + esc(it.h) + '</div>' : '') + '<div class="pd-m">' + by(it) + (i2 ? ' · <a class="pd-r2" data-u="' + esc(it.u) + '">Read ›</a>' : '') + '</div>' + know(k) + note(notes[k]) +
         (i2 ? '<div class="pd-two"><div class="pd-k">ALSO</div><div class="pd-h2">' + esc(i2.h) + '</div><div class="pd-m">' + by(i2) + ' · <a class="pd-r2" data-u="' + esc(i2.u) + '">Read ›</a></div></div>' : '')}); });
+    if(MV){ var bi = L.map(function(x){ return x.fk; }).indexOf("big"); L.splice(bi >= 0 ? bi + 1 : 1, 0, MV); }   // Breaking news first, then your stock's big move
     var cq = callQ(), cs = callSt(); if(cq && !(cs && cs.q === cq.id && $("pdV").hidden)) L.push({id: ed + ":call:" + cq.id, cls: "call", t: CALL, w: "today's money question", call: cq, body: ""});
     var W = WILD(); L.forEach(function(x){ if(W && x.fk === W){ var c = CATS[ix(W)]; x.wild = 1; x.t = "Wildcard · " + c[1]; x.body = x.body.replace('<div class="pd-k">', '<div class="pd-k">🎲 WILDCARD · '); } });
     (function(){ var ST = Object.assign({}, (daily && daily.stocks) || {}, (dd && dd.stocks) || {}), sv = seen().ids, own = pos.map(function(p){ return p.t; });   // "Your companies": stocks you own or keep reading about
       var t = tickers().filter(function(t){ return ST[t] && ST[t].h && !L.some(function(x){ return x.id.indexOf(":move:" + t) > 0; }); }), pk = t.filter(function(t){ return !sv[ed + ":co:" + ST[t].h]; })[0] || t[0]; if(!pk) return;
-      var it = ST[pk], i = L.map(function(x){ return x.fk; }).indexOf("big");
+      var it = ST[pk], i = Math.max(L.map(function(x){ return x.fk; }).indexOf("big"), MV ? L.indexOf(MV) : -1);
       L.splice(i >= 0 ? i + 1 : 1, 0, {id: ed + ":co:" + it.h, cls: "", t: "Your companies · " + pk, w: ago(it.t) + " ago", u: it.u, pic: it.u, ph: it.h, ps: it.s, nav: "📈 " + pk, sh: {k: pk, h: it.h, s: it.s, u: it.u},
         body: '<div class="pd-k">📈 ' + esc(pk) + (own.indexOf(pk) >= 0 ? ' · YOU OWN IT' : ' · YOU FOLLOW IT') + '</div><div class="pd-h1">' + esc(it.h) + '</div><div class="pd-m">' + esc(it.s) + ' · ' + ago(it.t) + ' ago</div>'}); })();
     // section row (Marco: show which section you're on): short label per slide
     L.forEach(function(x){ var k = x.fk, c = k && CATS[ix(k)];
-      x.nav = x.nav ? x.nav : x.call ? "⚔️ Duel" : x.wild ? "🎲 Wildcard" : k === "game" ? "⚽ Sports" : k === "big" ? "🌎 Top story" : k === "rd" ? "🇩🇴 DR" : c ? c[2] + " " + c[1] : /^Breaking/.test(x.t) ? "📈 " + x.t.replace("Breaking · ", "") : "🦆 Pato"; });
+      x.nav = x.nav ? x.nav : x.call ? "⚔️ Duel" : x.wild ? "🎲 Wildcard" : k === "game" ? "⚽ Sports" : k === "big" ? "🚨 Breaking" : k === "rd" ? "🇩🇴 DR" : c ? c[2] + " " + c[1] : /^Big move/.test(x.t) ? "📈 " + x.t.replace("Big move · ", "") : "🦆 Pato"; });
     // Pato's take page: "In today's edition" = what's coming, so the page is full and pulls you into the stories
     var nt = [tk.happened, tk.you, tk.watch].filter(function(r){ return r && r.text; }).length, up = L.slice(1).filter(function(x){ return x.ph || x.call; }).slice(0, nt >= 3 ? 3 : 6);
     if(0 && up.length) L[0].body += '<div class="pd-up"><i>IN TODAY\'S EDITION</i>' + up.map(function(x){ return '<div><b>' + esc(x.t) + '</b><span>' + esc(x.call ? x.call.q : x.ph) + '</span></div>'; }).join("") + '</div>';
@@ -6865,7 +6874,7 @@ TRACKER DATA:
     all.forEach(function(p){ tot += p.sh*(p.precio-p.prev); });
     var since = b.costo > 0 && !b.regalo ? pct((b.precio/b.costo-1)*100) : "";
     var line = b.regalo ? "These are free reward shares, so every cent here is gain." : all.length > 1 && Math.abs(g) >= Math.abs(tot)*.5 && Math.abs(tot) > 0 ? "Your biggest mover today: " + Math.round(Math.abs(g)/Math.max(Math.abs(tot), .01)*100) + "% of your stocks' move." : Math.abs(ch) >= 10 ? "A double-digit day is rare. Big moves often come with news, so read before you act." : "Big moves happen. Your plan matters more than one day.";
-    return '<div class="pd-brk"><span class="pd-dot"></span>BREAKING · YOUR STOCK</div>' +
+    return '<div class="pd-brk mv">📈 BIG MOVE · YOUR STOCK</div>' +
       '<div class="pd-bh"><span class="pd-lg">' + (L || esc(b.t.slice(0, 4))) + '</span><div><b>' + esc(b.t) + '</b><small>' + esc(CONAME[b.t] || "You own it") + '</small></div></div>' +
       '<div class="pd-big ' + (up ? "up" : "dn") + '">' + (up ? "▲ " : "▼ ") + Math.abs(ch).toFixed(1) + '%</div>' +
       '<div class="pd-px">US$' + b.prev.toFixed(2) + ' → <b>US$' + b.precio.toFixed(2) + '</b> today</div>' +
@@ -6929,7 +6938,7 @@ TRACKER DATA:
     $("pdFab").hidden = !S.length; $("pdN").textContent = u.length || ""; $("pdN").hidden = !u.length;
     placePeek(); var pw = $("pdPeek"); if(pw) pw.scrollTop = 0; if(pw && !pw.classList.contains("out") && !pw.classList.contains("dive")) pw.className = u.length ? "" : "idle";
     if(S.length && u.length && daily && !peeked){ if(blocked()) setTimeout(render, 2000); else { peeked = 1; if(!cover()) setTimeout(peek, 1500); } }
-    $("pdFab").classList.toggle("big", u.some(function(x){ return x.cls === "big"; }));
+    $("pdFab").classList.toggle("big", u.some(function(x){ return x.hot; }));
   }
   // Story photos: the outlet's own preview image via the worker (/img), cached for the day; no photo = text page.
   var IM = ls("pd-img3"); if(!IM || IM.day !== day()) IM = {day: day(), m: {}};   // v3: never keep "no photo" answers, so a bad moment doesn't hide photos all day
@@ -6968,7 +6977,7 @@ TRACKER DATA:
   function peekLines(){ var u = unseen(), tk = (daily && daily.take) || fallback(), L = [];
     u.forEach(function(x){ var i = S.indexOf(x);
       if(x.id.indexOf(":take") > 0){ if(tk.you && tk.you.text) L.push({i: i, k: "FOR YOU", h: tk.you.text}); return; }   // your money first
-      L.push({i: i, big: x.cls === "big", k: (x.fk && FR[x.fk] ? "NEW · " : "") + (x.call ? "⚔️ DAILY DUEL" : x.wild ? "🎲 WILDCARD" : (x.nav || x.t).toUpperCase()), h: x.call ? x.call.q : x.ph || (x.sh && x.sh.h) || x.t}); });
+      L.push({i: i, big: !!x.hot, k: (x.fk && FR[x.fk] ? "NEW · " : "") + (x.call ? "⚔️ DAILY DUEL" : x.wild ? "🎲 WILDCARD" : (x.nav || x.t).toUpperCase()), h: x.call ? x.call.q : x.ph || (x.sh && x.sh.h) || x.t}); });
     return L; }
   function blocked(){ return ["sfOffer", "sfLock", "mpGate", "sgSetup", "palSheet", "pdCover"].some(function(id){ var e = $(id); return e && !e.hidden && e.offsetParent !== null; }) || !$("pdV").hidden; }   // never peek over sign-in, Face ID, setup, settings
   function placePeek(){ var w = $("pdPeek"), b = $("pdBub"), t = document.querySelector("nav.tabs"); if(!w) return; var r = t && t.getBoundingClientRect(), bt = r && r.height && r.top > innerHeight / 2 ? innerHeight - r.top - 10 : 86;   // duck rises from behind the tab bar
@@ -6982,7 +6991,7 @@ TRACKER DATA:
   // Morning cover (Marco Nov 11): first open of each edition = a front page; "Read" opens the stories, "Later" lets the duck take over
   function cover(){ if(ls("pd-cover") === day() || !daily || !$("pdV").hidden) return false; var big = (tick && tick.big) || daily.big; if(!big) return false;
     ls("pd-cover", day()); var tk = daily.take || fallback(), line = (tk.you && tk.you.text) || (tk.happened && tk.happened.text) || "";
-    var also = S.filter(function(x){ return x.nav && !/Pato|Top story/.test(x.nav); }).map(function(x){ return x.nav; }).slice(0, 4).join(" · ");
+    var also = S.filter(function(x){ return x.nav && !/Pato|Breaking/.test(x.nav); }).map(function(x){ return x.nav; }).slice(0, 4).join(" · ");
     var im = PICS() && (IM.m[big.u] || big.img), c = document.createElement("div"); c.id = "pdCover"; c.className = "pd-cover";
     c.innerHTML = '<div class="pc-ph"' + (im ? ' style="background-image:url(\'' + esc(im) + '\')"' : '') + '><div class="pc-top"><img src="icon-192.png?v=7" alt=""><div><b>Pato Daily</b><small>' + esc(drd().toLocaleDateString("en-US", {timeZone: "UTC", weekday: "long", month: "long", day: "numeric"})) + ' · 7am edition</small></div></div>' + (im && big.s ? '<span class="pc-src">' + esc(big.s) + '</span>' : '') + '</div>' +
       '<div class="pc-bd"><div class="pc-k">🌎 TOP STORY</div><h2>' + esc(big.h) + '</h2>' + (line ? '<div class="pc-tk"><img src="icon-192.png?v=7" alt=""><div>' + bold(line) + '</div></div>' : '') + (also ? '<div class="pc-in">Also today: ' + esc(also) + '</div>' : '') + '</div>' +
