@@ -229,7 +229,7 @@ async function markets() {
 }
 const PWORLD = /\b(AI|OpenAI|Nvidia|Apple|Google|Microsoft|Amazon|Meta|Tesla|Musk|Fed|rates?|inflation|recession|S&P|Bitcoin|BTC|Ethereum|crypto|Trump|election|Congress|Senate|Dominican|Haiti|Abinader|Venezuela|Iran|China|NBA|NFL|MLB|Champions League|Premier League|World Cup|Super Bowl|Real Madrid|Barcelona|Yankees|Lakers)\b/i;
 // Marco Nov 12: counting bets ("how many tweets will Elon post") tell you nothing; keep markets that explain what is happening
-const PTRIVIA = /\b(tweets?|posts? on X|how many (times|tweets|posts|followers|views)|will \w+( \w+)? say\b|mention(s|ed)?\b|followers|subscribers|views|streams|box office|gross|top (song|artist|spotify)|spotify|youtube|tiktok|# of|number of (tweets|posts))\b/i;
+const PTRIVIA = /\b(tweets?|posts? on X|how many (times|tweets|posts|followers|views)|will \w+( \w+)? say\b|mention(s|ed)?\b|followers|subscribers|views|streams|box office|gross|top (song|artist|spotify)|spotify|youtube|tiktok|# of|number of (tweets|posts)|what price will|(bitcoin|btc|ethereum|ether|solana|xrp|dogecoin)\b[^?]{0,40}\b(hit|reach|dip|above|below|price))\b/i;
 const okM = M => M.filter(m => !PTRIVIA.test(m.t + " " + m.q));
 function pickMarkets(M, tick) { M = okM(M); const me = tick.length ? new RegExp("\\b(" + tick.map(t => t + (CO[t] ? "|" + CO[t] : "")).join("|") + ")\\b", "i") : null;
   return M.filter(m => m.p >= 4 && m.p <= 96 && m.u.length > 30).map(m => Object.assign({}, m, { sc: Math.log10(m.vol + 10) + (PWORLD.test(m.t + " " + m.q) ? 3 : 0) + (me && me.test(m.t + " " + m.q) ? 4 : 0) + Math.min(3, Math.abs(m.ch) / 4) }))
@@ -358,6 +358,25 @@ async function take(env, uid, body, b) {
   return out;
 }
 
+// "In plain words" (Marco Nov 12: some headlines are jargon, e.g. NGX / Seplat / MTN, or a name nobody knows). One cheap batched call per new set of headlines, shared by everyone and kept in KV.
+const PLAIN = `For each numbered news headline, write ONE plain-English line (max 18 words) that tells a 20-year-old who does not follow this topic what happened and who or what the names are (for example "NGX is Nigeria's stock exchange. Seplat is an oil company and MTN a phone company."). Use ONLY the headline and widely known general knowledge about the companies, people and places named. Never invent numbers, causes or outcomes. If a headline is already clear to anyone, or you are unsure, return "". Return ONLY JSON like {"0":"...","1":""}.`;
+async function plainAll(env, b) {
+  if (!env.ANTHROPIC_KEY || !env.LIMITS || !b || !b.cats) return;
+  const items = []; Object.values(b.cats).forEach(a => (a || []).slice(0, 2).forEach(it => { if (it && it.h) items.push(it); }));
+  if (!items.length) return;
+  const hk = it => it.h.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 60);
+  let M = {}; try { M = JSON.parse((await env.LIMITS.get("pl1")) || "{}"); } catch (e) { M = {}; }
+  const miss = items.filter(it => !(hk(it) in M));
+  if (miss.length) {
+    const list = miss.slice(0, 16), r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "content-type": "application/json", "x-api-key": env.ANTHROPIC_KEY, "anthropic-version": "2023-06-01" },
+      body: JSON.stringify({ model: "claude-haiku-5-5", max_tokens: 900, messages: [{ role: "user", content: PLAIN + "\n\nHEADLINES:\n" + list.map((it, i) => i + ". " + it.h + " (" + (it.s || "") + ")").join("\n") }] }) }).catch(() => null);
+    if (r && r.ok) {
+      const j = await r.json(), txt = ((j.content || []).find(c => c.type === "text") || {}).text || "", m = txt.match(/\{[\s\S]*\}/); let o = null; try { o = JSON.parse(m[0]); } catch (e) { o = null; }
+      if (o) { list.forEach((it, i) => { M[hk(it)] = typeof o[i] === "string" ? o[i].trim().slice(0, 160) : ""; }); const ks = Object.keys(M); if (ks.length > 220) ks.slice(0, ks.length - 220).forEach(k => delete M[k]); await env.LIMITS.put("pl1", JSON.stringify(M), { expirationTtl: 604800 }); }
+    }
+  }
+  items.forEach(it => { const t = M[hk(it)]; if (t) it.pl = t; });
+}
 // Breaking key facts (Marco Nov 11: "give the most important data, not only a headline"). One AI call per story, shared by all users (KV), grounded only in the feed text.
 const BRIEF = `You explain one news story to a busy young reader in a money app. From ONLY the text below, return JSON {"facts":["",""," "],"why":""}.
 facts: up to 3 short lines (max 15 words each) with the most important data: who, what happened, key numbers, what happens next. Only facts stated in the text; if the text has fewer facts, return fewer lines. Never invent numbers, names or outcomes.
@@ -468,7 +487,7 @@ export default {
     }
     if (req.method === "GET" && url.pathname === "/news") {
       if (!ORIGINS.includes(origin)) return json({ error: { type: "forbidden" } }, 403, origin);
-      try { await loadHL(env); const b = await bundle(url.searchParams, env); if (b.big) b.big.brief = await brief(env, b.big).catch(() => null); b.pick = await patoPick(env, b.games).catch(() => null); return json(b, 200, origin); } catch (e) { return json({ error: { type: "news_failed" } }, 502, origin); }
+      try { await loadHL(env); const b = await bundle(url.searchParams, env); if (b.big) b.big.brief = await brief(env, b.big).catch(() => null); await plainAll(env, b).catch(() => null); b.pick = await patoPick(env, b.games).catch(() => null); return json(b, 200, origin); } catch (e) { return json({ error: { type: "news_failed" } }, 502, origin); }
     }
     if (req.method === "GET" && url.pathname === "/scores") {   // live scores for the games on screen (Marco Nov 12: update when you come back), cached 60s
       if (!ORIGINS.includes(origin)) return json({ error: { type: "forbidden" } }, 403, origin);
@@ -505,7 +524,7 @@ export default {
     }
     if (url.pathname === "/insight") { try { return json((await insight(env, uid, body)) || {}, 200, origin); } catch (e) { return json({}, 200, origin); } }
     if (url.pathname === "/daily") {
-      try { await loadHL(env); const b = await bundle(url.searchParams, env); if (b.big) b.big.brief = await brief(env, b.big).catch(() => null); b.pick = await patoPick(env, b.games).catch(() => null); return json({ ...b, take: await take(env, uid, body, b).catch(() => null) }, 200, origin); }
+      try { await loadHL(env); const b = await bundle(url.searchParams, env); if (b.big) b.big.brief = await brief(env, b.big).catch(() => null); await plainAll(env, b).catch(() => null); b.pick = await patoPick(env, b.games).catch(() => null); return json({ ...b, take: await take(env, uid, body, b).catch(() => null) }, 200, origin); }
       catch (e) { return json({ error: { type: "news_failed" } }, 502, origin); }
     }
     if (!MODELS.includes(body.model) || !Array.isArray(body.messages)) return json({ error: { type: "invalid_request_error", message: "model" } }, 400, origin);
