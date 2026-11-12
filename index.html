@@ -1972,7 +1972,6 @@ html:root[data-palette="goyardl"] .stat b.ipend{color:#9A6F1F}
 #people .pic.pmore svg{fill:currentColor;stroke:none}
 </style>
 <style id="pato-base">
-html:not(.mp-guest) #s-topay{display:none!important}
 #tpList .tp{border-bottom:1px solid color-mix(in srgb,var(--ink) 10%,transparent)}
 #tpList .tp summary{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:12px 0;cursor:pointer;list-style:none;color:var(--ink)}
 #tpList .tp summary::-webkit-details-marker{display:none}
@@ -2040,9 +2039,20 @@ html:not(.mp-guest) #s-gst{display:none!important}
 #palSheet .sp-row small{color:var(--muted);font-size:.85rem}
 #palSheet .sp-row b{color:var(--muted);font-weight:400}
 </style>
+<style id="stakd-lsw">
+#lSw{display:flex;width:100%;margin:0 0 14px}
+#lSw button{flex:1;padding:9px 10px;font-size:.95rem}
+#p-loans:not(.lp-pay) #s-topay{display:none!important}
+#p-loans.lp-pay > section:not(#s-topay){display:none!important}
+#s-loans .shead h2::before,#s-debts .shead h2::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;vertical-align:middle;background:#4A7FD6}
+#s-debts .shead h2::before{background:#D9564C}
+#owedSplit a[href="#s-loans"] i{background:#4A7FD6!important}
+#owedSplit a[href="#s-debts"] i{background:#D9564C!important}
+</style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261112143052";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261112143225";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+
 
 
 
@@ -6773,7 +6783,7 @@ TRACKER DATA:
   }
   if(!window.claude) return;
   window.claude.use("db").then(function(d){
-    db = d; var me = window.MP_ME || {}; if(me.owner) return; // Marco: nothing changes
+    db = d; var me = window.MP_ME || {}; if(me.owner){ form(); db.collection("topay").onSnapshot(function(snap){ items = snap.docs.map(function(x){ return Object.assign({id: x.id}, x.data()); }); render(); }, function(){}); return; } // Marco: only the To pay list (Nov 12)
     cats(); texts(); form();
     new MutationObserver(function(){ if(!busy) net(); }).observe($("s-net"), {childList: true, subtree: true});
     var seg = $("pkSeg"); if(seg) new MutationObserver(texts).observe(seg, {childList: true, subtree: true, characterData: true});
@@ -7437,6 +7447,24 @@ TRACKER DATA:
     new MutationObserver(function(){ if(!sh.hidden){ if(!sh.hasAttribute("data-sec")) build(); } else sh.removeAttribute("data-sec"); }).observe(sh, {attributes:true, attributeFilter:["hidden"]});
     new MutationObserver(function(){ if(!sh.hidden && !sh.hasAttribute("data-sec")) build(); }).observe(sh, {childList:true});
     build();
+  }
+  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
+})();</script>
+<script id="stakd-lsw-js">(function(){
+  var K = "pato.loansView";
+  function set(v){ var p = document.getElementById("p-loans"), w = document.getElementById("lSw"); if(!p || !w) return;
+    p.classList.toggle("lp-pay", v === "pay"); w.querySelectorAll("button").forEach(function(b){ b.setAttribute("aria-pressed", String(b.dataset.v === v)); });
+    try{ localStorage.setItem(K, v); }catch(e){} gear(); }
+  function gear(){ setTimeout(function(){ var p = document.getElementById("p-loans"), b = document.getElementById("palBtn"); if(!p || !b || p.hidden) return;
+    var t = document.getElementById(p.classList.contains("lp-pay") ? "s-topay" : "s-cobrar"); if(t && b.parentNode !== t){ t.classList.add("gear-host"); t.appendChild(b); b.classList.add("in-card"); } }, 0); }
+  function start(){
+    var p = document.getElementById("p-loans"); if(!p || document.getElementById("lSw")) return;
+    var w = document.createElement("div"); w.id = "lSw"; w.className = "seg"; w.setAttribute("role", "group"); w.setAttribute("aria-label", "Loans view");
+    w.innerHTML = '<button type="button" data-v="get">To collect</button><button type="button" data-v="pay">To pay</button>';
+    p.insertBefore(w, p.firstChild);
+    w.querySelectorAll("button").forEach(function(b){ b.onclick = function(){ set(b.dataset.v); window.scrollTo(0, 0); }; });
+    new MutationObserver(gear).observe(p, {attributes: true, attributeFilter: ["hidden"]});
+    var v = "get"; try{ v = localStorage.getItem(K) || "get"; }catch(e){} set(v);
   }
   if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
 })();</script>
