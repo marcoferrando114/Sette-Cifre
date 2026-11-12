@@ -194,6 +194,22 @@ async function patoPick(env, G) {
   const last = log.filter(x => x.res && x.res !== "void" && x.day !== day).slice(-1)[0] || null;
   return { today, rec: { n: g.length, won, units: Math.round(units * 100) / 100 }, last: last ? { team: last.team, res: last.res, score: last.score || "", game: last.game } : null };
 }
+// Predictions (Marco Nov 12, picked "Predictions + odds in stories"): Polymarket's public market data, no key. Top markets for your world + the market line inside matching stories.
+const PJ = s => { try { return Array.isArray(s) ? s : JSON.parse(s || "[]"); } catch (e) { return []; } };
+async function markets() {
+  const f = await cached("https://gamma-api.polymarket.com/events?active=true&closed=false&order=volume24hr&ascending=false&limit=120", 1800, "json").catch(() => null), ev = Array.isArray(f && f.body) ? f.body : [];
+  return ev.map(e => { const ms = (e.markets || []).filter(m => m && !m.closed && m.active !== false); let best = null;
+    ms.forEach(m => { const o = PJ(m.outcomes), p = PJ(m.outcomePrices).map(Number), yi = o.findIndex(x => /^yes$/i.test(String(x))), py = yi >= 0 ? p[yi] : null; if (py == null || !isFinite(py)) return;
+      if (!best || py > best.p) best = { q: ms.length > 1 ? (m.groupItemTitle || m.question || "") : (m.question || ""), p: py, ch: Number(m.oneDayPriceChange) || 0 }; });
+    return best ? { t: String(e.title || best.q).slice(0, 140), q: String(best.q).slice(0, 140), multi: ms.length > 1, p: Math.round(best.p * 100), ch: Math.round(best.ch * 100), end: String(e.endDate || "").slice(0, 10), vol: Number(e.volume24hr) || 0, u: "https://polymarket.com/event/" + (e.slug || ""), img: e.image || e.icon || "" } : null; }).filter(Boolean);
+}
+const PWORLD = /\b(AI|OpenAI|Nvidia|Apple|Google|Microsoft|Amazon|Meta|Tesla|Musk|Fed|rates?|inflation|recession|S&P|Bitcoin|BTC|Ethereum|crypto|Trump|election|Congress|Senate|Dominican|Haiti|Abinader|Venezuela|Iran|China|NBA|NFL|MLB|Champions League|Premier League|World Cup|Super Bowl|Real Madrid|Barcelona|Yankees|Lakers)\b/i;
+function pickMarkets(M, tick) { const me = tick.length ? new RegExp("\\b(" + tick.map(t => t + (CO[t] ? "|" + CO[t] : "")).join("|") + ")\\b", "i") : null;
+  return M.filter(m => m.p >= 4 && m.p <= 96 && m.u.length > 30).map(m => Object.assign({}, m, { sc: Math.log10(m.vol + 10) + (PWORLD.test(m.t + " " + m.q) ? 3 : 0) + (me && me.test(m.t + " " + m.q) ? 4 : 0) + Math.min(3, Math.abs(m.ch) / 4) }))
+    .sort((a, b) => b.sc - a.sc).slice(0, 4).map(m => { delete m.sc; return m; }); }
+function marketFor(M, h) { if (!h) return null; const w = new Set(String(h).match(/\b[A-Z][a-zA-Z]{3,}\b/g) || []); if (w.size < 1) return null; let best = null, bn = 0;
+  M.forEach(m => { const mw = String(m.t + " " + m.q).match(/\b[A-Z][a-zA-Z]{3,}\b/g) || [], n = [...new Set(mw)].filter(x => w.has(x)).length; if (n >= 2 && n > bn && m.p >= 3 && m.p <= 97) { bn = n; best = m; } });
+  return best ? { q: best.multi ? best.t + ": " + best.q : best.q, p: best.p, end: best.end, u: best.u } : null; }
 async function bundle(P) {
   const tick = (P.get("t") || "").toUpperCase().split(",").filter(x => /^[A-Z.]{1,6}$/.test(x)).slice(0, 5);
   const want = (P.get("k") || "rd,business,tech").split(",").filter(k => CATS[k]).slice(0, 8);
@@ -213,7 +229,9 @@ async function bundle(P) {
   const bw = B ? new Set(words(B.h)) : new Set(), MORE = pool.filter(i => i && i.h && i !== B && words(i.h).filter(v => bw.has(v)).length / Math.max(bw.size, 1) < 0.5).sort((x, y) => bs(y) - bs(x))
     .filter((v, i, a) => a.findIndex(o => o.h === v.h || words(o.h).filter(w => new Set(words(v.h)).has(w)).length / Math.max(words(v.h).length, 1) >= 0.5) === i).slice(0, 10)
     .map(i => ({ h: i.h, s: i.s, u: i.u, t: i.t, n: i.n, by: i.by, d: i.d || "" }));
-  return { at: top.at || Date.now(), day: edDay(), big: W, calls: CL, more: MORE, cats, stocks, games: rest[rest.length - 1] || [],
+  const MK = await markets().catch(() => []);
+  if (W) W.mk = marketFor(MK, W.h); Object.keys(cats).forEach(k => { const it = cats[k][0]; if (it) it.mk = marketFor(MK, it.h); });
+  return { at: top.at || Date.now(), day: edDay(), big: W, calls: CL, more: MORE, preds: pickMarkets(MK, tick), cats, stocks, games: rest[rest.length - 1] || [],
     ticker: T.filter(i => MOVERS.test(i.h)).concat(T).filter((v, i, a) => a.indexOf(v) === i).slice(0, 5) };
 }
 const TAKE = `You are Pato, the money buddy inside a finance app for young Dominicans. Write today's "Pato's take" for ONE user from the facts below.
