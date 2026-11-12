@@ -2002,17 +2002,6 @@ html:not(.mp-guest) #s-gst{display:none!important}
 #s-gst .krow input{flex:1;min-width:0;width:auto}
 #s-gst .krow .secondary{width:auto;flex:none;padding-left:18px;padding-right:18px}
 </style>
-<style id="stakd-crypto">
-#stCrypto .cr-row{display:flex;align-items:center;gap:12px;padding:10px 2px;border-top:1px solid var(--line)}
-#stCrypto .cr-row:first-of-type{border-top:0}
-#stCrypto .cr-ic{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-weight:800;color:#fff;flex:none;font-size:1rem}
-#stCrypto .cr-n{flex:1;min-width:0}
-#stCrypto .cr-n b{display:block;color:var(--ink)}
-#stCrypto .cr-n small,#stCrypto .cr-p small{color:var(--muted);font-size:.78rem}
-#stCrypto .cr-p{text-align:right}
-#stCrypto .cr-p b{display:block;color:var(--ink);font-family:var(--sans,Inter,system-ui,sans-serif)}
-#stCrypto .cr-p small.up{color:var(--good,#7fd1a4)} #stCrypto .cr-p small.dn{color:var(--bad,#f09a8a)}
-</style>
 <style id="stakd-setpage">
 #palSheet.full[hidden]{display:none!important}
 #palSheet.full:not([hidden]){display:block!important;text-align:left!important;position:fixed!important;inset:0!important;bottom:0!important;max-width:none!important;border-radius:0!important;border:0!important;margin:0!important;z-index:95!important;overflow-y:auto;-webkit-overflow-scrolling:touch;
@@ -2040,18 +2029,26 @@ html:not(.mp-guest) #s-gst{display:none!important}
 #palSheet .sp-row b{color:var(--muted);font-weight:400}
 </style>
 <style id="stakd-lsw">
-#lSw{display:flex;width:100%;margin:0 0 14px}
-#lSw button{flex:1;padding:9px 10px;font-size:.95rem}
-#p-loans:not(.lp-pay) #s-topay{display:none!important}
-#p-loans.lp-pay > section:not(#s-topay){display:none!important}
 #s-loans .shead h2::before,#s-debts .shead h2::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;vertical-align:middle;background:#4A7FD6}
 #s-debts .shead h2::before{background:#D9564C}
 #owedSplit a[href="#s-loans"] i{background:#4A7FD6!important}
 #owedSplit a[href="#s-debts"] i{background:#D9564C!important}
 </style>
+<style id="stakd-crypto">
+#stCrypto .cr-row{display:flex;align-items:center;gap:12px;padding:10px 2px;border-top:1px solid var(--line)}
+#stCrypto .cr-row:first-of-type{border-top:0}
+#stCrypto .cr-ic{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-weight:800;color:#fff;flex:none;font-size:1rem}
+#stCrypto .cr-n{flex:1;min-width:0}
+#stCrypto .cr-n b{display:block;color:var(--ink)}
+#stCrypto .cr-n small,#stCrypto .cr-p small{color:var(--muted);font-size:.78rem}
+#stCrypto .cr-p{text-align:right}
+#stCrypto .cr-p b{display:block;color:var(--ink);font-family:var(--sans,Inter,system-ui,sans-serif)}
+#stCrypto .cr-p small.up{color:var(--good,#7fd1a4)} #stCrypto .cr-p small.dn{color:var(--bad,#f09a8a)}
+</style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261112234500";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261112153553";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+
 
 
 
@@ -7384,32 +7381,6 @@ TRACKER DATA:
   });
 })();
 </script>
-<script id="stakd-crypto-js">(function(){
-  var COINS = [["bitcoin","Bitcoin","BTC","₿","#F7931A"],["solana","Solana","SOL","◎","linear-gradient(135deg,#9945FF,#14F195)"]];
-  var KEY = "pato.crypto", last = null, busy = false, at = 0;
-  try{ last = JSON.parse(localStorage.getItem(KEY) || "null"); }catch(e){}
-  var fmt = function(n){ return "US$" + n.toLocaleString("en-US", {minimumFractionDigits: n < 1000 ? 2 : 0, maximumFractionDigits: n < 1000 ? 2 : 0}); };
-  function draw(){
-    var el = document.getElementById("stCrypto"); if(!el) return;
-    if(!last || !last.d){ el.innerHTML = ""; return; }
-    el.innerHTML = '<div class="st-h">Crypto</div>' + COINS.map(function(c){ var x = last.d[c[0]]; if(!x || !x.usd) return ""; var ch = Number(x.usd_24h_change) || 0;
-      return '<div class="cr-row"><div class="cr-ic" style="background:'+c[4]+'">'+c[3]+'</div><div class="cr-n"><b>'+c[1]+'</b><small>'+c[2]+'</small></div><div class="cr-p"><b>'+fmt(x.usd)+'</b><small class="'+(ch>=0?"up":"dn")+'">'+(ch>=0?"+":"")+ch.toFixed(2)+'% <span style="opacity:.7">24h</span></small></div></div>'; }).join("");
-  }
-  function load(){
-    if(busy || Date.now() - at < 30000) return; busy = true; at = Date.now();
-    fetch("https://api.coingecko.com/api/v3/simple/price?ids=" + COINS.map(function(c){ return c[0]; }).join(",") + "&vs_currencies=usd&include_24hr_change=true", {cache: "no-store"})
-      .then(function(r){ return r.json(); }).then(function(d){ if(d && d.bitcoin){ last = {d: d, at: Date.now()}; try{ localStorage.setItem(KEY, JSON.stringify(last)); }catch(e){} draw(); } })
-      .catch(function(){}).then(function(){ busy = false; });
-  }
-  function start(){
-    draw(); load();
-    document.addEventListener("visibilitychange", function(){ if(!document.hidden) load(); });
-    var t = document.getElementById("tab-stocks"); if(t) t.addEventListener("click", load);
-    setInterval(function(){ var p = document.getElementById("p-stocks"); if(!document.hidden && p && !p.hidden) load(); }, 60000);
-    var el = document.getElementById("stCrypto"); if(el) new MutationObserver(function(){}).observe(el, {childList: true});
-  }
-  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
-})();</script>
 <script id="stakd-setpage-js">(function(){
   var NAMES = {look:["🎨","Look"], faceid:["🔒","Face ID"], alerts:["🔔","Alerts"], daily:["🦆","Pato Daily"], camera:["📷","Camera"], tabs:["🗂️","Tabs & account"], more:["⋯","More"]};
   var ORDER = ["look","faceid","alerts","daily","camera","tabs","more"];
@@ -7452,20 +7423,32 @@ TRACKER DATA:
   if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
 })();</script>
 <script id="stakd-lsw-js">(function(){
-  var K = "pato.loansView";
-  function set(v){ var p = document.getElementById("p-loans"), w = document.getElementById("lSw"); if(!p || !w) return;
-    p.classList.toggle("lp-pay", v === "pay"); w.querySelectorAll("button").forEach(function(b){ b.setAttribute("aria-pressed", String(b.dataset.v === v)); });
-    try{ localStorage.setItem(K, v); }catch(e){} gear(); }
-  function gear(){ setTimeout(function(){ var p = document.getElementById("p-loans"), b = document.getElementById("palBtn"); if(!p || !b || p.hidden) return;
-    var t = document.getElementById(p.classList.contains("lp-pay") ? "s-topay" : "s-cobrar"); if(t && b.parentNode !== t){ t.classList.add("gear-host"); t.appendChild(b); b.classList.add("in-card"); } }, 0); }
+  function start(){ var c = document.getElementById("s-cobrar"), t = document.getElementById("s-topay"); if(c && t && c.nextElementSibling !== t) c.parentNode.insertBefore(t, c.nextElementSibling); }
+  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
+})();</script>
+<script id="stakd-crypto-js">(function(){
+  var COINS = [["bitcoin","Bitcoin","BTC","₿","#F7931A"],["ethereum","Ethereum","ETH","Ξ","#627EEA"],["solana","Solana","SOL","◎","linear-gradient(135deg,#9945FF,#14F195)"]];
+  var KEY = "pato.crypto", last = null, busy = false, at = 0;
+  try{ last = JSON.parse(localStorage.getItem(KEY) || "null"); }catch(e){}
+  var fmt = function(n){ return "US$" + n.toLocaleString("en-US", {minimumFractionDigits: n < 1000 ? 2 : 0, maximumFractionDigits: n < 1000 ? 2 : 0}); };
+  function draw(){
+    var el = document.getElementById("stCrypto"); if(!el) return;
+    if(!last || !last.d){ el.innerHTML = ""; return; }
+    el.innerHTML = '<div class="st-h">Crypto</div>' + COINS.map(function(c){ var x = last.d[c[0]]; if(!x || !x.usd) return ""; var ch = Number(x.usd_24h_change) || 0;
+      return '<div class="cr-row"><div class="cr-ic" style="background:'+c[4]+'">'+c[3]+'</div><div class="cr-n"><b>'+c[1]+'</b><small>'+c[2]+'</small></div><div class="cr-p"><b>'+fmt(x.usd)+'</b><small class="'+(ch>=0?"up":"dn")+'">'+(ch>=0?"+":"")+ch.toFixed(2)+'% <span style="opacity:.7">24h</span></small></div></div>'; }).join("");
+  }
+  function load(){
+    if(busy || Date.now() - at < 30000) return; busy = true; at = Date.now();
+    fetch("https://api.coingecko.com/api/v3/simple/price?ids=" + COINS.map(function(c){ return c[0]; }).join(",") + "&vs_currencies=usd&include_24hr_change=true", {cache: "no-store"})
+      .then(function(r){ return r.json(); }).then(function(d){ if(d && d.bitcoin){ last = {d: d, at: Date.now()}; try{ localStorage.setItem(KEY, JSON.stringify(last)); }catch(e){} draw(); } })
+      .catch(function(){}).then(function(){ busy = false; });
+  }
   function start(){
-    var p = document.getElementById("p-loans"); if(!p || document.getElementById("lSw")) return;
-    var w = document.createElement("div"); w.id = "lSw"; w.className = "seg"; w.setAttribute("role", "group"); w.setAttribute("aria-label", "Loans view");
-    w.innerHTML = '<button type="button" data-v="get">To collect</button><button type="button" data-v="pay">To pay</button>';
-    p.insertBefore(w, p.firstChild);
-    w.querySelectorAll("button").forEach(function(b){ b.onclick = function(){ set(b.dataset.v); window.scrollTo(0, 0); }; });
-    new MutationObserver(gear).observe(p, {attributes: true, attributeFilter: ["hidden"]});
-    var v = "get"; try{ v = localStorage.getItem(K) || "get"; }catch(e){} set(v);
+    draw(); load();
+    document.addEventListener("visibilitychange", function(){ if(!document.hidden) load(); });
+    var t = document.getElementById("tab-stocks"); if(t) t.addEventListener("click", load);
+    setInterval(function(){ var p = document.getElementById("p-stocks"); if(!document.hidden && p && !p.hidden) load(); }, 60000);
+    var el = document.getElementById("stCrypto"); if(el) new MutationObserver(function(){}).observe(el, {childList: true});
   }
   if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
 })();</script>
