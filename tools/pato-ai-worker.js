@@ -32,12 +32,15 @@ const JUNK = /(stock analysis|big announcement|everything just changed|!\)|you w
 const MOVERS = /\b(fed|federal reserve|powell|rates?|inflation|cpi|jobs report|payrolls|s&p|nasdaq|dow|stocks?|wall street|bitcoin|crypto|dollar|earnings|oil|treasur(y|ies)|recession|tariffs?|ipo|market)\b/i;
 const DRAMA = /\b(affair|scandal|fired|ousted|steps? down|resign(s|ed)?|lawsuit|sued|indicted|charged|arrested|probe|investigat|fraud|leak(ed)?|recall|bankrupt|layoffs?|misconduct|accused)\b/i;
 const CALLS = /\b(upgrades?|upgraded|downgrades?|downgraded|price target|buy rating|top pick|outperform|overweight|analysts? (say|see|expect|bullish))\b/i;
-const HUGE = /\b(dead|dies|died|killed|deaths?|crash(es|ed)?|earthquake|hurricane|tsunami|wildfire|flood|war|invasion|invades|attack|explosion|shooting|terror|ceasefire|assassinat|resigns|impeach|coup|elected|wins (the )?election|state of emergency|pandemic|outbreak)\b/i;
+const HUGE = /\b(dead|dies|died|killed|deaths?|crash(es|ed)?|earthquake|hurricane|tsunami|wildfire|flood|war|invasion|invades|attack|explosion|shooting|terror|ceasefire|assassinat|resigns|impeach|coup|elected|wins (the )?election|state of emergency|pandemic|outbreak|blackout|power outage|without (power|water)|evacuat\w*|prepare for)\b/i;
+// Marco's taste (Nov 12, his Instagram examples): AI changing jobs and big employers, DR politics and Haiti, luxury brands + star athletes, governments warning citizens. Boosts, never filters.
+const TASTE = /\b(AI|artificial intelligence|OpenAI|ChatGPT|Anthropic|Claude|Gemini|automation|robots?)\b.{0,80}\b(jobs?|workers?|employees|workforce|hiring|layoffs?|train(s|ing)?|skills)\b|\b(jobs?|workers?|employees|workforce)\b.{0,80}\b(AI|artificial intelligence)\b|\b(Abinader|Bukele|Hait[ií]|Rep[uú]blica Dominicana|Dominican Republic|Punta Cana)\b|\b(Aman|Ritz|Four Seasons|LVMH|Rolex|Herm[eè]s|Louis Vuitton|Ferrari|luxury)\b.{0,80}\b(Djokovic|Ronaldo|Messi|LeBron|Jordan|Federer|Nadal|Alcaraz|Hamilton|Beckham|Curry|athlete|star)\b|\b(urges?|tells?|warns?) (citizens|residents|people|Canadians|Americans)\b/i;
+const LOCAL = /^(Listín Diario|Listin Diario|Diario Libre|Noticias SIN|SIN|El Día|N Digital|CDN|Hoy)$/i, TOPDR = /^(Listín Diario|Listin Diario|Diario Libre|Noticias SIN|SIN)$/i;   // Marco Nov 12: Listín Diario, Diario Libre, Noticias SIN first
 const sec = t => GN + "/headlines/section/topic/" + t + "?" + EN, srch = (q, l) => GN + "/search?q=" + encodeURIComponent(q + " when:1d") + "&" + (l || EN);
 const CATS = {
   rd: GN + "?" + ES, business: sec("BUSINESS"), tech: sec("TECHNOLOGY"), politics: srch("politics OR Congress OR White House OR election"),
   crypto: srch("bitcoin OR ethereum OR crypto"), ent: sec("ENTERTAINMENT"), gaming: srch("video games OR PlayStation OR Xbox OR Nintendo OR esports"),
-  health: sec("HEALTH"), cars: srch("cars OR Tesla OR Ferrari OR automaker OR Formula 1"), fashion: srch("luxury OR Rolex OR \"Patek Philippe\" OR \"Audemars Piguet\" OR Hermès OR \"Louis Vuitton\" OR Goyard OR sneakers OR streetwear"),
+  health: sec("HEALTH"), cars: srch("cars OR Tesla OR Ferrari OR automaker OR Formula 1"), fashion: srch("luxury OR Rolex OR \"Patek Philippe\" OR \"Audemars Piguet\" OR Hermès OR \"Louis Vuitton\" OR Goyard OR sneakers OR streetwear OR \"luxury hotel\" OR Aman OR (athlete brand) OR Djokovic OR Ronaldo OR Messi OR LeBron"),
   poker: srch("poker WSOP OR \"World Series of Poker\" OR \"poker tournament\""), saving: srch("\"personal finance\" OR savings OR \"interest rates\""),
 };
 const LEAGUES = [["football/nfl", "NFL", 9], ["soccer/uefa.champions", "Champions League", 9], ["basketball/nba", "NBA", 8], ["mma/ufc", "UFC", 8], ["soccer/fifa.world", "World Cup", 10],
@@ -108,7 +111,7 @@ const CO = { GOOGL: "google|alphabet|pichai", GOOG: "google|alphabet|pichai", NV
 // Importance: trusted outlets covering it x10 + freshness (0-14) + 25 if it names your stocks. 2nd story only if 5+ outlets or about you.
 function top2(items, tick, busy) {
   const now = Date.now(), me = new RegExp("\\b(" + tick.map(t => t.toLowerCase() + (CO[t] ? "|" + CO[t] : "")).join("|") + ")", "i");
-  const a = pick(items).map(i => { const mine = tick.length ? me.test(i.h) : false; return Object.assign({}, i, { mine, sc: (i.n || 1) * 10 + Math.max(0, 14 - (now - i.t) / 36e5) + (mine ? 25 : 0) }); }).sort((x, y) => y.sc - x.sc);
+  const a = pick(items).map(i => { const mine = tick.length ? me.test(i.h) : false; return Object.assign({}, i, { mine, sc: (i.n || 1) * 10 + Math.max(0, 14 - (now - i.t) / 36e5) + (mine ? 25 : 0) + (TASTE.test(i.h) ? 20 : 0) + (TOPDR.test(i.s || "") ? 18 : LOCAL.test(i.s || "") ? 8 : 0) }); }).sort((x, y) => y.sc - x.sc);
   const w0 = a[0] ? new Set(words(a[0].h)) : new Set(), dup = i => words(i.h).filter(v => w0.has(v)).length / Math.max(w0.size, 1) >= 0.5;   // 2nd story must be a different story
   return a.slice(0, 1).concat(a.slice(1).filter(i => !dup(i) && (busy || i.n >= 5 || i.mine)).slice(0, 1));
 }
@@ -125,7 +128,7 @@ async function games() {
         const t = x.team || {}, a = x.athlete || {}, rec = ((x.records || [])[0] || {}).summary || "";
         return { n: t.shortDisplayName || t.displayName || a.shortName || a.displayName || "", ab: t.abbreviation || "", logo: t.logo || (a.flag && a.flag.href) || "", rec, score: st === "in" ? x.score || "" : "" }; });
       const o0 = (c.odds || [])[0];
-      out.push({ path, id: e.id, odds0: o0 ? { line: o0.details || "", ou: o0.overUnder || "", ml: [(o0.awayTeamOdds || {}).moneyLine, (o0.homeTeamOdds || {}).moneyLine], by: (o0.provider || {}).name || "" } : null, league: name, name: e.name || e.shortName, short: e.shortName, t: Date.parse(e.date) || 0, tv: tv.slice(0, 2), note, live: st === "in", teams,
+      out.push({ path, id: e.id, ref: path + "|" + e.id, odds0: o0 ? { line: o0.details || "", ou: o0.overUnder || "", ml: [(o0.awayTeamOdds || {}).moneyLine, (o0.homeTeamOdds || {}).moneyLine], by: (o0.provider || {}).name || "" } : null, league: name, name: e.name || e.shortName, short: e.shortName, t: Date.parse(e.date) || 0, tv: tv.slice(0, 2), note, live: st === "in", teams,
         score: w + (nat ? 2 : 0) + ranked + (/final|championship|playoff|semifinal|title|main event|derby|clasico|clásico/i.test(note + " " + e.name) ? 4 : 0) });
     });
   }).catch(() => null)));
@@ -158,6 +161,39 @@ async function gameInfo(g) {
   if (!g.odds && g.odds0) g.odds = { line: String(g.odds0.line || ""), ou: g.odds0.ou ? String(g.odds0.ou) : "", ml: g.odds0.ml.map(v => v == null ? "" : (Number(v) > 0 ? "+" : "") + v), by: g.odds0.by };
   delete g.path; delete g.id; delete g.odds0;
 }
+// Pato's pick of the day (Marco Nov 12: "research, and decide based on history, odds and probability a recommendation... track Pato's percentage and his hit rate").
+// One pick per DR day, locked the first time it's made (so the record is honest), graded from ESPN when the game ends. Shared by every user.
+const impl = ml => { const m = parseFloat(ml); return !isFinite(m) || m === 0 ? null : m < 0 ? -m / (-m + 100) : 100 / (m + 100); };
+function choosePick(G) {
+  let best = null, seen = 0;
+  (G || []).forEach(g => {
+    if (!g.ref || !g.win || g.win.length !== 2 || !g.odds || !g.odds.ml || g.win[0] + g.win[1] < 97 || g.live || (g.t && g.t < Date.now())) return;
+    const a = impl(g.odds.ml[0]), b = impl(g.odds.ml[1]); if (a == null || b == null) return; seen++;
+    const P = [a / (a + b) * 100, b / (a + b) * 100];
+    [0, 1].forEach(i => { const T = (g.teams || [])[i] || {}, f = (g.form || []).find(x => x.team === T.n), wn = f ? (f.r.match(/W/g) || []).length : null, e = g.win[i] - P[i], sc = e + (wn == null ? 0 : (wn - 2.5) * 1.5);
+      if (e >= 3 && (wn == null || wn >= 2) && sc >= 4 && (!best || sc > best.sc)) best = { sc, side: i, team: T.n || "", ab: T.ab || "", ml: String(g.odds.ml[i]), w: g.win[i], p: Math.round(P[i]), edge: Math.round(e), form: f ? f.r : "", game: g.name || g.short || "", league: g.league, t: g.t, ref: g.ref }; });
+  });
+  return { best, seen };
+}
+async function patoPick(env, G) {
+  if (!env.LIMITS) return null;
+  const day = drDay(), k = "pk1:" + day; let log = JSON.parse((await env.LIMITS.get("pklog1")) || "[]"), today = JSON.parse((await env.LIMITS.get(k)) || "null"), dirty = false;
+  if (!today) { const c = choosePick(G); if (c.best) { today = Object.assign({ day }, c.best); delete today.sc; await env.LIMITS.put(k, JSON.stringify(today), { expirationTtl: 172800 }); log = log.filter(x => x.day !== day).concat([today]).slice(-120); dirty = true; } else if (c.seen) today = { day, none: true, seen: c.seen }; }
+  let n = 0; for (const x of log) {   // grade finished games (a few per call)
+    if (x.res || !x.ref || !x.t || Date.now() - x.t < 2.5 * 3600e3 || n >= 4) continue; n++;
+    const [path, id] = x.ref.split("|"), f = await cached("https://site.api.espn.com/apis/site/v2/sports/" + path + "/summary?event=" + id, 1800, "json").catch(() => null);
+    const c = (((f && f.body && f.body.header) || {}).competitions || [])[0] || {}, done = c.status && c.status.type && c.status.type.completed;
+    if (!done) { if (Date.now() - x.t > 4 * 864e5) { x.res = "void"; dirty = true; } continue; }
+    const me = (c.competitors || []).find(t => t.homeAway === (x.side === 0 ? "away" : "home")), them = (c.competitors || []).find(t => t !== me);
+    if (!me || !them) continue; const a = Number(me.score), b = Number(them.score);
+    x.res = me.winner === true || a > b ? "won" : a === b ? "push" : "lost"; x.score = me.score + "-" + them.score; dirty = true;
+  }
+  if (dirty) await env.LIMITS.put("pklog1", JSON.stringify(log));
+  const g = log.filter(x => x.res === "won" || x.res === "lost"), won = g.filter(x => x.res === "won").length;
+  const units = g.reduce((u, x) => { const m = parseFloat(x.ml); return u + (x.res === "won" ? (m > 0 ? m / 100 : 100 / -m) : -1); }, 0);
+  const last = log.filter(x => x.res && x.res !== "void" && x.day !== day).slice(-1)[0] || null;
+  return { today, rec: { n: g.length, won, units: Math.round(units * 100) / 100 }, last: last ? { team: last.team, res: last.res, score: last.score || "", game: last.game } : null };
+}
 async function bundle(P) {
   const tick = (P.get("t") || "").toUpperCase().split(",").filter(x => /^[A-Z.]{1,6}$/.test(x)).slice(0, 5);
   const want = (P.get("k") || "rd,business,tech").split(",").filter(k => CATS[k]).slice(0, 8);
@@ -168,7 +204,7 @@ async function bundle(P) {
   // Breaking (Marco Nov 11): the story that matters most to YOU today: big world events, scandals about the people behind your companies, major accidents, analyst calls on your stocks.
   const WL = clean(world.items || [], 14), me = tick.length ? new RegExp("\\b(" + tick.map(t => t.toLowerCase() + (CO[t] ? "|" + CO[t] : "")).join("|") + ")", "i") : null, now = Date.now();
   const pool = WL.concat(pick(top.items || []), ...tick.map((t, i) => pick(rest[want.length + i].items || []).slice(0, 3)));
-  const bs = i => (i.n || 1) * 10 + Math.max(0, 14 - (now - i.t) / 36e5) + (HUGE.test(i.h) ? 25 : 0) + (DRAMA.test(i.h) ? 18 : 0) + (me && me.test(i.h) ? 30 : 0) + (CALLS.test(i.h) && me && me.test(i.h) ? 10 : 0);
+  const bs = i => (i.n || 1) * 10 + Math.max(0, 14 - (now - i.t) / 36e5) + (HUGE.test(i.h) ? 25 : 0) + (DRAMA.test(i.h) ? 18 : 0) + (me && me.test(i.h) ? 30 : 0) + (CALLS.test(i.h) && me && me.test(i.h) ? 10 : 0) + (TASTE.test(i.h) ? 12 : 0);
   const B = pool.filter(i => i && i.h).sort((x, y) => bs(y) - bs(x))[0] || null;
   const W = B ? Object.assign({}, B, { huge: (B.n || 0) >= 3 && HUGE.test(B.h), mine: !!(me && me.test(B.h)) }) : null;
   const CL = pick(rest[want.length + tick.length].items || []).filter(i => CALLS.test(i.h)).map(i => Object.assign({}, i, { mine: !!(me && me.test(i.h)) })).sort((x, y) => (y.mine - x.mine) || ((y.n || 1) - (x.n || 1)))[0] || null;
@@ -179,7 +215,7 @@ async function bundle(P) {
 const TAKE = `You are Pato, the money buddy inside a finance app for young Dominicans. Write today's "Pato's take" for ONE user from the facts below.
 Return ONLY JSON: {"pato":{"line":"","tip":""},"happened":{"text":"","src":""},"you":{"text":"","src":""},"watch":{"text":"","src":""},"game":0,"rd":"","notes":{},"know":{}}
 Rules:
-- pato: the heart of the app. Pato (a duck who is the user's sharp, warm money friend) talks straight to THEM. line = ONE memorable sentence (max 30 words) that shows Pato really knows their money: connect two of their real numbers (savings vs goal, spending pace vs limit, stocks since bought, portfolio concentration, bets record) into an insight or a piece of real financial knowledge they would not notice alone (e.g. concentration risk, compounding, cost averaging, emergency fund, the cost of a spending habit). NEVER just recap today's gain or loss. tip = ONE specific, well-thought move for the next days, with a number from USER (e.g. a daily spending amount, a saving target, skipping a bet). Never tell them to buy or sell a specific stock or bet. Use ONLY numbers that appear in USER (you may round). Skip any data that is missing. Sound human, a little witty, never preachy. No emojis.
+- pato: the heart of the app. Pato (a duck who is the user's sharp, warm money friend) talks straight to THEM. line = ONE memorable sentence (max 32 words) that shows Pato really knows their money and teaches them something. Pato covers their WHOLE financial life, not only stocks: savings vs goal, spending pace vs limit, money lent out and what comes back (money.lentOutRD, backOwedRD, lateLoans), bets record (money.betsWon/betsLost), portfolio concentration (stocks[].weightPct), and lessons from today's news in FACTS (e.g. AI changing jobs = invest in your skills; a rate move = what it does to savings; a crisis = why an emergency fund matters). USER.angle names today's preferred angle: use it if its data exists, otherwise pick the most interesting one. Connect their real numbers into an insight or real financial / general knowledge they would not notice alone (concentration risk, compounding, cost averaging, emergency fund, the real cost of a habit, the house edge in betting, the risk of lending). NEVER just recap today's gain or loss. tip = ONE specific, well-thought move for the next days, with a number from USER (e.g. a daily spending amount, a saving target, skipping a bet). Never tell them to buy or sell a specific stock or bet. Use ONLY numbers that appear in USER (you may round). Skip any data that is missing. Sound human, a little witty, never preachy. No emojis.
 - happened: the one news story that matters most for this user's money today (their stocks first, then markets). src = the outlet name given.
 - you: what it means for THEM using ONLY the numbers in USER. "Today" numbers come ONLY from TODAY_* fields. SINCE_BOUGHT_gainPct is the total gain since they bought; never call it today's move. If nothing moved much, say it was a quiet day and give their real total.TODAY change. src = "From your stocks" (or "From your bets").
 - watch: one concrete thing coming up (an earnings date, a game they bet on, a Fed meeting) that appears in the facts. If none, a short useful money habit. src = outlet or "Pato".
@@ -191,7 +227,7 @@ Rules:
 // Every number in "For you" must be one of the user's real numbers; otherwise use a plain line built from the numbers.
 function check(out, body) {
   const today = new Set(), since = new Set(), other = new Set(), put = (S, v) => { if (typeof v === "number" && isFinite(v)) { const a = Math.abs(v); [0, 1, 2].forEach(d => S.add(a.toFixed(d))); } };
-  (body.stocks || []).forEach(s => { put(today, s.TODAY_changeUsd); put(today, s.TODAY_changePct); put(since, s.SINCE_BOUGHT_gainPct); put(other, s.shares); });
+  (body.stocks || []).forEach(s => { put(today, s.TODAY_changeUsd); put(today, s.TODAY_changePct); put(since, s.SINCE_BOUGHT_gainPct); put(other, s.shares); put(other, s.weightPct); });
   if (body.total) { put(today, body.total.TODAY_changeUsd); put(today, body.total.TODAY_changePct); }
   (body.bets || []).forEach(x => put(other, x.stakeRD));
   const t = out && out.you && out.you.text || "", says = /today/i.test(t), sinceWords = /since|bought|overall|in total|all.?time/i.test(t);
@@ -207,10 +243,10 @@ function check(out, body) {
   return out;
 }
 async function take(env, uid, body, b) {
-  const key = "daily6:" + uid + ":" + b.day;
+  const key = "daily7:" + uid + ":" + b.day;
   if (env.LIMITS) { const hit = await env.LIMITS.get(key); if (hit) return JSON.parse(hit); }
-  const user = JSON.stringify({ stocks: (body.stocks || []).slice(0, 8), total: body.total || null, bets: (body.bets || []).slice(0, 8), money: body.money || null, currency: "USD for stocks, RD$ for bets and money" }).slice(0, 3500);
-  const facts = JSON.stringify({ stockNews: b.stocks, marketTop: b.ticker.slice(0, 4).map(i => ({ h: i.h, s: i.s })), rd: b.cats.rd ? { h: b.cats.rd[0].h, s: b.cats.rd[0].s } : null,
+  const user = JSON.stringify({ stocks: (body.stocks || []).slice(0, 8), total: body.total || null, bets: (body.bets || []).slice(0, 8), money: body.money || null, angle: String(body.angle || "").slice(0, 20), currency: "USD for stocks, RD$ for bets and money" }).slice(0, 3500);
+  const facts = JSON.stringify({ stockNews: b.stocks, marketTop: b.ticker.slice(0, 4).map(i => ({ h: i.h, s: i.s })), breaking: b.big ? { h: b.big.h, s: b.big.s } : null, tech: b.cats.tech ? { h: b.cats.tech[0].h, s: b.cats.tech[0].s } : null, rd: b.cats.rd ? { h: b.cats.rd[0].h, s: b.cats.rd[0].s } : null,
     games: b.games.map(g => ({ league: g.league, name: g.name, note: g.note, tv: g.tv })),
     cards: Object.fromEntries(Object.entries(b.cats).concat(b.big ? [["big", b.big]] : []).map(([k, v]) => { const i = Array.isArray(v) ? v[0] : v; return [k, { h: i.h, also: (i.also || []).slice(0, 3) }]; })) }).slice(0, 9000);
   const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST",
@@ -315,7 +351,7 @@ export default {
     }
     if (req.method === "GET" && url.pathname === "/news") {
       if (!ORIGINS.includes(origin)) return json({ error: { type: "forbidden" } }, 403, origin);
-      try { const b = await bundle(url.searchParams); if (b.big) b.big.brief = await brief(env, b.big).catch(() => null); return json(b, 200, origin); } catch (e) { return json({ error: { type: "news_failed" } }, 502, origin); }
+      try { const b = await bundle(url.searchParams); if (b.big) b.big.brief = await brief(env, b.big).catch(() => null); b.pick = await patoPick(env, b.games).catch(() => null); return json(b, 200, origin); } catch (e) { return json({ error: { type: "news_failed" } }, 502, origin); }
     }
     if (req.method === "GET" && url.pathname === "/img") {
       if (url.searchParams.get("debug") === "1") {   // test link: tries today's top world story and shows each step
@@ -342,7 +378,7 @@ export default {
     }
     if (url.pathname === "/insight") { try { return json((await insight(env, uid, body)) || {}, 200, origin); } catch (e) { return json({}, 200, origin); } }
     if (url.pathname === "/daily") {
-      try { const b = await bundle(url.searchParams); if (b.big) b.big.brief = await brief(env, b.big).catch(() => null); return json({ ...b, take: await take(env, uid, body, b).catch(() => null) }, 200, origin); }
+      try { const b = await bundle(url.searchParams); if (b.big) b.big.brief = await brief(env, b.big).catch(() => null); b.pick = await patoPick(env, b.games).catch(() => null); return json({ ...b, take: await take(env, uid, body, b).catch(() => null) }, 200, origin); }
       catch (e) { return json({ error: { type: "news_failed" } }, 502, origin); }
     }
     if (!MODELS.includes(body.model) || !Array.isArray(body.messages)) return json({ error: { type: "invalid_request_error", message: "model" } }, 400, origin);
