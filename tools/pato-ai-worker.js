@@ -227,10 +227,13 @@ async function markets() {
     return best ? { t: String(e.title || best.q).slice(0, 140), q: String(best.q).slice(0, 140), multi: ms.length > 1, p: Math.round(best.p * 100), ch: Math.round(best.ch * 100), end: String(e.endDate || "").slice(0, 10), vol: Number(e.volume24hr) || 0, u: "https://polymarket.com/event/" + (e.slug || ""), img: e.image || e.icon || "" } : null; }).filter(Boolean);
 }
 const PWORLD = /\b(AI|OpenAI|Nvidia|Apple|Google|Microsoft|Amazon|Meta|Tesla|Musk|Fed|rates?|inflation|recession|S&P|Bitcoin|BTC|Ethereum|crypto|Trump|election|Congress|Senate|Dominican|Haiti|Abinader|Venezuela|Iran|China|NBA|NFL|MLB|Champions League|Premier League|World Cup|Super Bowl|Real Madrid|Barcelona|Yankees|Lakers)\b/i;
-function pickMarkets(M, tick) { const me = tick.length ? new RegExp("\\b(" + tick.map(t => t + (CO[t] ? "|" + CO[t] : "")).join("|") + ")\\b", "i") : null;
+// Marco Nov 12: counting bets ("how many tweets will Elon post") tell you nothing; keep markets that explain what is happening
+const PTRIVIA = /\b(tweets?|posts? on X|how many (times|tweets|posts|followers|views)|will \w+( \w+)? say\b|mention(s|ed)?\b|followers|subscribers|views|streams|box office|gross|top (song|artist|spotify)|spotify|youtube|tiktok|# of|number of (tweets|posts))\b/i;
+const okM = M => M.filter(m => !PTRIVIA.test(m.t + " " + m.q));
+function pickMarkets(M, tick) { M = okM(M); const me = tick.length ? new RegExp("\\b(" + tick.map(t => t + (CO[t] ? "|" + CO[t] : "")).join("|") + ")\\b", "i") : null;
   return M.filter(m => m.p >= 4 && m.p <= 96 && m.u.length > 30).map(m => Object.assign({}, m, { sc: Math.log10(m.vol + 10) + (PWORLD.test(m.t + " " + m.q) ? 3 : 0) + (me && me.test(m.t + " " + m.q) ? 4 : 0) + Math.min(3, Math.abs(m.ch) / 4) }))
     .sort((a, b) => b.sc - a.sc).slice(0, 4).map(m => { delete m.sc; return m; }); }
-function marketFor(M, h) { if (!h) return null; const w = new Set(String(h).match(/\b[A-Z][a-zA-Z]{3,}\b/g) || []); if (w.size < 1) return null; let best = null, bn = 0;
+function marketFor(M, h) { if (!h) return null; M = okM(M); const w = new Set(String(h).match(/\b[A-Z][a-zA-Z]{3,}\b/g) || []); if (w.size < 1) return null; let best = null, bn = 0;
   M.forEach(m => { const mw = String(m.t + " " + m.q).match(/\b[A-Z][a-zA-Z]{3,}\b/g) || [], n = [...new Set(mw)].filter(x => w.has(x)).length; if (n >= 2 && n > bn && m.p >= 3 && m.p <= 97) { bn = n; best = m; } });
   return best ? { q: best.multi ? best.t + ": " + best.q : best.q, p: best.p, end: best.end, u: best.u } : null; }
 // Launches + Rising companies (Marco Nov 12: "product releases" and "underground companies before they break through"): big launches this week, startups raising at big valuations
