@@ -132,9 +132,9 @@ function clean(items, hours) {
 const pick = items => clean(items, 14);   // Marco: anything over 14h drops
 const CO = { GOOGL: "google|alphabet|pichai", GOOG: "google|alphabet|pichai", NVDA: "nvidia|jensen huang", META: "meta|facebook|instagram|whatsapp|zuckerberg", AVGO: "broadcom|hock tan", AAPL: "apple|iphone|tim cook", MSFT: "microsoft|nadella", AMZN: "amazon|jassy|bezos", TSLA: "tesla|musk", MU: "micron", IBKR: "interactive brokers", AMD: "\\bamd\\b", TSM: "tsmc", NFLX: "netflix", VUAA: "s&p 500" };
 // Importance: trusted outlets covering it x10 + freshness (0-14) + 25 if it names your stocks. 2nd story only if 5+ outlets or about you.
-function top2(items, tick, busy) {
+function top2(items, tick, busy, like) {
   const now = Date.now(), me = new RegExp("\\b(" + tick.map(t => t.toLowerCase() + (CO[t] ? "|" + CO[t] : "")).join("|") + ")", "i");
-  const a = pick(items).map(i => { const mine = tick.length ? me.test(i.h) : false; return Object.assign({}, i, { mine, sc: (i.n || 1) * 10 + Math.max(0, 14 - (now - i.t) / 36e5) + (mine ? 25 : 0) + (TASTE.test(i.h) ? 20 : 0) + (TOPDR.test(i.s || "") ? 18 : LOCAL.test(i.s || "") ? 8 : 0) }); }).sort((x, y) => y.sc - x.sc);
+  const a = pick(items).map(i => { const mine = tick.length ? me.test(i.h) : false; return Object.assign({}, i, { mine, sc: (i.n || 1) * 10 + Math.max(0, 14 - (now - i.t) / 36e5) + (mine ? 25 : 0) + (TASTE.test(i.h) ? 20 : 0) + (TOPDR.test(i.s || "") ? 18 : LOCAL.test(i.s || "") ? 8 : 0) + (like ? like(i.h) : 0) }); }).sort((x, y) => y.sc - x.sc);
   const w0 = a[0] ? new Set(words(a[0].h)) : new Set(), dup = i => words(i.h).filter(v => w0.has(v)).length / Math.max(w0.size, 1) >= 0.5;   // 2nd story must be a different story
   return a.slice(0, 1).concat(a.slice(1).filter(i => !dup(i) && (busy || i.n >= 5 || i.mine)).slice(0, 1));
 }
@@ -277,6 +277,8 @@ const AQ = srch("analysts upgrade stock buy rating");
 const SHARED = () => [sec("BUSINESS"), sec("WORLD"), ...Object.values(CATS), AQ, LQ, RQ];
 async function bundle(P, env) {
   const tick = (P.get("t") || "").toUpperCase().split(",").filter(x => /^[A-Z.]{1,6}$/.test(x)).slice(0, 5);
+  const wl = k => (P.get(k) || "").split(",").map(v => v.trim().toLowerCase()).filter(v => /^[a-z0-9]{3,20}$/.test(v)).slice(0, 8), LK = wl("lk"), DK = wl("dk");   // Nov 12: words you 👍/👎 (sent by the app, nothing stored here)
+  const lk = h => { const t = String(h || "").toLowerCase(); let s = 0; LK.forEach(v => { if (new RegExp("\\b" + v + "\\b").test(t)) s += 9; }); DK.forEach(v => { if (new RegExp("\\b" + v + "\\b").test(t)) s -= 14; }); return s; };
   const want = (P.get("k") || "rd,business,tech").split(",").filter(k => CATS[k]).slice(0, 8);
   const [top, world, ...rest] = await Promise.all([kfeed(env, sec("BUSINESS"), 200), kfeed(env, sec("WORLD"), 75),
     ...want.map(k => kfeed(env, CATS[k], 200)), ...tick.map(t => kfeed(env, srch(t + " stock"), 180)), kfeed(env, AQ, 200)]);
@@ -287,7 +289,7 @@ async function bundle(P, env) {
   // Breaking (Marco Nov 11): the story that matters most to YOU today: big world events, scandals about the people behind your companies, major accidents, analyst calls on your stocks.
   const WL = clean(world.items || [], 14), me = tick.length ? new RegExp("\\b(" + tick.map(t => t.toLowerCase() + (CO[t] ? "|" + CO[t] : "")).join("|") + ")", "i") : null, now = Date.now();
   const pool = WL.concat(pick(top.items || []), ...tick.map((t, i) => pick(rest[want.length + i].items || []).slice(0, 3)));
-  const bs = i => (i.n || 1) * 10 + Math.max(0, 14 - (now - i.t) / 36e5) + (HUGE.test(i.h) ? 25 : 0) + (DRAMA.test(i.h) ? 18 : 0) + (me && me.test(i.h) ? 30 : 0) + (CALLS.test(i.h) && me && me.test(i.h) ? 10 : 0) + (TASTE.test(i.h) ? 12 : 0);
+  const bs = i => (i.n || 1) * 10 + Math.max(0, 14 - (now - i.t) / 36e5) + (HUGE.test(i.h) ? 25 : 0) + (DRAMA.test(i.h) ? 18 : 0) + (me && me.test(i.h) ? 30 : 0) + (CALLS.test(i.h) && me && me.test(i.h) ? 10 : 0) + (TASTE.test(i.h) ? 12 : 0) + lk(i.h);
   const B = pool.filter(i => i && i.h).sort((x, y) => bs(y) - bs(x))[0] || null;
   const W = B ? Object.assign({}, B, { huge: (B.n || 0) >= 3 && HUGE.test(B.h), mine: !!(me && me.test(B.h)) }) : null;
   const CL = pick(rest[want.length + tick.length].items || []).filter(i => CALLS.test(i.h)).map(i => Object.assign({}, i, { mine: !!(me && me.test(i.h)) })).sort((x, y) => (y.mine - x.mine) || ((y.n || 1) - (x.n || 1)))[0] || null;
@@ -301,7 +303,7 @@ async function bundle(P, env) {
   const EVT = /\b(resign\w*|oust\w*|affair|scandal|spy|fired|steps? down|probe|indict\w*|arrest\w*|crash\w*|quake|earthquake|hurricane|collaps\w*|plunge\w*|drops?|falls?|tumbl\w*|sinks?|soar\w*|surg\w*|jumps?|ceasefire|attack\w*|explosion|shooting|out at)\b/i;
   const same = (a, b) => { if (!a || !b) return false; if (simw(a, b) >= 0.5) return true; const A = CAPS(a), B = CAPS(b), n = [...A].filter(w => B.has(w)).length; return n >= 2 || (n >= 1 && EVT.test(a) && EVT.test(b)); };   // same name + both about an event = same story
   // Nov 12 fix: skip stories already shown BEFORE ranking, so a category falls back to its next-best story instead of disappearing
-  const shown = W ? [W.h] : [], cats = {}; want.forEach((k, i) => { const it = top2((rest[i].items || []).filter(x => x && x.h && !shown.some(h => same(h, x.h))), tick, P.get("busy") === "1"); if (it.length) { cats[k] = it; it.forEach(x => shown.push(x.h)); } });
+  const shown = W ? [W.h] : [], cats = {}; want.forEach((k, i) => { const it = top2((rest[i].items || []).filter(x => x && x.h && !shown.some(h => same(h, x.h))), tick, P.get("busy") === "1", lk); if (it.length) { cats[k] = it; it.forEach(x => shown.push(x.h)); } });
   MORE = MORE.filter(it => !shown.some(h => same(h, it.h)));
   if (W) W.mk = marketFor(MK, W.h); Object.keys(cats).forEach(k => { const it = cats[k][0]; if (it) it.mk = marketFor(MK, it.h); });
   return { at: top.at || Date.now(), day: edDay(), big: W, calls: CL, more: MORE, preds: pickMarkets(MK, tick), launch: launches(LF.items || [], tick), rising: rising(RF.items || []), cats, stocks, games: rest[rest.length - 1] || [],

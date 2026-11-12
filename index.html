@@ -2051,7 +2051,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261112215410";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261112224046";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -6971,7 +6971,7 @@ TRACKER DATA:
     if(!base() || (busy && Date.now() - busy < 9e4) || !window.mpIdToken) return;   // a request stuck while the phone slept never blocks the next one
     var st = ls("pd-daily7"); if(!force && st && st.day === day() && st.sig === sig() && st.data && ((st.data.take && Object.keys(st.data.cats || {}).length >= 2) || Date.now() - (st.at||0) < 15*6e4)){ daily = st.data; return render(); }
     busy = Date.now();
-    window.mpIdToken().then(function(tok){ return fetch(base() + "/daily?" + q(), {method: "POST", headers: {"content-type": "application/json", authorization: "Bearer " + tok}, body: JSON.stringify(facts())}); })
+    window.mpIdToken().then(function(tok){ return fetch(base() + "/daily?" + q() + lwq(), {method: "POST", headers: {"content-type": "application/json", authorization: "Bearer " + tok}, body: JSON.stringify(facts())}); })
       .then(function(r){ return r.ok ? r.json() : null; }).then(function(d){ busy = 0; if(!d) return render(); daily = d; tick = {at: d.at, ticker: d.ticker, big: d.big};
         ls("pd-daily7", {day: day(), sig: sig(), at: Date.now(), data: d}); render(); }).catch(function(){ busy = 0; render(); });
   }
@@ -6987,7 +6987,7 @@ TRACKER DATA:
   function fresh(){ var sl = slot(); return !!((drop && drop.day === day() && drop.slot === sl && (drop.got || 0) >= waitAt - 18e5) || (!sl && daily && Object.keys(daily.cats || {}).length)); }
   function ready(){ return DEMO || fresh() || Date.now() - waitAt > 25e3; }
   function getDrop(){ if(DEMO) return; var sl = slot(), same = drop && drop.day === day() && drop.slot === sl && drop.sig === sig(); if(!base() || (getDrop.busy && Date.now() - getDrop.busy < 9e4) || (same && Date.now() - (drop.got || 0) < 20*6e4)) return; if(!sl && !same && !(drop && drop.day === day()) && daily && Object.keys(daily.cats || {}).length) return;   // 7am: the AI edition leads, unless it failed getDrop.busy = Date.now();
-    fetch(base() + "/news?" + q().replace("&busy=1", "") + "&busy=1").then(function(r){ return r.ok ? r.json() : null; })
+    fetch(base() + "/news?" + q().replace("&busy=1", "") + "&busy=1" + lwq()).then(function(r){ return r.ok ? r.json() : null; })
       .then(function(d){ getDrop.busy = 0; if(!d || !d.cats || (!d.big && !Object.keys(d.cats).length)) return;   // never keep an empty drop
         if(same || !sl){ var o = drop.d, LA = ls("pd-live") || {}; if(LA.day !== day()) LA = {day: day(), n: 0, at: 0};
           // Marco: "live alerts can't be too much": only huge breaking news, at most 2 a day, 3+ hours apart. Everything else waits for the next drop.
@@ -7271,6 +7271,10 @@ TRACKER DATA:
     if(navigator.share) return navigator.share({text: text, url: u}).then(done, done);
     done(); open("https://wa.me/?text=" + encodeURIComponent(text + "\n" + u)); }
   function vote(x, v){ if(!x || !x.fk) return; if(v > 0) learn(x.ph || (x.sh && x.sh.h), 2); var F = ls("pd-fb") || {}, was = F[x.id] || 0, now = was === v ? 0 : v; F[x.id] = now; ls("pd-fb", F);
+    // Marco Nov 12: 👍/👎 teaches the ranking: the names in the headline get a score that follows you to the server
+    var lw = Object.assign({}, (prefs && prefs.lw) || {}), STOPW = /^(The|This|That|With|After|Over|Says?|What|Why|How|From|Into|Amid|Its|And|For|New|Stock|Stocks|Report|Reports|Here|More|Could|Will|Just|Your|When|They|Their|About|Than|Still)$/;
+    (String(x.ph || (x.sh && x.sh.h) || "").match(/\b[A-Z][a-zA-Z]{3,}\b/g) || []).filter(function(w){ return !STOPW.test(w); }).forEach(function(w){ var k = w.toLowerCase(); lw[k] = (lw[k] || 0) + (now - was); if(!lw[k]) delete lw[k]; });
+    var ks = Object.keys(lw).sort(function(a, b){ return Math.abs(lw[b]) - Math.abs(lw[a]); }).slice(0, 40), lw2 = {}; ks.forEach(function(k){ lw2[k] = lw[k]; }); prefs = Object.assign({}, prefs || {}, {lw: lw2});
     var fb = Object.assign({}, (prefs && prefs.fb) || {}); fb[x.fk] = (fb[x.fk] || 0) - was + now; prefs = Object.assign({}, prefs || {}, {fb: fb}); save(on());
     [].forEach.call($("pdBd").querySelectorAll(".pd-fb"), function(b){ b.classList.toggle("on", Number(b.dataset.fb) === now); }); }
   var seen = function(){ var s = ls("pd-seen2") || {}; return s.day === day() ? s : {day: day(), ids: {}}; };
@@ -7296,9 +7300,10 @@ TRACKER DATA:
   var IM = ls("pd-img3"); if(!IM || IM.day !== day()) IM = {day: day(), m: {}};   // v3: never keep "no photo" answers, so a bad moment doesn't hide photos all day
   function DEMO(){ var m = window.MP_ME; return !!(m && /^pato-?demo/i.test(m.email || "")); }
   function PICS(){ var m = window.MP_ME; return !!(m && (m.owner || /^pato-?demo/i.test(m.email || ""))); }   // trial: demo account only until Marco approves
-  function pic(u, cb, h){ if(!u || !base() || !PICS() || (u in IM.m)) return; IM.m[u] = null;
+  function PHOTOS(){ return !!window.MP_ME; }   // Marco Nov 12: photos for everyone
+  function pic(u, cb, h){ if(!u || !base() || !PHOTOS() || (u in IM.m)) return; IM.m[u] = null;
     fetch(base() + "/img?u=" + encodeURIComponent(u) + (h ? "&h=" + encodeURIComponent(h) : "")).then(function(r){ return r.ok ? r.json() : {}; }).then(function(d){ IM.m[u] = (d && d.img) || ""; if(IM.m[u]) ls("pd-img3", {day: IM.day, m: Object.keys(IM.m).reduce(function(o, k){ if(IM.m[k]) o[k] = IM.m[k]; return o; }, {})}); if(cb) cb(); }).catch(function(){ delete IM.m[u]; }); }
-  function picHtml(x){ var im = PICS() && x.pic && IM.m[x.pic], ix0 = S.indexOf(x); if(im && S.some(function(y, j){ return j < ix0 && y.pic && IM.m[y.pic] === im; })) im = "";   // never the same photo twice
+  function picHtml(x){ var im = PHOTOS() && x.pic && IM.m[x.pic], ix0 = S.indexOf(x); if(im && S.some(function(y, j){ return j < ix0 && y.pic && IM.m[y.pic] === im; })) im = "";   // never the same photo twice
     return im ? '<div class="pd-img"><img src="' + esc(im) + '" alt="" referrerpolicy="no-referrer" onerror="this.parentNode.remove()">' + (x.ps ? '<span>' + esc(x.ps) + '</span>' : '') + '</div>' : ''; }
   var lastBase = null, NEW = {};   // what was unread when you opened: those chips get a dot, the slide gets a NEW tag
   function show(i){
@@ -7334,7 +7339,8 @@ TRACKER DATA:
         if(c.checked && i < 0) o.push(k); if(!c.checked && i >= 0) o.splice(i, 1); save(o); ls("pd-daily7", null); $("pdTopM").textContent = "Saved. Your next stories use these."; }); }
     var o = on(), all = CATS.filter(function(c){ return FIX.indexOf(c[0]) < 0; }), nm = function(k){ return all.filter(function(c){ return c[0] === k; })[0]; };   // Marco Nov 12: you set the order of your topics
     w.innerHTML = '<span>Pato Daily topics</span>' + o.map(function(k, i){ var c = nm(k); return c ? '<label class="tg"><span>' + c[2] + ' ' + c[1] + '</span><span class="pd-ord"><button type="button" aria-label="Move up" data-mv="' + k + ':-1"' + (i === 0 ? ' disabled' : '') + '>↑</button><button type="button" aria-label="Move down" data-mv="' + k + ':1"' + (i === o.length - 1 ? ' disabled' : '') + '>↓</button><input type="checkbox" data-k="' + k + '" checked></span></label>' : ''; }).join("") + all.filter(function(c){ return o.indexOf(c[0]) < 0; }).map(function(c){ return '<label class="tg"><span>' + c[2] + ' ' + c[1] + '</span><input type="checkbox" data-k="' + c[0] + '"></label>'; }).join("") + '<div class="pd-tm" id="pdTopM">Up to ' + TOP + '. Top story and DR come every day.</div>'; }
-  function save(o){ var fb = (prefs && prefs.fb) || {}, co = (prefs && prefs.co) || {}; prefs = {on: o, picked: true, fb: fb, co: co}; try{ db.doc("prefs/news").set({on: o, picked: true, fb: fb, co: co, at: Date.now()}); }catch(_){} }
+  function save(o){ var fb = (prefs && prefs.fb) || {}, co = (prefs && prefs.co) || {}, lw = (prefs && prefs.lw) || {}; prefs = {on: o, picked: true, fb: fb, co: co, lw: lw}; try{ db.doc("prefs/news").set({on: o, picked: true, fb: fb, co: co, lw: lw, at: Date.now()}); }catch(_){} }
+  function lwq(){ var lw = (prefs && prefs.lw) || {}, ks = Object.keys(lw).filter(function(k){ return /^[a-z0-9]{3,20}$/.test(k); }), up = ks.filter(function(k){ return lw[k] > 0; }).sort(function(a, b){ return lw[b] - lw[a]; }).slice(0, 8), dn = ks.filter(function(k){ return lw[k] < 0; }).sort(function(a, b){ return lw[a] - lw[b]; }).slice(0, 6); return (up.length ? "&lk=" + up.join(",") : "") + (dn.length ? "&dk=" + dn.join(",") : ""); }   // what you liked or disliked, sent with the request (not part of the cache key)
   var peeked = 0, pk = 0, pc = 0, pt = null;
   function peekLines(){ var u = unseen(), tk = (daily && daily.take) || fallback(), L = [];
     u.forEach(function(x){ var i = S.indexOf(x);
@@ -7354,7 +7360,7 @@ TRACKER DATA:
   function cover(){ if(ls("pd-cover") === day() || !daily || !$("pdV").hidden) return false; var big = (tick && tick.big) || daily.big; if(!big) return false;
     ls("pd-cover", day()); var tk = daily.take || fallback(), line = (tk.pato && tk.pato.line) || (tk.you && tk.you.text) || "";
     var also = S.filter(function(x){ return x.nav && !/Pato|Breaking/.test(x.nav); }).map(function(x){ return x.nav; }).slice(0, 4).join(" · ");
-    var im = PICS() && (IM.m[big.u] || big.img), c = document.createElement("div"); c.id = "pdCover"; c.className = "pd-cover";
+    var im = PHOTOS() && (IM.m[big.u] || big.img), c = document.createElement("div"); c.id = "pdCover"; c.className = "pd-cover";
     c.innerHTML = '<div class="pc-ph"' + (im ? ' style="background-image:url(\'' + esc(im) + '\')"' : '') + '><div class="pc-top"><img src="icon-192.png?v=7" alt=""><div><b>Pato Daily</b><small>' + esc((DEMO ? new Date(day() + "T12:00:00Z") : drd()).toLocaleDateString("en-US", {timeZone: "UTC", weekday: "long", month: "long", day: "numeric"})) + ' · ' + esc(hh(DROPS[slot()]).replace(":00", "")) + ' edition</small></div></div>' + (im && big.s ? '<span class="pc-src">' + esc(big.s) + '</span>' : '') + '</div>' +
       '<div class="pc-bd"><div class="pc-k">🌎 TOP STORY</div><h2>' + esc(big.h) + '</h2>' + (line ? '<div class="pc-tk"><img src="icon-192.png?v=7" alt=""><div>' + bold(line) + '</div></div>' : '') + (also ? '<div class="pc-in">Also today: ' + esc(also) + '</div>' : '') + '</div>' +
       '<div class="pc-cta"><button type="button" class="go">Read today\'s edition</button><button type="button" class="no">Later</button></div>';
