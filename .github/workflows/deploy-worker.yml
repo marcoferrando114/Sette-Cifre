@@ -2,7 +2,7 @@ name: Deploy Pato server
 on:
   push:
     branches: [main]
-    paths: ["tools/pato-ai-worker.js", "tools/wrangler.toml"]
+    paths: ["tools/pato-ai-worker.js", "tools/wrangler.toml", "tools/mail/**"]
   workflow_dispatch:
 jobs:
   deploy:
@@ -14,4 +14,10 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           workingDirectory: tools
+          command: deploy
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          workingDirectory: tools/mail
           command: deploy

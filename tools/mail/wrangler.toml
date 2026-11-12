@@ -1,0 +1,10 @@
+# Pato mail (Cloudflare worker "pato-mail"): one-tap Gmail for friends. GitHub deploys it when tools/mail/ changes.
+name = "pato-mail"
+main = "worker.js"
+compatibility_date = "2024-09-23"
+workers_dev = true
+keep_vars = true   # keep GOOGLE_ID, GOOGLE_SECRET, ANTHROPIC_KEY set in the Cloudflare dashboard
+
+[[kv_namespaces]]
+binding = "LIMITS"
+id = "1b3dc8d572c64e46a714ec50c34d4abc"
