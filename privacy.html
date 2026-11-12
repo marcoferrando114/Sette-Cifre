@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Pato Privacy</title>
+<style>
+:root{--bg:#f6f1e7;--ink:#1d2a22;--muted:#5b675f}
+@media (prefers-color-scheme:dark){:root{--bg:#13201a;--ink:#f1ead9;--muted:#a9b3aa}}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 -apple-system,system-ui,sans-serif}
+main{max-width:680px;margin:0 auto;padding:32px 16px 48px}
+h1{font:600 2rem Georgia,serif;margin:0 0 4px}h2{font:600 1.15rem Georgia,serif;margin:28px 0 6px}
+small{color:var(--muted)}a{color:inherit}
+</style></head>
+<body><main>
+<h1>Pato privacy</h1><small>Updated November 12, 2026</small>
+
+<h2>What Pato is</h2>
+<p>Pato is a personal money tracker. Each person signs in with their own account and sees only their own data.</p>
+
+<h2>Gmail (optional)</h2>
+<p>If you tap <b>Connect Gmail</b>, Google asks you to let Pato read your email (read-only). Pato uses this only to find alert emails from your banks (card purchases, cash withdrawals and transfers you send) and turn them into spending rows in your own Pato account.</p>
+<ul>
+<li>Pato only searches for emails from bank senders. It never sends, deletes or changes email.</li>
+<li>The text of those bank emails is read for the amount, date and store, then discarded. It is not stored.</li>
+<li>To read each bank email, Pato sends its text to Anthropic's Claude API, which does not use it to train models.</li>
+<li>Your Gmail access key is stored encrypted and used only to read your bank emails when you open Pato.</li>
+<li>Pato never sells or shares your Gmail data, never uses it for ads, and no person reads it.</li>
+<li>You can disconnect anytime in Pato (tap Bank activity, then Disconnect) or at <a href="https://myaccount.google.com/permissions">myaccount.google.com/permissions</a>. Disconnecting deletes the key.</li>
+</ul>
+<p>Pato's use of information received from Google APIs follows the <a href="https://developers.google.com/terms/api-services-user-data-policy">Google API Services User Data Policy</a>, including the Limited Use requirements.</p>
+
+<h2>Your data</h2>
+<p>What you log in Pato is stored in Google Firebase under your account and only you can read it. You can delete entries in the app, or ask for your account to be deleted.</p>
+
+<h2>Contact</h2>
+<p>Questions or deletion requests: contact the person who invited you to Pato.</p>
+</main></body></html>
