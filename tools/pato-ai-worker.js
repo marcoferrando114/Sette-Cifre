@@ -402,6 +402,12 @@ export default {
     const origin = req.headers.get("origin") || "";
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(origin) });
     const url = new URL(req.url);
+    if (req.method === "GET" && url.pathname === "/news" && url.searchParams.get("debug") === "net") {   // test link: can the server reach ESPN and Polymarket right now
+      const T = ["https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard?dates=" + drDay().replace(/-/g, ""), "https://gamma-api.polymarket.com/events?active=true&closed=false&order=volume24hr&ascending=false&limit=120"], out = [];
+      for (const u of T) { try { const r = await fetch(u, { headers: { "user-agent": "Mozilla/5.0 (compatible; PatoDaily/1.0)" } }), t = await r.text(); out.push({ u: u.slice(8, 40), st: r.status, len: t.length, head: t.slice(0, 120) }); } catch (e) { out.push({ u: u.slice(8, 40), err: String(e.message || e).slice(0, 120) }); } }
+      const c = await caches.default.match(new Request(T[0])); out.push({ cachedEspn: !!c, cachedLen: c ? (await c.text()).length : 0 });
+      return json(out, 200, origin);
+    }
     if (req.method === "GET" && url.pathname === "/news" && url.searchParams.get("debug") === "1") {   // test link: how many stories each topic feed gives right now
       const ks = ["rd", "business", "tech", "politics", "crypto", "ent", "gaming", "health", "cars", "fashion"], out = {};
       await Promise.all(ks.map(async k => { try { const it = (await feed(CATS[k], 7200)).items;
