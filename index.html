@@ -2051,7 +2051,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261112143225";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261112234500";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -7068,9 +7068,10 @@ TRACKER DATA:
     var gi2 = function(){ var g = L.map(function(x){ return x.fk; }).indexOf("game"); return g >= 0 ? g : L.length; };
     if(LA.length) L.splice(gi2(), 0, {id: ed + ":launch:" + LA.map(function(x){ return x.h; }).join("|").slice(0, 120), cls: "launch", t: "Launches", w: "this week", nav: "🚀 Launches", fk: "launch", pic: LA[0].u, ph: LA[0].h, ps: LA[0].s,
       body: '<div class="pd-k">🚀 LAUNCHES</div><div class="pd-h1" style="font-size:1.3rem">New this week</div>' + LA.slice(0, 4).map(function(it){ return row(it); }).join("")});
+    // Rising pills only add what the headline doesn't say (Marco Nov 12): sector, round, backers, share sold
     if(RI.length) L.splice(gi2(), 0, {id: ed + ":rising:" + RI.map(function(x){ return x.h; }).join("|").slice(0, 120), cls: "rise", t: "Rising companies", w: "this week", nav: "💎 Rising", fk: "rising",
       body: '<div class="pd-k">💎 RISING COMPANIES</div><div class="pd-h1" style="font-size:1.3rem">Where the big money is going</div>' + RI.slice(0, 4).map(function(it){
-        var ch = [it.raised ? "Raised " + bn(it.raised) : "", it.val ? "Valued " + bn(it.val) : ""].filter(Boolean); return row(it, ch.length ? '<div class="pd-chips">' + ch.map(function(c){ return '<span>' + esc(c) + '</span>'; }).join("") + '</div>' : ""); }).join("") +
+        var ch = (it.pills || []).map(function(c){ return c.replace(/\$\s?\d[\d.,]*\s?(million|billion|bn|trillion)\b/gi, bn); }); return row(it, ch.length ? '<div class="pd-chips">' + ch.map(function(c){ return '<span>' + esc(c) + '</span>'; }).join("") + '</div>' : ""); }).join("") +
         '<div class="pd-m" style="margin-top:14px">Private for now. These are the names that could be next year\'s IPOs.</div>'});
     L.forEach(function(x){ var src = x.fk === "big" ? big : x.fk && cats[x.fk] && cats[x.fk][0]; var mk = src && src.mk; if(!mk || x.fk === "preds" || x.fk === "launch" || x.fk === "rising") return;
       x.body += '<a class="pd-r2 pd-mk" data-u="' + esc(mk.u) + '"><span>🔮 MARKET ODDS</span><b>' + mk.p + '%</b> ' + esc(mk.q) + (mk.end ? ' <small>· by ' + esc(dlabel(mk.end)) + '</small>' : '') + '</a>'; });
