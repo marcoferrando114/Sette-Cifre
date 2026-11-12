@@ -264,7 +264,7 @@ function rising(items) { const now = Date.now(), out = [];
     .sort((a, b) => b.sc - a.sc).forEach(i => { if (out.length < 4 && !out.some(o => (o.co && o.co === i.co) || simw(o.h, i.h) >= 0.5)) out.push({ h: i.h, s: i.s, u: i.u, t: i.t, n: i.n, d: i.d || "", co: i.co, val: i.val, raised: i.raised, pills: i.pills }); });
   return out; }
 const LQ = srch("(launches OR unveils OR debuts OR \"release date\" OR \"now available\") (Apple OR Google OR Samsung OR Nvidia OR OpenAI OR Tesla OR Meta OR Microsoft OR Sony OR Nintendo OR Anthropic OR Amazon OR Ferrari OR Nike OR iPhone OR PlayStation)").replace(" when:1d", " when:3d").replace("when%3A1d", "when%3A3d");
-const RQ = srch("startup (raises OR \"valued at\" OR valuation OR \"funding round\" OR \"Series A\" OR \"Series B\" OR \"Series C\" OR unicorn)").replace("when%3A1d", "when%3A3d");
+const RQ = srch("startup (raises OR \"valued at\" OR valuation OR \"funding round\" OR \"Series A\" OR \"Series B\" OR \"Series C\" OR unicorn OR \"teen founders\" OR \"student founders\" OR \"year-old founder\" OR \"young founders\")").replace("when%3A1d", "when%3A3d");
 // Games and predictions are the same for everyone: keep one copy in KV (20/30 min) so a /news call doesn't redo ~25 outside calls or parse Polymarket's 18 MB list each time (Nov 12)
 async function kvFresh(env, key, mins, make) {
   const kv = env && env.LIMITS; let old = null;
