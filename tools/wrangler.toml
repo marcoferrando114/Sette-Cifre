@@ -8,3 +8,6 @@ keep_vars = true   # keep the variables and secrets set in the Cloudflare dashbo
 [[kv_namespaces]]
 binding = "LIMITS"
 id = "1b3dc8d572c64e46a714ec50c34d4abc"
+
+[triggers]
+crons = ["*/15 * * * *"]   # refresh games + predictions into KV (Nov 12)
