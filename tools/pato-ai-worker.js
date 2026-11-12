@@ -6,6 +6,8 @@ const ORIGINS = ["https://marcoferrando114.github.io"];
 const MODELS = ["claude-haiku-5-5", "claude-sonnet-5-5"];
 const JWKS = "https://www.googleapis.com/robot/v1/metadata/jwk/securetoken@system.gserviceaccount.com";
 let jwks = null, jwksAt = 0;
+// Cloudflare stops a request after 50 outside calls; a cold /news (12 feeds + ESPN + Polymarket) went over and came back nearly empty (Nov 12). Count them and keep news first.
+let SUBN = 0; const xf = (u, o) => (++SUBN > 42 ? Promise.reject(new Error("budget")) : fetch(u, o));
 
 const b64u = s => Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((s.length + 3) % 4)), c => c.charCodeAt(0));
 const json = (o, status, origin) => new Response(JSON.stringify(o), { status, headers: { "content-type": "application/json", ...cors(origin) } });
@@ -59,7 +61,7 @@ async function cached(url, ttl, kind) {
   const cache = caches.default, key = new Request(url);
   let r = await cache.match(key);
   if (!r) {
-    const f = await fetch(url, { headers: { "user-agent": "Mozilla/5.0 (compatible; PatoDaily/1.0)" } });
+    const f = await xf(url, { headers: { "user-agent": "Mozilla/5.0 (compatible; PatoDaily/1.0)" } });
     if (!f.ok) return { at: Date.now(), body: kind === "json" ? {} : "" };
     r = new Response(await f.text(), { headers: { "cache-control": "public, max-age=" + ttl, "x-at": String(Date.now()) } });
     await cache.put(key, r.clone());
@@ -89,7 +91,7 @@ const gfeed = (url, ttl) => cached(url, ttl).then(f => ({ at: f.at, items: parse
 const feed = async (url, ttl) => { const b = bingUrl(url); if (b) { try { const r = await bingFeed(b, ttl); if (pick(r.items).length) return r; } catch (e) {} } return gfeed(url, ttl); };
 // Bing: one request at a time (bursts come back empty), only cache answers that have stories, retry once.
 let bingQ = Promise.resolve();
-const bingGet = u => (bingQ = bingQ.catch(() => {}).then(() => new Promise(r => setTimeout(r, 120))).then(() => fetch(u, { headers: { ...PUA, accept: "application/rss+xml, application/xml;q=0.9, */*;q=0.5" } })).then(f => f.ok ? f.text() : ""));
+const bingGet = u => (bingQ = bingQ.catch(() => {}).then(() => new Promise(r => setTimeout(r, 120))).then(() => xf(u, { headers: { ...PUA, accept: "application/rss+xml, application/xml;q=0.9, */*;q=0.5" } })).then(f => f.ok ? f.text() : ""));
 async function bingFeed(u, ttl) {
   const key = new Request(u + "&pv=2"), hit = await caches.default.match(key);
   if (hit) return { at: Number(hit.headers.get("x-at")) || Date.now(), items: parseBing(await hit.text()) };
@@ -135,7 +137,7 @@ async function games() {
   const srt = out.sort((a, b) => b.score - a.score), seenL = new Set(), one = [], more = [];   // best game of each league first, so the day mixes sports (Marco Nov 11)
   srt.forEach(g => { if (seenL.has(g.league)) more.push(g); else { seenL.add(g.league); one.push(g); } });
   const top = one.concat(more).slice(0, 10);
-  await Promise.all(top.slice(0, 8).map(g => gameInfo(g))); top.slice(8).forEach(g => { if (g.odds0) g.odds = { line: String(g.odds0.line || ""), ou: g.odds0.ou ? String(g.odds0.ou) : "", ml: [], by: g.odds0.by }; delete g.path; delete g.id; delete g.odds0; });   // all shown games get the full card (Marco Nov 11: odds, form, key players, injuries)   // injury report + starting lineups for the biggest games (Marco Nov 11)
+  await Promise.all(top.slice(0, 5).map(g => gameInfo(g))); top.slice(5).forEach(g => { if (g.odds0) g.odds = { line: String(g.odds0.line || ""), ou: g.odds0.ou ? String(g.odds0.ou) : "", ml: [], by: g.odds0.by }; delete g.path; delete g.id; delete g.odds0; });   // all shown games get the full card (Marco Nov 11: odds, form, key players, injuries)   // injury report + starting lineups for the biggest games (Marco Nov 11)
   return top;
 }
 async function gameInfo(g) {
@@ -241,7 +243,9 @@ async function bundle(P) {
   const tick = (P.get("t") || "").toUpperCase().split(",").filter(x => /^[A-Z.]{1,6}$/.test(x)).slice(0, 5);
   const want = (P.get("k") || "rd,business,tech").split(",").filter(k => CATS[k]).slice(0, 8);
   const [top, world, ...rest] = await Promise.all([feed(sec("BUSINESS"), 7200), feed(sec("WORLD"), 3600),
-    ...want.map(k => feed(CATS[k], 7200)), ...tick.map(t => feed(srch(t + " stock"), 10800)), feed(srch("analysts upgrade stock buy rating"), 10800), P.get("g") === "0" ? Promise.resolve([]) : games()]);
+    ...want.map(k => feed(CATS[k], 7200)), ...tick.map(t => feed(srch(t + " stock"), 10800)), feed(srch("analysts upgrade stock buy rating"), 10800)]);
+  const [LF, RF] = await Promise.all([feed(LQ, 10800).catch(() => ({})), feed(RQ, 10800).catch(() => ({}))]);
+  const [MK, GM] = await Promise.all([markets().catch(() => []), P.get("g") === "0" ? Promise.resolve([]) : games().catch(() => [])]); rest.push(GM);
   const cats = {}; want.forEach((k, i) => { const it = top2(rest[i].items || [], tick, P.get("busy") === "1"); if (it.length) cats[k] = it; });
   const stocks = {}; tick.forEach((t, i) => { const it = pick(rest[want.length + i].items || [])[0]; if (it) stocks[t] = it; });
   // Breaking (Marco Nov 11): the story that matters most to YOU today: big world events, scandals about the people behind your companies, major accidents, analyst calls on your stocks.
@@ -256,7 +260,6 @@ async function bundle(P) {
   const bw = B ? new Set(words(B.h)) : new Set(), MORE = pool.filter(i => i && i.h && i !== B && words(i.h).filter(v => bw.has(v)).length / Math.max(bw.size, 1) < 0.5).sort((x, y) => bs(y) - bs(x))
     .filter((v, i, a) => a.findIndex(o => o.h === v.h || words(o.h).filter(w => new Set(words(v.h)).has(w)).length / Math.max(words(v.h).length, 1) >= 0.5) === i).slice(0, 10)
     .map(i => ({ h: i.h, s: i.s, u: i.u, t: i.t, n: i.n, by: i.by, d: i.d || "" }));
-  const [MK, LF, RF] = await Promise.all([markets().catch(() => []), feed(LQ, 10800).catch(() => ({})), feed(RQ, 10800).catch(() => ({}))]);
   if (W) W.mk = marketFor(MK, W.h); Object.keys(cats).forEach(k => { const it = cats[k][0]; if (it) it.mk = marketFor(MK, it.h); });
   return { at: top.at || Date.now(), day: edDay(), big: W, calls: CL, more: MORE, preds: pickMarkets(MK, tick), launch: launches(LF.items || [], tick), rising: rising(RF.items || []), cats, stocks, games: rest[rest.length - 1] || [],
     ticker: T.filter(i => MOVERS.test(i.h)).concat(T).filter((v, i, a) => a.indexOf(v) === i).slice(0, 5) };
@@ -389,6 +392,7 @@ async function storyImg(u, h, debug) {
 
 export default {
   async fetch(req, env) {
+    SUBN = 0;
     const origin = req.headers.get("origin") || "";
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(origin) });
     const url = new URL(req.url);
