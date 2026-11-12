@@ -125,7 +125,7 @@ function clean(items, hours) {
   const now = Date.now(), seen = new Set();
   return items.filter(i => {
     const k = i.h.toLowerCase().replace(/[^a-z0-9 ]/g, "").split(" ").slice(0, 6).join(" ");
-    if (!i.h || !(i.bing || TRUSTED.test(i.s)) || BADSRC.test(i.s || "") || JUNK.test(i.h) || seen.has(k) || (i.t && now - i.t > hours * 3600e3)) return false;
+    if (!i.h || i.h.trim().split(/\s+/).length < 4 || !(i.bing || TRUSTED.test(i.s)) || BADSRC.test(i.s || "") || JUNK.test(i.h) || seen.has(k) || (i.t && now - i.t > hours * 3600e3)) return false;
     seen.add(k); return true;
   });
 }
