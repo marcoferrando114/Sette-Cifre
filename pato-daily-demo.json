@@ -1,0 +1,419 @@
+{
+ "label": "DEMO · MON NOV 9 · REAL NEWS · SAMPLE PROFILE",
+ "day": "2026-11-09",
+ "facts": {
+  "saved": 412500,
+  "goal": 1000000,
+  "spentMonth": 23800,
+  "limit": 60000,
+  "daysLeft": 21,
+  "perDayLeft": 1723,
+  "lentOut": 35000,
+  "backOwed": 39500,
+  "loansOpen": 3,
+  "lateLoans": 1,
+  "nextDueDays": 6
+ },
+ "pos": [
+  {
+   "t": "NVDA",
+   "sh": 8,
+   "precio": 174.51,
+   "prev": 186.64,
+   "costo": 168.2
+  },
+  {
+   "t": "GOOGL",
+   "sh": 3,
+   "precio": 281.4,
+   "prev": 276.1,
+   "costo": 252.0
+  },
+  {
+   "t": "AMZN",
+   "sh": 4,
+   "precio": 247.8,
+   "prev": 243.9,
+   "costo": 231.5
+  },
+  {
+   "t": "MSFT",
+   "sh": 1.5,
+   "precio": 512.3,
+   "prev": 506.9,
+   "costo": 470.0
+  }
+ ],
+ "evs": [
+  {
+   "t": "NVDA",
+   "fecha": "2026-11-17",
+   "txt": "Earnings"
+  }
+ ],
+ "bets": [
+  {
+   "fecha": "2026-11-09",
+   "stake": 1500,
+   "legs": [
+    {
+     "sport": "NBA",
+     "game": "Lakers vs Hawks"
+    }
+   ]
+  },
+  {
+   "fecha": "2026-11-07",
+   "result": "won",
+   "stake": 1000,
+   "legs": [
+    {
+     "sport": "NBA"
+    }
+   ]
+  },
+  {
+   "fecha": "2026-11-05",
+   "result": "lost",
+   "stake": 800,
+   "legs": [
+    {
+     "sport": "Soccer"
+    }
+   ]
+  },
+  {
+   "fecha": "2026-11-03",
+   "result": "won",
+   "stake": 1200,
+   "legs": [
+    {
+     "sport": "NBA"
+    }
+   ]
+  },
+  {
+   "fecha": "2026-11-01",
+   "result": "lost",
+   "stake": 500,
+   "legs": [
+    {
+     "sport": "NFL"
+    }
+   ]
+  }
+ ],
+ "topics": [
+  "business",
+  "tech",
+  "game"
+ ],
+ "daily": {
+  "big": {
+   "h": "Nvidia board opens independent investigation into CEO Jensen Huang",
+   "s": "Decrypt",
+   "u": "https://decrypt.co/382793/nvidia-board-investigates-jensen-huang-after-report-he-was-target-of-chinese-spy-effort",
+   "m": 95,
+   "n": 6,
+   "by": [
+    "Financial Times",
+    "Bloomberg",
+    "Decrypt"
+   ],
+   "huge": true,
+   "brief": {
+    "facts": [
+     "Nvidia's board opened an independent probe after reports that Jensen Huang was the target of a foreign intelligence effort.",
+     "A US government memo reported by the Financial Times links Huang romantically to a Megaspeed executive US intelligence believes is a Chinese spy.",
+     "In an email to staff Huang apologized for being unfaithful to his wife and said he'll cooperate fully.",
+     "The board says it has no reason to believe national security or Nvidia secrets were compromised; Huang stays on as CEO."
+    ],
+    "why": "The probe lands 8 days before Nvidia's earnings, and the stock opened about 8% lower."
+   }
+  },
+  "calls": {
+   "h": "Wells Fargo upgrades Becton Dickinson to Overweight, lifts target to $242 from $170",
+   "s": "Insider Monkey",
+   "u": "https://www.insidermonkey.com/news/dont-miss-out-10-stocks-getting-major-upgrades-from-top-analysts-1862944/?singlepage=1",
+   "m": 300,
+   "by": [
+    "Insider Monkey"
+   ],
+   "mine": false
+  },
+  "cats": {
+   "rd": [
+    {
+     "h": "Gobierno propone multas altas por evasión de peajes",
+     "s": "elCaribe",
+     "u": "https://www.elcaribe.com.do/seccion/pais-3/",
+     "m": 240
+    }
+   ],
+   "business": [
+    {
+     "h": "Wall Street rallies after last week's AI rout; Nvidia falls",
+     "s": "Associated Press",
+     "u": "https://www.staradvertiser.com/2026/11/09/breaking-news/wall-street-rallies-after-last-weeks-ai-rout-nvidia-falls/",
+     "m": 60,
+     "n": 5,
+     "by": [
+      "Associated Press",
+      "Reuters"
+     ]
+    },
+    {
+     "h": "US stocks rally as crude oil prices drop even as Nvidia sinks",
+     "s": "National Herald",
+     "u": "https://www.thenationalherald.com/us-stocks-rally-as-crude-oil-prices-drop-even-as-nvidia-sinks/",
+     "m": 120,
+     "n": 3
+    }
+   ],
+   "tech": [
+    {
+     "h": "Amazon ships the AI shopping agent it blocked Meta from building",
+     "s": "AI Tools Recap",
+     "u": "https://aitoolsrecap.com/Blog/ai-news-november-09-2026",
+     "m": 150,
+     "n": 2
+    },
+    {
+     "h": "Shield AI more than doubles its valuation in eight months",
+     "s": "AI Tools Recap",
+     "u": "https://aitoolsrecap.com/Blog/ai-news-november-09-2026",
+     "m": 200,
+     "n": 2
+    }
+   ]
+  },
+  "stocks": {
+   "NVDA": {
+    "h": "Nasdaq jumps 1.3% as Nvidia plunges 6.5% on CEO probe; Dow rises 582 points",
+    "s": "HDFC Sky",
+    "u": "https://hdfcsky.com/news/nasdaq-jumps-1-3percent-to-24899-as-nvidia-plunges-6-5percent-on-ceo-probe-dow-rises-582-points",
+    "m": 30
+   }
+  },
+  "more": [
+   {
+    "h": "Bloomberg: Nvidia minimized its CEO's ties to Megaspeed for more than a year",
+    "s": "Tech Insider",
+    "u": "https://tech-insider.org/nvidia-board-probe-jensen-huang-megaspeed-4-8-billion-2026/",
+    "m": 180,
+    "n": 3,
+    "by": [
+     "Bloomberg",
+     "Tech Insider"
+    ],
+    "d": "Bloomberg reported that for more than a year Nvidia minimized the ties between Jensen Huang and Megaspeed, the company at the center of the board's probe."
+   },
+   {
+    "h": "Iran strikes Kuwait after US bombardments as Gulf tensions escalate",
+    "s": "Business Standard",
+    "u": "https://www.business-standard.com/world-news/iran-strikes-kuwait-after-us-bombardments-gulf-tensions-escalate-126090300989_1.html",
+    "m": 400,
+    "n": 4,
+    "d": "Fresh strikes across the Gulf kept oil traders on edge heading into the week."
+   }
+  ],
+  "ticker": [
+   {
+    "h": "Nvidia opens about 8% lower after board launches probe of CEO",
+    "s": "Reuters",
+    "u": "https://decrypt.co/382793/nvidia-board-investigates-jensen-huang-after-report-he-was-target-of-chinese-spy-effort",
+    "m": 25
+   },
+   {
+    "h": "S&P 500 up about 1.9% as chip stocks rebound from last week's AI selloff",
+    "s": "Associated Press",
+    "u": "https://www.staradvertiser.com/2026/11/09/breaking-news/wall-street-rallies-after-last-weeks-ai-rout-nvidia-falls/",
+    "m": 60
+   },
+   {
+    "h": "October inflation report due Tuesday",
+    "s": "Pato",
+    "u": "",
+    "m": 90
+   }
+  ],
+  "games": [
+   {
+    "league": "NBA",
+    "name": "Los Angeles Lakers at Atlanta Hawks",
+    "short": "LAL @ ATL",
+    "tv": [
+     "NBA League Pass"
+    ],
+    "teams": [
+     {
+      "n": "Lakers",
+      "ab": "LAL",
+      "logo": "https://a.espncdn.com/i/teamlogos/nba/500/lal.png"
+     },
+     {
+      "n": "Hawks",
+      "ab": "ATL",
+      "logo": "https://a.espncdn.com/i/teamlogos/nba/500/atl.png"
+     }
+    ],
+    "odds": {
+     "line": "LAL -2.5",
+     "ou": "231.5",
+     "ml": [
+      "-135",
+      "+115"
+     ],
+     "by": "sample"
+    },
+    "win": [
+     61,
+     39
+    ],
+    "form": [
+     {
+      "team": "Lakers",
+      "r": "WWLWW"
+     },
+     {
+      "team": "Hawks",
+      "r": "LWLLW"
+     }
+    ],
+    "stars": [
+     {
+      "team": "Lakers",
+      "n": "L. Doncic",
+      "v": "31.2",
+      "s": "PTS"
+     },
+     {
+      "team": "Hawks",
+      "n": "T. Young",
+      "v": "24.6",
+      "s": "PTS"
+     }
+    ],
+    "at": "2026-11-09T23:30:00Z"
+   },
+   {
+    "league": "NBA",
+    "name": "Cleveland Cavaliers at Charlotte Hornets",
+    "short": "CLE @ CHA",
+    "teams": [
+     {
+      "n": "Cavaliers",
+      "ab": "CLE"
+     },
+     {
+      "n": "Hornets",
+      "ab": "CHA"
+     }
+    ],
+    "odds": {
+     "line": "CLE -6.5",
+     "ml": [
+      "-260",
+      "+210"
+     ],
+     "by": "sample"
+    },
+    "win": [
+     70,
+     30
+    ],
+    "at": "2026-11-09T23:00:00Z"
+   },
+   {
+    "league": "NBA",
+    "name": "Washington Wizards at Detroit Pistons",
+    "short": "WAS @ DET",
+    "teams": [
+     {
+      "n": "Wizards",
+      "ab": "WAS"
+     },
+     {
+      "n": "Pistons",
+      "ab": "DET"
+     }
+    ],
+    "at": "2026-11-09T23:00:00Z"
+   },
+   {
+    "league": "NBA",
+    "name": "New Orleans Pelicans at Golden State Warriors",
+    "short": "NOP @ GSW",
+    "teams": [
+     {
+      "n": "Pelicans",
+      "ab": "NOP"
+     },
+     {
+      "n": "Warriors",
+      "ab": "GSW"
+     }
+    ],
+    "at": "2026-11-10T02:00:00Z"
+   }
+  ],
+  "pick": {
+   "today": {
+    "team": "Lakers",
+    "ml": "-135",
+    "w": 61,
+    "p": 55,
+    "edge": 6,
+    "form": "WWLWW",
+    "game": "Los Angeles Lakers at Atlanta Hawks",
+    "league": "NBA"
+   },
+   "rec": {
+    "n": 14,
+    "won": 8,
+    "units": 1.6
+   },
+   "last": {
+    "team": "Celtics",
+    "res": "won",
+    "score": "118-109",
+    "game": ""
+   }
+  },
+  "take": {
+   "pato": {
+    "line": "Nvidia is 35% of your stocks, so a CEO scandal just became your problem too: when one company's bad week moves your whole portfolio, that's concentration risk, not bad luck.",
+    "tip": "Don't sell in a panic before the November 17 earnings. Point your next US$300 at an index fund instead of more NVDA, so the next scandal hits half as hard."
+   },
+   "happened": {
+    "text": "Nvidia's board opened an independent probe into Jensen Huang, and the stock opened about 8% lower.",
+    "src": "Decrypt"
+   },
+   "you": {
+    "text": "Your 8 Nvidia shares are down US$97 this morning, but you're still up 3.8% on what you paid.",
+    "src": "From your stocks"
+   },
+   "watch": {
+    "text": "October inflation numbers come out Tuesday, and Nvidia reports on November 17.",
+    "src": "Pato"
+   },
+   "game": 0,
+   "rd": "Government proposes steep fines for skipping tolls",
+   "know": {
+    "business": [
+     "Stocks bounced back after last week's AI selloff, with the S&P 500 up about 1.9% by mid-morning.",
+     "Nvidia went the other way, falling as investors priced in the CEO probe."
+    ],
+    "rd": [
+     "The government wants much higher fines for drivers who skip toll payments.",
+     "It still has to pass before it applies."
+    ]
+   },
+   "notes": {
+    "business": "Good day for your Amazon, Google and Microsoft. Nvidia is the one dragging.",
+    "tech": "Amazon pushing AI shopping is part of why you own it.",
+    "rd": "If you drive the Las Américas or Duarte toll roads, this one's for you."
+   }
+  }
+ }
+}

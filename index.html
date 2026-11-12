@@ -2000,7 +2000,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261112171500";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261112181500";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -6861,10 +6861,12 @@ TRACKER DATA:
   ];
   var esc = function(t){ return String(t==null?"":t).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); };
   var drd = function(t){ return new Date((t||Date.now()) - 4*3600e3); };
-  var day = function(){ return new Date(Date.now() - 11*3600e3).toISOString().slice(0,10); };   // edition flips at 7am DR
+  // Demo edition (Marco Nov 12): ?pd=demo shows a full morning from a past day (real headlines, sample profile). Separate storage, no writes, no network except photos/insight.
+  var DEMO = /[?&]pd=demo\b/.test(location.search), DD = null;
+  var day = function(){ return DEMO && DD ? DD.day : new Date(Date.now() - 11*3600e3).toISOString().slice(0,10); };   // edition flips at 7am DR
   var hr = function(t){ var d = drd(t), h = d.getUTCHours(), m = d.getUTCMinutes(); return (h%12||12) + (m ? ":" + String(m).padStart(2,"0") : "") + (h<12?"am":"pm"); };
   var ago = function(t){ if(!t) return ""; var m = Math.max(1, Math.round((Date.now()-t)/6e4)); return m < 60 ? m+"m" : m < 1440 ? Math.round(m/60)+"h" : Math.round(m/1440)+"d"; };
-  var ls = function(k, v){ try{ if(v===undefined) return JSON.parse(localStorage.getItem(k)||"null"); localStorage.setItem(k, JSON.stringify(v)); }catch(e){ return null; } };
+  var ls = function(k, v){ if(DEMO) k = "pdemo-" + k; try{ if(v===undefined) return JSON.parse(localStorage.getItem(k)||"null"); localStorage.setItem(k, JSON.stringify(v)); }catch(e){ return null; } };
   var open = function(u){ if(u) window.open(u, "_blank", "noopener"); };
   var usd = function(n){ return "US$" + Math.abs(n).toLocaleString("en-US", {maximumFractionDigits: Math.abs(n) < 10 ? 2 : 0}); };
   var bold = function(t){ return esc(t).replace(/((?:US|RD)\$[\d,.]+[kKmM]?|[+−-]?\d+(?:\.\d+)?%)/g, "<b>$1</b>"); };
@@ -6908,7 +6910,7 @@ TRACKER DATA:
     var bw = bets.filter(function(b){ return b.result === "won"; }).length, bl = bets.filter(function(b){ return b.result === "lost"; }).length; if(bw + bl >= 3){ money = money || {}; money.betsWon = bw; money.betsLost = bl; }
     return {angle: angleOf(), money: money, stocks: st, total: tot, bets: open.map(function(b){ b.open = true; return b; }).concat(done)};
   }
-  function getDaily(force){
+  function getDaily(force){ if(DEMO) return;
     if(!base() || busy || !window.mpIdToken) return;
     var st = ls("pd-daily7"); if(!force && st && st.day === day() && st.sig === sig() && st.data && ((st.data.take && Object.keys(st.data.cats || {}).length >= 2) || Date.now() - (st.at||0) < 15*6e4)){ daily = st.data; return render(); }
     busy = 1;
@@ -6919,11 +6921,11 @@ TRACKER DATA:
   // Drops (Marco Nov 11): 7am full edition (AI take), then 12pm and 6pm each topic swaps to the best story you haven't seen. Free: /news, no AI.
   var FR = {}, drop = ls("pd-drop3");
   var DROPS = [7, 10, 13, 16, 19, 22];   // Marco Nov 11: every 3 hours, 7am to 10pm (DR)
-  function slot(){ var h = drd().getUTCHours(); if(h < 7) return 4; for(var i = DROPS.length - 1; i >= 0; i--) if(h >= DROPS[i]) return i; return 0; }
+  function slot(){ if(DEMO) return 0; var h = drd().getUTCHours(); if(h < 7) return 4; for(var i = DROPS.length - 1; i >= 0; i--) if(h >= DROPS[i]) return i; return 0; }
   function hh(h){ return (h % 12 || 12) + ":00 " + (h < 12 ? "AM" : "PM"); }
   function clock(){ var sl = slot(); return "Updated " + hh(DROPS[sl]) + " · next " + hh(DROPS[(sl + 1) % DROPS.length]); }
   // Live between drops (Marco Nov 12): every 20 min check for things that can't wait: huge breaking news (3+ outlets), Pato's pick graded, more world stories. The rest waits for the next drop.
-  function getDrop(){ var sl = slot(), same = drop && drop.day === day() && drop.slot === sl && drop.sig === sig(); if(!base() || getDrop.busy || (same && Date.now() - (drop.got || 0) < 20*6e4)) return; if(!sl && !same && !(drop && drop.day === day())) return; getDrop.busy = 1;
+  function getDrop(){ if(DEMO) return; var sl = slot(), same = drop && drop.day === day() && drop.slot === sl && drop.sig === sig(); if(!base() || getDrop.busy || (same && Date.now() - (drop.got || 0) < 20*6e4)) return; if(!sl && !same && !(drop && drop.day === day())) return; getDrop.busy = 1;
     fetch(base() + "/news?" + q().replace("&busy=1", "") + "&busy=1").then(function(r){ return r.ok ? r.json() : null; })
       .then(function(d){ getDrop.busy = 0; if(!d || !d.cats) return;
         if(same || !sl){ var o = drop.d, LA = ls("pd-live") || {}; if(LA.day !== day()) LA = {day: day(), n: 0, at: 0};
@@ -6937,7 +6939,7 @@ TRACKER DATA:
     list.forEach(function(x){ if(x && x.h && !used[x.h]){ used[x.h] = 1; out.push(x); } });
     var un = out.filter(function(x){ return !s[(k === "big" ? "big:" : k === "calls" ? "calls:" : day() + ":" + k + ":") + x.h]; });
     return un.length ? un : out.slice(0, 1); }
-  function getTick(){   // ticker + big news refresh every 2h (free, no AI)
+  function getTick(){ if(DEMO) return;   // ticker + big news refresh every 2h (free, no AI)
     if(!base() || (tick && Date.now() - (tick.got||0) < 2*3600e3)) return;
     fetch(base() + "/news?k=business&g=0" + (pos.length ? "&t=" + encodeURIComponent(pos.slice(0,5).map(function(p){ return p.t; }).join(",")) : "")).then(function(r){ return r.ok ? r.json() : null; })
       .then(function(d){ if(!d) return; tick = {at: d.at, ticker: d.ticker, big: d.big, got: Date.now()}; render(); }).catch(function(){});
@@ -6980,7 +6982,7 @@ TRACKER DATA:
           (mine ? '<div class="pd-note"><i>YOUR BET</i><p>' + bold("You have RD$" + (Number(mine.stake)||0).toLocaleString("en-US") + " on this game.") + '</p></div>' : "")}); return; }
       var A = [].concat(cats[k] || []); it = A[0]; if(!it) return; h = k === "rd" && !FR.rd && daily.take && daily.take.rd ? daily.take.rd : it.h;
       var by = function(x){ return esc(x.by && x.by.length > 1 ? x.by.join(" · ") : x.s) + " · " + ago(x.t) + " ago"; }, i2 = A[1];   // 1-2 stories per topic, ranked by the worker
-      L.push({id: ed + ":" + k + ":" + it.h, id2: i2 ? ed + ":" + k + ":" + i2.h : "", cls: k === "rd" ? "rd" : "", t: c[1], w: ago(it.t) + " ago", u: i2 ? "" : it.u, pic: it.u, ph: it.h, ps: it.s, fk: k, sh: {k: c[1], h: h, s: it.s, u: it.u, kn: knowArr(k)}, body: '<div class="pd-k">' + esc((/\b(AI|artificial intelligence|OpenAI|ChatGPT|chatbots?)\b/.test(it.h) ? "AI news" : c[1]).toUpperCase()) + '</div><div class="pd-h1' + ((it.n || 0) >= 4 ? ' pd-hx' : '') + '">' + esc(h) + '</div>' + (h !== it.h ? '<div class="pd-m" style="font-style:italic">' + esc(it.h) + '</div>' : '') + '<div class="pd-m">' + by(it) + (i2 ? ' · <a class="pd-r2" data-u="' + esc(it.u) + '">Read ›</a>' : '') + '</div>' + know(k) + note(notes[k]) +
+      L.push({id: ed + ":" + k + ":" + it.h, id2: i2 ? ed + ":" + k + ":" + i2.h : "", cls: k === "rd" ? "rd" : "", t: c[1], w: ago(it.t) + " ago", u: i2 ? "" : it.u, pic: it.u, ph: it.h, ps: it.s, fk: k, sh: {k: c[1], h: h, s: it.s, u: it.u, kn: knowArr(k)}, body: '<div class="pd-k">' + esc((k === "tech" && /\b(AI|artificial intelligence|OpenAI|ChatGPT|chatbots?)\b/.test(it.h) ? "AI news" : c[1]).toUpperCase()) + '</div><div class="pd-h1' + ((it.n || 0) >= 4 ? ' pd-hx' : '') + '">' + esc(h) + '</div>' + (h !== it.h ? '<div class="pd-m" style="font-style:italic">' + esc(it.h) + '</div>' : '') + '<div class="pd-m">' + by(it) + (i2 ? ' · <a class="pd-r2" data-u="' + esc(it.u) + '">Read ›</a>' : '') + '</div>' + know(k) + note(notes[k]) +
         (i2 ? '<div class="pd-two"><div class="pd-k">ALSO</div><div class="pd-h2">' + esc(i2.h) + '</div><div class="pd-m">' + by(i2) + ' · <a class="pd-r2" data-u="' + esc(i2.u) + '">Read ›</a></div></div>' : '')}); });
     TK.body = takeBody(tk, big, (FR.game ? dd.games : daily && daily.games) || [], MV && MV.t.replace("Big move · ", ""), (dd && dd.pick) || (daily && daily.pick));
     if(MV){ var bi = L.map(function(x){ return x.fk; }).indexOf("big"); L.splice(bi >= 0 ? bi + 1 : 1, 0, MV); }   // Breaking news first, then your stock's big move
@@ -7234,7 +7236,7 @@ TRACKER DATA:
     ls("pd-cover", day()); var tk = daily.take || fallback(), line = (tk.pato && tk.pato.line) || (tk.you && tk.you.text) || "";
     var also = S.filter(function(x){ return x.nav && !/Pato|Breaking/.test(x.nav); }).map(function(x){ return x.nav; }).slice(0, 4).join(" · ");
     var im = PICS() && (IM.m[big.u] || big.img), c = document.createElement("div"); c.id = "pdCover"; c.className = "pd-cover";
-    c.innerHTML = '<div class="pc-ph"' + (im ? ' style="background-image:url(\'' + esc(im) + '\')"' : '') + '><div class="pc-top"><img src="icon-192.png?v=7" alt=""><div><b>Pato Daily</b><small>' + esc(drd().toLocaleDateString("en-US", {timeZone: "UTC", weekday: "long", month: "long", day: "numeric"})) + ' · ' + esc(hh(DROPS[slot()]).replace(":00", "")) + ' edition</small></div></div>' + (im && big.s ? '<span class="pc-src">' + esc(big.s) + '</span>' : '') + '</div>' +
+    c.innerHTML = '<div class="pc-ph"' + (im ? ' style="background-image:url(\'' + esc(im) + '\')"' : '') + '><div class="pc-top"><img src="icon-192.png?v=7" alt=""><div><b>Pato Daily</b><small>' + esc((DEMO ? new Date(day() + "T12:00:00Z") : drd()).toLocaleDateString("en-US", {timeZone: "UTC", weekday: "long", month: "long", day: "numeric"})) + ' · ' + esc(hh(DROPS[slot()]).replace(":00", "")) + ' edition</small></div></div>' + (im && big.s ? '<span class="pc-src">' + esc(big.s) + '</span>' : '') + '</div>' +
       '<div class="pc-bd"><div class="pc-k">🌎 TOP STORY</div><h2>' + esc(big.h) + '</h2>' + (line ? '<div class="pc-tk"><img src="icon-192.png?v=7" alt=""><div>' + bold(line) + '</div></div>' : '') + (also ? '<div class="pc-in">Also today: ' + esc(also) + '</div>' : '') + '</div>' +
       '<div class="pc-cta"><button type="button" class="go">Read today\'s edition</button><button type="button" class="no">Later</button></div>';
     document.body.appendChild(c); document.documentElement.style.overflow = "hidden"; requestAnimationFrame(function(){ c.classList.add("on"); });
@@ -7271,7 +7273,16 @@ TRACKER DATA:
   }
   if(!window.claude) return;
   window.claude.use("db").then(function(d){
-    if(!d) return; db = d; me = window.MP_ME || {}; wire();
+    if(!d) return;
+    if(DEMO) return fetch("pato-daily-demo.json?v=" + Date.now()).then(function(r){ return r.json(); }).then(function(D){
+      DD = D; try{ Object.keys(localStorage).forEach(function(k){ if(k.indexOf("pdemo-") === 0) localStorage.removeItem(k); }); }catch(_){}   // a fresh morning every time
+      var now = Date.now(), fix = function(o){ if(Array.isArray(o)) return o.forEach(fix); if(o && typeof o === "object"){ if(typeof o.m === "number"){ o.t = now - o.m*6e4; delete o.m; } if(typeof o.at === "string"){ o.t = Date.parse(o.at); delete o.at; } Object.keys(o).forEach(function(k){ fix(o[k]); }); } }; fix(D.daily);
+      try{ Object.defineProperty(window, "__patoFacts", {get: function(){ return D.facts; }, set: function(){}, configurable: true}); }catch(_){}
+      var noop = function(){ return {set: function(){ return Promise.resolve(); }, onSnapshot: function(){ return function(){}; }}; }; db = {doc: noop, collection: noop};
+      me = window.MP_ME || {}; pos = D.pos; evs = D.evs; bets = D.bets; prefs = {on: D.topics, picked: true}; daily = D.daily; daily.day = D.day; tick = {at: now, ticker: D.daily.ticker, big: D.daily.big, got: now};
+      var bn = document.createElement("div"); bn.textContent = D.label; bn.style.cssText = "position:fixed;left:50%;transform:translateX(-50%);top:calc(env(safe-area-inset-top,0px) + 2px);z-index:200;background:#E3BC6A;color:#13241B;font:800 .6rem/1 -apple-system,system-ui,sans-serif;letter-spacing:.04em;white-space:nowrap;padding:4px 9px;border-radius:999px;max-width:92vw;text-align:center;pointer-events:none"; document.body.appendChild(bn);
+      wire(); topicsRow(); render(); }).catch(function(){});
+    db = d; me = window.MP_ME || {}; wire();
     var ready = {pos: 0, bets: 0, prefs: 0}, go = function(k){ ready[k] = 1; if(ready.pos && ready.bets && ready.prefs){ render(); getDaily(false); getDrop(); } };
     var again = function(k, was){ if(!ready[k]) return go(k); if(sig() !== was){ getDaily(false); getDrop(); } else render(); };
     var setPos = function(list){ pos = list.filter(function(x){ return Number(x.sh) > 0 && x.t; }).map(function(x){ return {t: String(x.t).toUpperCase(), sh: Number(x.sh), precio: Number(x.precio)||0, prev: Number(x.prev)||0, costo: Number(x.costo)||0, regalo: !!x.regalo}; })
