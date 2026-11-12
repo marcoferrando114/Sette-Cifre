@@ -81,7 +81,7 @@ function parseBing(xml) {
   const it = [...String(xml).matchAll(/<item>([\s\S]*?)<\/item>/g)].map(m => {
     const g = tag => { const r = m[1].match(new RegExp("<" + tag + "[^>]*>([\\s\\S]*?)</" + tag + ">", "i")); return r ? dec(r[1]) : ""; };
     const l = g("link"), u = (() => { try { return new URL(l).searchParams.get("url") || l; } catch (e) { return l; } })(), im = g("News:Image").replace(/^http:/, "https:");
-    return { bing: 1, h: g("title"), s: g("News:Source"), d: g("description").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 400), u, t: Date.parse(g("pubDate")) || 0, img: im && !BADIMG.test(im) ? im + (im.includes("?") ? "&" : "?") + "w=800&h=450&c=7" : "" };
+    return { bing: 1, h: g("title"), s: g("News:Source"), d: g("description").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 400), u, t: Date.parse(g("pubDate")) || 0, img: "" };   // Nov 12: Bing thumbnails are low quality; the app asks /img for the outlet's own photo instead
   }).filter(i => i.h && i.u);
   return it.map(i => { const w = new Set(words(i.h)), same = it.filter(j => j === i || words(j.h).filter(v => w.has(v)).length / Math.max(w.size, 1) >= 0.5);
     const by = [...new Set(same.map(j => j.s).filter(x => TRUSTED.test(x)))]; return Object.assign(i, { n: new Set(same.map(j => j.s).filter(Boolean)).size || 1, by: by.slice(0, 3), also: same.filter(j => j !== i).map(j => j.h).slice(0, 3) }); });
@@ -220,23 +220,39 @@ async function patoPick(env, G) {
 }
 // Predictions (Marco Nov 12, picked "Predictions + odds in stories"): Polymarket's public market data, no key. Top markets for your world + the market line inside matching stories.
 const PJ = s => { try { return Array.isArray(s) ? s : JSON.parse(s || "[]"); } catch (e) { return []; } };
-async function markets() {
+async function kalshi() {
+  const f = await xf("https://api.elections.kalshi.com/trade-api/v2/events?status=open&with_nested_markets=true&limit=100", { headers: { "user-agent": "Mozilla/5.0 (compatible; PatoDaily/1.0)", accept: "application/json" } }).then(r => r.ok ? r.json() : {}).catch(() => ({})), ev = Array.isArray(f.events) ? f.events : [];
+  const c = v => { const n = Number(v); return isFinite(n) ? n : null; }, px = m => { const d = c(m.last_price_dollars) != null ? c(m.last_price_dollars) * 100 : c(m.last_price); return d != null && d > 0 ? d : (c(m.yes_bid) || 0); };
+  return ev.filter(e => e && !/sport/i.test(e.category || "") && !/^KXMVE/i.test(e.event_ticker || "") && !/[,]/.test(e.title || "")).map(e => { const ms = (e.markets || []).filter(m => m && /active|open/i.test(m.status || "active")); let best = null;
+    ms.forEach(m => { const p = px(m); if (p > 0 && (!best || p > best.p)) best = { m, p }; });
+    if (!best) return null; const m = best.m, prev = c(m.previous_price_dollars) != null ? c(m.previous_price_dollars) * 100 : c(m.previous_price);
+    return { t: String(e.title || m.title || "").slice(0, 140), q: String((ms.length > 1 ? (m.yes_sub_title || m.subtitle || m.title) : (m.title || e.title)) || "").slice(0, 140), multi: ms.length > 1, p: Math.round(best.p), ch: prev ? Math.round(best.p - prev) : 0, end: String(m.close_time || m.expiration_time || "").slice(0, 10), vol: ms.reduce((a, x) => a + (c(x.volume_24h) || 0), 0), u: "https://kalshi.com/events/" + (e.event_ticker || ""), img: "", src: "Kalshi" }; }).filter(Boolean);
+}
+async function polymarket() {
   const f = await xf("https://gamma-api.polymarket.com/events?active=true&closed=false&order=volume24hr&ascending=false&limit=60", { headers: { "user-agent": "Mozilla/5.0 (compatible; PatoDaily/1.0)" } }).then(r => r.ok ? r.json() : []).catch(() => []), ev = Array.isArray(f) ? f : [];
   return ev.map(e => { const ms = (e.markets || []).filter(m => m && !m.closed && m.active !== false); let best = null;
     ms.forEach(m => { const o = PJ(m.outcomes), p = PJ(m.outcomePrices).map(Number), yi = o.findIndex(x => /^yes$/i.test(String(x))), py = yi >= 0 ? p[yi] : null; if (py == null || !isFinite(py)) return;
       if (!best || py > best.p) best = { q: ms.length > 1 ? (m.groupItemTitle || m.question || "") : (m.question || ""), p: py, ch: Number(m.oneDayPriceChange) || 0 }; });
     return best ? { t: String(e.title || best.q).slice(0, 140), q: String(best.q).slice(0, 140), multi: ms.length > 1, p: Math.round(best.p * 100), ch: Math.round(best.ch * 100), end: String(e.endDate || "").slice(0, 10), vol: Number(e.volume24hr) || 0, u: "https://polymarket.com/event/" + (e.slug || ""), img: e.image || e.icon || "" } : null; }).filter(Boolean);
 }
+const markets = async () => { const [a, b] = await Promise.all([polymarket().catch(() => []), kalshi().catch(() => [])]); return a.concat(b); };
 const PWORLD = /\b(AI|OpenAI|Nvidia|Apple|Google|Microsoft|Amazon|Meta|Tesla|Musk|Fed|rates?|inflation|recession|S&P|Bitcoin|BTC|Ethereum|crypto|Trump|election|Congress|Senate|Dominican|Haiti|Abinader|Venezuela|Iran|China|NBA|NFL|MLB|Champions League|Premier League|World Cup|Super Bowl|Real Madrid|Barcelona|Yankees|Lakers)\b/i;
 // Marco Nov 12: counting bets ("how many tweets will Elon post") tell you nothing; keep markets that explain what is happening
 const PTRIVIA = /\b(tweets?|posts? on X|how many (times|tweets|posts|followers|views)|will \w+( \w+)? say\b|mention(s|ed)?\b|followers|subscribers|views|streams|box office|gross|top (song|artist|spotify)|spotify|youtube|tiktok|# of|number of (tweets|posts)|what price will|(bitcoin|btc|ethereum|ether|solana|xrp|dogecoin)\b[^?]{0,40}\b(hit|reach|dip|above|below|price))\b/i;
 const okM = M => M.filter(m => !PTRIVIA.test(m.t + " " + m.q));
+// Nov 12 (Marco): never two polls of the same kind at once (two Fed-rate questions), and Kalshi polls too
+const MON = /\b(jan(uary)?|feb(ruary)?|mar(ch)?|apr(il)?|may|june?|july?|aug(ust)?|sep(t(ember)?)?|oct(ober)?|nov(ember)?|dec(ember)?)\b/gi;
+const themeOf = m => { const t = String(m.t + " " + m.q); return /\b(Fed|FOMC|interest rates?|rate (cut|hike)|bps)\b/i.test(t) ? "fed" : /\b(bitcoin|btc|ethereum|crypto|solana|xrp)\b/i.test(t) ? "crypto" : String(m.t).toLowerCase().replace(MON, " ").replace(/[0-9]+|[^a-z ]/g, " ").replace(/\b(by|in|on|the|will|be|of|a|to|before|after|for|and)\b/g, " ").split(/\s+/).filter(Boolean).slice(0, 3).join(" "); };
 function pickMarkets(M, tick) { M = okM(M); const me = tick.length ? new RegExp("\\b(" + tick.map(t => t + (CO[t] ? "|" + CO[t] : "")).join("|") + ")\\b", "i") : null;
   return M.filter(m => m.p >= 4 && m.p <= 96 && m.u.length > 30).map(m => Object.assign({}, m, { sc: Math.log10(m.vol + 10) + (PWORLD.test(m.t + " " + m.q) ? 3 : 0) + (me && me.test(m.t + " " + m.q) ? 4 : 0) + Math.min(3, Math.abs(m.ch) / 4) }))
-    .sort((a, b) => b.sc - a.sc).slice(0, 4).map(m => { delete m.sc; return m; }); }
-function marketFor(M, h) { if (!h) return null; M = okM(M); const w = new Set(String(h).match(/\b[A-Z][a-zA-Z]{3,}\b/g) || []); if (w.size < 1) return null; let best = null, bn = 0;
-  M.forEach(m => { const mw = String(m.t + " " + m.q).match(/\b[A-Z][a-zA-Z]{3,}\b/g) || [], n = [...new Set(mw)].filter(x => w.has(x)).length; if (n >= 2 && n > bn && m.p >= 3 && m.p <= 97) { bn = n; best = m; } });
-  return best ? { q: best.multi ? best.t + ": " + best.q : best.q, p: best.p, end: best.end, u: best.u } : null; }
+    .sort((a, b) => b.sc - a.sc).filter((m, i, a) => a.findIndex(o => themeOf(o) === themeOf(m)) === i).slice(0, 4).map(m => { delete m.sc; return m; }); }
+const GENERIC = new Set("this that with from have will what when where which after before about into over under their there these those been were your more most just only than then them they said says here also back next last first news report reports update after amid week year years today new latest says could would should might says plan plans deal deals shares stock stocks market markets price prices company companies people government president state states world global group bank banks year inside why how".split(" "));
+const toks = t => [...new Set((String(t).match(/\b[A-Z][a-zA-Z]{2,}\b/g) || []).filter(x => !GENERIC.has(x.toLowerCase()) && (x.length >= 4 || /^(Fed|OPEC|NATO|SEC|FTC|IPO|ETF)$/.test(x))))];
+// Nov 12 (Marco): "whenever a story can match a poll, do it": one distinctive shared name in the poll's TITLE is enough (Fed, Nvidia, Trump, Bitcoin...)
+function marketFor(M, h) { if (!h) return null; M = okM(M); const w = new Set(toks(h)); if (w.size < 1) return null; let best = null, bs = 0;
+  M.forEach(m => { if (!(m.p >= 3 && m.p <= 97)) return; const tt = new Set(toks(m.t)), tq = new Set(toks(m.q)), n = [...w].filter(x => tt.has(x) || tq.has(x)).length, nt = [...w].filter(x => tt.has(x)).length; if (!(n >= 2 || nt >= 1)) return; const sc = n * 10 + nt * 5 + Math.log10((m.vol || 0) + 10); if (sc > bs) { bs = sc; best = m; } });
+  if (!best) return null; const by = /\bby\.{0,3}\??$/i.test(best.t), q = best.multi ? (by ? best.t.replace(/\bby\.{0,3}\??$/i, "by " + String(best.q).replace(/^by /i, "")).replace(/\?*$/, "?") : best.t.replace(/\?$/, "") + ": " + best.q) : best.q;
+  return { q, p: best.p, end: best.end, u: best.u }; }
 // Launches + Rising companies (Marco Nov 12: "product releases" and "underground companies before they break through"): big launches this week, startups raising at big valuations
 const LAUNCH = /\b(launch(es|ed)?|unveil(s|ed)?|debuts?|introduc(es|ed)|releases?|rolls? out|now available|goes on sale|first look|announc(es|ed) (new|its))\b/i, NOTLAUNCH = /\b(missile|rocket attack|investigation|lawsuit|probe|campaign against|offensive|strikes?)\b/i;
 const LBRAND = /\b(Apple|iPhone|iPad|Mac(Book)?|Google|Gemini|Pixel|Samsung|Galaxy|Nvidia|OpenAI|ChatGPT|Anthropic|Claude|Tesla|Meta|Instagram|WhatsApp|Microsoft|Xbox|Sony|PlayStation|Nintendo|Amazon|Netflix|Disney|Spotify|Ferrari|Porsche|BMW|Mercedes|Nike|Adidas|Rolex|Louis Vuitton|Herm[eè]s|xAI|Grok|Uber|Airbnb|Starlink|SpaceX)\b/;
@@ -440,21 +456,16 @@ async function bingImg(h, log) {
   log.push("bing " + r.status + " " + (r.headers.get("content-type") || "").slice(0, 20) + " " + x.length + " items:" + items.length + " " + (items.length ? "" : x.slice(0, 60).replace(/\s+/g, " ")));
   const want = new Set(words(h)), score = it => words(it.t).filter(v => want.has(v)).length / Math.max(want.size, 1);
   const good = items.map(it => Object.assign(it, { sc: score(it) })).filter(it => it.sc >= 0.5 || (it.sc >= 0.35 && it.sc * want.size >= 3)).sort((x, y) => y.sc - x.sc);
-  const th = good.find(it => it.i);   // Bing's own thumbnail for the story, if it has one
-  if (th) { const u = th.i.replace(/^http:/, "https:"); if (!BADIMG.test(u)) return u + (u.includes("?") ? "&" : "?") + "w=800&h=450&c=7"; }
+  // Marco Nov 12: no low-quality photos ever. Bing's thumbnails are small, so only the outlet's own full-size photo is used.
   for (const it of good.slice(0, 3)) {   // else the outlet's own preview photo, trying up to 3 outlets covering it
     const real = (() => { try { return new URL(it.l).searchParams.get("url") || it.l; } catch (e) { return it.l; } })();
     log.push("match " + it.sc.toFixed(2) + " " + real.slice(0, 60));
     try { const og = real && !/bing\.com/.test(real) ? await ogImg(real, log) : ""; if (og) return og; } catch (e) { log.push("og err " + e.message); }
   }
-  if (!items.length) {   // got the web page instead of RSS: use its first news thumbnail
-    const m = x.match(/\/th\?id=(OVFT\.[A-Za-z0-9_\-.]+)/); log.push("html thumb " + (m ? "yes" : "no"));
-    if (m) return "https://www.bing.com/th?id=" + m[1] + "&w=800&h=450&c=7";
-  }
   return "";
 }
 async function storyImg(u, h, debug) {
-  const key = new Request("https://pato-img.cache/v5?u=" + encodeURIComponent(u)), hit = debug ? null : await caches.default.match(key);
+  const key = new Request("https://pato-img.cache/v6?u=" + encodeURIComponent(u)), hit = debug ? null : await caches.default.match(key);
   if (hit) return hit.json();
   const log = []; let img = "", src = "";
   if (h) { try { img = await bingImg(h, log); } catch (e) { log.push("bing err " + e.message); } }

@@ -2054,7 +2054,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261112234731";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261112235320";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -7089,8 +7089,8 @@ TRACKER DATA:
     // Predictions (Marco Nov 12): the hottest Polymarket markets for your world, plus the market line inside matching stories
     var PTRIV = /\b(tweets?|posts? on X|how many (times|tweets|posts|followers|views)|will \w+( \w+)? say\b|mention(s|ed)?\b|followers|subscribers|views|streams|box office|gross|top (song|artist|spotify)|spotify|youtube|tiktok|# of|number of (tweets|posts)|what price will|(bitcoin|btc|ethereum|ether|solana|xrp|dogecoin)\b[^?]{0,40}\b(hit|reach|dip|above|below|price))\b/i;   // Marco Nov 12: counting bets say nothing. Also filtered on the phone, so older saved editions are clean too
     var lead = function(m){ var q = String(m.q), a = q.match(/^([↑↓])\s*\$?([\d,.]+)/); if(a) return (a[1] === "↑" ? "Reaches US$" : "Falls to US$") + a[2]; if(/\bby\.{0,3}\??$/i.test(m.t) && /\d{4}|January|February|March|April|May|June|July|August|September|October|November|December/.test(q)) return "by " + q; return q; };
-    var PR = ((dd && dd.preds && dd.preds.length ? dd.preds : daily && daily.preds) || []).filter(function(m){ return !PTRIV.test(m.t + " " + m.q); });
-    if(PR.length){ var gi = L.map(function(x){ return x.fk; }).indexOf("game"), pr = {id: ed + ":preds:" + PR.map(function(m){ return m.q; }).join("|").slice(0, 120), cls: "preds", t: "Predictions", w: "Polymarket", nav: "🔮 Predictions", fk: "preds",
+    var PR = ((dd && dd.preds && dd.preds.length ? dd.preds : daily && daily.preds) || []).filter(function(m){ return !PTRIV.test(m.t + " " + m.q); }).filter(function(m, i, a){ var th = function(x){ var t = x.t + " " + x.q; return /\b(Fed|FOMC|interest rates?|rate (cut|hike)|bps)\b/i.test(t) ? "fed" : String(x.t).toLowerCase().replace(/[0-9]+|[^a-z ]/g, " ").split(/\s+/).slice(0, 3).join(" "); }; return a.findIndex(function(o){ return th(o) === th(m); }) === i; });   // Nov 12: never two polls of the same kind
+    if(PR.length){ var gi = L.map(function(x){ return x.fk; }).indexOf("game"), pr = {id: ed + ":preds:" + PR.map(function(m){ return m.q; }).join("|").slice(0, 120), cls: "preds", t: "Predictions", w: "Polymarket · Kalshi", nav: "🔮 Predictions", fk: "preds",
         body: '<div class="pd-k">🔮 WHAT THE MARKET THINKS</div><div class="pd-h1" style="font-size:1.3rem">The hottest predictions right now</div>' + PR.map(function(m){ var dl = m.end ? Math.round((Date.parse(m.end + "T12:00:00Z") - Date.now())/864e5) : null;
           return '<div class="pd-pm"><div class="pd-pmq">' + esc(m.multi ? m.t : m.q) + (m.multi ? '<small>Most likely: ' + esc(lead(m)) + '</small>' : '') + '</div><div class="pd-pmr"><b>' + m.p + '%</b><i><u style="width:' + m.p + '%"></u></i>' +
             '<small>' + (m.ch ? '<em class="' + (m.ch > 0 ? "up" : "dn") + '">' + (m.ch > 0 ? "▲ " : "▼ ") + Math.abs(m.ch) + ' today</em> · ' : '') + (dl != null && dl >= 0 ? (dl === 0 ? "Settles today" : "Settles " + dlabel(m.end) + (dl <= 60 ? " · " + dl + "d" : "")) : "") + ' · <a class="pd-r2 pd-go" data-u="' + esc(m.u) + '">Open ›</a></small></div></div>'; }).join("") +
@@ -7316,7 +7316,7 @@ TRACKER DATA:
   function pic(u, cb, h){ if(!u || !base() || !PHOTOS() || (u in IM.m)) return; IM.m[u] = null;
     fetch(base() + "/img?u=" + encodeURIComponent(u) + (h ? "&h=" + encodeURIComponent(h) : "")).then(function(r){ return r.ok ? r.json() : {}; }).then(function(d){ IM.m[u] = (d && d.img) || ""; if(IM.m[u]) ls("pd-img3", {day: IM.day, m: Object.keys(IM.m).reduce(function(o, k){ if(IM.m[k]) o[k] = IM.m[k]; return o; }, {})}); if(cb) cb(); }).catch(function(){ delete IM.m[u]; }); }
   function picHtml(x){ var im = PHOTOS() && x.pic && IM.m[x.pic], ix0 = S.indexOf(x); if(im && S.some(function(y, j){ return j < ix0 && y.pic && IM.m[y.pic] === im; })) im = "";   // never the same photo twice
-    return im ? '<div class="pd-img"><img src="' + esc(im) + '" alt="" referrerpolicy="no-referrer" onerror="this.parentNode.remove()">' + (x.ps ? '<span>' + esc(x.ps) + '</span>' : '') + '</div>' : ''; }
+    return im ? '<div class="pd-img"><img src="' + esc(im) + '" alt="" referrerpolicy="no-referrer" onerror="this.parentNode.remove()" onload="if(this.naturalWidth<640||this.naturalHeight<360)this.parentNode.remove()">' + (x.ps ? '<span>' + esc(x.ps) + '</span>' : '') + '</div>' : ''; }
   var lastBase = null, NEW = {};   // what was unread when you opened: those chips get a dot, the slide gets a NEW tag
   function show(i){
     clearTimeout(timer); cur = Math.max(0, Math.min(i, S.length - 1)); var x = S[cur], s = seen();
@@ -7378,6 +7378,7 @@ TRACKER DATA:
     c.innerHTML = '<div class="pc-ph"' + (im ? ' style="background-image:url(\'' + esc(im) + '\')"' : '') + '><div class="pc-top"><img src="icon-192.png?v=7" alt=""><div><b>Pato Daily</b><small>' + esc((DEMO ? new Date(day() + "T12:00:00Z") : drd()).toLocaleDateString("en-US", {timeZone: "UTC", weekday: "long", month: "long", day: "numeric"})) + ' · ' + esc(hh(DROPS[slot()]).replace(":00", "")) + ' edition</small></div></div>' + (im && big.s ? '<span class="pc-src">' + esc(big.s) + '</span>' : '') + '</div>' +
       '<div class="pc-bd"><div class="pc-k">🌎 TOP STORY</div><h2>' + esc(big.h) + '</h2>' + (line ? '<div class="pc-tk"><img src="icon-192.png?v=7" alt=""><div>' + bold(line) + '</div></div>' : '') + (also ? '<div class="pc-in">Also today: ' + esc(also) + '</div>' : '') + '</div>' +
       '<div class="pc-cta"><button type="button" class="go">Read today\'s edition</button><button type="button" class="no">Later</button></div>';
+    if(im){ var pq = new Image(); pq.onload = function(){ if(pq.naturalWidth < 640 || pq.naturalHeight < 360){ var ph = c.querySelector(".pc-ph"); if(ph) ph.style.backgroundImage = "none"; } }; pq.src = im; }   // Nov 12: no low-quality photos ever
     document.body.appendChild(c); document.documentElement.style.overflow = "hidden"; requestAnimationFrame(function(){ c.classList.add("on"); });
     var done = function(read){ c.classList.remove("on"); document.documentElement.style.overflow = ""; setTimeout(function(){ c.remove(); }, 350); if(read) openV(0); else setTimeout(peek, 1200); };
     c.querySelector(".go").onclick = function(){ done(1); }; c.querySelector(".no").onclick = function(){ done(0); }; return true; }
