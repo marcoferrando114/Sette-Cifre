@@ -46,7 +46,7 @@ const CATS = {
   poker: srch("poker WSOP OR \"World Series of Poker\" OR \"poker tournament\""), saving: srch("\"personal finance\" OR savings OR \"interest rates\""),
 };
 const LEAGUES = [["football/nfl", "NFL", 9], ["soccer/uefa.champions", "Champions League", 9], ["basketball/nba", "NBA", 8], ["mma/ufc", "UFC", 8], ["soccer/fifa.world", "World Cup", 10],
-  ["soccer/esp.1", "LaLiga", 7], ["soccer/eng.1", "Premier League", 7], ["soccer/ita.1", "Serie A", 6], ["soccer/ger.1", "Bundesliga", 6], ["soccer/uefa.europa", "Europa League", 6], ["soccer/fifa.friendly", "Soccer friendly", 4], ["baseball/mlb", "MLB", 6], ["tennis/atp", "Tennis", 6], ["tennis/wta", "Tennis", 5], ["soccer/usa.1", "MLS", 4], ["football/college-football", "College football", 5], ["racing/f1", "F1", 6]];
+  ["soccer/esp.1", "LaLiga", 7], ["soccer/eng.1", "Premier League", 7], ["soccer/ita.1", "Serie A", 6], ["soccer/ger.1", "Bundesliga", 6], ["soccer/uefa.europa", "Europa League", 6], ["baseball/mlb", "MLB", 6], ["tennis/atp", "Tennis", 6], ["tennis/wta", "Tennis", 5], ["soccer/usa.1", "MLS", 5, /Inter Miami/i], ["soccer/fra.1", "Ligue 1", 7, /Paris Saint-Germain|\bPSG\b/i], ["baseball/dominican-winter-league", "LIDOM", 9], ["football/college-football", "College football", 5], ["racing/f1", "F1", 6]];
 const dec = t => t.replace(/<!\[CDATA\[|\]\]>/g, "").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&nbsp;/g, " ").replace(/&#(\d+);/g, (m, n) => String.fromCharCode(+n)).replace(/&#x([0-9a-f]+);/gi, (m, n) => String.fromCharCode(parseInt(n, 16))).trim();
 function parse(xml) {
   return [...String(xml).matchAll(/<item>([\s\S]*?)<\/item>/g)].map(m => {
@@ -141,8 +141,9 @@ function top2(items, tick, busy, like) {
 const drDay = () => new Date(Date.now() - 4 * 3600e3).toISOString().slice(0, 10), edDay = () => new Date(Date.now() - 11 * 3600e3).toISOString().slice(0, 10); // edition starts 7am DR
 async function games() {
   const d = drDay().replace(/-/g, ""), out = [];
-  await Promise.all(LEAGUES.map(([path, name, w]) => cached("https://site.api.espn.com/apis/site/v2/sports/" + path + "/scoreboard?dates=" + d, 3600, "json").then(f => {
+  await Promise.all(LEAGUES.map(([path, name, w, only]) => cached("https://site.api.espn.com/apis/site/v2/sports/" + path + "/scoreboard?dates=" + d, 3600, "json").then(f => {
     (f.body.events || []).forEach(e => {
+      if (only && !only.test(e.name || e.shortName || "")) return;   // Marco Nov 12: MLS = Inter Miami only, Ligue 1 = PSG only
       const st = e.status && e.status.type && e.status.type.state; if (st === "post") return;
       const c = (e.competitions || [])[0] || {}, tv = (c.broadcasts || []).flatMap(b => b.names || []), note = ((c.notes || [])[0] || {}).headline || "";
       const ranked = (c.competitors || []).filter(x => x.curatedRank && x.curatedRank.current && x.curatedRank.current <= 10).length;
