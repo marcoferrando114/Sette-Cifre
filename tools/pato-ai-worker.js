@@ -199,7 +199,7 @@ async function patoPick(env, G) {
 // Predictions (Marco Nov 12, picked "Predictions + odds in stories"): Polymarket's public market data, no key. Top markets for your world + the market line inside matching stories.
 const PJ = s => { try { return Array.isArray(s) ? s : JSON.parse(s || "[]"); } catch (e) { return []; } };
 async function markets() {
-  const f = await cached("https://gamma-api.polymarket.com/events?active=true&closed=false&order=volume24hr&ascending=false&limit=120", 1800, "json").catch(() => null), ev = Array.isArray(f && f.body) ? f.body : [];
+  const f = await xf("https://gamma-api.polymarket.com/events?active=true&closed=false&order=volume24hr&ascending=false&limit=60", { headers: { "user-agent": "Mozilla/5.0 (compatible; PatoDaily/1.0)" } }).then(r => r.ok ? r.json() : []).catch(() => []), ev = Array.isArray(f) ? f : [];
   return ev.map(e => { const ms = (e.markets || []).filter(m => m && !m.closed && m.active !== false); let best = null;
     ms.forEach(m => { const o = PJ(m.outcomes), p = PJ(m.outcomePrices).map(Number), yi = o.findIndex(x => /^yes$/i.test(String(x))), py = yi >= 0 ? p[yi] : null; if (py == null || !isFinite(py)) return;
       if (!best || py > best.p) best = { q: ms.length > 1 ? (m.groupItemTitle || m.question || "") : (m.question || ""), p: py, ch: Number(m.oneDayPriceChange) || 0 }; });
@@ -239,14 +239,22 @@ function rising(items) { const now = Date.now(), out = [];
   return out; }
 const LQ = srch("(launches OR unveils OR debuts OR \"release date\" OR \"now available\") (Apple OR Google OR Samsung OR Nvidia OR OpenAI OR Tesla OR Meta OR Microsoft OR Sony OR Nintendo OR Anthropic OR Amazon OR Ferrari OR Nike OR iPhone OR PlayStation)").replace(" when:1d", " when:3d").replace("when%3A1d", "when%3A3d");
 const RQ = srch("startup (raises OR \"valued at\" OR valuation OR \"funding round\" OR \"Series A\" OR \"Series B\" OR \"Series C\" OR unicorn)").replace("when%3A1d", "when%3A3d");
-async function bundle(P) {
+// Games and predictions are the same for everyone: keep one copy in KV (20/30 min) so a /news call doesn't redo ~25 outside calls or parse Polymarket's 18 MB list each time (Nov 12)
+async function kvFresh(env, key, mins, make) {
+  const kv = env && env.LIMITS; let old = null;
+  if (kv) { try { old = await kv.get(key, "json"); } catch (e) {} if (old && Date.now() - old.at < mins * 6e4) return old.v; }
+  const v = await make().catch(() => null);
+  if (v && v.length) { if (kv) await kv.put(key, JSON.stringify({ at: Date.now(), v }), { expirationTtl: 86400 }).catch(() => {}); return v; }
+  return old ? old.v : [];
+}
+async function bundle(P, env) {
   const tick = (P.get("t") || "").toUpperCase().split(",").filter(x => /^[A-Z.]{1,6}$/.test(x)).slice(0, 5);
   const want = (P.get("k") || "rd,business,tech").split(",").filter(k => CATS[k]).slice(0, 8);
   const [top, world, ...rest] = await Promise.all([feed(sec("BUSINESS"), 7200), feed(sec("WORLD"), 3600),
     ...want.map(k => feed(CATS[k], 7200)), ...tick.map(t => feed(srch(t + " stock"), 10800)), feed(srch("analysts upgrade stock buy rating"), 10800)]);
   const N1 = SUBN;
   const [LF, RF] = await Promise.all([feed(LQ, 10800).catch(() => ({})), feed(RQ, 10800).catch(() => ({}))]);
-  const [MK, GM] = await Promise.all([markets().catch(() => []), P.get("g") === "0" ? Promise.resolve([]) : games().catch(() => [])]); rest.push(GM); const N2 = SUBN;
+  const [MK, GM] = await Promise.all([kvFresh(env, "mk2", 45, markets), P.get("g") === "0" ? Promise.resolve([]) : kvFresh(env, "gm2:" + drDay(), 30, games)]); rest.push(GM); const N2 = SUBN;
   const cats = {}; want.forEach((k, i) => { const it = top2(rest[i].items || [], tick, P.get("busy") === "1"); if (it.length) cats[k] = it; });
   const stocks = {}; tick.forEach((t, i) => { const it = pick(rest[want.length + i].items || [])[0]; if (it) stocks[t] = it; });
   // Breaking (Marco Nov 11): the story that matters most to YOU today: big world events, scandals about the people behind your companies, major accidents, analyst calls on your stocks.
@@ -397,6 +405,8 @@ async function storyImg(u, h, debug) {
 }
 
 export default {
+  // every 15 min (tools/wrangler.toml crons): refresh games and predictions in their own run, so /news only reads them
+  async scheduled(ev, env, ctx) { SUBN = 0; ctx.waitUntil(Promise.all([kvFresh(env, "mk2", 0, markets), kvFresh(env, "gm2:" + drDay(), 0, games)])); },
   async fetch(req, env) {
     SUBN = 0;
     const origin = req.headers.get("origin") || "";
@@ -416,7 +426,7 @@ export default {
     }
     if (req.method === "GET" && url.pathname === "/news") {
       if (!ORIGINS.includes(origin)) return json({ error: { type: "forbidden" } }, 403, origin);
-      try { const b = await bundle(url.searchParams); if (b.big) b.big.brief = await brief(env, b.big).catch(() => null); b.pick = await patoPick(env, b.games).catch(() => null); return json(b, 200, origin); } catch (e) { return json({ error: { type: "news_failed" } }, 502, origin); }
+      try { const b = await bundle(url.searchParams, env); if (b.big) b.big.brief = await brief(env, b.big).catch(() => null); b.pick = await patoPick(env, b.games).catch(() => null); return json(b, 200, origin); } catch (e) { return json({ error: { type: "news_failed" } }, 502, origin); }
     }
     if (req.method === "GET" && url.pathname === "/scores") {   // live scores for the games on screen (Marco Nov 12: update when you come back), cached 60s
       if (!ORIGINS.includes(origin)) return json({ error: { type: "forbidden" } }, 403, origin);
@@ -453,7 +463,7 @@ export default {
     }
     if (url.pathname === "/insight") { try { return json((await insight(env, uid, body)) || {}, 200, origin); } catch (e) { return json({}, 200, origin); } }
     if (url.pathname === "/daily") {
-      try { const b = await bundle(url.searchParams); if (b.big) b.big.brief = await brief(env, b.big).catch(() => null); b.pick = await patoPick(env, b.games).catch(() => null); return json({ ...b, take: await take(env, uid, body, b).catch(() => null) }, 200, origin); }
+      try { const b = await bundle(url.searchParams, env); if (b.big) b.big.brief = await brief(env, b.big).catch(() => null); b.pick = await patoPick(env, b.games).catch(() => null); return json({ ...b, take: await take(env, uid, body, b).catch(() => null) }, 200, origin); }
       catch (e) { return json({ error: { type: "news_failed" } }, 502, origin); }
     }
     if (!MODELS.includes(body.model) || !Array.isArray(body.messages)) return json({ error: { type: "invalid_request_error", message: "model" } }, 400, origin);
