@@ -336,6 +336,8 @@ h3{font-size:.95rem;margin:16px 0 4px;color:var(--muted);font-weight:600;text-tr
 .colbtns{display:grid;gap:8px}
 .cel-card .colbtns button.alt{background:var(--ink);color:var(--paper)}
 .cel-card .colbtns button.ghost{background:none;color:var(--muted);border:1px solid var(--line)}
+#sureDlg.del #sureOk{order:2;background:#c0392b;color:#fff}
+#sureDlg.del #sureNo{order:1}
 .dpay{margin-top:8px}
 .dpay li{padding:6px 0}
 
@@ -1877,7 +1879,8 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261112031500";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261112021201";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+
 
 
 
@@ -2975,10 +2978,15 @@ html:not(.mp-guest) #s-gst{display:none!important}
   // in-page confirm: native confirm()/alert() are blocked inside the app frame
   function sure(msg, ok){
     return new Promise(res=>{
-      const d=$("sureDlg"); $("sureMsg").textContent=msg; $("sureOk").textContent=ok||"OK";
-      const done=v=>{ d.classList.remove("on"); $("sureOk").onclick=$("sureNo").onclick=null; res(v); };
-      $("sureOk").onclick=()=>done(true); $("sureNo").onclick=()=>done(false);
-      d.classList.add("on"); $("sureOk").focus();
+      /* safe delete (Marco, Nov 12): delete prompts show Cancel first and a red Delete; taps in the first 0.6s and taps outside the card count as Cancel */
+      const d=$("sureDlg"); $("sureMsg").textContent=msg;
+      const isDel = /^delete/i.test(msg) || /^delete/i.test(ok||""); d.classList.toggle("del", isDel);
+      $("sureOk").textContent = ok || (isDel ? "Delete" : "OK"); const t0 = Date.now();
+      const done=v=>{ d.classList.remove("on"); $("sureOk").onclick=$("sureNo").onclick=d.onclick=null; res(v); };
+      $("sureOk").onclick=ev=>{ ev.stopPropagation(); if(Date.now()-t0 < 600) return; done(true); };
+      $("sureNo").onclick=ev=>{ ev.stopPropagation(); done(false); };
+      d.onclick=ev=>{ if(ev.target===d) done(false); };
+      d.classList.add("on"); if(!isDel) $("sureOk").focus();
     });
   }
   function warnMsg(msg){ toast(msg, "", true); }
@@ -5039,7 +5047,10 @@ html:not(.mp-guest) #s-gst{display:none!important}
       if(!db) del.style.display="none";
       del.onclick = async () => {
         if(!await sure("Delete this " + fmt(e.amount) + " entry?")) return;
-        try{ await db.collection("entries").doc(e.id).delete(); }catch(err){ warnMsg("Couldn’t delete."); }
+        const ref = db.collection("entries").doc(e.id);
+        try{ const snap = await ref.get(); const keep = snap.exists ? snap.data() : null; await ref.delete();
+          if(keep) toast("Entry deleted", fmt(e.amount), false, () => ref.set(keep)); /* Undo for 6s */
+        }catch(err){ warnMsg("Couldn’t delete."); }
       };
       h.appendChild(li);
     });
