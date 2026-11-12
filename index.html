@@ -1879,7 +1879,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261112021201";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261112032500";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -6923,13 +6923,15 @@ TRACKER DATA:
   function breakBody(b, ch, st0){ var up = ch > 0, L = window.ST_LOGOS && window.ST_LOGOS[b.t], g = b.sh*(b.precio-b.prev), all = pos.filter(function(p){ return p.prev > 0 && p.precio > 0; }), tot = 0;
     all.forEach(function(p){ tot += p.sh*(p.precio-p.prev); });
     var since = b.costo > 0 && !b.regalo ? pct((b.precio/b.costo-1)*100) : "";
-    var line = b.regalo ? "These are free reward shares, so every cent here is gain." : all.length > 1 && Math.abs(g) >= Math.abs(tot)*.5 && Math.abs(tot) > 0 ? "Your biggest mover today: " + Math.round(Math.abs(g)/Math.max(Math.abs(tot), .01)*100) + "% of your stocks' move." : Math.abs(ch) >= 10 ? "A double-digit day is rare. Big moves often come with news, so read before you act." : "Big moves happen. Your plan matters more than one day.";
+    var oth = tot - g, nm = b.t, nx = evs.filter(function(e){ return e.t === b.t && e.fecha >= new Date(Date.now() - 4*3600e3).toISOString().slice(0, 10); }).sort(function(a, c){ return a.fecha.localeCompare(c.fecha); })[0];   // plain dollars (Marco: "119% of your stocks' move" means nothing)
+    var line = b.regalo ? "These are free reward shares, so every cent here is gain." : all.length < 2 || Math.abs(oth) < 1 ? nm + (g < 0 ? " cost you " : " made you ") + usd(g) + " today." : (g < 0) !== (oth < 0) ? nm + (g < 0 ? " cost you " : " made you ") + usd(g) + " today. Your other stocks " + (oth > 0 ? "made back " : "gave back ") + usd(oth) + ", so you're " + (tot < 0 ? "down " : "up ") + usd(tot) + " overall." : nm + " was " + usd(g) + " of your " + usd(tot) + (tot < 0 ? " drop" : " gain") + " today.";
+    if(nx){ var dn = Math.round((Date.parse(nx.fecha + "T12:00:00Z") - Date.parse(new Date(Date.now() - 4*3600e3).toISOString().slice(0, 10) + "T12:00:00Z"))/864e5); if(dn >= 0 && dn <= 14) line += " Next big test: " + (nx.txt || "event").toLowerCase() + (dn === 0 ? " today." : dn === 1 ? " tomorrow." : " in " + dn + " days."); }
     return '<div class="pd-brk mv">📈 BIG MOVE · YOUR STOCK</div>' +
       '<div class="pd-bh"><span class="pd-lg">' + (L || esc(b.t.slice(0, 4))) + '</span><div><b>' + esc(b.t) + '</b><small>' + esc(CONAME[b.t] || "You own it") + '</small></div></div>' +
       '<div class="pd-big ' + (up ? "up" : "dn") + '">' + (up ? "▲ " : "▼ ") + Math.abs(ch).toFixed(1) + '%</div>' +
       '<div class="pd-px">US$' + b.prev.toFixed(2) + ' → <b>US$' + b.precio.toFixed(2) + '</b> today</div>' +
       (st0 ? '<div class="pd-h2" style="margin-top:18px">' + esc(st0.h) + '</div><div class="pd-m">' + esc(st0.s) + " · " + ago(st0.t) + ' ago</div>' : "") +
-      '<div class="pd-st"><div><small>You made today</small><b class="' + (up ? "up" : "dn") + '">' + sgn(g) + '</b></div><div><small>Your position</small><b>' + usd(b.sh*b.precio) + '</b></div><div><small>Shares</small><b>' + (Math.round(b.sh*1e4)/1e4) + '</b></div><div><small>' + (since ? "Since you bought" : "Cost") + '</small><b>' + (since || (b.regalo ? "Free" : "—")) + '</b></div></div>' +
+      '<div class="pd-st"><div><small>' + (up ? "You made today" : "You lost today") + '</small><b class="' + (up ? "up" : "dn") + '">' + sgn(g) + '</b></div><div><small>Your position</small><b>' + usd(b.sh*b.precio) + '</b></div><div><small>Shares</small><b>' + (Math.round(b.sh*1e4)/1e4) + '</b></div><div><small>' + (since ? "Since you bought" : "Cost") + '</small><b>' + (since || (b.regalo ? "Free" : "—")) + '</b></div></div>' +
       '<div class="pd-note"><i>PATO</i><p>' + bold(line) + '</p></div>'; }
   function gameMore(g){ var T = g.teams || [], ab = function(i){ var t = T[i] || {}; return esc(t.ab || (t.n || "").slice(0, 3).toUpperCase()); }, h = "";
     if(g.win && g.win.length === 2) h += '<div class="pd-wp"><div><b>' + esc((T[0]||{}).n || "") + ' ' + g.win[0] + '%</b><b>' + g.win[1] + '% ' + esc((T[1]||{}).n || "") + '</b></div><i><u style="width:' + g.win[0] + '%"></u></i><small>Chance to win (ESPN)</small></div>';
@@ -7013,7 +7015,7 @@ TRACKER DATA:
   }
   function next(){ if(cur >= S.length - 1) return close(); show(cur + 1); }
   function openV(at){ S = stories(); var want = at >= 0 && S[at] ? S[at].id : ""; S.forEach(function(x){ pic(x.pic, null, x.ph); }); hidePeek(); var u = unseen(); NEW = {}; u.forEach(function(x){ NEW[x.id] = 1; });
-    S = S.filter(function(x){ return NEW[x.id]; }).concat(S.filter(function(x){ return !NEW[x.id]; })); if(want) at = S.map(function(x){ return x.id; }).indexOf(want);   // organized: everything new first, then what you already saw (Marco Nov 11)
+    var tkx = S.filter(function(x){ return /:take$/.test(x.id); }); S = tkx.concat(S.filter(function(x){ return NEW[x.id] && tkx.indexOf(x) < 0; }), S.filter(function(x){ return !NEW[x.id] && tkx.indexOf(x) < 0; }));   // Pato's take always first (Marco), then new, then seen if(want) at = S.map(function(x){ return x.id; }).indexOf(want);   // organized: everything new first, then what you already saw (Marco Nov 11)
     var i = at >= 0 && at < S.length ? at : u.length ? S.indexOf(u[0]) : 0; if(!(prefs && prefs.picked) && !u.length) i = S.length - 1;
     $("pdV").hidden = false; document.documentElement.style.overflow = "hidden"; show(i); }
   function close(){ clearTimeout(timer); $("pdV").hidden = true; $("pdS").style.transform = ""; document.documentElement.style.overflow = "";
