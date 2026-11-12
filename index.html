@@ -1879,7 +1879,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261112032500";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261112141500";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -6900,16 +6900,16 @@ TRACKER DATA:
   // Pato's take (Marco Nov 11): ONE constructive sentence. Never repeats another slide (no news, no game, no Big-move ticker).
   function takeBody(tk, big, G, skip){
     var h = '<div class="pd-k">PATO\'S TAKE · ' + esc(dlabel(day()).toUpperCase()) + '</div>', mv = pos.filter(function(p){ return p.prev > 0 && p.precio > 0; }), line = "";
-    if(mv.length){ var up = 0, b0 = 0, c0 = 0, g0 = 0;
-      mv.forEach(function(p){ up += p.sh*(p.precio-p.prev); b0 += p.sh*p.prev; });
-      pos.forEach(function(p){ if(p.precio > 0 && p.costo > 0 && !p.regalo){ c0 += p.sh*p.costo; g0 += p.sh*(p.precio-p.costo); } });
-      var pc = b0 > 0 ? up/b0*100 : 0, since = c0 > 0 ? g0/c0*100 : null;
-      var lead = mv.slice().sort(function(x, y){ return Math.abs(y.sh*(y.precio-y.prev)) - Math.abs(x.sh*(x.precio-x.prev)); })[0], ln = lead && lead.t !== skip && Math.abs(lead.sh*(lead.precio-lead.prev)) >= Math.abs(up)*.5 && (up > 0) === (lead.precio > lead.prev) ? ", mostly from " + lead.t : "";
-      var sv = since == null ? "" : Math.abs(since).toFixed(1) + "%";
-      if(Math.abs(pc) < .3) line = "Quiet day for your stocks. " + (since == null ? "Quiet days are part of the plan." : since >= 0 ? "You're up " + sv + " on what you paid, and quiet days let that keep growing." : "You're " + sv + " below what you paid, and patience is how that turns around.");
-      else if(up > 0) line = "Your stocks made " + usd(up) + " today" + ln + ". " + (since == null ? "Good day to stay the course." : since >= 0 ? "Everything you own is now " + sv + " above what you paid." : "That gets you closer to even: you're " + sv + " below what you paid.");
-      else line = "Your stocks are down " + usd(up) + " today" + ln + ". " + (since == null ? "Dips are normal, your plan matters more than one day." : since >= 0 ? "You're still up " + sv + " on what you paid, so this is a normal dip." : "Dips are normal, your plan matters more than one day.");
-    } else line = (tk.you && tk.you.text) || fallback().you.text;
+    // Marco Nov 12: "the take needs to be way smarter", real knowledge about HIS money, never a recap of today's gain (Big move covers the day)
+    var pf0 = window.__patoFacts || {}, ideas = [], val = 0, c0 = 0, g0 = 0, big0 = null;
+    pos.forEach(function(p){ if(p.precio > 0){ var v = p.sh*p.precio; val += v; if(!big0 || v > big0.v) big0 = {t: p.t, v: v}; if(p.costo > 0 && !p.regalo){ c0 += p.sh*p.costo; g0 += p.sh*(p.precio-p.costo); } } });
+    var wt = big0 && val > 0 ? Math.round(big0.v/val*100) : 0, since = c0 > 0 ? g0/c0*100 : null;
+    if(wt >= 40 && pos.length > 1) ideas.push(wt + "% of your stocks ride on " + big0.t + ". That's one company carrying your plan; many investors keep a single stock under 20 to 30% so one bad quarter can't sink everything. Your next buys can fix that without selling anything.");
+    else if(wt >= 40) ideas.push("All your stock money is in " + big0.t + " right now. One great company is still one risk; spreading the next buys across a broad index fund is how most long-term investors protect the upside.");
+    if(since != null) ideas.push(since < 0 ? "You're " + Math.abs(since).toFixed(1) + "% below what you paid overall. That only becomes a real loss if you sell; buying the same companies lower brings your average cost down, which is why a dip with a plan beats a dip with panic." : "You're " + since.toFixed(1) + "% above what you paid overall. The trap now is chasing: buying more just because it went up. Set the price you'd be happy to pay and let the market come to you.");
+    if(pf0.goal > 0 && pf0.saved > 0 && pf0.saved < pf0.goal){ var gp = Math.round(pf0.saved/pf0.goal*100), r10 = Math.round(pf0.saved*.1/1000)*1000; ideas.push("You're " + gp + "% of the way to RD$" + Math.round(pf0.goal).toLocaleString("en-US") + ". At this stage what you save matters more than what you earn on it: even a strong 10% year on what you have adds about RD$" + r10.toLocaleString("en-US") + ". Your monthly saving is the real engine."); }
+    if(ideas.length){ var dn0 = Math.floor((Date.now() - 4*3600e3)/864e5); line = ideas[dn0 % ideas.length]; }
+    else line = (tk.you && tk.you.text) || fallback().you.text;
     var pf = window.__patoFacts || {}, tip = "";
     if(tk.pato && tk.pato.line){ line = tk.pato.line; tip = tk.pato.tip || ""; }   // the 7am AI take: Pato talking to you with your real numbers (checked on the server)
     if(!tip && pf.limit > 0 && pf.daysLeft > 0){ var lft = pf.limit - pf.spentMonth; tip = lft > 0 ? "Keep spending under RD$" + Math.max(0, pf.perDayLeft).toLocaleString("en-US") + " a day and you finish the month inside your RD$" + pf.limit.toLocaleString("en-US") + " limit." : "You're past your monthly limit; every peso you don't spend now goes straight back to your goal."; }
@@ -6924,15 +6924,26 @@ TRACKER DATA:
     all.forEach(function(p){ tot += p.sh*(p.precio-p.prev); });
     var since = b.costo > 0 && !b.regalo ? pct((b.precio/b.costo-1)*100) : "";
     var oth = tot - g, nm = b.t, nx = evs.filter(function(e){ return e.t === b.t && e.fecha >= new Date(Date.now() - 4*3600e3).toISOString().slice(0, 10); }).sort(function(a, c){ return a.fecha.localeCompare(c.fecha); })[0];   // plain dollars (Marco: "119% of your stocks' move" means nothing)
-    var line = b.regalo ? "These are free reward shares, so every cent here is gain." : all.length < 2 || Math.abs(oth) < 1 ? nm + (g < 0 ? " cost you " : " made you ") + usd(g) + " today." : (g < 0) !== (oth < 0) ? nm + (g < 0 ? " cost you " : " made you ") + usd(g) + " today. Your other stocks " + (oth > 0 ? "made back " : "gave back ") + usd(oth) + ", so you're " + (tot < 0 ? "down " : "up ") + usd(tot) + " overall." : nm + " was " + usd(g) + " of your " + usd(tot) + (tot < 0 ? " drop" : " gain") + " today.";
-    if(nx){ var dn = Math.round((Date.parse(nx.fecha + "T12:00:00Z") - Date.parse(new Date(Date.now() - 4*3600e3).toISOString().slice(0, 10) + "T12:00:00Z"))/864e5); if(dn >= 0 && dn <= 14) line += " Next big test: " + (nx.txt || "event").toLowerCase() + (dn === 0 ? " today." : dn === 1 ? " tomorrow." : " in " + dn + " days."); }
+    var val = 0; pos.forEach(function(p){ if(p.precio > 0) val += p.sh*p.precio; });
+    var w = val > 0 ? Math.round(b.sh*b.precio/val*100) : 0, sv = b.costo > 0 && !b.regalo ? (b.precio/b.costo-1)*100 : null, dn = null;
+    if(nx){ dn = Math.round((Date.parse(nx.fecha + "T12:00:00Z") - Date.parse(new Date(Date.now() - 4*3600e3).toISOString().slice(0, 10) + "T12:00:00Z"))/864e5); if(dn < 0 || dn > 14) dn = null; }
+    var line = b.regalo ? "These are free reward shares, so every cent here is gain." :
+      dn != null ? (nx.txt || "A big event") + (dn === 0 ? " is today" : dn === 1 ? " is tomorrow" : " is in " + dn + " days") + ", and stocks often swing hardest right around it. If you plan to buy more, set your price before, not during, the move." :
+      w >= 40 && !up ? nm + " is " + w + "% of your stocks, so days like this hit your whole portfolio. " + (sv != null && sv < 0 ? "Buying lower brings your average cost down, but adding to your biggest position also adds to that concentration." : "Your next buys going to other companies is the cleanest way to soften days like this.") :
+      w >= 40 ? nm + " is now " + w + "% of your stocks. Big jumps make the biggest position bigger; that's a good moment to point your next buys elsewhere instead of chasing it." :
+      !up && sv != null && sv < 0 ? "You're " + Math.abs(sv).toFixed(1) + "% below what you paid on " + nm + ". That's only a real loss if you sell; what matters is whether the reason you bought it changed, not one red day." :
+      !up ? "Even after today you're still " + (sv != null ? sv.toFixed(1) + "% " : "") + "up on " + nm + ". Big names drop 5% several times a year; the plan you had before today still holds." :
+      sv != null && sv > 0 ? "You're now " + sv.toFixed(1) + "% up on " + nm + ". Jumps tempt people to chase; the smart move is to keep your buy prices and let the next dip come to you." :
+      "Good bounce, but " + nm + " is still " + (sv != null ? Math.abs(sv).toFixed(1) + "% " : "") + "below what you paid. Recovering slowly is normal; patience is part of the plan.";
+    var ik = "pd-ins-" + day() + "-" + b.t + (up ? "u" : "d"), ic = ls(ik); if(ic && ic.line) line = ic.line;
+    else setTimeout(function(){ if(!window.mpIdToken) return; window.mpIdToken().then(function(tok){ return fetch(base() + "/insight", {method: "POST", headers: {"content-type": "application/json", authorization: "Bearer " + tok}, body: JSON.stringify({t: b.t, co: CONAME[b.t] || "", chPct: ch, usd: g, sh: b.sh, avg: b.costo || 0, px: b.precio, since: sv == null ? null : Math.round(sv*10)/10, val: Math.round(b.sh*b.precio*100)/100, w: w, oth: Math.round(oth*100)/100, ev: nx && dn != null ? (nx.txt || "") + " in " + dn + " days" : null, h: st0 ? st0.h : null})}); }).then(function(r){ return r && r.ok ? r.json() : null; }).then(function(d){ if(!d || !d.line) return; ls(ik, d); var el = document.querySelector('[data-ins="' + ik + '"] p'); if(el) el.innerHTML = bold(d.line); }).catch(function(){}); }, 300);   // AI insight replaces the fallback when it arrives
     return '<div class="pd-brk mv">📈 BIG MOVE · YOUR STOCK</div>' +
       '<div class="pd-bh"><span class="pd-lg">' + (L || esc(b.t.slice(0, 4))) + '</span><div><b>' + esc(b.t) + '</b><small>' + esc(CONAME[b.t] || "You own it") + '</small></div></div>' +
       '<div class="pd-big ' + (up ? "up" : "dn") + '">' + (up ? "▲ " : "▼ ") + Math.abs(ch).toFixed(1) + '%</div>' +
       '<div class="pd-px">US$' + b.prev.toFixed(2) + ' → <b>US$' + b.precio.toFixed(2) + '</b> today</div>' +
       (st0 ? '<div class="pd-h2" style="margin-top:18px">' + esc(st0.h) + '</div><div class="pd-m">' + esc(st0.s) + " · " + ago(st0.t) + ' ago</div>' : "") +
       '<div class="pd-st"><div><small>' + (up ? "You made today" : "You lost today") + '</small><b class="' + (up ? "up" : "dn") + '">' + sgn(g) + '</b></div><div><small>Your position</small><b>' + usd(b.sh*b.precio) + '</b></div><div><small>Shares</small><b>' + (Math.round(b.sh*1e4)/1e4) + '</b></div><div><small>' + (since ? "Since you bought" : "Cost") + '</small><b>' + (since || (b.regalo ? "Free" : "—")) + '</b></div></div>' +
-      '<div class="pd-note"><i>PATO</i><p>' + bold(line) + '</p></div>'; }
+      '<div class="pd-note" data-ins="' + ik + '"><i>PATO</i><p>' + bold(line) + '</p></div>'; }
   function gameMore(g){ var T = g.teams || [], ab = function(i){ var t = T[i] || {}; return esc(t.ab || (t.n || "").slice(0, 3).toUpperCase()); }, h = "";
     if(g.win && g.win.length === 2) h += '<div class="pd-wp"><div><b>' + esc((T[0]||{}).n || "") + ' ' + g.win[0] + '%</b><b>' + g.win[1] + '% ' + esc((T[1]||{}).n || "") + '</b></div><i><u style="width:' + g.win[0] + '%"></u></i><small>Chance to win (ESPN)</small></div>';
     var o = g.odds, cells = [];
