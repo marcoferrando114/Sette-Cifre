@@ -1469,6 +1469,7 @@ main{padding-bottom:calc(128px + env(safe-area-inset-bottom,0px))!important}
 .pd-old{display:inline-block;margin-right:6px;padding:1px 7px;border-radius:999px;background:rgba(255,255,255,.12);color:#B8C7BE;font-size:.62rem;font-weight:700;vertical-align:2px}
 .pd-nav button.nw{color:#fff;background:rgba(255,255,255,.14);position:relative;padding-right:18px}.pd-nav button.nw::after{content:"";position:absolute;right:8px;top:50%;width:6px;height:6px;margin-top:-3px;border-radius:50%;background:#FF5A4A}
 .pd-nav button.sn{opacity:.45}
+.pd-an{margin-top:14px}.pd-an>div:first-child{display:flex;justify-content:space-between;align-items:baseline}.pd-an b{font-size:1.02rem;color:#fff}.pd-an span{font-size:.9rem;font-weight:800;color:#E8C06A}.pd-anb{height:8px;border-radius:5px;background:rgba(255,255,255,.14);margin-top:6px;overflow:hidden}.pd-anb i{display:block;height:100%;background:#6FD39A;border-radius:5px}.pd-an small{display:block;margin-top:5px;font-size:.78rem;color:#9FB3A7}.pd-ord{display:inline-flex;align-items:center;gap:6px}.pd-ord button{all:unset;cursor:pointer;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.1);text-align:center;line-height:30px;font-size:.95rem}.pd-ord button:disabled{opacity:.25}
 .pd-sep.nw{color:#E8C06A;border-left:0;padding-left:2px}.pd-bars i.g{margin-left:8px}.pd-pos{font-weight:800;letter-spacing:.06em;color:#fff}.pd-pos.n{color:#E8C06A}.pd-pos.s{color:rgba(255,255,255,.55)}.pd-nav button.on{box-shadow:0 0 0 2px rgba(232,192,106,.4)}
 .pd-bars i.nw{background:rgba(232,192,106,.75)}
 .pd-brk.mv{background:rgba(227,188,106,.18);color:#F3D38F}
@@ -2048,7 +2049,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261112205017";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261112211129";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -6994,11 +6995,26 @@ TRACKER DATA:
         else drop = {day: day(), slot: sl, sig: sig(), d: d, got: Date.now()};
         ls("pd-drop3", drop); render(); }).catch(function(){ getDrop.busy = 0; }); }
   function about(t, it){ if(!it || !it.h) return null; var re = CO[t] || new RegExp("\\b" + t + "\\b"); return re.test(it.h) ? it : null; }   // a stock's news must name that company (Marco: no Costco story on IBKR)
+  // Wall Street on your stocks (Marco Nov 12: analysts needs real output): buy/hold/sell counts from Finnhub (your own key), kept 6 hours
+  var RC = ls("pd-recs") || {at: 0, d: {}};
+  function getRecs(){ if(DEMO || !db || getRecs.busy || Date.now() - RC.at < 6*36e5 || !pos.length) return; getRecs.busy = 1; var d = {};
+    db.doc("prefs/keys").get().then(function(s){ var k = s && s.exists ? s.data().finnhub : null; if(!k) return;
+      var f = function(r){ return {b: (r.strongBuy || 0) + (r.buy || 0), h: r.hold || 0, s: (r.sell || 0) + (r.strongSell || 0)}; };
+      return Promise.all(pos.slice().sort(function(a, b){ return b.sh*b.precio - a.sh*a.precio; }).slice(0, 3).map(function(p){ return fetch("https://finnhub.io/api/v1/stock/recommendation?symbol=" + encodeURIComponent(p.t) + "&token=" + encodeURIComponent(k)).then(function(r){ return r.ok ? r.json() : []; }).then(function(a){ if(a && a[0]) d[p.t] = {n: f(a[0]), p: a[1] ? f(a[1]) : null}; }).catch(function(){}); })); })
+    .then(function(){ getRecs.busy = 0; if(Object.keys(d).length){ RC = {at: Date.now(), d: d}; ls("pd-recs", RC); render(); } }).catch(function(){ getRecs.busy = 0; }); }
+  function anBody(c){ var rows = "", rd = "", h = c ? c.h : "";
+    pos.slice().sort(function(a, b){ return b.sh*b.precio - a.sh*a.precio; }).forEach(function(p, ix){ var r = RC.d && RC.d[p.t]; if(!r) return; var n = r.n, tot = n.b + n.h + n.s; if(!tot) return; var pc = Math.round(n.b / tot * 100), pp = r.p, pt = pp && (pp.b + pp.h + pp.s) ? Math.round(pp.b / (pp.b + pp.h + pp.s) * 100) : null;
+      rows += '<div class="pd-an"><div><b>' + esc(p.t) + '</b><span>' + pc + '% Buy</span></div><div class="pd-anb"><i style="width:' + pc + '%"></i></div><small>' + n.b + ' Buy · ' + n.h + ' Hold · ' + n.s + ' Sell' + (pt != null && pt !== pc ? ' · last month ' + pt + '%' : '') + '</small></div>';
+      if(!rd) rd = p.t + ": " + (pc >= 75 ? n.b + " of " + tot + " analysts say Buy. Strong backing, but remember that is already in the price." : pc >= 50 ? "More analysts say Buy than not, but " + (n.h + n.s) + " of " + tot + " are not convinced." : "Analysts are split or cautious. A reason to keep this position size modest."); });
+    var kind = /downgrad|cuts?\b|lowers?|slashes/i.test(h) ? "An analyst turned more cautious." : /upgrad|raises?|boosts?|lifts?|initiat\w+|buy rating|outperform|overweight/i.test(h) ? "An analyst turned more positive." : "", hit = pos.filter(function(p){ return CO[p.t] && CO[p.t].test(h); })[0], tg = /target|price objective|\bPT\b/i.test(h) ? (h.match(/\$\s?(\d[\d,]*(?:\.\d+)?)/) || [])[1] : null, tgl = "";
+    if(tg && hit && hit.precio > 0){ var tv = Number(tg.replace(/,/g, "")); if(tv > hit.precio * .4 && tv < hit.precio * 4) tgl = "Their target is US$" + Math.round(tv).toLocaleString("en-US") + " vs US$" + Math.round(hit.precio).toLocaleString("en-US") + " today: " + Math.abs(Math.round((tv / hit.precio - 1) * 100)) + "% " + (tv >= hit.precio ? "above" : "below") + " the price."; }
+    return '<div class="pd-k">🧠 WHAT ANALYSTS SAY' + (c && c.mine ? ' · ABOUT YOUR STOCK' : '') + '</div>' + (rows ? '<div class="pd-h1" style="font-size:1.3rem">Wall Street on your stocks</div>' + rows + '<div class="pd-tk">' + bold(rd) + '</div>' : '') +
+      (c ? '<div class="pd-know"><i>LATEST CALL</i><p style="margin:6px 0 0;font-size:1.05rem;line-height:1.35;color:#fff;font-weight:700">' + esc(c.h) + '</p><div class="pd-m">' + esc(c.by && c.by.length > 1 ? c.by.join(" · ") : c.s) + ' · ' + ago(c.t) + ' ago</div>' + ((kind || tgl) ? '<p style="margin:10px 0 0;font-size:.95rem;line-height:1.4;color:#E4ECE7">' + esc((kind + " " + tgl).trim()) + '</p>' : '') + '</div>' : ''); }
   function pickNew(k, list){ var s = seen().ids, out = [], used = {};   // newest-unseen first; never the same story twice in a day
     list.forEach(function(x){ if(x && x.h && !used[x.h]){ used[x.h] = 1; out.push(x); } });
     var un = out.filter(function(x){ return !s[(k === "big" ? "big:" : k === "calls" ? "calls:" : day() + ":" + k + ":") + x.h]; });
     return un.length ? un : out.slice(0, 1); }
-  function getTick(){ if(DEMO) return;   // ticker + big news refresh every 2h (free, no AI)
+  function getTick(){ if(DEMO) return; getRecs();   // ticker + big news refresh every 2h (free, no AI)
     if(!base() || (tick && Date.now() - (tick.got||0) < 2*3600e3)) return;
     fetch(base() + "/news?k=business&g=0" + (pos.length ? "&t=" + encodeURIComponent(pos.slice(0,5).map(function(p){ return p.t; }).join(",")) : "")).then(function(r){ return r.ok ? r.json() : null; })
       .then(function(d){ if(!d) return; tick = {at: d.at, ticker: d.ticker, big: d.big, got: Date.now()}; render(); }).catch(function(){});
@@ -7027,7 +7043,7 @@ TRACKER DATA:
     if(b && !(said && (new RegExp("\\b" + b.t + "\\b").test(said) || (st0 && said.indexOf(st0.h.split(" ")[0]) >= 0)))){ var ch = (b.precio/b.prev-1)*100;
       MV = ({id: ed + ":move:" + b.t + (ch>0?"+":"-"), cls: "", t: "Big move · " + b.t, w: "today", nav: "📈 Big move", sh: st0 ? {k: "Big move · " + b.t, h: st0.h, s: st0.s, u: st0.u} : null, u: st0 && st0.u, pic: st0 && st0.u, ph: st0 && st0.h, ps: st0 && st0.s, body: breakBody(b, ch, st0, bigSame)}); }
     var fb = (prefs && prefs.fb) || {}, ix = function(k){ return CATS.map(function(c){ return c[0]; }).indexOf(k); };   // 👍/👎 move topics up or down
-    (function(){ var T = on().slice().sort(function(a, b){ return (fb[b]||0) - (fb[a]||0) || on().indexOf(a) - on().indexOf(b); }); return ["big", "rd"].concat(T.filter(function(k){ return k !== "game"; }), T.indexOf("game") >= 0 ? ["game"] : [], WILD() ? [WILD()] : []); })().map(function(k){ return CATS[ix(k)]; }).filter(Boolean).forEach(function(c){ if(L.length >= MAX + 1) return; var k = c[0], it, h;
+    (function(){ var T = on().slice(); /* Marco Nov 12: his own topic order (Settings), no automatic reshuffle */ return ["big", "rd"].concat(T.filter(function(k){ return k !== "game"; }), T.indexOf("game") >= 0 ? ["game"] : [], WILD() ? [WILD()] : []); })().map(function(k){ return CATS[ix(k)]; }).filter(Boolean).forEach(function(c){ if(L.length >= MAX + 1) return; var k = c[0], it, h;
       if(k === "big"){ if(!big) return; var BY = big.by && big.by.length ? big.by : [big.s].filter(Boolean);   // Breaking = the news of the day (Marco Nov 11), front-page look every day
         L.push({id: "big:" + big.h, hot: big.huge !== false, cls: "big brk", t: "Breaking", w: ago(big.t) + " ago", u: big.u, pic: big.u, ph: big.h, ps: big.s, fk: "big", sh: {k: "Breaking", h: big.h, s: big.s, u: big.u, kn: knowArr("big")},
           body: '<div class="pd-brkrow"><span class="pd-brk"><span class="pd-dot"></span>BREAKING</span><span class="pd-ago">' + esc(ago(big.t)) + ' ago</span></div><div class="pd-bigh">' + esc(big.h) + '</div>' +
@@ -7045,18 +7061,18 @@ TRACKER DATA:
       L.push({id: ed + ":" + k + ":" + it.h, id2: i2 ? ed + ":" + k + ":" + i2.h : "", cls: k === "rd" ? "rd" : "", t: c[1], w: ago(it.t) + " ago", u: i2 ? "" : it.u, pic: it.u, ph: it.h, ps: it.s, fk: k, sh: {k: c[1], h: h, s: it.s, u: it.u, kn: knowArr(k)}, body: '<div class="pd-k">' + esc((k === "tech" && /\b(AI|artificial intelligence|OpenAI|ChatGPT|chatbots?)\b/.test(it.h) ? "AI news" : c[1]).toUpperCase()) + '</div><div class="pd-h1' + ((it.n || 0) >= 4 ? ' pd-hx' : '') + '">' + esc(h) + '</div>' + (h !== it.h ? '<div class="pd-m" style="font-style:italic">' + esc(it.h) + '</div>' : '') + '<div class="pd-m">' + by(it) + (i2 ? ' · <a class="pd-r2" data-u="' + esc(it.u) + '">Read ›</a>' : '') + '</div>' + know(k) + note(notes[k]) +
         (i2 ? '<div class="pd-two"><div class="pd-k">ALSO</div><div class="pd-h2">' + esc(i2.h) + '</div><div class="pd-m">' + by(i2) + ' · <a class="pd-r2" data-u="' + esc(i2.u) + '">Read ›</a></div></div>' : '')}); });
     TK.body = takeBody(tk, big, (FR.game ? dd.games : daily && daily.games) || [], MV && MV.t.replace("Big move · ", ""), (dd && dd.pick) || (daily && daily.pick));
-    if(MV){ var bi = L.map(function(x){ return x.fk; }).indexOf("big"); L.splice(bi >= 0 ? bi + 1 : 1, 0, MV); }   // Breaking news first, then your stock's big move
+    // Marco Nov 12: Big move is not its own slide any more: a big move shows inside "Your companies" and in Pato's take
     var cq = callQ(), cs = callSt(); if(cq && !(cs && cs.q === cq.id && $("pdV").hidden)) L.push({id: ed + ":call:" + cq.id, cls: "call", t: CALL, w: "today's money question", call: cq, body: ""});
     var W = WILD(); L.forEach(function(x){ if(W && x.fk === W){ var c = CATS[ix(W)]; x.wild = 1; x.t = "Wildcard · " + c[1]; x.body = x.body.replace('<div class="pd-k">', '<div class="pd-k">🎲 WILDCARD · '); } });
     (function(){ var ST = Object.assign({}, (daily && daily.stocks) || {}, (dd && dd.stocks) || {}), sv = seen().ids, own = pos.map(function(p){ return p.t; });   // "Your companies": stocks you own or keep reading about
-      var t = tickers().filter(function(t){ return about(t, ST[t]) && !L.some(function(x){ return x.id.indexOf(":move:" + t) > 0; }); }), pk = t.filter(function(t){ return !sv[ed + ":co:" + ST[t].h]; })[0] || t[0]; if(!pk) return;
+      var t = tickers().filter(function(t){ return about(t, ST[t]) && !L.some(function(x){ return x.id.indexOf(":move:" + t) > 0; }); }), pk = t.filter(function(t){ return !sv[ed + ":co:" + ST[t].h]; })[0] || t[0], mvT = MV && MV.t.replace("Big move · ", ""); if(mvT && t.indexOf(mvT) >= 0) pk = mvT; if(!pk) return;
+      var mp = pos.filter(function(p){ return p.t === pk && p.prev > 0 && p.precio > 0; })[0], mch = mp ? (mp.precio / mp.prev - 1) * 100 : 0, mst = mp && Math.abs(mch) >= 2 ? '<div class="pd-tk"><b>' + esc(pk) + ' ' + (mch > 0 ? '+' : '−') + Math.abs(mch).toFixed(1) + '%</b> today · ' + (mch > 0 ? '+' : '−') + usd(mp.sh * (mp.precio - mp.prev)) + ' on your shares</div>' : '';
       var it = ST[pk], i = Math.max(L.map(function(x){ return x.fk; }).indexOf("big"), MV ? L.indexOf(MV) : -1);
       L.splice(i >= 0 ? i + 1 : 1, 0, {id: ed + ":co:" + it.h, cls: "", t: "Your companies · " + pk, w: ago(it.t) + " ago", u: it.u, pic: it.u, ph: it.h, ps: it.s, nav: "🏢 Your companies", sh: {k: pk, h: it.h, s: it.s, u: it.u},
-        body: '<div class="pd-k">📈 ' + esc(pk) + (own.indexOf(pk) >= 0 ? ' · YOU OWN IT' : ' · YOU FOLLOW IT') + '</div><div class="pd-h1">' + esc(it.h) + '</div><div class="pd-m">' + esc(it.s) + ' · ' + ago(it.t) + ' ago</div>'}); })();
-    (function(){ if(!pos.length) return; var c = pickNew("calls", [dd && dd.calls, daily && daily.calls].filter(Boolean))[0]; if(!c || !c.h) return;   // Marco Nov 11: "a report of analysts saying now is a good time to buy Micron, and why"
-      var i = L.map(function(x){ return x.fk; }).indexOf("big"), j = L.reduce(function(m, x, k){ return /:co:|:move:/.test(x.id) ? k : m; }, i);
-      L.splice(j >= 0 ? j + 1 : 1, 0, {id: "calls:" + c.h, cls: "", t: "Analyst call", w: ago(c.t) + " ago", u: c.u, pic: c.u, ph: c.h, ps: c.s, nav: "🧠 Analysts", sh: {k: "Analyst call", h: c.h, s: c.s, u: c.u},
-        body: '<div class="pd-k">🧠 WHAT ANALYSTS SAY' + (c.mine ? ' · ABOUT YOUR STOCK' : '') + '</div><div class="pd-h1">' + esc(c.h) + '</div><div class="pd-m">' + esc(c.by && c.by.length > 1 ? c.by.join(" · ") : c.s) + ' · ' + ago(c.t) + ' ago</div>' + note("An analyst call is an opinion with reasons, not a sure thing. Read the why, then check it against your own plan.")}); })();
+        body: '<div class="pd-k">📈 ' + esc(pk) + (own.indexOf(pk) >= 0 ? ' · YOU OWN IT' : ' · YOU FOLLOW IT') + '</div><div class="pd-h1">' + esc(it.h) + '</div><div class="pd-m">' + esc(it.s) + ' · ' + ago(it.t) + ' ago</div>' + mst}); })();
+    (function(){ if(!pos.length) return; var c = pickNew("calls", [dd && dd.calls, daily && daily.calls].filter(Boolean))[0]; if(c && !c.h) c = null; var have = Object.keys(RC.d || {}).some(function(t){ return pos.some(function(p){ return p.t === t; }); }); if(!c && !have) return;   // Marco Nov 11/12: real analyst output, not the same note
+      var i = L.map(function(x){ return x.fk; }).indexOf("big"), j = L.reduce(function(m, x, k){ return /:co:/.test(x.id) ? k : m; }, i);
+      L.splice(j >= 0 ? j + 1 : 1, 0, {id: c ? "calls:" + c.h : "calls:recs:" + ed, cls: "", t: "Analysts", w: c ? ago(c.t) + " ago" : "Wall Street", u: c && c.u, pic: c && c.u, ph: c && c.h, ps: c && c.s, nav: "🧠 Analysts", sh: c ? {k: "Analyst call", h: c.h, s: c.s, u: c.u} : null, body: anBody(c)}); })();
     // Predictions (Marco Nov 12): the hottest Polymarket markets for your world, plus the market line inside matching stories
     var PR = (dd && dd.preds && dd.preds.length ? dd.preds : daily && daily.preds) || [];
     if(PR.length){ var gi = L.map(function(x){ return x.fk; }).indexOf("game"), pr = {id: ed + ":preds:" + PR.map(function(m){ return m.q; }).join("|").slice(0, 120), cls: "preds", t: "Predictions", w: "Polymarket", nav: "🔮 Predictions", fk: "preds",
@@ -7070,13 +7086,11 @@ TRACKER DATA:
     var cut = function(t, n){ t = String(t || ""); return t.length > n ? t.slice(0, n - 3).replace(/\s+\S*$/, "") + "…" : t; }, bn = function(v){ return String(v).replace(/\s?(billion|bn)\b/i, "B").replace(/\s?trillion\b/i, "T").replace(/\s?million\b/i, "M").replace(/\$\s/, "$"); };
     var row = function(it, chips){ return '<a class="pd-r2 pd-pm pd-lr" data-u="' + esc(it.u) + '"><div class="pd-pmq">' + esc(it.h) + '</div>' + (chips || "") + '<div class="pd-lrm">' + esc(it.s) + ' · ' + ago(it.t) + ' ago' + (it.mine ? ' · <b>YOUR STOCK</b>' : '') + '</div></a>'; };
     var gi2 = function(){ var g = L.map(function(x){ return x.fk; }).indexOf("game"); return g >= 0 ? g : L.length; };
-    if(LA.length) L.splice(gi2(), 0, {id: ed + ":launch:" + LA.map(function(x){ return x.h; }).join("|").slice(0, 120), cls: "launch", t: "Launches", w: "this week", nav: "🚀 Launches", fk: "launch", pic: LA[0].u, ph: LA[0].h, ps: LA[0].s,
-      body: '<div class="pd-k">🚀 LAUNCHES</div><div class="pd-h1" style="font-size:1.3rem">New this week</div>' + LA.slice(0, 4).map(function(it){ return row(it); }).join("")});
-    // Rising pills only add what the headline doesn't say (Marco Nov 12): sector, round, backers, share sold
-    if(RI.length) L.splice(gi2(), 0, {id: ed + ":rising:" + RI.map(function(x){ return x.h; }).join("|").slice(0, 120), cls: "rise", t: "Rising companies", w: "this week", nav: "💎 Rising", fk: "rising",
-      body: '<div class="pd-k">💎 RISING COMPANIES</div><div class="pd-h1" style="font-size:1.3rem">Where the big money is going</div>' + RI.slice(0, 4).map(function(it){
-        var ch = (it.pills || []).map(function(c){ return c.replace(/\$\s?\d[\d.,]*\s?(million|billion|bn|trillion)\b/gi, bn); }); return row(it, ch.length ? '<div class="pd-chips">' + ch.map(function(c){ return '<span>' + esc(c) + '</span>'; }).join("") + '</div>' : ""); }).join("") +
-        '<div class="pd-m" style="margin-top:14px">Private for now. These are the names that could be next year\'s IPOs.</div>'});
+    // Marco Nov 12: Launches and Rising companies together in one slide
+    var risRows = RI.slice(0, 3).map(function(it){ var ch = (it.pills || []).map(function(c){ return c.replace(/\$\s?\d[\d.,]*\s?(million|billion|bn|trillion)\b/gi, bn); }); return row(it, ch.length ? '<div class="pd-chips">' + ch.map(function(c){ return '<span>' + esc(c) + '</span>'; }).join("") + '</div>' : ""); }).join("");
+    if(LA.length || RI.length) L.push({id: ed + ":launch:" + LA.concat(RI).map(function(x){ return x.h; }).join("|").slice(0, 120), cls: "launch", t: "New & rising", w: "this week", nav: "🚀 New & rising", fk: "launch", pic: (LA[0] || RI[0]).u, ph: (LA[0] || RI[0]).h, ps: (LA[0] || RI[0]).s,
+      body: '<div class="pd-k">🚀 NEW & RISING</div>' + (LA.length ? '<div class="pd-h1" style="font-size:1.3rem">New this week</div>' + LA.slice(0, 3).map(function(it){ return row(it); }).join("") : '') + (RI.length ? '<div class="pd-h1" style="font-size:1.3rem;margin-top:22px">Where the big money is going</div>' + risRows + '<div class="pd-m" style="margin-top:14px">Private for now. These could be next year\'s IPOs.</div>' : '')});
+
     L.forEach(function(x){ var src = x.fk === "big" ? big : x.fk && cats[x.fk] && cats[x.fk][0]; var mk = src && src.mk; if(!mk || x.fk === "preds" || x.fk === "launch" || x.fk === "rising") return;
       x.body += '<a class="pd-r2 pd-mk" data-u="' + esc(mk.u) + '"><span>🔮 MARKET ODDS</span><b>' + mk.p + '%</b> ' + esc(mk.q) + (mk.end ? ' <small>· by ' + esc(dlabel(mk.end)) + '</small>' : '') + '</a>'; });
     // Marco Nov 12: every drop brings at least 2 new stories; if the topics ran dry, add the biggest recent stories worldwide you haven't seen
@@ -7094,6 +7108,8 @@ TRACKER DATA:
     // Pato's take page: "In today's edition" = what's coming, so the page is full and pulls you into the stories
     var nt = [tk.happened, tk.you, tk.watch].filter(function(r){ return r && r.text; }).length, up = L.slice(1).filter(function(x){ return x.ph || x.call; }).slice(0, nt >= 3 ? 3 : 6);
     if(0 && up.length) L[0].body += '<div class="pd-up"><i>IN TODAY\'S EDITION</i>' + up.map(function(x){ return '<div><b>' + esc(x.t) + '</b><span>' + esc(x.call ? x.call.q : x.ph) + '</span></div>'; }).join("") + '</div>';
+    var ord = on(), rk = function(x){ var id = x.id || ""; return /:take$/.test(id) ? 0 : x.fk === "big" ? 1 : x.fk === "rd" ? 2 : /:co:/.test(id) ? 3 : /^calls:/.test(id) ? 4 : x.call ? 99 : x.fk === "game" ? 40 : /:more:/.test(id) ? 30 : x.fk === "preds" ? 31 : x.fk === "launch" ? 32 : x.wild ? 20 : x.fk && ord.indexOf(x.fk) >= 0 ? 10 + ord.indexOf(x.fk) : 25; };
+    L = L.map(function(x, i){ return [x, i]; }).sort(function(a, b){ return rk(a[0]) - rk(b[0]) || a[1] - b[1]; }).map(function(a){ return a[0]; });   // Marco Nov 12: take, world, your money, your topics, discover, sports, duel last
     return L;
   }
   // ---------- This or that: one money question a day, then what % of Pato users got it right + why ----------
@@ -7297,7 +7313,9 @@ TRACKER DATA:
   }
   function next(){ if(cur >= S.length - 1) return close(); show(cur + 1); }
   function openV(at){ liveScores(); S = stories(); var want = at >= 0 && S[at] ? S[at].id : ""; S.forEach(function(x){ pic(x.pic, null, x.ph); }); hidePeek(); var u = unseen(); NEW = {}; u.forEach(function(x){ NEW[x.id] = 1; });
-    var tkx = S.filter(function(x){ return /:take$/.test(x.id); }); S = tkx.concat(S.filter(function(x){ return NEW[x.id] && tkx.indexOf(x) < 0; }), S.filter(function(x){ return !NEW[x.id] && tkx.indexOf(x) < 0; }));   // Pato's take always first (Marco), then new, then seen if(want) at = S.map(function(x){ return x.id; }).indexOf(want);   // organized: everything new first, then what you already saw (Marco Nov 11)
+    var tkx = S.filter(function(x){ return /:take$/.test(x.id); }); S = tkx.concat(S.filter(function(x){ return NEW[x.id] && tkx.indexOf(x) < 0; }), S.filter(function(x){ return !NEW[x.id] && tkx.indexOf(x) < 0; }));   // Pato's take always first (Marco), then new, then seen
+    if(want) at = S.map(function(x){ return x.id; }).indexOf(want);   // organized: everything new first, then what you already saw (Marco Nov 11)
+    var dq = S.filter(function(x){ return x.call; }); S = S.filter(function(x){ return !x.call; }).concat(dq);   // the Duel is always last, once
     var i = at >= 0 && at < S.length ? at : u.length ? S.indexOf(u[0]) : 0; if(!(prefs && prefs.picked) && !u.length) i = S.length - 1;
     $("pdV").hidden = false; document.documentElement.style.overflow = "hidden"; show(i); }
   function close(){ clearTimeout(timer); $("pdV").hidden = true; $("pdS").style.transform = ""; document.documentElement.style.overflow = "";
@@ -7305,10 +7323,12 @@ TRACKER DATA:
   // Topics live in Settings (Marco Nov 11: picking topics is a setting, not a daily slide)
   function topicsRow(){ var sh = $("palSheet"); if(!sh) return; var w = $("pdTopics");
     if(!w){ w = document.createElement("div"); w.id = "pdTopics"; var t = $("sgTabs"); if(t) sh.insertBefore(w, t); else sh.appendChild(w);
+      w.addEventListener("click", function(e){ var b = e.target.closest && e.target.closest("button[data-mv]"); if(!b) return; e.preventDefault(); var pr = b.dataset.mv.split(":"), o = on().slice(), i = o.indexOf(pr[0]), j = i + Number(pr[1]); if(i < 0 || j < 0 || j >= o.length) return; var t = o[i]; o[i] = o[j]; o[j] = t; save(o); ls("pd-daily7", null); topicsRow(); $("pdTopM").textContent = "Order saved."; });
       w.addEventListener("change", function(e){ var c = e.target; if(!c.dataset || !c.dataset.k) return; var o = on().slice(), k = c.dataset.k, i = o.indexOf(k);
         if(c.checked && o.length >= TOP){ c.checked = false; $("pdTopM").textContent = "Max " + TOP + ". Turn one off first."; return; }
         if(c.checked && i < 0) o.push(k); if(!c.checked && i >= 0) o.splice(i, 1); save(o); ls("pd-daily7", null); $("pdTopM").textContent = "Saved. Your next stories use these."; }); }
-    var o = on(); w.innerHTML = '<span>Pato Daily topics</span>' + CATS.filter(function(c){ return FIX.indexOf(c[0]) < 0; }).map(function(c){ return '<label class="tg"><span>' + c[2] + ' ' + c[1] + '</span><input type="checkbox" data-k="' + c[0] + '"' + (o.indexOf(c[0]) >= 0 ? ' checked' : '') + '></label>'; }).join("") + '<div class="pd-tm" id="pdTopM">Up to ' + TOP + '. Top story and DR come every day.</div>'; }
+    var o = on(), all = CATS.filter(function(c){ return FIX.indexOf(c[0]) < 0; }), nm = function(k){ return all.filter(function(c){ return c[0] === k; })[0]; };   // Marco Nov 12: you set the order of your topics
+    w.innerHTML = '<span>Pato Daily topics</span>' + o.map(function(k, i){ var c = nm(k); return c ? '<label class="tg"><span>' + c[2] + ' ' + c[1] + '</span><span class="pd-ord"><button type="button" aria-label="Move up" data-mv="' + k + ':-1"' + (i === 0 ? ' disabled' : '') + '>↑</button><button type="button" aria-label="Move down" data-mv="' + k + ':1"' + (i === o.length - 1 ? ' disabled' : '') + '>↓</button><input type="checkbox" data-k="' + k + '" checked></span></label>' : ''; }).join("") + all.filter(function(c){ return o.indexOf(c[0]) < 0; }).map(function(c){ return '<label class="tg"><span>' + c[2] + ' ' + c[1] + '</span><input type="checkbox" data-k="' + c[0] + '"></label>'; }).join("") + '<div class="pd-tm" id="pdTopM">Up to ' + TOP + '. Top story and DR come every day.</div>'; }
   function save(o){ var fb = (prefs && prefs.fb) || {}, co = (prefs && prefs.co) || {}; prefs = {on: o, picked: true, fb: fb, co: co}; try{ db.doc("prefs/news").set({on: o, picked: true, fb: fb, co: co, at: Date.now()}); }catch(_){} }
   var peeked = 0, pk = 0, pc = 0, pt = null;
   function peekLines(){ var u = unseen(), tk = (daily && daily.take) || fallback(), L = [];
