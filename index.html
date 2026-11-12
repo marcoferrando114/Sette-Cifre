@@ -1333,6 +1333,7 @@ html.mp-guest #p-stocks > #pnTick:not([hidden]){display:flex!important}
 .pd-bd .pd-img{margin:-28px -24px 18px;border-radius:0;aspect-ratio:4/3}.pd-bd .pd-img::after{content:"";position:absolute;inset:auto 0 0 0;height:45%;background:linear-gradient(to top,rgba(10,18,14,.85),transparent);pointer-events:none}
 .pd-s.brk .pd-bd .pd-img{aspect-ratio:1/1;margin-bottom:-44px}.pd-s.brk .pd-bd .pd-img::after{height:70%;background:linear-gradient(to top,#1E100D,transparent)}.pd-s.brk .pd-brkrow,.pd-s.brk .pd-bigh{position:relative;z-index:1}.pd-s.brk .pd-img span{display:none}
 .pd-img span{z-index:1}
+.pd-at i.fin{background:#3B4A42;color:#E3BC6A}.pd-at small{display:block;margin-top:6px;font-size:.7rem;color:#CFE0D6;letter-spacing:0}.pd-team em.w{color:#E3BC6A}
 .pd-one.lg{font-size:1.32rem;line-height:1.28}.pd-one.xl{font-size:1.12rem;line-height:1.32}
 .pd-pick{border-color:rgba(120,200,255,.35);background:linear-gradient(160deg,rgba(60,110,170,.25),rgba(20,40,60,.2))}.pd-pick i{color:#8CC8FF}.pd-rec{margin-top:10px;padding-top:9px;border-top:1px solid rgba(140,200,255,.2);font-size:.82rem;color:#CFE0D6}.pd-rec b{color:#8CC8FF}.pd-pick small{display:block;margin-top:6px;font-size:.78rem;color:#9FB3A7}
 /* Pato's own story look (Marco Nov 12: "our own unique look", not Instagram): framed photo with the duck-bill corner, gold category stamp pinned on the edge, serif headline with a gold rule */
@@ -2002,7 +2003,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261112181800";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261112201500";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -6967,17 +6968,18 @@ TRACKER DATA:
     var pv = pos.reduce(function(m, p){ return m + (p.precio > 0 ? p.sh*p.precio : 0); }, 0), worth = function(p){ return Math.abs(p.sh*(p.precio-p.prev)) >= Math.max(10, pv*.005); };   // Marco: +6.3% on US$21 is US$1.25, not worth a slide
     var b = pos.filter(function(p){ return p.prev > 0 && p.precio > 0 && Math.abs(p.precio/p.prev-1) >= .04 && worth(p); }).sort(function(x, y){ return Math.abs(y.sh*(y.precio-y.prev)) - Math.abs(x.sh*(x.precio-x.prev)); })[0];
     var said = tk.happened ? tk.happened.text : "", st0 = b && about(b.t, daily && daily.stocks && daily.stocks[b.t]);
+    var bigSame = b && big && about(b.t, big); if(bigSame) st0 = null;   // Marco Nov 12: Breaking and Big move never repeat the same story or photo
     if(b && !(said && (new RegExp("\\b" + b.t + "\\b").test(said) || (st0 && said.indexOf(st0.h.split(" ")[0]) >= 0)))){ var ch = (b.precio/b.prev-1)*100;
-      MV = ({id: ed + ":move:" + b.t + (ch>0?"+":"-"), cls: "", t: "Big move · " + b.t, w: "today", nav: "📈 Big move", sh: st0 ? {k: "Big move · " + b.t, h: st0.h, s: st0.s, u: st0.u} : null, u: st0 && st0.u, pic: st0 && st0.u, ph: st0 && st0.h, ps: st0 && st0.s, body: breakBody(b, ch, st0)}); }
+      MV = ({id: ed + ":move:" + b.t + (ch>0?"+":"-"), cls: "", t: "Big move · " + b.t, w: "today", nav: "📈 Big move", sh: st0 ? {k: "Big move · " + b.t, h: st0.h, s: st0.s, u: st0.u} : null, u: st0 && st0.u, pic: st0 && st0.u, ph: st0 && st0.h, ps: st0 && st0.s, body: breakBody(b, ch, st0, bigSame)}); }
     var fb = (prefs && prefs.fb) || {}, ix = function(k){ return CATS.map(function(c){ return c[0]; }).indexOf(k); };   // 👍/👎 move topics up or down
     (function(){ var T = on().slice().sort(function(a, b){ return (fb[b]||0) - (fb[a]||0) || on().indexOf(a) - on().indexOf(b); }); return ["big", "rd"].concat(T.filter(function(k){ return k !== "game"; }), T.indexOf("game") >= 0 ? ["game"] : [], WILD() ? [WILD()] : []); })().map(function(k){ return CATS[ix(k)]; }).filter(Boolean).forEach(function(c){ if(L.length >= MAX + 1) return; var k = c[0], it, h;
       if(k === "big"){ if(!big) return; var BY = big.by && big.by.length ? big.by : [big.s].filter(Boolean);   // Breaking = the news of the day (Marco Nov 11), front-page look every day
         L.push({id: "big:" + big.h, hot: big.huge !== false, cls: "big brk", t: "Breaking", w: ago(big.t) + " ago", u: big.u, pic: big.u, ph: big.h, ps: big.s, fk: "big", sh: {k: "Breaking", h: big.h, s: big.s, u: big.u, kn: knowArr("big")},
           body: '<div class="pd-brkrow"><span class="pd-brk"><span class="pd-dot"></span>BREAKING</span><span class="pd-ago">' + esc(ago(big.t)) + ' ago</span></div><div class="pd-bigh">' + esc(big.h) + '</div>' +
             (BY.length ? '<div class="pd-by"><small>' + (Math.max(BY.length, big.n || 0) > 1 ? "Covered by " + Math.max(BY.length, big.n || 0) + " outlets" : "Source") + '</small>' + BY.slice(0, 4).map(function(o){ return '<span>' + esc(o) + '</span>'; }).join("") + '</div>' : '') + (big.brief && big.brief.facts && big.brief.facts.length ? '<div class="pd-know pd-kf"><i>KEY FACTS</i><ul>' + big.brief.facts.map(function(t){ return '<li>' + bold(t) + '</li>'; }).join("") + '</ul></div>' + (big.brief.why ? '<div class="pd-note"><i>WHY IT MATTERS</i><p>' + bold(big.brief.why) + '</p></div>' : '') : know("big") + (function(){ var A = (big.also || []).filter(function(t){ return t && t !== big.h; }).slice(0, 3); return A.length ? '<div class="pd-know pd-dev"><i>THE DEVELOPING STORY</i><ul>' + A.map(function(t){ return '<li>' + esc(t) + '</li>'; }).join("") + '</ul></div>' : ''; })()) + note(notes.big)}); return; }
-      if(k === "game"){ var pg = pickGame(FR.game ? dd.games : daily && daily.games), g = pg && pg.g, mine = pg && pg.mine; if(!g) return;
+      if(k === "game"){ var pg = pickGame(FR.game ? dd.games : daily && daily.games), g = pg && scOf(pg.g), mine = pg && pg.mine; if(!g) return; pg.more = (pg.more || []).map(scOf);
         var TM = g.teams || [], vs = TM.length === 2 && TM[0].n && TM[1].n ? '<div class="pd-vs">' + TM.map(function(t){ return '<div class="pd-team">' + (t.logo ? '<img src="' + esc(t.logo) + '" alt="" onerror="this.outerHTML=\'<span class=pd-tl>' + esc(t.n.slice(0,3).toUpperCase()) + '</span>\'">' : '<span class="pd-tl">' + esc(t.n.slice(0,3).toUpperCase()) + '</span>') +
-          '<b>' + esc(t.n) + '</b>' + (g.live && t.score !== "" ? '<em>' + esc(t.score) + '</em>' : t.rec ? '<small>' + esc(t.rec) + '</small>' : '') + '</div>'; }).join('<div class="pd-at">' + (g.live ? '<i>LIVE</i>' : 'VS') + '</div>') + '</div>' : '<div class="pd-h1">' + esc(g.name.replace(" at ", " vs ")) + '</div>';
+          '<b>' + esc(t.n) + '</b>' + ((g.live || g.fin) && t.score !== "" ? '<em' + (g.fin && t.won ? ' class="w"' : '') + '>' + esc(t.score) + '</em>' : t.rec ? '<small>' + esc(t.rec) + '</small>' : '') + '</div>'; }).join('<div class="pd-at">' + (g.fin ? '<i class="fin">FINAL</i>' : g.live ? '<i>LIVE</i>' + (g.det ? '<small>' + esc(g.det) + '</small>' : '') : 'VS') + '</div>') + '</div>' : '<div class="pd-h1">' + esc(g.name.replace(" at ", " vs ")) + '</div>';
         L.push({id: ed + ":game:" + g.name, cls: "game", t: "Sports", w: g.league, fk: "game", sh: {k: "Sports · " + g.league, h: g.name.replace(" at ", " vs ") + (g.t && !g.live ? " · " + hr(g.t) + " DR" : ""), s: (g.tv||[]).join(", "), u: ""}, body: '<div class="pd-k">SPORTS · ' + esc(g.league.toUpperCase()) + '</div>' + vs + '<div class="pd-m pd-c">' + esc([g.live ? "LIVE now" : g.t ? hr(g.t) + " (DR time)" : "", (g.tv||[]).join(", "), g.note].filter(Boolean).join(" · ")) + '</div>' +
           gameMore(g) + (g.inj && g.inj.length ? '<div class="pd-know pd-inj"><i>INJURY REPORT</i>' + g.inj.map(function(t){ return '<p><b>' + esc(t.team) + '</b> ' + esc(t.out.map(function(o){ return o.n + " (" + o.st + ")"; }).join(", ")) + '</p>'; }).join("") + '</div>' : '') +
           (g.lineup && g.lineup.length ? '<div class="pd-know pd-inj"><i>STARTING LINEUPS</i>' + g.lineup.map(function(t){ return '<p><b>' + esc(t.team) + '</b> ' + esc(t.xi.join(", ")) + '</p>'; }).join("") + '</div>' : '') +
@@ -7043,6 +7045,14 @@ TRACKER DATA:
   function betOn(g){ return bets.filter(function(x){ return ["won","lost","push"].indexOf(x.result) < 0 && (x.legs||[]).some(function(l){ var a = String(l.game||"").toLowerCase(); return a && g.name.toLowerCase().split(/ at | vs\.? /).some(function(t){ return t && a.indexOf(t.split(" ").pop()) >= 0; }); }); })[0]; }
   function rot(G){ var by = {}, lg = []; (G || []).slice().sort(function(a, b){ return (betOn(b) ? 1 : 0) - (betOn(a) ? 1 : 0) || sportScore(b) - sportScore(a); }).forEach(function(g){ if(!by[g.league]){ by[g.league] = []; lg.push(g.league); } by[g.league].push(g); });
     var out = [], k = 0; while(out.length < (G || []).length && k < 20){ lg.forEach(function(l){ if(by[l][k]) out.push(by[l][k]); }); k++; } return out; }
+  // Live scores (Marco Nov 12: "update the score of the sports games whenever the user leaves and comes back"): /scores, 60s cache, only for games that have started
+  var SC = {}, scAt = 0;
+  function scOf(g){ var r = g && g.ref && SC[g.ref]; if(!r) return g; var o = Object.assign({}, g, {live: r.st === "in", fin: r.st === "post", det: r.det}); o.teams = (g.teams || []).map(function(t, i){ return Object.assign({}, t, {score: r.sc[i] || t.score || "", won: !!r.win[i]}); }); return o; }
+  function liveScores(){ if(DEMO || !base() || Date.now() - scAt < 55e3) return; var dd = drop && drop.day === day() && drop.d, G = [].concat(dd && dd.games || [], daily && daily.games || []);
+    var refs = G.filter(function(g){ return g && g.ref && g.t && g.t < Date.now() + 5*6e4 && !(SC[g.ref] && SC[g.ref].st === "post"); }).map(function(g){ return g.ref; }).filter(function(v, i, a){ return a.indexOf(v) === i; }).slice(0, 12);
+    if(!refs.length) return; scAt = Date.now();
+    fetch(base() + "/scores?r=" + encodeURIComponent(refs.join(","))).then(function(r){ return r.ok ? r.json() : null; }).then(function(d){ if(!d) return; Object.keys(d).forEach(function(k){ SC[k] = d[k]; });
+      if(S.length){ var ns = stories(); S.forEach(function(x){ if(x.fk !== "game") return; var y = ns.filter(function(z){ return z.id === x.id; })[0]; if(y) x.body = y.body; }); if(!$("pdV").hidden && S[cur] && S[cur].fk === "game") show(cur); } }).catch(function(){}); }
   function pickGame(G){ G = rot(G); if(!G.length) return null; var sl = slot(), st = ls("pd-games"); if(!st || st.day !== day()) st = {day: day(), by: {}};
     var nm = st.by[sl], g = nm && G.filter(function(x){ return x.name === nm; })[0];
     if(!g){ var used = Object.keys(st.by).filter(function(k){ return Number(k) !== sl; }).map(function(k){ return st.by[k]; }), last = st.by[Object.keys(st.by).filter(function(k){ return Number(k) !== sl; }).sort().pop()];
@@ -7056,20 +7066,20 @@ TRACKER DATA:
     var pf0 = window.__patoFacts || {}, ideas = [], val = 0, c0 = 0, g0 = 0, big0 = null;
     pos.forEach(function(p){ if(p.precio > 0){ var v = p.sh*p.precio; val += v; if(!big0 || v > big0.v) big0 = {t: p.t, v: v}; if(p.costo > 0 && !p.regalo){ c0 += p.sh*p.costo; g0 += p.sh*(p.precio-p.costo); } } });
     var wt = big0 && val > 0 ? Math.round(big0.v/val*100) : 0, since = c0 > 0 ? g0/c0*100 : null;
-    if(wt >= 40 && pos.length > 1) ideas.push(wt + "% of your stocks ride on " + big0.t + ". That's one company carrying your plan; many investors keep a single stock under 20 to 30% so one bad quarter can't sink everything. Your next buys can fix that without selling anything.");
-    else if(wt >= 40) ideas.push("All your stock money is in " + big0.t + " right now. One great company is still one risk; spreading the next buys across a broad index fund is how most long-term investors protect the upside.");
-    if(since != null) ideas.push(since < 0 ? "You're " + Math.abs(since).toFixed(1) + "% below what you paid overall. That only becomes a real loss if you sell; buying the same companies lower brings your average cost down, which is why a dip with a plan beats a dip with panic." : "You're " + since.toFixed(1) + "% above what you paid overall. The trap now is chasing: buying more just because it went up. Set the price you'd be happy to pay and let the market come to you.");
-    if(pf0.goal > 0 && pf0.saved > 0 && pf0.saved < pf0.goal){ var gp = Math.round(pf0.saved/pf0.goal*100), r10 = Math.round(pf0.saved*.1/1000)*1000; ideas.push("You're " + gp + "% of the way to RD$" + Math.round(pf0.goal).toLocaleString("en-US") + ". At this stage what you save matters more than what you earn on it: even a strong 10% year on what you have adds about RD$" + r10.toLocaleString("en-US") + ". Your monthly saving is the real engine."); }
+    if(wt >= 40 && pos.length > 1) ideas.push(wt + "% of your stocks of your stocks is " + big0.t + ". That's a lot riding on one company. Many investors keep any single stock under 20 to 30%, so one bad quarter can't sink the whole plan. You don't have to sell anything: just point your next buys somewhere else.");
+    else if(wt >= 40) ideas.push("All your stock money is in " + big0.t + " right now. Even a great company is still one risk. Spreading your next buys into a broad index fund is how most long-term investors protect what they've built.");
+    if(since != null) ideas.push(since < 0 ? "You're " + Math.abs(since).toFixed(1) + "% below what you paid overall. That only becomes a real loss if you sell. Buying the same companies at a lower price brings your average cost down. That's why a dip with a plan beats a dip with panic." : "You're " + since.toFixed(1) + "% above what you paid overall. The trap now is chasing, buying more just because it went up. Decide the price you'd be happy to pay, and let the market come to you.");
+    if(pf0.goal > 0 && pf0.saved > 0 && pf0.saved < pf0.goal){ var gp = Math.round(pf0.saved/pf0.goal*100), r10 = Math.round(pf0.saved*.1/1000)*1000; ideas.push("You're " + gp + "% of the way to RD$" + Math.round(pf0.goal).toLocaleString("en-US") + ". At this stage, what you save matters more than what you earn on it. Even a great 10% year on what you have adds about RD$" + r10.toLocaleString("en-US") + ". Your monthly saving is the real engine."); }
     var byA = {stocks: ideas.slice(), goal: [], spending: [], loans: [], bets: []};
     if(pf0.goal > 0 && pf0.saved > 0 && pf0.saved < pf0.goal) byA.goal.push(ideas.pop());
     if(pf0.limit > 0 && pf0.daysLeft > 0){ var used = Math.round(pf0.spentMonth/pf0.limit*100), dim = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate(), tp = Math.round((dim - pf0.daysLeft)/dim*100);
-      byA.spending.push(used > tp + 5 ? "You've used " + used + "% of your monthly limit with " + pf0.daysLeft + " days left. Small daily spends are the sneaky ones: they don't feel like decisions, so they don't feel like money." : "You've used " + used + "% of your limit and the month is " + tp + "% done. Spending less than you could is the quietest way to get rich: every peso left over is a peso invested."); }
-    if(pf0.loansOpen){ byA.loans.push("You have RD$" + pf0.lentOut.toLocaleString("en-US") + " lent out" + (pf0.lateLoans ? ", and " + pf0.lateLoans + (pf0.lateLoans === 1 ? " loan is" : " loans are") + " late" : "") + ". Lending pays only if it comes back: a simple rule many lenders use is never lend more than you could live without if it didn't."); }
+      byA.spending.push(used > tp + 5 ? "You've used " + used + "% of your monthly limit with " + pf0.daysLeft + " days left. Small daily spends are the sneaky ones. They don't feel like decisions, so they don't feel like money." : "You've used " + used + "% of your limit and the month is " + tp + "% done. Spending less than you're allowed is the quietest way to build wealth. Every peso left over is a peso you can invest."); }
+    if(pf0.loansOpen){ byA.loans.push("You have RD$" + pf0.lentOut.toLocaleString("en-US") + " lent out" + (pf0.lateLoans ? ", and " + pf0.lateLoans + (pf0.lateLoans === 1 ? " loan is" : " loans are") + " late" : "") + ". Lending only pays if the money comes back. A simple rule: never lend more than you could live without if it didn't."); }
     var bw0 = bets.filter(function(b){ return b.result === "won"; }).length, bl0 = bets.filter(function(b){ return b.result === "lost"; }).length;
-    if(bw0 + bl0 >= 3) byA.bets.push("Your settled bets: " + bw0 + " won, " + bl0 + " lost. Sportsbooks build a margin into every line, so even good pickers need to win more than half just to break even; small, fixed stakes keep it fun.");
+    if(bw0 + bl0 >= 3) byA.bets.push("Your settled bets: " + bw0 + " won, " + bl0 + " lost. Sportsbooks build a margin into every line, so even good pickers must win more than half their bets just to break even. Small, fixed stakes keep it fun.");
     var ang = angleOf(), pool0 = (byA[ang] && byA[ang].length ? byA[ang] : []).concat(byA.stocks, byA.goal, byA.spending, byA.loans, byA.bets);
     if(pool0.length) line = pool0[0];
-    else line = "Rich isn't a number, it's a gap: the space between what you earn and what you spend. Pato's job is to help you widen it a little every month.";
+    else line = "Being rich isn't a number. It's the gap between what you earn and what you spend, and Pato's job is to help you widen it a little every month.";
     var pf = window.__patoFacts || {}, tip = "";
     if(tk.pato && tk.pato.line){ line = tk.pato.line; tip = tk.pato.tip || ""; }   // the 7am AI take: Pato talking to you with your real numbers (checked on the server)
     if(!tip && pf.limit > 0 && pf.daysLeft > 0){ var lft = pf.limit - pf.spentMonth; tip = lft > 0 ? "Keep spending under RD$" + Math.max(0, pf.perDayLeft).toLocaleString("en-US") + " a day and you finish the month inside your RD$" + pf.limit.toLocaleString("en-US") + " limit." : "You're past your monthly limit; every peso you don't spend now goes straight back to your goal."; }
@@ -7100,7 +7110,7 @@ TRACKER DATA:
     return {lg: g.league || g.lg || "Sports", txt: "Data lean: " + best.n + " (" + best.o + "). ESPN's model gives them " + best.w + "%, but the odds only price them at " + best.p + "%. A gap of " + Math.round(best.e) + " points is what sharp bettors call value." + (wins != null ? " They've won " + wins + " of their last " + f.r.length + "." : ""),
       sub: (g.name || g.short || "") + " · A lean, not a lock: keep the stake small."}; }
   var CONAME = {AAPL:"Apple",TSLA:"Tesla",NVDA:"Nvidia",AMZN:"Amazon",GOOGL:"Alphabet (Google)",GOOG:"Alphabet (Google)",META:"Meta",MSFT:"Microsoft",NFLX:"Netflix",AVGO:"Broadcom",AMD:"AMD",TSM:"TSMC",IBKR:"Interactive Brokers",VUAA:"S&P 500 fund",DIS:"Disney",NKE:"Nike",KO:"Coca-Cola",JPM:"JPMorgan",V:"Visa",MA:"Mastercard"};
-  function breakBody(b, ch, st0){ var up = ch > 0, L = window.ST_LOGOS && window.ST_LOGOS[b.t], g = b.sh*(b.precio-b.prev), all = pos.filter(function(p){ return p.prev > 0 && p.precio > 0; }), tot = 0;
+  function breakBody(b, ch, st0, bs){ var up = ch > 0, L = window.ST_LOGOS && window.ST_LOGOS[b.t], g = b.sh*(b.precio-b.prev), all = pos.filter(function(p){ return p.prev > 0 && p.precio > 0; }), tot = 0;
     all.forEach(function(p){ tot += p.sh*(p.precio-p.prev); });
     var since = b.costo > 0 && !b.regalo ? pct((b.precio/b.costo-1)*100) : "";
     var oth = tot - g, nm = b.t, nx = evs.filter(function(e){ return e.t === b.t && e.fecha >= new Date(Date.now() - 4*3600e3).toISOString().slice(0, 10); }).sort(function(a, c){ return a.fecha.localeCompare(c.fecha); })[0];   // plain dollars (Marco: "119% of your stocks' move" means nothing)
@@ -7108,13 +7118,13 @@ TRACKER DATA:
     var w = val > 0 ? Math.round(b.sh*b.precio/val*100) : 0, sv = b.costo > 0 && !b.regalo ? (b.precio/b.costo-1)*100 : null, dn = null;
     if(nx){ dn = Math.round((Date.parse(nx.fecha + "T12:00:00Z") - Date.parse(new Date(Date.now() - 4*3600e3).toISOString().slice(0, 10) + "T12:00:00Z"))/864e5); if(dn < 0 || dn > 14) dn = null; }
     var line = b.regalo ? "These are free reward shares, so every cent here is gain." :
-      dn != null ? (nx.txt || "A big event") + (dn === 0 ? " is today" : dn === 1 ? " is tomorrow" : " is in " + dn + " days") + ", and stocks often swing hardest right around it. If you plan to buy more, set your price before, not during, the move." :
-      w >= 40 && !up ? nm + " is " + w + "% of your stocks, so days like this hit your whole portfolio. " + (sv != null && sv < 0 ? "Buying lower brings your average cost down, but adding to your biggest position also adds to that concentration." : "Your next buys going to other companies is the cleanest way to soften days like this.") :
-      w >= 40 ? nm + " is now " + w + "% of your stocks. Big jumps make the biggest position bigger; that's a good moment to point your next buys elsewhere instead of chasing it." :
-      !up && sv != null && sv < 0 ? "You're " + Math.abs(sv).toFixed(1) + "% below what you paid on " + nm + ". That's only a real loss if you sell; what matters is whether the reason you bought it changed, not one red day." :
-      !up ? "Even after today you're still " + (sv != null ? sv.toFixed(1) + "% " : "") + "up on " + nm + ". Big names drop 5% several times a year; the plan you had before today still holds." :
-      sv != null && sv > 0 ? "You're now " + sv.toFixed(1) + "% up on " + nm + ". Jumps tempt people to chase; the smart move is to keep your buy prices and let the next dip come to you." :
-      "Good bounce, but " + nm + " is still " + (sv != null ? Math.abs(sv).toFixed(1) + "% " : "") + "below what you paid. Recovering slowly is normal; patience is part of the plan.";
+      dn != null ? (nx.txt || "A big event") + (dn === 0 ? " is today" : dn === 1 ? " is tomorrow" : " is in " + dn + " days") + ". Stocks often swing hardest right around events like this. If you want to buy more, pick your price before the move, not during it." :
+      w >= 40 && !up ? nm + " is " + w + "% of your stocks, so a day like this hits your whole portfolio. " + (sv != null && sv < 0 ? "Buying lower brings your average cost down. But adding to your biggest stock also makes you more dependent on it." : "Putting your next buys into other companies is the simplest way to soften days like this.") :
+      w >= 40 ? nm + " is now " + w + "% of your stocks. Every big jump makes your biggest stock even bigger. That's a good moment to put your next buys somewhere else, instead of chasing it." :
+      !up && sv != null && sv < 0 ? "You're " + Math.abs(sv).toFixed(1) + "% below what you paid on " + nm + ". It's only a real loss if you sell. What matters is whether your reason for buying it changed, not one red day." :
+      !up ? "Even after today you're still " + (sv != null ? sv.toFixed(1) + "% " : "") + "up on " + nm + ". Big companies drop 5% several times a year. The plan you had before today still holds." :
+      sv != null && sv > 0 ? "You're now " + sv.toFixed(1) + "% up on " + nm + ". Jumps like this tempt people to chase. The smart move is to stick to your buy prices and let the next dip come to you." :
+      "Good bounce, but " + nm + " is still " + (sv != null ? Math.abs(sv).toFixed(1) + "% " : "") + "below what you paid. Slow recoveries are normal, and patience is part of the plan.";
     var ik = "pd-ins-" + day() + "-" + b.t + (up ? "u" : "d"), ic = ls(ik); if(ic && ic.line) line = ic.line;
     else setTimeout(function(){ if(!window.mpIdToken) return; window.mpIdToken().then(function(tok){ return fetch(base() + "/insight", {method: "POST", headers: {"content-type": "application/json", authorization: "Bearer " + tok}, body: JSON.stringify({t: b.t, co: CONAME[b.t] || "", chPct: ch, usd: g, sh: b.sh, avg: b.costo || 0, px: b.precio, since: sv == null ? null : Math.round(sv*10)/10, val: Math.round(b.sh*b.precio*100)/100, w: w, oth: Math.round(oth*100)/100, ev: nx && dn != null ? (nx.txt || "") + " in " + dn + " days" : null, h: st0 ? st0.h : null})}); }).then(function(r){ return r && r.ok ? r.json() : null; }).then(function(d){ if(!d || !d.line) return; ls(ik, d); var el = document.querySelector('[data-ins="' + ik + '"] p'); if(el) el.innerHTML = bold(d.line); }).catch(function(){}); }, 300);   // AI insight replaces the fallback when it arrives
     return '<div class="pd-brk mv">📈 BIG MOVE · YOUR STOCK</div>' +
@@ -7122,6 +7132,7 @@ TRACKER DATA:
       '<div class="pd-big ' + (up ? "up" : "dn") + '">' + (up ? "▲ " : "▼ ") + Math.abs(ch).toFixed(1) + '%</div>' +
       '<div class="pd-px">US$' + b.prev.toFixed(2) + ' → <b>US$' + b.precio.toFixed(2) + '</b> today</div>' +
       (st0 ? '<div class="pd-h2" style="margin-top:18px">' + esc(st0.h) + '</div><div class="pd-m">' + esc(st0.s) + " · " + ago(st0.t) + ' ago</div>' : "") +
+      (bs ? '<div class="pd-m" style="margin-top:14px">📰 Why it moved: today\'s Breaking story</div>' : "") +
       '<div class="pd-st"><div><small>' + (up ? "You made today" : "You lost today") + '</small><b class="' + (up ? "up" : "dn") + '">' + sgn(g) + '</b></div><div><small>Your position</small><b>' + usd(b.sh*b.precio) + '</b></div><div><small>Shares</small><b>' + (Math.round(b.sh*1e4)/1e4) + '</b></div><div><small>' + (since ? "Since you bought" : "Cost") + '</small><b>' + (since || (b.regalo ? "Free" : "—")) + '</b></div></div>' +
       '<div class="pd-note" data-ins="' + ik + '"><i>PATO</i><p>' + bold(line) + '</p></div>'; }
   function gameMore(g){ var T = g.teams || [], ab = function(i){ var t = T[i] || {}; return esc(t.ab || (t.n || "").slice(0, 3).toUpperCase()); }, h = "";
@@ -7189,7 +7200,8 @@ TRACKER DATA:
   function PICS(){ var m = window.MP_ME; return !!(m && (m.owner || /^pato-?demo/i.test(m.email || ""))); }   // trial: demo account only until Marco approves
   function pic(u, cb, h){ if(!u || !base() || !PICS() || (u in IM.m)) return; IM.m[u] = null;
     fetch(base() + "/img?u=" + encodeURIComponent(u) + (h ? "&h=" + encodeURIComponent(h) : "")).then(function(r){ return r.ok ? r.json() : {}; }).then(function(d){ IM.m[u] = (d && d.img) || ""; if(IM.m[u]) ls("pd-img3", {day: IM.day, m: Object.keys(IM.m).reduce(function(o, k){ if(IM.m[k]) o[k] = IM.m[k]; return o; }, {})}); if(cb) cb(); }).catch(function(){ delete IM.m[u]; }); }
-  function picHtml(x){ var im = PICS() && x.pic && IM.m[x.pic]; return im ? '<div class="pd-img"><img src="' + esc(im) + '" alt="" referrerpolicy="no-referrer" onerror="this.parentNode.remove()">' + (x.ps ? '<span>' + esc(x.ps) + '</span>' : '') + '</div>' : ''; }
+  function picHtml(x){ var im = PICS() && x.pic && IM.m[x.pic], ix0 = S.indexOf(x); if(im && S.some(function(y, j){ return j < ix0 && y.pic && IM.m[y.pic] === im; })) im = "";   // never the same photo twice
+    return im ? '<div class="pd-img"><img src="' + esc(im) + '" alt="" referrerpolicy="no-referrer" onerror="this.parentNode.remove()">' + (x.ps ? '<span>' + esc(x.ps) + '</span>' : '') + '</div>' : ''; }
   var NEW = {};   // what was unread when you opened: those chips get a dot, the slide gets a NEW tag
   function show(i){
     clearTimeout(timer); cur = Math.max(0, Math.min(i, S.length - 1)); var x = S[cur], s = seen();
@@ -7205,7 +7217,7 @@ TRACKER DATA:
     if(t) timer = setTimeout(function(){ if(!$("pdV").classList.contains("paused")) next(); }, t); else $("pdBars").children[cur].className = "d";
   }
   function next(){ if(cur >= S.length - 1) return close(); show(cur + 1); }
-  function openV(at){ S = stories(); var want = at >= 0 && S[at] ? S[at].id : ""; S.forEach(function(x){ pic(x.pic, null, x.ph); }); hidePeek(); var u = unseen(); NEW = {}; u.forEach(function(x){ NEW[x.id] = 1; });
+  function openV(at){ liveScores(); S = stories(); var want = at >= 0 && S[at] ? S[at].id : ""; S.forEach(function(x){ pic(x.pic, null, x.ph); }); hidePeek(); var u = unseen(); NEW = {}; u.forEach(function(x){ NEW[x.id] = 1; });
     var tkx = S.filter(function(x){ return /:take$/.test(x.id); }); S = tkx.concat(S.filter(function(x){ return NEW[x.id] && tkx.indexOf(x) < 0; }), S.filter(function(x){ return !NEW[x.id] && tkx.indexOf(x) < 0; }));   // Pato's take always first (Marco), then new, then seen if(want) at = S.map(function(x){ return x.id; }).indexOf(want);   // organized: everything new first, then what you already saw (Marco Nov 11)
     var i = at >= 0 && at < S.length ? at : u.length ? S.indexOf(u[0]) : 0; if(!(prefs && prefs.picked) && !u.length) i = S.length - 1;
     $("pdV").hidden = false; document.documentElement.style.overflow = "hidden"; show(i); }
@@ -7271,7 +7283,8 @@ TRACKER DATA:
       if(long || was || Math.abs(dx) > 30 || Math.abs(dy) > 30) { if(was && S[cur] && !S[cur].pick){ show(cur); } return; }
       var r = S0.getBoundingClientRect(); if(e.clientX - r.left < r.width * .3) show(cur - 1); else next(); });
     document.addEventListener("keydown", function(e){ if(V.hidden) return; if(e.key === "Escape") close(); if(e.key === "ArrowRight") next(); if(e.key === "ArrowLeft") show(cur - 1); });
-    document.addEventListener("visibilitychange", function(){ if(!document.hidden){ getDaily(false); getTick(); getDrop(); setTimeout(peek, 900); } });
+    document.addEventListener("visibilitychange", function(){ if(!document.hidden){ getDaily(false); getTick(); getDrop(); liveScores(); setTimeout(peek, 900); } });
+    setInterval(function(){ if(!document.hidden && !$("pdV").hidden && S[cur] && S[cur].fk === "game") liveScores(); }, 6e4);
     setInterval(function(){ if(!document.hidden){ getDaily(false); getTick(); getDrop(); } }, 15*6e4);
   }
   if(!window.claude) return;
