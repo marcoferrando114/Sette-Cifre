@@ -2047,7 +2047,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261112181219";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261112181952";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -6977,6 +6977,10 @@ TRACKER DATA:
   function hh(h){ return (h % 12 || 12) + ":00 " + (h < 12 ? "AM" : "PM"); }
   function clock(){ var sl = slot(); return "Updated " + hh(DROPS[sl]) + " · next " + hh(DROPS[(sl + 1) % DROPS.length]); }
   // Live between drops (Marco Nov 12): every 20 min check for things that can't wait: huge breaking news (3+ outlets), Pato's pick graded, more world stories. The rest waits for the next drop.
+  // Marco Nov 12: the duck stays hidden until this drop's stories are in (max 25s wait, then it shows what it has)
+  var waitAt = Date.now(); setTimeout(function(){ render(); }, 25500);
+  function fresh(){ var sl = slot(); return !!((drop && drop.day === day() && drop.slot === sl && (drop.got || 0) >= waitAt - 18e5) || (!sl && daily && Object.keys(daily.cats || {}).length)); }
+  function ready(){ return DEMO || fresh() || Date.now() - waitAt > 25e3; }
   function getDrop(){ if(DEMO) return; var sl = slot(), same = drop && drop.day === day() && drop.slot === sl && drop.sig === sig(); if(!base() || (getDrop.busy && Date.now() - getDrop.busy < 9e4) || (same && Date.now() - (drop.got || 0) < 20*6e4)) return; if(!sl && !same && !(drop && drop.day === day()) && daily && Object.keys(daily.cats || {}).length) return;   // 7am: the AI edition leads, unless it failed getDrop.busy = Date.now();
     fetch(base() + "/news?" + q().replace("&busy=1", "") + "&busy=1").then(function(r){ return r.ok ? r.json() : null; })
       .then(function(d){ getDrop.busy = 0; if(!d || !d.cats || (!d.big && !Object.keys(d.cats).length)) return;   // never keep an empty drop
@@ -7260,9 +7264,9 @@ TRACKER DATA:
       requestAnimationFrame(function(){ var w = $("pnTrack").scrollWidth / 2; $("pnTrack").style.setProperty("--pn-dur", Math.max(17, w / 51.75) + "s"); }); }
     if(!$("pdV").hidden) return;
     S = stories(); var u = unseen(), first = !(prefs && prefs.picked);
-    $("pdFab").hidden = !S.length; $("pdN").textContent = u.length || ""; $("pdN").hidden = !u.length;
+    $("pdFab").hidden = !S.length || !ready(); $("pdN").textContent = u.length || ""; $("pdN").hidden = !u.length;
     placePeek(); var pw = $("pdPeek"); if(pw) pw.scrollTop = 0; if(pw && !pw.classList.contains("out") && !pw.classList.contains("dive")) pw.className = u.length ? "" : "idle";
-    if(S.length && u.length && daily && !peeked){ if(blocked()) setTimeout(render, 2000); else { peeked = 1; if(!cover()) setTimeout(peek, 1500); } }
+    if(S.length && u.length && ready() && !peeked){ if(blocked()) setTimeout(render, 2000); else { peeked = 1; if(!cover()) setTimeout(peek, 1500); } }
     $("pdFab").classList.toggle("big", u.some(function(x){ return x.hot; })); $("pdFab").classList.toggle("shine", u.length > 0);   // new stories = the duck glows (Marco)
   }
   // Story photos: the outlet's own preview image via the worker (/img), cached for the day; no photo = text page.
@@ -7354,7 +7358,7 @@ TRACKER DATA:
       if(long || was || Math.abs(dx) > 30 || Math.abs(dy) > 30) { if(was && S[cur] && !S[cur].pick){ show(cur); } return; }
       var r = S0.getBoundingClientRect(); if(e.clientX - r.left < r.width * .3) show(cur - 1); else next(); });
     document.addEventListener("keydown", function(e){ if(V.hidden) return; if(e.key === "Escape") close(); if(e.key === "ArrowRight") next(); if(e.key === "ArrowLeft") show(cur - 1); });
-    document.addEventListener("visibilitychange", function(){ if(!document.hidden){ getDaily(false); getTick(); getDrop(); liveScores(); setTimeout(peek, 900); } });
+    document.addEventListener("visibilitychange", function(){ if(!document.hidden){ if(!fresh()){ waitAt = Date.now(); setTimeout(function(){ render(); }, 25500); } getDaily(false); getTick(); getDrop(); liveScores(); setTimeout(peek, 900); } });
     setInterval(function(){ if(!document.hidden && !$("pdV").hidden && S[cur] && S[cur].fk === "game") liveScores(); }, 6e4);
     setInterval(function(){ if(!document.hidden){ getDaily(false); getTick(); getDrop(); } }, 15*6e4);
   }
