@@ -2047,7 +2047,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261112153553";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261112181219";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -6963,9 +6963,9 @@ TRACKER DATA:
     return {angle: angleOf(), money: money, stocks: st, total: tot, bets: open.map(function(b){ b.open = true; return b; }).concat(done)};
   }
   function getDaily(force){ if(DEMO) return;
-    if(!base() || busy || !window.mpIdToken) return;
+    if(!base() || (busy && Date.now() - busy < 9e4) || !window.mpIdToken) return;   // a request stuck while the phone slept never blocks the next one
     var st = ls("pd-daily7"); if(!force && st && st.day === day() && st.sig === sig() && st.data && ((st.data.take && Object.keys(st.data.cats || {}).length >= 2) || Date.now() - (st.at||0) < 15*6e4)){ daily = st.data; return render(); }
-    busy = 1;
+    busy = Date.now();
     window.mpIdToken().then(function(tok){ return fetch(base() + "/daily?" + q(), {method: "POST", headers: {"content-type": "application/json", authorization: "Bearer " + tok}, body: JSON.stringify(facts())}); })
       .then(function(r){ return r.ok ? r.json() : null; }).then(function(d){ busy = 0; if(!d) return render(); daily = d; tick = {at: d.at, ticker: d.ticker, big: d.big};
         ls("pd-daily7", {day: day(), sig: sig(), at: Date.now(), data: d}); render(); }).catch(function(){ busy = 0; render(); });
@@ -6977,13 +6977,14 @@ TRACKER DATA:
   function hh(h){ return (h % 12 || 12) + ":00 " + (h < 12 ? "AM" : "PM"); }
   function clock(){ var sl = slot(); return "Updated " + hh(DROPS[sl]) + " · next " + hh(DROPS[(sl + 1) % DROPS.length]); }
   // Live between drops (Marco Nov 12): every 20 min check for things that can't wait: huge breaking news (3+ outlets), Pato's pick graded, more world stories. The rest waits for the next drop.
-  function getDrop(){ if(DEMO) return; var sl = slot(), same = drop && drop.day === day() && drop.slot === sl && drop.sig === sig(); if(!base() || getDrop.busy || (same && Date.now() - (drop.got || 0) < 20*6e4)) return; if(!sl && !same && !(drop && drop.day === day())) return; getDrop.busy = 1;
+  function getDrop(){ if(DEMO) return; var sl = slot(), same = drop && drop.day === day() && drop.slot === sl && drop.sig === sig(); if(!base() || (getDrop.busy && Date.now() - getDrop.busy < 9e4) || (same && Date.now() - (drop.got || 0) < 20*6e4)) return; if(!sl && !same && !(drop && drop.day === day()) && daily && Object.keys(daily.cats || {}).length) return;   // 7am: the AI edition leads, unless it failed getDrop.busy = Date.now();
     fetch(base() + "/news?" + q().replace("&busy=1", "") + "&busy=1").then(function(r){ return r.ok ? r.json() : null; })
-      .then(function(d){ getDrop.busy = 0; if(!d || !d.cats) return;
+      .then(function(d){ getDrop.busy = 0; if(!d || !d.cats || (!d.big && !Object.keys(d.cats).length)) return;   // never keep an empty drop
         if(same || !sl){ var o = drop.d, LA = ls("pd-live") || {}; if(LA.day !== day()) LA = {day: day(), n: 0, at: 0};
           // Marco: "live alerts can't be too much": only huge breaking news, at most 2 a day, 3+ hours apart. Everything else waits for the next drop.
           if(d.big && d.big.huge && (d.big.n || 0) >= 3 && (!o.big || o.big.h !== d.big.h) && LA.n < 2 && Date.now() - LA.at > 3*3600e3){ o.big = d.big; LA.n++; LA.at = Date.now(); ls("pd-live", LA); }
-          if(d.pick) o.pick = d.pick; drop.got = Date.now(); }   // the pick's record updates quietly (no alert)
+          if(d.pick) o.pick = d.pick; drop.got = Date.now();
+          if(Object.keys(d.cats).length > Object.keys(o.cats || {}).length || !o.big){ drop.d = Object.assign({}, d, {big: o.big || d.big, pick: o.pick}); } }   // Nov 12: a thin drop gets filled in on the next check   // the pick's record updates quietly (no alert)
         else drop = {day: day(), slot: sl, sig: sig(), d: d, got: Date.now()};
         ls("pd-drop3", drop); render(); }).catch(function(){ getDrop.busy = 0; }); }
   function about(t, it){ if(!it || !it.h) return null; var re = CO[t] || new RegExp("\\b" + t + "\\b"); return re.test(it.h) ? it : null; }   // a stock's news must name that company (Marco: no Costco story on IBKR)
@@ -7009,7 +7010,7 @@ TRACKER DATA:
     Object.keys(cats0).concat(dd ? Object.keys(dd.cats || {}) : []).forEach(function(k){ if(cats[k]) return; var A = pickNew(k, [].concat(dd && dd.cats && dd.cats[k] || [], cats0[k] || []));
       cats[k] = A; if(A[0] && ![].concat(cats0[k] || []).some(function(x){ return x.h === A[0].h; })) FR[k] = 1; });   // FR = swapped in by a drop: no morning AI lines for it
     var nt0 = (daily && daily.take && daily.take.notes) || {}; Object.keys(nt0).forEach(function(k){ if(!FR[k]) notes[k] = nt0[k]; });
-    var big = pickNew("big", [dd && dd.big, !dd && tick && tick.big, daily && daily.big])[0];   // the 2-hour ticker refresh never sneaks in a new Breaking (live alerts are capped) if(big && daily && daily.big && big.h !== daily.big.h) FR.big = 1;
+    var big = pickNew("big", [dd && dd.big, !(dd && dd.big) && tick && tick.big, daily && daily.big])[0];   // the 2-hour ticker refresh never sneaks in a new Breaking (live alerts are capped) if(big && daily && daily.big && big.h !== daily.big.h) FR.big = 1;
     if(dd && dd.games && dd.games.length) FR.game = 1;
     var tk = (daily && daily.take) || fallback(), MV = null;
     L.push({id: ed + ":take", cls: "take", t: "Pato's take", w: "Updated " + hh(DROPS[slot()]), body: ""}); var TK = L[L.length - 1];
@@ -7136,7 +7137,7 @@ TRACKER DATA:
     var pf0 = window.__patoFacts || {}, ideas = [], val = 0, c0 = 0, g0 = 0, big0 = null;
     pos.forEach(function(p){ if(p.precio > 0){ var v = p.sh*p.precio; val += v; if(!big0 || v > big0.v) big0 = {t: p.t, v: v}; if(p.costo > 0 && !p.regalo){ c0 += p.sh*p.costo; g0 += p.sh*(p.precio-p.costo); } } });
     var wt = big0 && val > 0 ? Math.round(big0.v/val*100) : 0, since = c0 > 0 ? g0/c0*100 : null;
-    if(wt >= 40 && pos.length > 1) ideas.push(wt + "% of your stocks of your stocks is " + big0.t + ". That's a lot riding on one company. Many investors keep any single stock under 20 to 30%, so one bad quarter can't sink the whole plan. You don't have to sell anything: just point your next buys somewhere else.");
+    if(wt >= 40 && pos.length > 1) ideas.push(wt + "% of your stocks is " + big0.t + ". That's a lot riding on one company. Many investors keep any single stock under 20 to 30%, so one bad quarter can't sink the whole plan. You don't have to sell anything: just point your next buys somewhere else.");
     else if(wt >= 40) ideas.push("All your stock money is in " + big0.t + " right now. Even a great company is still one risk. Spreading your next buys into a broad index fund is how most long-term investors protect what they've built.");
     if(since != null) ideas.push(since < 0 ? "You're " + Math.abs(since).toFixed(1) + "% below what you paid overall. That only becomes a real loss if you sell. Buying the same companies at a lower price brings your average cost down. That's why a dip with a plan beats a dip with panic." : "You're " + since.toFixed(1) + "% above what you paid overall. The trap now is chasing, buying more just because it went up. Decide the price you'd be happy to pay, and let the market come to you.");
     if(pf0.goal > 0 && pf0.saved > 0 && pf0.saved < pf0.goal){ var gp = Math.round(pf0.saved/pf0.goal*100), r10 = Math.round(pf0.saved*.1/1000)*1000; ideas.push("You're " + gp + "% of the way to RD$" + Math.round(pf0.goal).toLocaleString("en-US") + ". At this stage, what you save matters more than what you earn on it. Even a great 10% year on what you have adds about RD$" + r10.toLocaleString("en-US") + ". Your monthly saving is the real engine."); }
