@@ -27,7 +27,8 @@ async function verify(token) {
 // ---------- Pato Daily (Google News RSS + ESPN schedules, cached at Cloudflare's edge; one Haiku call per user per day for Pato's take) ----------
 const GN = "https://news.google.com/rss", EN = "hl=en-US&gl=US&ceid=US:en", ES = "hl=es-419&gl=DO&ceid=DO:es-419";
 const TRUSTED = /^(Reuters|Associated Press|The Associated Press|USA TODAY|USA Today|Yahoo News|Fortune|Newsweek|Sky News|The Independent|TIME|Time|Los Angeles Times|Investing\.com|AP News|CNBC|Bloomberg|Bloomberg\.com|Yahoo Finance|Yahoo|MarketWatch|The Wall Street Journal|WSJ|Financial Times|CNN|CNN Business|Business Insider|Barron's|Fox Business|Axios|The Verge|TechCrunch|Wired|Ars Technica|Engadget|CoinDesk|Cointelegraph|Decrypt|Forbes|ESPN|The Athletic|CBS Sports|NBC Sports|Yahoo Sports|Sports Illustrated|BBC|BBC News|The Guardian|NPR|The New York Times|The Washington Post|Politico|The Hill|NBC News|ABC News|CBS News|Al Jazeera|Variety|Billboard|Rolling Stone|The Hollywood Reporter|Deadline|IGN|Polygon|GameSpot|Kotaku|STAT|Healthline|Medical News Today|Car and Driver|MotorTrend|Road & Track|Top Gear|Vogue|GQ|Hypebeast|Highsnobiety|Business of Fashion|WWD|Elle|Diario Libre|Listín Diario|Listin Diario|El Día|El Dia|Hoy Digital|Periódico Hoy|N Digital|CDN|El Nuevo Diario|Noticias SIN|Acento|De Último Minuto|Diario Libre RD|PokerNews|Investopedia|Bloomberg Línea)$/i;
-const JUNK = /\b(opinion|sponsored|\d+ (stocks?|ways|things|reasons|picks|best)|top \d+|best .{0,30} to buy|should you (buy|sell)|is it time to|buy now|before it'?s too late|millionaire|prediction:|could make you rich|live updates?|quiz|podcast|horoscope|deal alert|% off|coupon|review:)\b/i;
+const BADSRC = /youtube|tiktok|reddit|instagram|facebook|\bx\.com|twitter|msn video|benzinga|motley fool|fool\.com|seeking alpha|zacks|gurufocus|stocktwits/i;
+const JUNK = /(stock analysis|big announcement|everything just changed|!\)|you won'?t believe|\?{2}|\bhere'?s why\b|\bwatch:)|\b(opinion|sponsored|\d+ (stocks?|ways|things|reasons|picks|best)|top \d+|best .{0,30} to buy|should you (buy|sell)|is it time to|buy now|before it'?s too late|millionaire|prediction:|could make you rich|live updates?|quiz|podcast|horoscope|deal alert|% off|coupon|review:)\b/i;
 const MOVERS = /\b(fed|federal reserve|powell|rates?|inflation|cpi|jobs report|payrolls|s&p|nasdaq|dow|stocks?|wall street|bitcoin|crypto|dollar|earnings|oil|treasur(y|ies)|recession|tariffs?|ipo|market)\b/i;
 const DRAMA = /\b(affair|scandal|fired|ousted|steps? down|resign(s|ed)?|lawsuit|sued|indicted|charged|arrested|probe|investigat|fraud|leak(ed)?|recall|bankrupt|layoffs?|misconduct|accused)\b/i;
 const CALLS = /\b(upgrades?|upgraded|downgrades?|downgraded|price target|buy rating|top pick|outperform|overweight|analysts? (say|see|expect|bullish))\b/i;
@@ -75,7 +76,7 @@ function parseBing(xml) {
   const it = [...String(xml).matchAll(/<item>([\s\S]*?)<\/item>/g)].map(m => {
     const g = tag => { const r = m[1].match(new RegExp("<" + tag + "[^>]*>([\\s\\S]*?)</" + tag + ">", "i")); return r ? dec(r[1]) : ""; };
     const l = g("link"), u = (() => { try { return new URL(l).searchParams.get("url") || l; } catch (e) { return l; } })(), im = g("News:Image").replace(/^http:/, "https:");
-    return { bing: 1, h: g("title"), s: g("News:Source"), u, t: Date.parse(g("pubDate")) || 0, img: im && !BADIMG.test(im) ? im + (im.includes("?") ? "&" : "?") + "w=800&h=450&c=7" : "" };
+    return { bing: 1, h: g("title"), s: g("News:Source"), d: g("description").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 400), u, t: Date.parse(g("pubDate")) || 0, img: im && !BADIMG.test(im) ? im + (im.includes("?") ? "&" : "?") + "w=800&h=450&c=7" : "" };
   }).filter(i => i.h && i.u);
   return it.map(i => { const w = new Set(words(i.h)), same = it.filter(j => j === i || words(j.h).filter(v => w.has(v)).length / Math.max(w.size, 1) >= 0.5);
     const by = [...new Set(same.map(j => j.s).filter(x => TRUSTED.test(x)))]; return Object.assign(i, { n: new Set(same.map(j => j.s).filter(Boolean)).size || 1, by: by.slice(0, 3), also: same.filter(j => j !== i).map(j => j.h).slice(0, 3) }); });
@@ -98,7 +99,7 @@ function clean(items, hours) {
   const now = Date.now(), seen = new Set();
   return items.filter(i => {
     const k = i.h.toLowerCase().replace(/[^a-z0-9 ]/g, "").split(" ").slice(0, 6).join(" ");
-    if (!i.h || !(i.bing || TRUSTED.test(i.s)) || JUNK.test(i.h) || seen.has(k) || (i.t && now - i.t > hours * 3600e3)) return false;
+    if (!i.h || !(i.bing || TRUSTED.test(i.s)) || BADSRC.test(i.s || "") || JUNK.test(i.h) || seen.has(k) || (i.t && now - i.t > hours * 3600e3)) return false;
     seen.add(k); return true;
   });
 }
@@ -176,8 +177,9 @@ async function bundle(P) {
     ticker: T.filter(i => MOVERS.test(i.h)).concat(T).filter((v, i, a) => a.indexOf(v) === i).slice(0, 5) };
 }
 const TAKE = `You are Pato, the money buddy inside a finance app for young Dominicans. Write today's "Pato's take" for ONE user from the facts below.
-Return ONLY JSON: {"happened":{"text":"","src":""},"you":{"text":"","src":""},"watch":{"text":"","src":""},"game":0,"rd":"","notes":{},"know":{}}
+Return ONLY JSON: {"pato":{"line":"","tip":""},"happened":{"text":"","src":""},"you":{"text":"","src":""},"watch":{"text":"","src":""},"game":0,"rd":"","notes":{},"know":{}}
 Rules:
+- pato: the heart of the app. Pato (a duck who is the user's sharp, warm money friend) talks straight to THEM. line = ONE memorable sentence (max 28 words) that shows Pato really knows their money today: connect two of their real numbers (savings vs goal, spending pace vs limit, stocks today or since bought, bets record) into one insight they would not notice alone. tip = ONE specific, well-thought move for the next days, with a number from USER (e.g. a daily spending amount, a saving target, skipping a bet). Never tell them to buy or sell a specific stock or bet. Use ONLY numbers that appear in USER (you may round). Skip any data that is missing. Sound human, a little witty, never preachy. No emojis.
 - happened: the one news story that matters most for this user's money today (their stocks first, then markets). src = the outlet name given.
 - you: what it means for THEM using ONLY the numbers in USER. "Today" numbers come ONLY from TODAY_* fields. SINCE_BOUGHT_gainPct is the total gain since they bought; never call it today's move. If nothing moved much, say it was a quiet day and give their real total.TODAY change. src = "From your stocks" (or "From your bets").
 - watch: one concrete thing coming up (an earnings date, a game they bet on, a Fed meeting) that appears in the facts. If none, a short useful money habit. src = outlet or "Pato".
@@ -198,12 +200,16 @@ function check(out, body) {
   const bad = nums.some(n => { const k = key(n); if (!today.has(k) && !since.has(k) && !other.has(k)) return true; return says && !sinceWords && since.has(k) && !today.has(k); });
   if (bad && body.total) { const u = body.total.TODAY_changeUsd, p = body.total.TODAY_changePct;
     out.you = { text: Math.abs(u) < 1 ? "Quiet day: your stocks barely moved." : "Your stocks are " + (u > 0 ? "up" : "down") + " US$" + Math.abs(u).toFixed(2) + " (" + Math.abs(p).toFixed(2) + "%) today.", src: "From your stocks" }; }
+  const pt = out && out.pato ? (out.pato.line || "") + " " + (out.pato.tip || "") : "", all = new Set([...today, ...since, ...other]); put(all, 0);
+  const mny = body.money || {}; Object.values(mny).forEach(v => { if (typeof v === "number") [v, v / 1000].forEach(x => { put(all, x); [Math.round(x / 100) * 100, Math.round(x / 1000) * 1000, Math.round(x / 1000)].forEach(y => put(all, y)); }); });
+  const pn = [...pt.matchAll(/(\d[\d,]*(?:\.\d+)?)/g)].map(m => m[1].replace(/,/g, "")).filter(n => Number(n) > 1 && !/^(19|20)\d\d$/.test(n));
+  if (pn.some(n => !all.has(key(n)) && !all.has(Number(n).toFixed(0)))) out.pato = null;   // a number we can't trace to their data: drop it, the app writes its own line
   return out;
 }
 async function take(env, uid, body, b) {
-  const key = "daily5:" + uid + ":" + b.day;
+  const key = "daily6:" + uid + ":" + b.day;
   if (env.LIMITS) { const hit = await env.LIMITS.get(key); if (hit) return JSON.parse(hit); }
-  const user = JSON.stringify({ stocks: (body.stocks || []).slice(0, 8), total: body.total || null, bets: (body.bets || []).slice(0, 8), currency: "USD for stocks, RD$ for bets" }).slice(0, 3000);
+  const user = JSON.stringify({ stocks: (body.stocks || []).slice(0, 8), total: body.total || null, bets: (body.bets || []).slice(0, 8), money: body.money || null, currency: "USD for stocks, RD$ for bets and money" }).slice(0, 3500);
   const facts = JSON.stringify({ stockNews: b.stocks, marketTop: b.ticker.slice(0, 4).map(i => ({ h: i.h, s: i.s })), rd: b.cats.rd ? { h: b.cats.rd[0].h, s: b.cats.rd[0].s } : null,
     games: b.games.map(g => ({ league: g.league, name: g.name, note: g.note, tv: g.tv })),
     cards: Object.fromEntries(Object.entries(b.cats).concat(b.big ? [["big", b.big]] : []).map(([k, v]) => { const i = Array.isArray(v) ? v[0] : v; return [k, { h: i.h, also: (i.also || []).slice(0, 3) }]; })) }).slice(0, 9000);
@@ -218,6 +224,22 @@ async function take(env, uid, body, b) {
   return out;
 }
 
+// Breaking key facts (Marco Nov 11: "give the most important data, not only a headline"). One AI call per story, shared by all users (KV), grounded only in the feed text.
+const BRIEF = `You explain one news story to a busy young reader in a money app. From ONLY the text below, return JSON {"facts":["",""," "],"why":""}.
+facts: up to 3 short lines (max 15 words each) with the most important data: who, what happened, key numbers, what happens next. Only facts stated in the text; if the text has fewer facts, return fewer lines. Never invent numbers, names or outcomes.
+why: one line (max 18 words) on why it matters for markets, money or daily life, only if the text supports it; else "". English. No emojis.`;
+async function brief(env, it) {
+  if (!it || !it.h || !env.ANTHROPIC_KEY || !env.LIMITS) return null;
+  const k = "brief1:" + it.h.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 120), hit = await env.LIMITS.get(k); if (hit) return JSON.parse(hit);
+  const text = JSON.stringify({ headline: it.h, outlet: it.s, snippet: it.d || "", otherHeadlines: (it.also || []).slice(0, 4) });
+  const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "content-type": "application/json", "x-api-key": env.ANTHROPIC_KEY, "anthropic-version": "2023-06-01" },
+    body: JSON.stringify({ model: "claude-haiku-5-5", max_tokens: 400, messages: [{ role: "user", content: BRIEF + "\n\nTEXT: " + text }] }) }).catch(() => null);
+  if (!r || !r.ok) return null;
+  const j = await r.json(), txt = ((j.content || []).find(c => c.type === "text") || {}).text || "", m = txt.match(/\{[\s\S]*\}/);
+  let out = null; try { out = JSON.parse(m[0]); } catch (e) { return null; }
+  out = { facts: (out.facts || []).filter(x => typeof x === "string" && x.trim()).slice(0, 3), why: typeof out.why === "string" ? out.why : "" };
+  await env.LIMITS.put(k, JSON.stringify(out), { expirationTtl: 172800 }); return out;
+}
 // Story photos (Nov 11): Bing News RSS finds the same story -> Bing's thumbnail, else the outlet's own preview photo (og:image).
 // Honest user agent only; if an outlet refuses, try another outlet covering the story, else the page stays text-only.
 const PUA = { "user-agent": "PatoDaily/1.0 (news link preview; +https://marcoferrando114.github.io/Sette-Cifre/)", "accept-language": "en-US,en;q=0.9,es;q=0.8" };
@@ -276,7 +298,7 @@ export default {
     }
     if (req.method === "GET" && url.pathname === "/news") {
       if (!ORIGINS.includes(origin)) return json({ error: { type: "forbidden" } }, 403, origin);
-      try { return json(await bundle(url.searchParams), 200, origin); } catch (e) { return json({ error: { type: "news_failed" } }, 502, origin); }
+      try { const b = await bundle(url.searchParams); if (b.big) b.big.brief = await brief(env, b.big).catch(() => null); return json(b, 200, origin); } catch (e) { return json({ error: { type: "news_failed" } }, 502, origin); }
     }
     if (req.method === "GET" && url.pathname === "/img") {
       if (url.searchParams.get("debug") === "1") {   // test link: tries today's top world story and shows each step
@@ -302,7 +324,7 @@ export default {
       return json(cur, 200, origin);
     }
     if (url.pathname === "/daily") {
-      try { const b = await bundle(url.searchParams); return json({ ...b, take: await take(env, uid, body, b).catch(() => null) }, 200, origin); }
+      try { const b = await bundle(url.searchParams); if (b.big) b.big.brief = await brief(env, b.big).catch(() => null); return json({ ...b, take: await take(env, uid, body, b).catch(() => null) }, 200, origin); }
       catch (e) { return json({ error: { type: "news_failed" } }, 502, origin); }
     }
     if (!MODELS.includes(body.model) || !Array.isArray(body.messages)) return json({ error: { type: "invalid_request_error", message: "model" } }, 400, origin);
