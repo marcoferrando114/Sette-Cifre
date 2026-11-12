@@ -1469,6 +1469,7 @@ main{padding-bottom:calc(128px + env(safe-area-inset-bottom,0px))!important}
 .pd-old{display:inline-block;margin-right:6px;padding:1px 7px;border-radius:999px;background:rgba(255,255,255,.12);color:#B8C7BE;font-size:.62rem;font-weight:700;vertical-align:2px}
 .pd-nav button.nw{color:#fff;background:rgba(255,255,255,.14);position:relative;padding-right:18px}.pd-nav button.nw::after{content:"";position:absolute;right:8px;top:50%;width:6px;height:6px;margin-top:-3px;border-radius:50%;background:#FF5A4A}
 .pd-nav button.sn{opacity:.45}
+.pd-ft{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 14px 14px}.pd-fmid{flex:1;text-align:center;line-height:1.35}.pd-fsp{width:36px;flex:none}.pd-ft .pd-fb{width:36px;height:36px;flex:none;font-size:.9rem;opacity:.75}.pd-ft .pd-fb.on{opacity:1}
 .pd-s.pd-in{animation:pdIn .26s ease backwards}.pd-s.pd-in2{animation:pdIn2 .5s ease backwards}@keyframes pdIn{from{opacity:.35;transform:translateX(18px)}}@keyframes pdIn2{from{opacity:0;transform:translateY(22px) scale(.97)}}
 .pd-s.game .pd-pick{margin:0 0 20px}
 .pd-an{margin-top:14px}.pd-an>div:first-child{display:flex;justify-content:space-between;align-items:baseline}.pd-an b{font-size:1.02rem;color:#fff}.pd-an span{font-size:.9rem;font-weight:800;color:#E8C06A}.pd-anb{height:8px;border-radius:5px;background:rgba(255,255,255,.14);margin-top:6px;overflow:hidden}.pd-anb i{display:block;height:100%;background:#6FD39A;border-radius:5px}.pd-an small{display:block;margin-top:5px;font-size:.78rem;color:#9FB3A7}.pd-ord{display:inline-flex;align-items:center;gap:6px}.pd-ord button{all:unset;cursor:pointer;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.1);text-align:center;line-height:30px;font-size:.95rem}.pd-ord button:disabled{opacity:.25}
@@ -2051,7 +2052,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261112224046";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261112224746";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -7247,7 +7248,6 @@ TRACKER DATA:
   var SHARE = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 8l5-5 5 5"/><path d="M5 13v6a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-6"/></svg>';
   function act(x){ if(x.pick || (!x.u && !x.sh)) return ""; var f = (ls("pd-fb") || {})[x.id];
     return '<div class="pd-act">' + (x.u ? '<button type="button" class="pd-read" data-u="' + esc(x.u) + '">Read the story ›</button>' : '<span></span>') + '<span class="pd-ic">' +
-      (x.fk ? '<button type="button" class="pd-fb' + (f === 1 ? ' on' : '') + '" data-fb="1" aria-label="More like this">👍</button><button type="button" class="pd-fb' + (f === -1 ? ' on' : '') + '" data-fb="-1" aria-label="Less like this">👎</button>' : '') +
       (x.sh ? '<button type="button" class="pd-share" aria-label="Share">' + SHARE + '</button>' : '') + '</span></div>'; }
   // Share: a clean Pato card image (WhatsApp, IG, etc.) + the link
   var duck = new Image(); duck.src = "icon-192.png?v=7";
@@ -7276,7 +7276,7 @@ TRACKER DATA:
     (String(x.ph || (x.sh && x.sh.h) || "").match(/\b[A-Z][a-zA-Z]{3,}\b/g) || []).filter(function(w){ return !STOPW.test(w); }).forEach(function(w){ var k = w.toLowerCase(); lw[k] = (lw[k] || 0) + (now - was); if(!lw[k]) delete lw[k]; });
     var ks = Object.keys(lw).sort(function(a, b){ return Math.abs(lw[b]) - Math.abs(lw[a]); }).slice(0, 40), lw2 = {}; ks.forEach(function(k){ lw2[k] = lw[k]; }); prefs = Object.assign({}, prefs || {}, {lw: lw2});
     var fb = Object.assign({}, (prefs && prefs.fb) || {}); fb[x.fk] = (fb[x.fk] || 0) - was + now; prefs = Object.assign({}, prefs || {}, {fb: fb}); save(on());
-    [].forEach.call($("pdBd").querySelectorAll(".pd-fb"), function(b){ b.classList.toggle("on", Number(b.dataset.fb) === now); }); }
+    [].forEach.call($("pdS").querySelectorAll(".pd-fb"), function(b){ b.classList.toggle("on", Number(b.dataset.fb) === now); }); }
   var seen = function(){ var s = ls("pd-seen2") || {}; return s.day === day() ? s : {day: day(), ids: {}}; };
   function unseen(){ var s = seen(); return S.filter(function(x){ return !x.pick && !s.ids[x.id]; }); }
   function render(){
@@ -7317,7 +7317,8 @@ TRACKER DATA:
     var nv = $("pdNav"); if(nv){ nv.innerHTML = S.map(function(y, j){ var sn = s.ids[y.id] && j !== cur && !NEW[y.id]; return (j > 0 && grp(y) !== grp(S[j - 1]) ? '<span class="pd-sep' + (grp(y) === "n" ? ' nw">NEW · ' : '">✓ SEEN · ') + cnt[grp(y)] + '</span>' : '') + '<button type="button" data-j="' + j + '" class="' + (j === cur ? 'on' : '') + (NEW[y.id] && j !== cur && !s.ids[y.id] ? ' nw' : '') + (sn || (NEW[y.id] && s.ids[y.id] && j !== cur) ? ' sn' : '') + '">' + esc(y.nav || y.t) + '</button>'; }).join(""); var onb = nv.querySelector(".on"); if(onb) nv.scrollLeft = Math.max(0, onb.offsetLeft - nv.clientWidth / 2 + onb.offsetWidth / 2); }
     if(x.pic && !(x.pic in IM.m)) pic(x.pic, function(){ if(S[cur] === x && !$("pdV").hidden && !$("pdBd").querySelector(".pd-img")) $("pdBd").insertAdjacentHTML("afterbegin", picHtml(x)); }, x.ph);
     var ul = unseen().length, g = grp(x), gi = S.filter(function(y){ return grp(y) === g; }).indexOf(x) + 1, nx = S[cur + 1];
-    $("pdFt").innerHTML = '<span class="pd-pos ' + g + '">' + (g === "n" ? "NEW" : g === "s" ? "✓ SEEN" : "PATO'S TAKE") + (g === "t" ? "" : " · " + gi + " of " + cnt[g]) + '</span><br>' + (nx ? "Next: " + (grp(nx) !== g ? (grp(nx) === "n" ? "new stories" : "✓ seen stories") + " · " : "") + esc(nx.nav || nx.t) : (ul ? "🕒 " + ul + " new · " + clock() : "✓ You're all caught up · next drop " + hh(DROPS[(slot() + 1) % DROPS.length])));
+    var fv = (ls("pd-fb") || {})[x.id], tb = x.fk && !x.pick && !x.call && (x.u || x.sh);   // Marco Nov 12: 👍/👎 live quietly at the bottom corners
+    $("pdFt").innerHTML = (tb ? '<button type="button" class="pd-fb' + (fv === 1 ? ' on' : '') + '" data-fb="1" aria-label="More like this">👍</button>' : '<span class="pd-fsp"></span>') + '<div class="pd-fmid">' + ('<span class="pd-pos ' + g + '">' + (g === "n" ? "NEW" : g === "s" ? "✓ SEEN" : "PATO'S TAKE") + (g === "t" ? "" : " · " + gi + " of " + cnt[g]) + '</span><br>' + (nx ? "Next: " + (grp(nx) !== g ? (grp(nx) === "n" ? "new stories" : "✓ seen stories") + " · " : "") + esc(nx.nav || nx.t) : (ul ? "🕒 " + ul + " new · " + clock() : "✓ You're all caught up · next drop " + hh(DROPS[(slot() + 1) % DROPS.length])))) + '</div>' + (tb ? '<button type="button" class="pd-fb' + (fv === -1 ? ' on' : '') + '" data-fb="-1" aria-label="Less like this">👎</button>' : '<span class="pd-fsp"></span>');
     var t = 0; /* no clock (Marco Nov 11): tap for next */ $("pdS").style.setProperty("--pd-t", t/1000 + "s");
     if(t) timer = setTimeout(function(){ if(!$("pdV").classList.contains("paused")) next(); }, t); else $("pdBars").children[cur].className = "d";
   }
@@ -7380,16 +7381,17 @@ TRACKER DATA:
     var sc = null, dive = function(){ var w = $("pdPeek"); if(!w) return; if(!w.classList.contains("dive")){ hidePeek(); w.classList.add("dive"); } clearTimeout(sc); sc = setTimeout(function(){ w.classList.remove("dive"); }, 2500); };   // Marco: wait 4s after you stop scrolling before the duck comes back
     window.addEventListener("scroll", dive, {passive: true}); document.addEventListener("touchmove", function(){ if($("pdV").hidden) dive(); }, {passive: true});   // duck dives while you scroll, so it never sits on your numbers
     // viewer: tap right = next, tap left = back, hold = pause, swipe down = close
-    var V = $("pdV"), S0 = $("pdS"), ty, tx, t0, held;
+    var V = $("pdV"), S0 = $("pdS"), ty, tx, t0, held, sy = 0, drag = false, onRow = false;
     $("pdX").onclick = function(e){ e.stopPropagation(); close(); };
     S0.addEventListener("click", function(e){ var b = e.target.closest(".pd-share, .pd-fb, .pd-opt"); if(!b) return; e.stopPropagation(); if(b.classList.contains("pd-next")){ ls("pd-dq", (Number(ls("pd-dq")) || 0) + 1); S[cur].call = callQ(); show(cur); return; } if(b.classList.contains("pd-opt")) return callPick(S[cur], Number(b.dataset.i)); if(b.classList.contains("pd-share")) share(S[cur]); else vote(S[cur], Number(b.dataset.fb)); });
     V.addEventListener("click", function(e){ if(e.target === V) close(); });
     var NV = $("pdNav"); if(NV) NV.addEventListener("click", function(e){ var b = e.target.closest("button[data-j]"); if(!b) return; e.stopPropagation(); show(Number(b.dataset.j)); });
-    S0.addEventListener("pointerdown", function(e){ if(e.target.closest("button, #pdNav")) return; ty = e.clientY; tx = e.clientX; t0 = Date.now(); held = setTimeout(function(){ V.classList.add("paused"); }, 250); });
-    S0.addEventListener("pointermove", function(e){ if(ty == null) return; var dy = e.clientY - ty; if(dy > 0) S0.style.transform = "translateY(" + dy + "px)"; });
+    S0.addEventListener("pointerdown", function(e){ if(e.target.closest("button, #pdNav, input, .pd-ft")) return; onRow = !!e.target.closest("a, .pd-r2"); ty = e.clientY; tx = e.clientX; t0 = Date.now(); sy = $("pdBd").scrollTop; drag = false; held = setTimeout(function(){ V.classList.add("paused"); }, 250); });
+    S0.addEventListener("pointermove", function(e){ if(ty == null) return; var dy = e.clientY - ty, dx = e.clientX - tx; if(!drag && dy > 28 && dy > Math.abs(dx) * 1.5 && sy <= 0 && $("pdBd").scrollTop <= 0) drag = true; if(drag) S0.style.transform = "translateY(" + Math.max(0, dy - 28) + "px)"; });   // only a deliberate pull-down from the top moves the card; scrolling never does
+    S0.addEventListener("pointercancel", function(){ clearTimeout(held); ty = null; drag = false; S0.style.transform = ""; V.classList.remove("paused"); });   // the browser took the touch to scroll: put everything back
     S0.addEventListener("pointerup", function(e){ if(ty == null) return; clearTimeout(held); var dy = e.clientY - ty, dx = e.clientX - tx, long = Date.now() - t0 > 250; ty = null;
       var was = V.classList.contains("paused"); V.classList.remove("paused");
-      if(dy > 90) return close(); S0.style.transform = "";
+      if(drag && dy > 110) return close(); S0.style.transform = ""; drag = false; if(onRow) return;   // a tap on a story card only opens it, never flips the slide
       if(long || was || Math.abs(dx) > 30 || Math.abs(dy) > 30) { if(was && S[cur] && !S[cur].pick){ show(cur); } return; }
       var r = S0.getBoundingClientRect(); if(e.clientX - r.left < r.width * .3) show(cur - 1); else next(); });
     document.addEventListener("keydown", function(e){ if(V.hidden) return; if(e.key === "Escape") close(); if(e.key === "ArrowRight") next(); if(e.key === "ArrowLeft") show(cur - 1); });
