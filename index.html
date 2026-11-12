@@ -1469,6 +1469,7 @@ main{padding-bottom:calc(128px + env(safe-area-inset-bottom,0px))!important}
 .pd-old{display:inline-block;margin-right:6px;padding:1px 7px;border-radius:999px;background:rgba(255,255,255,.12);color:#B8C7BE;font-size:.62rem;font-weight:700;vertical-align:2px}
 .pd-nav button.nw{color:#fff;background:rgba(255,255,255,.14);position:relative;padding-right:18px}.pd-nav button.nw::after{content:"";position:absolute;right:8px;top:50%;width:6px;height:6px;margin-top:-3px;border-radius:50%;background:#FF5A4A}
 .pd-nav button.sn{opacity:.45}
+.pd-sep.nw{color:#E8C06A;border-left:0;padding-left:2px}.pd-bars i.g{margin-left:8px}.pd-pos{font-weight:800;letter-spacing:.06em;color:#fff}.pd-pos.n{color:#E8C06A}.pd-pos.s{color:rgba(255,255,255,.55)}.pd-nav button.on{box-shadow:0 0 0 2px rgba(232,192,106,.4)}
 .pd-bars i.nw{background:rgba(232,192,106,.75)}
 .pd-brk.mv{background:rgba(227,188,106,.18);color:#F3D38F}
 .pd-brkrow{display:flex;align-items:center;gap:10px}.pd-ago{font-size:.78rem;font-weight:700;color:#FF9A8C}
@@ -2047,7 +2048,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261112204934";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261112205017";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -7285,10 +7286,12 @@ TRACKER DATA:
     $("pdS").className = "pd-s " + (x.cls||""); $("pdT").innerHTML = (NEW[x.id] ? '<span class="pd-new">NEW</span>' : (x.pick ? '' : '<span class="pd-old">✓ Seen</span>')) + esc(x.t); $("pdW").textContent = x.w || "";
     $("pdBd").innerHTML = x.call ? callBody(x.call) : picHtml(x) + x.body + act(x);
     if(x.call && callSt() && callSt().n === 0) callSync(x.call, null);
-    $("pdBars").innerHTML = S.map(function(y, j){ return '<i class="' + (j === cur ? "n" : s.ids[y.id] ? "d" : "nw") + '"></i>'; }).join("");
-    var nv = $("pdNav"); if(nv){ nv.innerHTML = S.map(function(y, j){ var sn = s.ids[y.id] && j !== cur && !NEW[y.id]; return (j > 0 && !NEW[y.id] && NEW[S[j - 1].id] ? '<span class="pd-sep">✓ Seen</span>' : '') + '<button type="button" data-j="' + j + '" class="' + (j === cur ? 'on' : '') + (NEW[y.id] && j !== cur && !s.ids[y.id] ? ' nw' : '') + (sn || (NEW[y.id] && s.ids[y.id] && j !== cur) ? ' sn' : '') + '">' + esc(y.nav || y.t) + '</button>'; }).join(""); var onb = nv.querySelector(".on"); if(onb) nv.scrollLeft = Math.max(0, onb.offsetLeft - nv.clientWidth / 2 + onb.offsetWidth / 2); }
+    var grp = function(y){ return /:take$/.test(y.id) ? "t" : NEW[y.id] ? "n" : "s"; }, cnt = {t: 0, n: 0, s: 0}; S.forEach(function(y){ cnt[grp(y)]++; });   // Marco Nov 12: new and seen stories must be clearly divided
+    $("pdBars").innerHTML = S.map(function(y, j){ return '<i class="' + (j === cur ? "n" : s.ids[y.id] ? "d" : "nw") + (j && grp(y) !== grp(S[j - 1]) ? " g" : "") + '"></i>'; }).join("");
+    var nv = $("pdNav"); if(nv){ nv.innerHTML = S.map(function(y, j){ var sn = s.ids[y.id] && j !== cur && !NEW[y.id]; return (j > 0 && grp(y) !== grp(S[j - 1]) ? '<span class="pd-sep' + (grp(y) === "n" ? ' nw">NEW · ' : '">✓ SEEN · ') + cnt[grp(y)] + '</span>' : '') + '<button type="button" data-j="' + j + '" class="' + (j === cur ? 'on' : '') + (NEW[y.id] && j !== cur && !s.ids[y.id] ? ' nw' : '') + (sn || (NEW[y.id] && s.ids[y.id] && j !== cur) ? ' sn' : '') + '">' + esc(y.nav || y.t) + '</button>'; }).join(""); var onb = nv.querySelector(".on"); if(onb) nv.scrollLeft = Math.max(0, onb.offsetLeft - nv.clientWidth / 2 + onb.offsetWidth / 2); }
     if(x.pic && !(x.pic in IM.m)) pic(x.pic, function(){ if(S[cur] === x && !$("pdV").hidden && !$("pdBd").querySelector(".pd-img")) $("pdBd").insertAdjacentHTML("afterbegin", picHtml(x)); }, x.ph);
-    var ul = unseen().length; $("pdFt").textContent = ul ? "🕒 " + ul + " new · " + clock() + " · tap for next" : "✓ You're all caught up · next drop " + hh(DROPS[(slot() + 1) % DROPS.length]);
+    var ul = unseen().length, g = grp(x), gi = S.filter(function(y){ return grp(y) === g; }).indexOf(x) + 1, nx = S[cur + 1];
+    $("pdFt").innerHTML = '<span class="pd-pos ' + g + '">' + (g === "n" ? "NEW" : g === "s" ? "✓ SEEN" : "PATO'S TAKE") + (g === "t" ? "" : " · " + gi + " of " + cnt[g]) + '</span><br>' + (nx ? "Next: " + (grp(nx) !== g ? (grp(nx) === "n" ? "new stories" : "✓ seen stories") + " · " : "") + esc(nx.nav || nx.t) : (ul ? "🕒 " + ul + " new · " + clock() : "✓ You're all caught up · next drop " + hh(DROPS[(slot() + 1) % DROPS.length])));
     var t = 0; /* no clock (Marco Nov 11): tap for next */ $("pdS").style.setProperty("--pd-t", t/1000 + "s");
     if(t) timer = setTimeout(function(){ if(!$("pdV").classList.contains("paused")) next(); }, t); else $("pdBars").children[cur].className = "d";
   }
