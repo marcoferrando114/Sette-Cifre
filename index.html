@@ -1144,6 +1144,8 @@ section input,section select{max-width:100%;box-sizing:border-box}
 #stList{display:grid;grid-template-columns:minmax(0,1fr);margin-top:14px;border-top:1px solid color-mix(in srgb,var(--ink) 14%,transparent)}
 #stList .st-row{border-bottom:1px solid color-mix(in srgb,var(--ink) 14%,transparent);border-radius:0;padding:12px 2px;background:none}
 .st-row .st-sub{display:flex;justify-content:space-between;gap:10px;margin:6px 0 0;font-size:.78rem;color:var(--muted)}
+.st-avg{display:block}
+.st-lb{font-style:normal;opacity:.7;font-size:.85em;margin-left:2px}
 .st-row .st-sub b{white-space:nowrap;color:var(--ink);font-weight:700;font-family:var(--sans,Inter,system-ui,sans-serif);margin-left:4px}
 .st-row{display:block;width:100%;box-sizing:border-box;min-width:0;border:0;color:inherit;font:inherit;text-align:left;padding:14px 16px;cursor:pointer}
 .st-row .st-l{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
@@ -1703,7 +1705,7 @@ html.mp-guest #pkSeg [data-v="league"],html.mp-guest:not(.tr-casino) #pkSeg [dat
 #pdPeek.out .pd-fab{transform:translateY(6px) rotate(0deg);animation:pdBob .9s ease-in-out .6s 2}
 #pdPeek.idle .pd-fab{transform:translateY(100px) rotate(-5deg)}
 #pdPeek.dive .pd-fab{transform:translateY(120px) rotate(-5deg);animation:none}
-main{padding-bottom:calc(128px + env(safe-area-inset-bottom,0px))!important}
+main{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))!important} /* less empty space under the last card (Marco, Nov 12) */
 #pdPeek .pd-fab b{top:10px;right:14px;left:auto}
 @keyframes pdBob{0%,100%{rotate:0deg}30%{rotate:-6deg}70%{rotate:5deg}}
 #pdBub{position:fixed;right:22px;bottom:200px;z-index:41;max-width:min(250px,64vw);background:#F6F1E4;color:#13241B;border-radius:16px 16px 4px 16px;padding:9px 12px 10px;font:500 .88rem/1.32 -apple-system,system-ui,sans-serif;box-shadow:0 10px 28px rgba(0,0,0,.4);opacity:0;transform:translate(18px,10px) scale(.85);transform-origin:100% 100%;transition:opacity .25s,transform .45s cubic-bezier(.34,1.56,.64,1);pointer-events:none;cursor:pointer}
@@ -2000,7 +2002,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261112181700";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261112181800";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -2744,7 +2746,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
       return `<div class="st-vs ${lead>=0?"ahead":"behind"}"><div><span>You</span><b class="${cl(me)}">${pc(me)}</b></div><div><span>S&amp;P 500</span><b class="${cl(sp)}">${pc(sp)}</b></div><div class="st-lead"><b class="${cl(lead)}">${pc(lead)}</b><span>vs S&amp;P 500</span></div></div>`; })();
     const tAt = c.at ? new Date(c.at).toLocaleTimeString("en-US",{hour:"numeric", minute:"2-digit", timeZone:"America/Santo_Domingo"}).toLowerCase() : "";
     const rows = c.pos.map(x => { const pr = Number(x.precio)||x.costo, v = x.sh*pr, base = (x.nuevo ? x.basis/x.sh : Number(x.prev)) || x.costo, d = base ? (pr/base-1)*100 : 0, inv = x.inv, pl = v - x.basis, g = inv ? pl/inv*100 : 0, open = stOpen===x.t;
-      return `<button type="button" class="st-row" data-t="${spEsc(x.t)}"><div class="st-top">${stLogo(x.t)}<div class="st-mid"><div class="st-t">${spEsc(x.t)}</div><small>${(+x.sh).toLocaleString("en-US",{maximumFractionDigits:4})} shares</small></div><div class="st-right"><div class="st-p">${usd(pr)}</div><small class="${cl(d)}">${pc(d)}</small></div></div>
+      return `<button type="button" class="st-row" data-t="${spEsc(x.t)}"><div class="st-top">${stLogo(x.t)}<div class="st-mid"><div class="st-t">${spEsc(x.t)}</div><small>${(+x.sh).toLocaleString("en-US",{maximumFractionDigits:4})} shares</small>${x.regalo||!x.costo?"":`<small class="st-avg">Avg buy ${usd(+x.costo)}</small>`}</div><div class="st-right"><div class="st-p">${usd(pr)}</div><small class="${cl(d)}">${pc(d)} <i class="st-lb">1D</i></small></div></div>
         <div class="st-sub"><span>Value<b>${usd(v)}</b></span><span>Gain<b class="${cl(pl)}">${pl>0.004?"+":""}${usd(pl)}${x.basis ? ` (${pc(g)})` : ""}</b></span></div>${open?`<div class="st-d">${x.regalo ? "Free shares from IBKR, cost US$0" : `Cost ${usd(inv, inv%1 ? 2 : 0)}`}${x.prev?` · Prev close ${usd(+x.prev)}`:""}</div>`:""}</button>`; });
     const waits = c.ord.map(o => `<div class="st-row wait"><div class="st-l"><span class="st-t">${spEsc(o.t)}</span><span class="st-v">${usd(Number(o.usd)||0,0)}</span></div><small>Waiting · limit ${usd(Number(o.limite)||0)}</small></div>`);
     $("stList").innerHTML = rows.join("") + waits.join("");
@@ -5170,7 +5172,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
       del.onclick = async () => {
         if(!await sure("Delete this " + fmt(e.amount) + " entry?")) return;
         const ref = db.collection("entries").doc(e.id);
-        try{ const snap = await ref.get(); const keep = snap.exists ? snap.data() : null; await ref.delete();
+        try{ let keep = null; try{ const snap = await ref.get(); keep = snap.exists ? snap.data() : null; }catch(_){} await ref.delete();
           if(keep) toast("Entry deleted", fmt(e.amount), false, () => ref.set(keep)); /* Undo for 6s */
         }catch(err){ warnMsg("Couldn’t delete."); }
       };
@@ -7172,7 +7174,7 @@ TRACKER DATA:
     if(T.length){ var mine = pos.map(function(p){ return p.t; });
       var one = T.map(function(i){ var tk = mine.filter(function(x){ return new RegExp("\\b"+x+"\\b").test(i.h); })[0];
         return '<a data-u="' + esc(i.u) + '">' + (tk ? "<b>" + esc(tk) + "</b>" : "") + esc(i.h) + "</a>"; }).join("");
-      $("pnTrack").innerHTML = one + one; $("pnAt").textContent = " · " + hr((tick && tick.at) || daily.at).replace(/:\d\d/, ""); $("pnTick").hidden = false;
+      $("pnTrack").innerHTML = one + one; $("pnAt").textContent = " · Updated " + hr((tick && tick.at) || daily.at).replace(/:\d\d/, ""); $("pnTick").hidden = false;
       requestAnimationFrame(function(){ var w = $("pnTrack").scrollWidth / 2; $("pnTrack").style.setProperty("--pn-dur", Math.max(17, w / 51.75) + "s"); }); }
     if(!$("pdV").hidden) return;
     S = stories(); var u = unseen(), first = !(prefs && prefs.picked);
