@@ -2047,7 +2047,8 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261112181952";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261112204934";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+
 
 
 
@@ -4768,7 +4769,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
         const arc = (s0,s1) => { const [x0,y0] = pt(s0,R), [x1,y1] = pt(s1,R); return `M${x0.toFixed(1)} ${y0.toFixed(1)} A${R} ${R} 0 0 1 ${x1.toFixed(1)} ${y1.toFixed(1)}`; };
         const [nx,ny] = pt(score, R-14);
         $("pscG").innerHTML = `<svg viewBox="0 0 200 112" aria-hidden="true">${[[0,19.4,"z1"],[20.6,39.4,"z2"],[40.6,59.4,"z3"],[60.6,79.4,"z4"],[80.6,100,"z5"]].map(([a,b,c])=>`<path d="${arc(a,b)}" class="g-${c}${c===z[3]?" on":""}"/>`).join("")}<line x1="${cx}" y1="${cy}" x2="${nx.toFixed(1)}" y2="${ny.toFixed(1)}" class="g-n"/><circle cx="${cx}" cy="${cy}" r="5" class="g-c"/></svg>`; }
-      $("pscNum").textContent = score; $("pscBand").textContent = z[1]; $("pscBand").className = "psc-z " + z[3]; $("pscMean").textContent = z[2][Math.floor(new Date(t+"T12:00").getTime()/864e5) % z[2].length];
+      $("pscNum").textContent = score; $("pscBand").textContent = z[1]; $("pscBand").className = "psc-z " + z[3]; window.__patoLast = [score, z[1], z[3]]; window.__patoPill && window.__patoPill(score, z[1], z[3]); /* pill on every tab (restored Nov 12) */ $("pscMean").textContent = z[2][Math.floor(new Date(t+"T12:00").getTime()/864e5) % z[2].length];
       // why it moved: compare with the saved score from about a week ago
       const PH = {spend:["you spent less compared to what you earn","you spent more compared to what you earn"], limit:["you're on a better pace for your limit","you're spending faster than your limit"],
         months:["your savings cushion grew","your savings cushion shrank"], inv:["more of your money is invested","less of your money is invested"], ontime:["loans came back on time","a loan is late"],
