@@ -47,7 +47,7 @@ const CATS = {
 };
 const LEAGUES = [["football/nfl", "NFL", 9], ["soccer/uefa.champions", "Champions League", 9], ["basketball/nba", "NBA", 8], ["mma/ufc", "UFC", 8], ["soccer/fifa.world", "World Cup", 10],
   ["soccer/esp.1", "LaLiga", 7], ["soccer/eng.1", "Premier League", 7], ["soccer/ita.1", "Serie A", 6], ["soccer/ger.1", "Bundesliga", 6], ["soccer/uefa.europa", "Europa League", 6], ["soccer/fifa.friendly", "Soccer friendly", 4], ["baseball/mlb", "MLB", 6], ["tennis/atp", "Tennis", 6], ["tennis/wta", "Tennis", 5], ["soccer/usa.1", "MLS", 4], ["hockey/nhl", "NHL", 4], ["football/college-football", "College football", 5], ["racing/f1", "F1", 6]];
-const dec = t => t.replace(/<!\[CDATA\[|\]\]>/g, "").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&nbsp;/g, " ").trim();
+const dec = t => t.replace(/<!\[CDATA\[|\]\]>/g, "").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&nbsp;/g, " ").replace(/&#(\d+);/g, (m, n) => String.fromCharCode(+n)).replace(/&#x([0-9a-f]+);/gi, (m, n) => String.fromCharCode(parseInt(n, 16))).trim();
 function parse(xml) {
   return [...String(xml).matchAll(/<item>([\s\S]*?)<\/item>/g)].map(m => {
     const g = tag => { const r = m[1].match(new RegExp("<" + tag + "[^>]*>([\\s\\S]*?)</" + tag + ">")); return r ? dec(r[1]) : ""; };
@@ -244,8 +244,9 @@ async function bundle(P) {
   const want = (P.get("k") || "rd,business,tech").split(",").filter(k => CATS[k]).slice(0, 8);
   const [top, world, ...rest] = await Promise.all([feed(sec("BUSINESS"), 7200), feed(sec("WORLD"), 3600),
     ...want.map(k => feed(CATS[k], 7200)), ...tick.map(t => feed(srch(t + " stock"), 10800)), feed(srch("analysts upgrade stock buy rating"), 10800)]);
+  const N1 = SUBN;
   const [LF, RF] = await Promise.all([feed(LQ, 10800).catch(() => ({})), feed(RQ, 10800).catch(() => ({}))]);
-  const [MK, GM] = await Promise.all([markets().catch(() => []), P.get("g") === "0" ? Promise.resolve([]) : games().catch(() => [])]); rest.push(GM);
+  const [MK, GM] = await Promise.all([markets().catch(() => []), P.get("g") === "0" ? Promise.resolve([]) : games().catch(() => [])]); rest.push(GM); const N2 = SUBN;
   const cats = {}; want.forEach((k, i) => { const it = top2(rest[i].items || [], tick, P.get("busy") === "1"); if (it.length) cats[k] = it; });
   const stocks = {}; tick.forEach((t, i) => { const it = pick(rest[want.length + i].items || [])[0]; if (it) stocks[t] = it; });
   // Breaking (Marco Nov 11): the story that matters most to YOU today: big world events, scandals about the people behind your companies, major accidents, analyst calls on your stocks.
@@ -257,12 +258,17 @@ async function bundle(P) {
   const CL = pick(rest[want.length + tick.length].items || []).filter(i => CALLS.test(i.h)).map(i => Object.assign({}, i, { mine: !!(me && me.test(i.h)) })).sort((x, y) => (y.mine - x.mine) || ((y.n || 1) - (x.n || 1)))[0] || null;
   const T = pick(top.items || []);
   // "More from the world" (Marco Nov 12: every drop has at least 2 new stories; "find the biggest recent story you can"): next-biggest stories worldwide
-  const bw = B ? new Set(words(B.h)) : new Set(), MORE = pool.filter(i => i && i.h && i !== B && words(i.h).filter(v => bw.has(v)).length / Math.max(bw.size, 1) < 0.5).sort((x, y) => bs(y) - bs(x))
+  const bw = B ? new Set(words(B.h)) : new Set(); let MORE = pool.filter(i => i && i.h && i !== B && words(i.h).filter(v => bw.has(v)).length / Math.max(bw.size, 1) < 0.5).sort((x, y) => bs(y) - bs(x))
     .filter((v, i, a) => a.findIndex(o => o.h === v.h || words(o.h).filter(w => new Set(words(v.h)).has(w)).length / Math.max(words(v.h).length, 1) >= 0.5) === i).slice(0, 10)
     .map(i => ({ h: i.h, s: i.s, u: i.u, t: i.t, n: i.n, by: i.by, d: i.d || "" }));
+  // one story, one slide (Nov 12: the Nvidia CEO story filled Breaking, Tech, Politics and World at once)
+  const CAPS = t => new Set((String(t).match(/\b[A-Z][a-zA-Z]{2,}\b/g) || []).filter(w => !/^(The|And|For|With|After|Over|Says?|New|How|What|Why|Its|This|That|From|Into|Amid|CEO|Stock|Stocks)$/.test(w)));
+  const same = (a, b) => { if (!a || !b) return false; if (simw(a, b) >= 0.5) return true; const A = CAPS(a), B = CAPS(b); return [...A].filter(w => B.has(w)).length >= 2; };
+  const shown = W ? [W.h] : []; Object.keys(cats).forEach(k => { cats[k] = cats[k].filter(it => !shown.some(h => same(h, it.h))); if (cats[k].length) cats[k].forEach(it => shown.push(it.h)); else delete cats[k]; });
+  MORE = MORE.filter(it => !shown.some(h => same(h, it.h)));
   if (W) W.mk = marketFor(MK, W.h); Object.keys(cats).forEach(k => { const it = cats[k][0]; if (it) it.mk = marketFor(MK, it.h); });
   return { at: top.at || Date.now(), day: edDay(), big: W, calls: CL, more: MORE, preds: pickMarkets(MK, tick), launch: launches(LF.items || [], tick), rising: rising(RF.items || []), cats, stocks, games: rest[rest.length - 1] || [],
-    ticker: T.filter(i => MOVERS.test(i.h)).concat(T).filter((v, i, a) => a.indexOf(v) === i).slice(0, 5) };
+    _n: [N1, N2, MK.length, (GM || []).length], ticker: T.filter(i => MOVERS.test(i.h)).concat(T).filter((v, i, a) => a.indexOf(v) === i).slice(0, 5) };
 }
 const TAKE = `You are Pato, the money buddy inside a finance app for young Dominicans. Write today's "Pato's take" for ONE user from the facts below.
 Return ONLY JSON: {"pato":{"line":"","tip":""},"happened":{"text":"","src":""},"you":{"text":"","src":""},"watch":{"text":"","src":""},"game":0,"rd":"","notes":{},"know":{}}
