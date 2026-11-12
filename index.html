@@ -1469,6 +1469,7 @@ main{padding-bottom:calc(128px + env(safe-area-inset-bottom,0px))!important}
 .pd-old{display:inline-block;margin-right:6px;padding:1px 7px;border-radius:999px;background:rgba(255,255,255,.12);color:#B8C7BE;font-size:.62rem;font-weight:700;vertical-align:2px}
 .pd-nav button.nw{color:#fff;background:rgba(255,255,255,.14);position:relative;padding-right:18px}.pd-nav button.nw::after{content:"";position:absolute;right:8px;top:50%;width:6px;height:6px;margin-top:-3px;border-radius:50%;background:#FF5A4A}
 .pd-nav button.sn{opacity:.45}
+.pd-s.pd-in{animation:pdIn .26s ease backwards}.pd-s.pd-in2{animation:pdIn2 .5s ease backwards}@keyframes pdIn{from{opacity:.35;transform:translateX(18px)}}@keyframes pdIn2{from{opacity:0;transform:translateY(22px) scale(.97)}}
 .pd-s.game .pd-pick{margin:0 0 20px}
 .pd-an{margin-top:14px}.pd-an>div:first-child{display:flex;justify-content:space-between;align-items:baseline}.pd-an b{font-size:1.02rem;color:#fff}.pd-an span{font-size:.9rem;font-weight:800;color:#E8C06A}.pd-anb{height:8px;border-radius:5px;background:rgba(255,255,255,.14);margin-top:6px;overflow:hidden}.pd-anb i{display:block;height:100%;background:#6FD39A;border-radius:5px}.pd-an small{display:block;margin-top:5px;font-size:.78rem;color:#9FB3A7}.pd-ord{display:inline-flex;align-items:center;gap:6px}.pd-ord button{all:unset;cursor:pointer;width:30px;height:30px;border-radius:50%;background:rgba(255,255,255,.1);text-align:center;line-height:30px;font-size:.95rem}.pd-ord button:disabled{opacity:.25}
 .pd-sep.nw{color:#E8C06A;border-left:0;padding-left:2px}.pd-bars i.g{margin-left:8px}.pd-pos{font-weight:800;letter-spacing:.06em;color:#fff}.pd-pos.n{color:#E8C06A}.pd-pos.s{color:rgba(255,255,255,.55)}.pd-nav button.on{box-shadow:0 0 0 2px rgba(232,192,106,.4)}
@@ -2050,7 +2051,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261112214600";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261112215410";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -7075,10 +7076,12 @@ TRACKER DATA:
       var i = L.map(function(x){ return x.fk; }).indexOf("big"), j = L.reduce(function(m, x, k){ return /:co:/.test(x.id) ? k : m; }, i);
       L.splice(j >= 0 ? j + 1 : 1, 0, {id: c ? "calls:" + c.h : "calls:recs:" + ed, cls: "", t: "Analysts", w: c ? ago(c.t) + " ago" : "Wall Street", u: c && c.u, pic: c && c.u, ph: c && c.h, ps: c && c.s, nav: "🧠 Analysts", sh: c ? {k: "Analyst call", h: c.h, s: c.s, u: c.u} : null, body: anBody(c)}); })();
     // Predictions (Marco Nov 12): the hottest Polymarket markets for your world, plus the market line inside matching stories
-    var PR = (dd && dd.preds && dd.preds.length ? dd.preds : daily && daily.preds) || [];
+    var PTRIV = /\b(tweets?|posts? on X|how many (times|tweets|posts|followers|views)|will \w+( \w+)? say\b|mention(s|ed)?\b|followers|subscribers|views|streams|box office|gross|top (song|artist|spotify)|spotify|youtube|tiktok|# of|number of (tweets|posts))\b/i;   // Marco Nov 12: counting bets say nothing. Also filtered on the phone, so older saved editions are clean too
+    var lead = function(m){ var q = String(m.q), a = q.match(/^([↑↓])\s*\$?([\d,.]+)/); if(a) return (a[1] === "↑" ? "Reaches US$" : "Falls to US$") + a[2]; if(/\bby\.{0,3}\??$/i.test(m.t) && /\d{4}|January|February|March|April|May|June|July|August|September|October|November|December/.test(q)) return "by " + q; return q; };
+    var PR = ((dd && dd.preds && dd.preds.length ? dd.preds : daily && daily.preds) || []).filter(function(m){ return !PTRIV.test(m.t + " " + m.q); });
     if(PR.length){ var gi = L.map(function(x){ return x.fk; }).indexOf("game"), pr = {id: ed + ":preds:" + PR.map(function(m){ return m.q; }).join("|").slice(0, 120), cls: "preds", t: "Predictions", w: "Polymarket", nav: "🔮 Predictions", fk: "preds",
         body: '<div class="pd-k">🔮 WHAT THE MARKET THINKS</div><div class="pd-h1" style="font-size:1.3rem">The hottest predictions right now</div>' + PR.map(function(m){ var dl = m.end ? Math.round((Date.parse(m.end + "T12:00:00Z") - Date.now())/864e5) : null;
-          return '<a class="pd-r2 pd-pm" data-u="' + esc(m.u) + '"><div class="pd-pmq">' + esc(m.multi ? m.t : m.q) + (m.multi ? '<small>Leading: ' + esc(m.q) + '</small>' : '') + '</div><div class="pd-pmr"><b>' + m.p + '%</b><i><u style="width:' + m.p + '%"></u></i>' +
+          return '<a class="pd-r2 pd-pm" data-u="' + esc(m.u) + '"><div class="pd-pmq">' + esc(m.multi ? m.t : m.q) + (m.multi ? '<small>Most likely: ' + esc(lead(m)) + '</small>' : '') + '</div><div class="pd-pmr"><b>' + m.p + '%</b><i><u style="width:' + m.p + '%"></u></i>' +
             '<small>' + (m.ch ? '<em class="' + (m.ch > 0 ? "up" : "dn") + '">' + (m.ch > 0 ? "▲ " : "▼ ") + Math.abs(m.ch) + ' today</em> · ' : '') + (dl != null && dl >= 0 ? (dl === 0 ? "Settles today" : "Settles " + dlabel(m.end) + (dl <= 60 ? " · " + dl + "d" : "")) : "") + '</small></div></a>'; }).join("") +
           '<div class="pd-m" style="margin-top:14px">% = what people betting real money think the chance is. Not advice.</div>'};
       L.splice(gi >= 0 ? gi : L.length, 0, pr); }
@@ -7297,11 +7300,11 @@ TRACKER DATA:
     fetch(base() + "/img?u=" + encodeURIComponent(u) + (h ? "&h=" + encodeURIComponent(h) : "")).then(function(r){ return r.ok ? r.json() : {}; }).then(function(d){ IM.m[u] = (d && d.img) || ""; if(IM.m[u]) ls("pd-img3", {day: IM.day, m: Object.keys(IM.m).reduce(function(o, k){ if(IM.m[k]) o[k] = IM.m[k]; return o; }, {})}); if(cb) cb(); }).catch(function(){ delete IM.m[u]; }); }
   function picHtml(x){ var im = PICS() && x.pic && IM.m[x.pic], ix0 = S.indexOf(x); if(im && S.some(function(y, j){ return j < ix0 && y.pic && IM.m[y.pic] === im; })) im = "";   // never the same photo twice
     return im ? '<div class="pd-img"><img src="' + esc(im) + '" alt="" referrerpolicy="no-referrer" onerror="this.parentNode.remove()">' + (x.ps ? '<span>' + esc(x.ps) + '</span>' : '') + '</div>' : ''; }
-  var NEW = {};   // what was unread when you opened: those chips get a dot, the slide gets a NEW tag
+  var lastBase = null, NEW = {};   // what was unread when you opened: those chips get a dot, the slide gets a NEW tag
   function show(i){
     clearTimeout(timer); cur = Math.max(0, Math.min(i, S.length - 1)); var x = S[cur], s = seen();
     if(!x.pick){ s.ids[x.id] = 1; if(x.id2) s.ids[x.id2] = 1; ls("pd-seen2", s); }
-    $("pdS").className = "pd-s " + (x.cls||""); $("pdT").innerHTML = (NEW[x.id] ? '<span class="pd-new">NEW</span>' : (x.pick ? '' : '<span class="pd-old">✓ Seen</span>')) + esc(x.t); $("pdW").textContent = x.w || "";
+    var base = "pd-s " + (x.cls||""); $("pdS").className = base + (lastBase == null ? "" : lastBase !== base ? " pd-in2" : " pd-in"); lastBase = base;   // Marco Nov 12: moving to a new kind of slide fades in instead of snapping $("pdT").innerHTML = (NEW[x.id] ? '<span class="pd-new">NEW</span>' : (x.pick ? '' : '<span class="pd-old">✓ Seen</span>')) + esc(x.t); $("pdW").textContent = x.w || "";
     $("pdBd").innerHTML = x.call ? callBody(x.call) : picHtml(x) + x.body + act(x);
     if(x.call && callSt() && callSt().n === 0) callSync(x.call, null);
     var grp = function(y){ return /:take$/.test(y.id) ? "t" : NEW[y.id] ? "n" : "s"; }, cnt = {t: 0, n: 0, s: 0}; S.forEach(function(y){ cnt[grp(y)]++; });   // Marco Nov 12: new and seen stories must be clearly divided
@@ -7314,7 +7317,7 @@ TRACKER DATA:
     if(t) timer = setTimeout(function(){ if(!$("pdV").classList.contains("paused")) next(); }, t); else $("pdBars").children[cur].className = "d";
   }
   function next(){ if(cur >= S.length - 1) return close(); show(cur + 1); }
-  function openV(at){ liveScores(); S = stories(); var want = at >= 0 && S[at] ? S[at].id : ""; S.forEach(function(x){ pic(x.pic, null, x.ph); }); hidePeek(); var u = unseen(); NEW = {}; u.forEach(function(x){ NEW[x.id] = 1; });
+  function openV(at){ lastBase = null; liveScores(); S = stories(); var want = at >= 0 && S[at] ? S[at].id : ""; S.forEach(function(x){ pic(x.pic, null, x.ph); }); hidePeek(); var u = unseen(); NEW = {}; u.forEach(function(x){ NEW[x.id] = 1; });
     var tkx = S.filter(function(x){ return /:take$/.test(x.id); }); S = tkx.concat(S.filter(function(x){ return NEW[x.id] && tkx.indexOf(x) < 0; }), S.filter(function(x){ return !NEW[x.id] && tkx.indexOf(x) < 0; }));   // Pato's take always first (Marco), then new, then seen
     if(want) at = S.map(function(x){ return x.id; }).indexOf(want);   // organized: everything new first, then what you already saw (Marco Nov 11)
     var dq = S.filter(function(x){ return x.call; }); S = S.filter(function(x){ return !x.call; }).concat(dq);   // the Duel is always last, once
