@@ -88,7 +88,17 @@ function parseBing(xml) {
 }
 // Bing first (its stories come with a photo), Google News when Bing has nothing (Nov 11, Marco: photos on every story).
 const gfeed = (url, ttl, nc) => cached(url, ttl, "", nc).then(f => ({ at: f.at, items: parse(f.body) })).catch(() => ({ at: Date.now(), items: [] }));
-const feed = async (url, ttl, nc) => { const b = bingUrl(url); if (b) { try { const r = await bingFeed(b, ttl, nc); if (pick(r.items).length) return r; } catch (e) {} } return gfeed(url, ttl, nc); };
+// Source memory (Marco Nov 12: "learn which news sites block you and don't go back"): Bing News and Google News are tried in order of what worked;
+// a source that failed 3 times in a row is skipped for 6 hours (only used if the other one fails too). The cron saves what it learned in KV "hl1".
+let HL = {}, HLdirty = false;
+const blocked = k => { const x = HL[k]; return !!(x && x.fail >= 3 && Date.now() - x.last < 6 * 3600e3); };
+const note = (k, ok) => { const x = HL[k] || (HL[k] = { ok: 0, fail: 0, last: 0 }); if (ok) { x.ok++; x.fail = 0; } else { x.fail++; x.last = Date.now(); } HLdirty = true; };
+async function loadHL(env) { try { HL = (env && env.LIMITS && await env.LIMITS.get("hl1", "json")) || {}; } catch (e) { HL = {}; } HLdirty = false; }
+async function saveHL(env) { if (HLdirty && env && env.LIMITS) { await env.LIMITS.put("hl1", JSON.stringify(HL)).catch(() => {}); HLdirty = false; } }
+const feed = async (url, ttl, nc) => { const b = bingUrl(url), tryB = async () => { const r = await bingFeed(b, ttl, nc); const ok = pick(r.items).length > 0; note("bing", ok); return ok ? r : null; },
+  tryG = async () => { const r = await gfeed(url, ttl, nc); const ok = pick(r.items).length > 0; note("google", ok); return ok ? r : null; };
+  const order = !b ? [tryG] : blocked("bing") && !blocked("google") ? [tryG, tryB] : [tryB, tryG];
+  for (const f of order) { const r = await f().catch(() => null); if (r) return r; } return { at: Date.now(), items: [] }; };
 // Drops are prepared ahead (Marco Nov 12: "we need to be efficient"): the cron fetches every shared topic once before each drop and keeps it in KV; /news only reads it.
 // If a source fails, the last good stories stay. Fresh for 200 min (drops are 3h apart), so a missed cron only means one live fetch.
 const fkey = u => "fd2:" + u.replace(/^https?:\/\//, "").replace(/[^a-z0-9]+/gi, "").slice(-180);
@@ -421,10 +431,10 @@ async function storyImg(u, h, debug) {
 export default {
   // every 15 min (tools/wrangler.toml crons): refresh games and predictions in their own run, so /news only reads them
   // Every 15 min. At :30 and :45 before each drop (7, 10, 1, 4, 7, 10 DR = 11, 14, 17, 20, 23, 2 UTC) it prepares the drop's news; other runs refresh games, predictions and world news.
-  async scheduled(ev, env, ctx) { SUBN = 0; const d = new Date(ev.scheduledTime || Date.now()), m = Math.floor(d.getUTCMinutes() / 15) * 15, pre = [10, 13, 16, 19, 22, 1].includes(d.getUTCHours()) && m >= 30;
+  async scheduled(ev, env, ctx) { SUBN = 0; await loadHL(env); const d = new Date(ev.scheduledTime || Date.now()), m = Math.floor(d.getUTCMinutes() / 15) * 15, pre = [10, 13, 16, 19, 22, 1].includes(d.getUTCHours()) && m >= 30;
     if (pre) { const L = SHARED(), half = Math.ceil(L.length / 2), part = m === 30 ? L.slice(0, half) : L.slice(half);
-      ctx.waitUntil((async () => { for (const u of part) await refreshFeed(env, u).catch(() => 0); })()); return; }
-    ctx.waitUntil(Promise.all([kvFresh(env, "mk2", 0, markets), kvFresh(env, "gm2:" + drDay(), 0, games), m === 0 ? refreshFeed(env, sec("WORLD")).catch(() => 0) : null])); },
+      ctx.waitUntil((async () => { for (const u of part) await refreshFeed(env, u).catch(() => 0); await saveHL(env); })()); return; }
+    ctx.waitUntil(Promise.all([kvFresh(env, "mk2", 0, markets), kvFresh(env, "gm2:" + drDay(), 0, games), m === 0 ? refreshFeed(env, sec("WORLD")).catch(() => 0) : null]).then(() => saveHL(env))); },
   async fetch(req, env) {
     SUBN = 0;
     const origin = req.headers.get("origin") || "";
@@ -432,6 +442,7 @@ export default {
     const url = new URL(req.url);
     if (req.method === "GET" && url.pathname === "/news" && url.searchParams.get("debug") === "kv") {   // test link: how old each prepared topic is
       const out = {}; for (const u of SHARED()) { const v = await env.LIMITS.get(fkey(u), "json").catch(() => null); out[fkey(u).slice(-34)] = v ? { min: Math.round((Date.now() - v.at) / 6e4), n: v.items.length } : null; }
+      out.sources = await env.LIMITS.get("hl1", "json").catch(() => null);
       for (const k of ["mk2", "gm2:" + drDay()]) { const v = await env.LIMITS.get(k, "json").catch(() => null); out[k] = v ? { min: Math.round((Date.now() - v.at) / 6e4), n: v.v.length } : null; }
       return json(out, 200, origin);
     }
@@ -449,7 +460,7 @@ export default {
     }
     if (req.method === "GET" && url.pathname === "/news") {
       if (!ORIGINS.includes(origin)) return json({ error: { type: "forbidden" } }, 403, origin);
-      try { const b = await bundle(url.searchParams, env); if (b.big) b.big.brief = await brief(env, b.big).catch(() => null); b.pick = await patoPick(env, b.games).catch(() => null); return json(b, 200, origin); } catch (e) { return json({ error: { type: "news_failed" } }, 502, origin); }
+      try { await loadHL(env); const b = await bundle(url.searchParams, env); if (b.big) b.big.brief = await brief(env, b.big).catch(() => null); b.pick = await patoPick(env, b.games).catch(() => null); return json(b, 200, origin); } catch (e) { return json({ error: { type: "news_failed" } }, 502, origin); }
     }
     if (req.method === "GET" && url.pathname === "/scores") {   // live scores for the games on screen (Marco Nov 12: update when you come back), cached 60s
       if (!ORIGINS.includes(origin)) return json({ error: { type: "forbidden" } }, 403, origin);
@@ -486,7 +497,7 @@ export default {
     }
     if (url.pathname === "/insight") { try { return json((await insight(env, uid, body)) || {}, 200, origin); } catch (e) { return json({}, 200, origin); } }
     if (url.pathname === "/daily") {
-      try { const b = await bundle(url.searchParams, env); if (b.big) b.big.brief = await brief(env, b.big).catch(() => null); b.pick = await patoPick(env, b.games).catch(() => null); return json({ ...b, take: await take(env, uid, body, b).catch(() => null) }, 200, origin); }
+      try { await loadHL(env); const b = await bundle(url.searchParams, env); if (b.big) b.big.brief = await brief(env, b.big).catch(() => null); b.pick = await patoPick(env, b.games).catch(() => null); return json({ ...b, take: await take(env, uid, body, b).catch(() => null) }, 200, origin); }
       catch (e) { return json({ error: { type: "news_failed" } }, 502, origin); }
     }
     if (!MODELS.includes(body.model) || !Array.isArray(body.messages)) return json({ error: { type: "invalid_request_error", message: "model" } }, 400, origin);
