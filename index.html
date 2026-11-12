@@ -1331,6 +1331,124 @@ html.mp-guest #p-stocks > #pnTick:not([hidden]){display:flex!important}
 .pd-bd .pd-img{margin:-28px -24px 18px;border-radius:0;aspect-ratio:4/3}.pd-bd .pd-img::after{content:"";position:absolute;inset:auto 0 0 0;height:45%;background:linear-gradient(to top,rgba(10,18,14,.85),transparent);pointer-events:none}
 .pd-s.brk .pd-bd .pd-img{aspect-ratio:1/1;margin-bottom:-44px}.pd-s.brk .pd-bd .pd-img::after{height:70%;background:linear-gradient(to top,#1E100D,transparent)}.pd-s.brk .pd-brkrow,.pd-s.brk .pd-bigh{position:relative;z-index:1}.pd-s.brk .pd-img span{display:none}
 .pd-img span{z-index:1}
+.pd-one.lg{font-size:1.32rem;line-height:1.28}.pd-one.xl{font-size:1.12rem;line-height:1.32}
+.pd-pick{border-color:rgba(120,200,255,.35);background:linear-gradient(160deg,rgba(60,110,170,.25),rgba(20,40,60,.2))}.pd-pick i{color:#8CC8FF}.pd-rec{margin-top:10px;padding-top:9px;border-top:1px solid rgba(140,200,255,.2);font-size:.82rem;color:#CFE0D6}.pd-rec b{color:#8CC8FF}.pd-pick small{display:block;margin-top:6px;font-size:.78rem;color:#9FB3A7}
+/* Instagram-style cover (Marco Nov 12 examples): tall photo, category tag + bold headline sitting on the photo */
+.pd-bd>.pd-img:has(+ .pd-k){aspect-ratio:4/5;margin-bottom:-132px}.pd-bd>.pd-img:has(+ .pd-k)::after{height:62%;background:linear-gradient(to top,rgba(16,32,24,1) 8%,rgba(16,32,24,.75) 45%,transparent)}
+.pd-bd>.pd-img+.pd-k,.pd-bd>.pd-img+.pd-k+.pd-h1,.pd-bd>.pd-img+.pd-k~*{position:relative;z-index:1}.pd-bd>.pd-img+.pd-k+.pd-h1{text-shadow:0 2px 12px rgba(0,0,0,.5)}.pd-bd>.pd-img:has(+ .pd-k) span{bottom:auto;top:12px;left:12px}
+#pdFab.shine svg{animation:pdShine 1.8s ease-in-out infinite}@keyframes pdShine{0%,100%{filter:drop-shadow(0 0 2px rgba(243,211,143,.4))}50%{filter:drop-shadow(0 0 12px rgba(243,211,143,.95)) brightness(1.12)}}
+#pdFab.shine::before{content:"✦";position:absolute;left:4px;top:-4px;font-size:15px;color:#FFE7A8;text-shadow:0 0 8px #F3D38F;animation:pdTw 1.8s ease-in-out infinite;pointer-events:none;z-index:2}@keyframes pdTw{0%,100%{opacity:.2;transform:scale(.7) rotate(0)}50%{opacity:1;transform:scale(1.15) rotate(25deg)}}
+.pn-lab{padding:0 8px 0 6px;gap:4px}.pn-lab small{font-size:.64rem}
+.pd-sep{flex:none;align-self:center;font-size:.64rem;font-weight:800;letter-spacing:.06em;color:rgba(255,255,255,.45);padding:0 2px 0 8px;border-left:1px solid rgba(255,255,255,.2);margin-left:4px;white-space:nowrap;text-transform:uppercase}
+.pd-s.take .pd-bd{display:flex;flex-direction:column;justify-content:center;padding-bottom:70px}
+.pd-one{font-size:1.75rem;font-weight:800;line-height:1.28;letter-spacing:-.01em;margin-top:16px}.pd-one b{color:#F3D38F}
+.pd-nx{margin-top:22px;font-size:.9rem;color:#C9D8CF;padding:10px 14px;border-radius:14px;background:rgba(255,255,255,.07);align-self:flex-start}.pd-nx b{color:#fff}
+.pd-also p{display:grid;grid-template-columns:auto 1fr;column-gap:8px;margin:8px 0 0;padding:9px 12px;border-radius:12px;background:rgba(255,255,255,.07)}.pd-also span{grid-row:1/3;align-self:center;font-size:.64rem;font-weight:800;letter-spacing:.05em;color:#E8C06A;text-transform:uppercase;min-width:54px}.pd-also b{font-size:.9rem;color:#fff!important;margin:0!important}.pd-also small{font-size:.74rem;color:#B9A88A}
+.pd-new{display:inline-block;margin-right:6px;padding:1px 7px;border-radius:999px;background:#FF5A4A;color:#fff;font-size:.62rem;font-weight:850;letter-spacing:.06em;vertical-align:2px}
+.pd-old{display:inline-block;margin-right:6px;padding:1px 7px;border-radius:999px;background:rgba(255,255,255,.12);color:#B8C7BE;font-size:.62rem;font-weight:700;vertical-align:2px}
+.pd-nav button.nw{color:#fff;background:rgba(255,255,255,.14);position:relative;padding-right:18px}.pd-nav button.nw::after{content:"";position:absolute;right:8px;top:50%;width:6px;height:6px;margin-top:-3px;border-radius:50%;background:#FF5A4A}
+.pd-nav button.sn{opacity:.45}
+.pd-bars i.nw{background:rgba(232,192,106,.75)}
+.pd-brk.mv{background:rgba(227,188,106,.18);color:#F3D38F}
+.pd-brkrow{display:flex;align-items:center;gap:10px}.pd-ago{font-size:.78rem;font-weight:700;color:#FF9A8C}
+.pd-bigh{font-size:1.85rem;font-weight:900;line-height:1.16;letter-spacing:-.01em;margin-top:14px}
+.pd-by{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:14px}.pd-by small{width:100%;font-size:.7rem;font-weight:700;color:#C9A9A3;letter-spacing:.04em}.pd-by span{padding:4px 10px;border-radius:999px;background:rgba(255,255,255,.09);font-size:.76rem;font-weight:700}
+.pd-s.brk .pd-img{aspect-ratio:4/3;margin-bottom:18px}.pd-s.brk .pd-know li:before{background:#FF7A6B}
+.pd-hero{margin-top:16px}.pd-hero small{display:block;font-size:.78rem;color:#9FB3A7;font-weight:600}
+.pd-hero>div{display:flex;align-items:baseline;gap:10px;margin-top:2px}.pd-hero b{font-size:2.6rem;font-weight:850;letter-spacing:-.02em;line-height:1.1}.pd-hero em{font-style:normal;font-size:1.05rem;font-weight:800}
+.pd-hero.tip p{font-size:1.25rem;font-weight:750;line-height:1.3;margin:6px 0 0}.pd-hero.tip p b{color:#F3D38F}
+.pd-s .up{color:#7FE0A8}.pd-s .dn{color:#FF8A7A}
+.pd-mv{margin-top:14px;display:grid;gap:9px}.pd-mv>div{display:grid;grid-template-columns:52px 1fr 54px 66px;align-items:center;gap:8px;font-size:.86rem}
+.pd-mv span{font-weight:800}.pd-mv i{height:6px;border-radius:3px;background:rgba(255,255,255,.1);overflow:hidden}.pd-mv u{display:block;height:100%;border-radius:3px;background:#9FB3A7}.pd-mv u.up{background:#4FC487}.pd-mv u.dn{background:#E5604F}
+.pd-mv em{font-style:normal;font-weight:700;text-align:right}.pd-mv b{text-align:right;font-weight:700;color:#E4ECE7}
+.pd-3{margin-top:22px;display:grid;gap:10px}.pd-3>div{display:flex;gap:12px;align-items:flex-start;padding:12px 14px;border-radius:16px;background:rgba(255,255,255,.07)}
+.pd-3>div>span{font-size:1.25rem;line-height:1.2}.pd-3 i{font-style:normal;font-size:.64rem;font-weight:800;letter-spacing:.08em;color:#E3BC6A}
+.pd-3 p{font-size:.98rem;font-weight:650;line-height:1.32;margin:3px 0 0}.pd-3 p b{color:#F3D38F}.pd-3 small{display:block;font-size:.74rem;color:#9FB3A7;margin-top:3px}
+.pd-brk{display:inline-flex;align-items:center;gap:8px;padding:5px 11px;border-radius:999px;background:#D93A2B;color:#fff;font-size:.7rem;font-weight:850;letter-spacing:.1em}
+.pd-dot{width:7px;height:7px;border-radius:50%;background:#fff;animation:pdPulse 1.2s ease-in-out infinite}@keyframes pdPulse{50%{opacity:.25}}
+.pd-bh{display:flex;align-items:center;gap:12px;margin-top:20px}.pd-bh b{display:block;font-size:1.2rem;font-weight:850}.pd-bh small{font-size:.8rem;color:#C9A9A3}
+.pd-lg{width:48px;height:48px;border-radius:13px;background:#fff;display:grid;place-items:center;overflow:hidden;color:#222;font-weight:850;font-size:.8rem;flex:none}.pd-lg svg{width:32px;height:32px}
+.pd-big{font-size:4.2rem;font-weight:900;letter-spacing:-.03em;line-height:1;margin-top:18px}
+.pd-px{font-size:.92rem;color:#D9C2BD;margin-top:8px}.pd-px b{color:#fff}
+.pd-st{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:20px}.pd-st>div{padding:11px 13px;border-radius:14px;background:rgba(255,255,255,.07)}
+.pd-st small{display:block;font-size:.7rem;color:#C9A9A3;font-weight:600}.pd-st b{display:block;font-size:1.15rem;font-weight:800;margin-top:2px}
+.pd-wp{margin-top:18px}.pd-wp>div{display:flex;justify-content:space-between;font-size:.84rem}.pd-wp i{display:block;height:8px;border-radius:4px;background:#C7A46A;overflow:hidden;margin-top:6px}.pd-wp u{display:block;height:100%;background:#F3D38F}.pd-wp small{display:block;font-size:.7rem;color:#B9A88A;margin-top:5px;text-align:center}
+.pd-odds{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px;margin-top:8px}.pd-odds>div{padding:9px 10px;border-radius:12px;background:rgba(255,255,255,.08)}.pd-odds small{display:block;font-size:.66rem;color:#B9A88A}.pd-odds b{display:block;font-size:.88rem;margin-top:2px;white-space:pre-line}
+.pd-form{display:flex;align-items:center;justify-content:space-between}.pd-form span{display:flex;gap:4px}.pd-form u{text-decoration:none;width:22px;height:22px;border-radius:6px;display:grid;place-items:center;font-size:.7rem;font-weight:800;background:rgba(255,255,255,.12)}.pd-form u.w{background:#2F8F5B}.pd-form u.l{background:#A53A2E}
+.pd-know i{font-style:normal;font-size:.66rem;font-weight:800;letter-spacing:.08em;color:#9FB3A7}
+.pd-know ul{margin:6px 0 0;padding:0;list-style:none}
+.pd-know li{position:relative;padding-left:16px;font-size:.98rem;line-height:1.4;margin-top:6px;color:#E4ECE7}
+.pd-know li:before{content:"";position:absolute;left:2px;top:.62em;width:6px;height:6px;border-radius:50%;background:#E3BC6A}
+.pd-vs{display:flex;align-items:center;justify-content:space-between;gap:8px;margin:18px 0 6px}
+.pd-team{flex:1;display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;min-width:0}
+.pd-team img,.pd-tl{width:84px;height:84px;object-fit:contain;filter:drop-shadow(0 4px 10px rgba(0,0,0,.35))}
+.pd-tl{display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(255,255,255,.12);font-weight:800;font-size:1.3rem}
+.pd-team b{font-size:1.05rem;font-weight:800;line-height:1.2}
+.pd-team small{font-size:.75rem;color:#9FB3A7}
+.pd-team em{font-style:normal;font-size:1.8rem;font-weight:800}
+.pd-at{font-weight:800;font-size:.85rem;color:#9FB3A7;letter-spacing:.06em}
+.pd-at i{font-style:normal;color:#fff;background:#D64545;padding:3px 8px;border-radius:999px}
+.pd-c{text-align:center}
+.pd-act{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:22px}
+.pd-act .pd-read{margin-top:0}
+.pd-ic{display:flex;gap:8px}
+.pd-fb,.pd-share{all:unset;cursor:pointer;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:rgba(255,255,255,.1);font-size:1.05rem;color:#fff;transition:transform .15s}
+.pd-fb.on{background:rgba(227,188,106,.3);box-shadow:inset 0 0 0 1.5px #E3BC6A}
+.pd-fb:active,.pd-share:active{transform:scale(.9)}
+.pd-opts{display:flex;flex-direction:column;gap:10px;margin-top:22px}
+.pd-opt{all:unset;cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:15px 18px;border-radius:14px;background:rgba(255,255,255,.1);font-weight:700;font-size:1.02rem;transition:transform .12s,background .2s}
+.pd-opt:active{transform:scale(.98)}
+.pd-opt.ok{background:rgba(76,175,110,.32);box-shadow:inset 0 0 0 1.5px #5FD08A}
+.pd-opt.no{background:rgba(214,69,69,.28);box-shadow:inset 0 0 0 1.5px #E06A6A}
+.pd-opt.dim{opacity:.45}
+.pd-res{margin-top:20px}
+.pd-res>b{font-size:1.15rem;font-weight:800}
+.pd-pct{display:flex;align-items:baseline;gap:10px;margin-top:8px}
+.pd-pct em{font-style:normal;font-size:2.6rem;font-weight:800;color:#E3BC6A;line-height:1}
+.pd-pct span{font-size:.9rem;color:#C9D6CE}
+.pd-why{font-size:1rem;line-height:1.45;margin:6px 0 0;color:#E4ECE7}
+.pd-s.call{background:linear-gradient(170deg,#23304F 0%,#0C1120 80%);border-color:#3D5A9A}
+.pd-done .pd-h1{font-size:1.2rem;line-height:1.25}.pd-done .pd-opt{padding:11px 16px;font-size:.95rem}.pd-done .pd-opts{gap:8px}.pd-done .pd-res{margin-top:12px}.pd-done .pd-why{font-size:.92rem;line-height:1.4}
+.pd-tk{font-size:.9rem;line-height:1.4;margin:10px 0 0;padding:9px 12px;border-radius:12px;background:rgba(232,192,106,.12);color:#F3E6C4}.pd-tk b{color:#E8C06A;margin-right:4px}.pd-done .pd-pct em{font-size:2.2rem}.pd-done .pd-pct{margin-top:2px}.pd-done .pd-know{margin-top:10px}
+.pd-up{margin-top:22px;padding-top:16px;border-top:1px solid rgba(255,255,255,.12)}.pd-up>i{display:block;font-style:normal;font-size:.7rem;letter-spacing:.12em;font-weight:800;color:#9FB3A7;margin-bottom:8px}.pd-up div{display:flex;flex-direction:column;gap:2px;padding:9px 0;border-bottom:1px solid rgba(255,255,255,.06)}.pd-up div:last-child{border-bottom:0}.pd-up b{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:#E8C06A}.pd-up span{font-size:.95rem;line-height:1.35;color:#E4ECE7;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.pd-nav{display:flex;gap:6px;overflow-x:auto;padding:10px 14px 0;scrollbar-width:none;-webkit-overflow-scrolling:touch}.pd-nav::-webkit-scrollbar{display:none}.pd-nav button{all:unset;flex:none;cursor:pointer;font-size:.74rem;font-weight:700;padding:5px 10px;border-radius:999px;background:rgba(255,255,255,.08);color:rgba(255,255,255,.6);white-space:nowrap}.pd-nav button.on{background:#E8C06A;color:#1A1405}.pd-inj p{margin:6px 0 0;font-size:.92rem;line-height:1.4;color:#E4ECE7}.pd-inj b{color:#E8C06A;margin-right:4px}
+.pd-ft{padding:10px 16px 16px;text-align:center;font-size:.72rem;color:#9FB3A7}
+#pdTopics{flex-basis:100%;max-width:340px;margin:6px auto 0;text-align:left}#pdTopics>span{display:block;text-align:center;margin-bottom:4px}#pdTopics .tg{display:flex;align-items:center;justify-content:space-between;padding:9px 4px;border-bottom:1px solid color-mix(in srgb,var(--ink) 10%,transparent);color:var(--ink);font-size:.95rem}#pdTopics .tg input{width:20px;height:20px;accent-color:var(--mango)}#pdTopics .pd-tm{font-size:.8rem;opacity:.7;text-align:center;padding:8px 0 2px}
+.pd-cover{position:fixed;inset:0;z-index:120;background:#0E1A14;color:#fff;display:flex;flex-direction:column;font-family:-apple-system,system-ui,sans-serif;opacity:0;transform:scale(1.03);transition:opacity .35s,transform .35s}
+.pd-cover.on{opacity:1;transform:none}
+.pd-cover .pc-ph{position:relative;flex:0 0 52%;background:linear-gradient(160deg,#1F4A35,#0E1A14 70%) center/cover}
+.pd-cover .pc-ph::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(14,26,20,.6) 0%,rgba(14,26,20,0) 28%,rgba(14,26,20,.15) 60%,#0E1A14 100%)}
+.pd-cover .pc-top{position:absolute;top:calc(env(safe-area-inset-top,0px) + 16px);left:20px;right:20px;z-index:2;display:flex;align-items:center;gap:10px}
+.pd-cover .pc-top img{width:34px;height:34px;border-radius:50%}.pd-cover .pc-top b{font-size:1.05rem}.pd-cover .pc-top small{display:block;color:#E8C06A;font-size:.78rem;font-weight:600}
+.pd-cover .pc-src{position:absolute;right:14px;bottom:64px;z-index:2;font-size:.7rem;background:rgba(0,0,0,.5);padding:3px 8px;border-radius:999px;color:#ddd}
+.pd-cover .pc-bd{padding:0 22px;margin-top:-56px;position:relative;z-index:2}
+.pd-cover .pc-k{color:#E8C06A;font-size:.74rem;font-weight:800;letter-spacing:.14em}
+.pd-cover h2{font-size:1.7rem;line-height:1.15;margin:8px 0 14px;font-weight:800}
+.pd-cover .pc-tk{display:flex;gap:10px;align-items:flex-start;background:rgba(232,192,106,.1);border:1px solid rgba(232,192,106,.25);border-radius:14px;padding:12px;font-size:.95rem;line-height:1.4;color:#E4ECE7}
+.pd-cover .pc-tk img{width:26px;height:26px;border-radius:50%;flex:none}.pd-cover .pc-tk b{color:#E8C06A}
+.pd-cover .pc-in{margin-top:14px;color:#9FB3A7;font-size:.85rem}
+.pd-cover .pc-cta{margin:auto 22px calc(env(safe-area-inset-bottom,0px) + 28px);display:flex;gap:10px;padding-top:16px}
+.pd-cover .pc-cta button{all:unset;cursor:pointer;flex:1;text-align:center;padding:14px;border-radius:14px;font-weight:800}
+.pd-cover .pc-cta .go{background:#E8C06A;color:#13241B}.pd-cover .pc-cta .no{flex:.5;background:rgba(255,255,255,.08);color:#CFE0D6}
+#pdPeek{position:fixed;right:8px;bottom:96px;width:96px;height:118px;overflow:hidden;overflow:clip;z-index:40;pointer-events:none}
+#pdPeek .pd-fab{position:absolute;left:0;top:0;right:auto;bottom:auto;width:96px;height:112px;padding:0;border:0;border-radius:0;background:none!important;box-shadow:none;pointer-events:auto;touch-action:manipulation;transform:translateY(84px) rotate(-5deg);transform-origin:50% 100%;transition:transform .6s cubic-bezier(.34,1.56,.64,1);filter:drop-shadow(0 4px 10px rgba(0,0,0,.35))}
+#pdPeek .pd-fab svg{width:100%;height:100%;display:block;pointer-events:none}
+#pdPeek .pd-fab:active{filter:brightness(1.1)}
+#pdPeek.out .pd-fab{transform:translateY(6px) rotate(0deg);animation:pdBob .9s ease-in-out .6s 2}
+#pdPeek.idle .pd-fab{transform:translateY(100px) rotate(-5deg)}
+#pdPeek.dive .pd-fab{transform:translateY(120px) rotate(-5deg);animation:none}
+main{padding-bottom:calc(128px + env(safe-area-inset-bottom,0px))!important}
+#pdPeek .pd-fab b{top:10px;right:14px;left:auto}
+@keyframes pdBob{0%,100%{rotate:0deg}30%{rotate:-6deg}70%{rotate:5deg}}
+#pdBub{position:fixed;right:22px;bottom:200px;z-index:41;max-width:min(250px,64vw);background:#F6F1E4;color:#13241B;border-radius:16px 16px 4px 16px;padding:9px 12px 10px;font:500 .88rem/1.32 -apple-system,system-ui,sans-serif;box-shadow:0 10px 28px rgba(0,0,0,.4);opacity:0;transform:translate(18px,10px) scale(.85);transform-origin:100% 100%;transition:opacity .25s,transform .45s cubic-bezier(.34,1.56,.64,1);pointer-events:none;cursor:pointer}
+#pdBub.on{opacity:1;transform:none;pointer-events:auto;transition-delay:.25s}
+#pdBub b{display:block;font-size:.66rem;font-weight:800;letter-spacing:.12em;color:#9A7424;margin-bottom:3px}
+#pdBub.big b{color:#C0392B}
+#pdTopics{flex-basis:100%;max-width:340px;margin:6px auto 0;text-align:left}#pdTopics>span{display:block;text-align:center;margin-bottom:4px}#pdTopics .tg{display:flex;align-items:center;justify-content:space-between;padding:9px 4px;border-bottom:1px solid color-mix(in srgb,var(--ink) 10%,transparent);color:var(--ink);font-size:.95rem}#pdTopics .tg input{width:20px;height:20px;accent-color:var(--mango)}#pdTopics .pd-tm{font-size:.8rem;opacity:.7;text-align:center;padding:8px 0 2px}
+.pd-duck{position:absolute;top:6px;right:54px;z-index:5;width:32px;height:32px;padding:0;border:0;border-radius:50%;background:none;cursor:pointer}.pd-duck[hidden],.pd-edge[hidden]{display:none}.pd-duck img{width:100%;height:100%;border-radius:50%;display:block}.pd-duck.new{box-shadow:0 0 0 2px #E8C06A,0 0 14px 3px rgba(232,192,106,.75);animation:pdGlow 1.8s ease-in-out infinite}@keyframes pdGlow{50%{box-shadow:0 0 0 2px #E8C06A,0 0 4px 1px rgba(232,192,106,.25)}}.pd-edge{position:fixed;left:0;top:42%;z-index:39;width:24px;height:66px;padding:0;border:0;border-radius:0 14px 14px 0;background:#E8C06A;display:grid;place-items:center;box-shadow:0 4px 14px rgba(0,0,0,.35);transition:transform .2s;cursor:pointer}.pd-edge img{width:17px;height:17px;border-radius:50%}.pd-edge.new::after{content:"";position:absolute;top:-3px;right:-3px;width:9px;height:9px;border-radius:50%;background:#FF5A4A}.pd-pull{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 8px);z-index:60;transform:translate(-50%,calc(-70px + var(--p,0) * 70px));opacity:var(--p,0);display:flex;align-items:center;gap:8px;padding:6px 14px 6px 6px;border-radius:999px;background:#13261C;color:#E8C06A;font-weight:700;font-size:.85rem;box-shadow:0 6px 18px rgba(0,0,0,.4);pointer-events:none;white-space:nowrap}.pd-pull img{width:26px;height:26px;border-radius:50%}.pd-pull.go{background:#E8C06A;color:#13261C}
+.pd-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
+.pd-chips button{all:unset;cursor:pointer;font-size:.88rem;padding:8px 13px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#CFE0D6}
+.pd-chips button.on{background:#E3BC6A;border-color:#E3BC6A;color:#13241B;font-weight:700}
 #pdFab.shine svg{animation:pdShine 1.8s ease-in-out infinite}@keyframes pdShine{0%,100%{filter:drop-shadow(0 0 2px rgba(243,211,143,.4))}50%{filter:drop-shadow(0 0 12px rgba(243,211,143,.95)) brightness(1.12)}}
 #pdFab.shine::before{content:"✦";position:absolute;left:4px;top:-4px;font-size:15px;color:#FFE7A8;text-shadow:0 0 8px #F3D38F;animation:pdTw 1.8s ease-in-out infinite;pointer-events:none;z-index:2}@keyframes pdTw{0%,100%{opacity:.2;transform:scale(.7) rotate(0)}50%{opacity:1;transform:scale(1.15) rotate(25deg)}}
 .pn-lab{padding:0 8px 0 6px;gap:4px}.pn-lab small{font-size:.64rem}
@@ -1879,7 +1997,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261112141500";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261112151500";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -6134,6 +6252,8 @@ TRACKER DATA:
     db.collection("prestamos").onSnapshot(snap => {
       loans = snap.docs.map(d => { const x = d.data(); return {id:d.id, ...x, monto:Number(x.monto)||0, interes:Number(x.interes)||0,
         destino: x.destino || (x.cobradoA==="otro" ? "otra" : x.cobradoA==="ahorro" ? "ahorro" : undefined)}; });
+      try{ const op = loans.filter(l => !l.pagado && l.monto > 0), td = new Date(Date.now()-4*3600e3).toISOString().slice(0,10), nx = op.filter(l => l.vence).map(l => l.vence).sort()[0];
+        window.__patoFacts = Object.assign(window.__patoFacts||{}, {lentOut: Math.round(op.reduce((a,l) => a + l.monto, 0)), backOwed: Math.round(op.reduce((a,l) => a + l.monto*(1+(l.interes||0)/100), 0)), loansOpen: op.length, lateLoans: op.filter(l => l.vence && l.vence < td).length, nextDueDays: nx ? Math.round((Date.parse(nx)-Date.parse(td))/864e5) : null}); }catch(_){}   // Pato's take reads these (amounts only, never names)
       render();
     }, ()=>{});
   })();
@@ -6765,25 +6885,33 @@ TRACKER DATA:
   function q(){ var k = on().filter(function(x){ return x !== "big" && x !== "game"; }); if(k.indexOf("rd") < 0) k.unshift("rd"); if(WILD()) k.push(WILD());
     return "k=" + k.join(",") + (tickers().length ? "&t=" + encodeURIComponent(tickers().join(",")) : "") + (on().indexOf("game") < 0 ? "&g=0" : "") + (PICS() ? "&busy=1" : ""); }
   var sig = function(){ return q(); };
+  // Marco Nov 12: "Pato's take needs to be able to provide more things": rotate the angle each day across his whole financial life
+  function angleOf(){ var pf = window.__patoFacts || {}, A = [];
+    if(pos.length) A.push("stocks"); if(pf.goal > 0 && pf.saved > 0) A.push("goal"); if(pf.limit > 0) A.push("spending"); if(pf.loansOpen) A.push("loans");
+    if(bets.filter(function(b){ return b.result === "won" || b.result === "lost"; }).length >= 3) A.push("bets"); A.push("news lesson");
+    return A[Math.floor((Date.now() - 11*3600e3)/864e5) % A.length]; }
   function facts(){
     var tu = 0, tb = 0;
     var st = pos.map(function(p){ var o = {ticker: p.t, shares: Math.round(p.sh*1e4)/1e4};
       if(p.prev > 0 && p.precio > 0){ o.TODAY_changeUsd = Math.round(p.sh*(p.precio-p.prev)*100)/100; o.TODAY_changePct = Math.round((p.precio/p.prev-1)*1e4)/100; tu += p.sh*(p.precio-p.prev); tb += p.sh*p.prev; }
       if(p.costo > 0 && p.precio > 0) o.SINCE_BOUGHT_gainPct = Math.round((p.precio/p.costo-1)*1e4)/100; if(p.regalo) o.freeShares = true; return o; });
+    var vv = 0; pos.forEach(function(p){ if(p.precio > 0) vv += p.sh*p.precio; }); if(vv > 0) st.forEach(function(o, i){ var p = pos[i]; if(p.precio > 0) o.weightPct = Math.round(p.sh*p.precio/vv*100); });
     var tot = tb > 0 ? {TODAY_changeUsd: Math.round(tu*100)/100, TODAY_changePct: Math.round(tu/tb*1e4)/100} : null;
     var open = bets.filter(function(b){ return ["won","lost","push"].indexOf(b.result) < 0; }).slice(0,5).map(function(b){ return {stakeRD: Number(b.stake)||0, legs: (b.legs||[]).map(function(l){ return [l.sport, l.game].filter(Boolean).join(": "); }).slice(0,3)}; });
     var done = bets.filter(function(b){ return b.result==="won"||b.result==="lost"; }).slice(0,6).map(function(b){ return {result: b.result, sport: ((b.legs||[])[0]||{}).sport||""}; });
     var pf = window.__patoFacts || {}, money = null;
     if(pf.saved != null){ money = {savedRD: pf.saved, goalRD: pf.goal, goalPct: pf.goal ? Math.round(pf.saved/pf.goal*1000)/10 : null}; if(pf.limit){ money.spentThisMonthRD = pf.spentMonth; money.monthLimitRD = pf.limit; money.leftPerDayRD = pf.perDayLeft; money.daysLeftInMonth = pf.daysLeft; money.limitUsedPct = Math.round(pf.spentMonth/pf.limit*100); } }
-    return {money: money, stocks: st, total: tot, bets: open.map(function(b){ b.open = true; return b; }).concat(done)};
+    if(pf.loansOpen){ money = money || {}; money.lentOutRD = pf.lentOut; money.backOwedRD = pf.backOwed; money.loansOpen = pf.loansOpen; money.lateLoans = pf.lateLoans; if(pf.nextDueDays != null) money.nextLoanDueInDays = pf.nextDueDays; }
+    var bw = bets.filter(function(b){ return b.result === "won"; }).length, bl = bets.filter(function(b){ return b.result === "lost"; }).length; if(bw + bl >= 3){ money = money || {}; money.betsWon = bw; money.betsLost = bl; }
+    return {angle: angleOf(), money: money, stocks: st, total: tot, bets: open.map(function(b){ b.open = true; return b; }).concat(done)};
   }
   function getDaily(force){
     if(!base() || busy || !window.mpIdToken) return;
-    var st = ls("pd-daily6"); if(!force && st && st.day === day() && st.sig === sig() && st.data && ((st.data.take && Object.keys(st.data.cats || {}).length >= 2) || Date.now() - (st.at||0) < 15*6e4)){ daily = st.data; return render(); }
+    var st = ls("pd-daily7"); if(!force && st && st.day === day() && st.sig === sig() && st.data && ((st.data.take && Object.keys(st.data.cats || {}).length >= 2) || Date.now() - (st.at||0) < 15*6e4)){ daily = st.data; return render(); }
     busy = 1;
     window.mpIdToken().then(function(tok){ return fetch(base() + "/daily?" + q(), {method: "POST", headers: {"content-type": "application/json", authorization: "Bearer " + tok}, body: JSON.stringify(facts())}); })
       .then(function(r){ return r.ok ? r.json() : null; }).then(function(d){ busy = 0; if(!d) return render(); daily = d; tick = {at: d.at, ticker: d.ticker, big: d.big};
-        ls("pd-daily6", {day: day(), sig: sig(), at: Date.now(), data: d}); render(); }).catch(function(){ busy = 0; render(); });
+        ls("pd-daily7", {day: day(), sig: sig(), at: Date.now(), data: d}); render(); }).catch(function(){ busy = 0; render(); });
   }
   // Drops (Marco Nov 11): 7am full edition (AI take), then 12pm and 6pm each topic swaps to the best story you haven't seen. Free: /news, no AI.
   var FR = {}, drop = ls("pd-drop3");
@@ -6842,9 +6970,9 @@ TRACKER DATA:
           (mine ? '<div class="pd-note"><i>YOUR BET</i><p>' + bold("You have RD$" + (Number(mine.stake)||0).toLocaleString("en-US") + " on this game.") + '</p></div>' : "")}); return; }
       var A = [].concat(cats[k] || []); it = A[0]; if(!it) return; h = k === "rd" && !FR.rd && daily.take && daily.take.rd ? daily.take.rd : it.h;
       var by = function(x){ return esc(x.by && x.by.length > 1 ? x.by.join(" · ") : x.s) + " · " + ago(x.t) + " ago"; }, i2 = A[1];   // 1-2 stories per topic, ranked by the worker
-      L.push({id: ed + ":" + k + ":" + it.h, id2: i2 ? ed + ":" + k + ":" + i2.h : "", cls: k === "rd" ? "rd" : "", t: c[1], w: ago(it.t) + " ago", u: i2 ? "" : it.u, pic: it.u, ph: it.h, ps: it.s, fk: k, sh: {k: c[1], h: h, s: it.s, u: it.u, kn: knowArr(k)}, body: '<div class="pd-k">' + esc(c[1].toUpperCase()) + '</div><div class="pd-h1' + ((it.n || 0) >= 4 ? ' pd-hx' : '') + '">' + esc(h) + '</div>' + (h !== it.h ? '<div class="pd-m" style="font-style:italic">' + esc(it.h) + '</div>' : '') + '<div class="pd-m">' + by(it) + (i2 ? ' · <a class="pd-r2" data-u="' + esc(it.u) + '">Read ›</a>' : '') + '</div>' + know(k) + note(notes[k]) +
+      L.push({id: ed + ":" + k + ":" + it.h, id2: i2 ? ed + ":" + k + ":" + i2.h : "", cls: k === "rd" ? "rd" : "", t: c[1], w: ago(it.t) + " ago", u: i2 ? "" : it.u, pic: it.u, ph: it.h, ps: it.s, fk: k, sh: {k: c[1], h: h, s: it.s, u: it.u, kn: knowArr(k)}, body: '<div class="pd-k">' + esc((/\b(AI|artificial intelligence|OpenAI|ChatGPT|chatbots?)\b/.test(it.h) ? "AI news" : c[1]).toUpperCase()) + '</div><div class="pd-h1' + ((it.n || 0) >= 4 ? ' pd-hx' : '') + '">' + esc(h) + '</div>' + (h !== it.h ? '<div class="pd-m" style="font-style:italic">' + esc(it.h) + '</div>' : '') + '<div class="pd-m">' + by(it) + (i2 ? ' · <a class="pd-r2" data-u="' + esc(it.u) + '">Read ›</a>' : '') + '</div>' + know(k) + note(notes[k]) +
         (i2 ? '<div class="pd-two"><div class="pd-k">ALSO</div><div class="pd-h2">' + esc(i2.h) + '</div><div class="pd-m">' + by(i2) + ' · <a class="pd-r2" data-u="' + esc(i2.u) + '">Read ›</a></div></div>' : '')}); });
-    TK.body = takeBody(tk, big, null, MV && MV.t.replace("Big move · ", ""));
+    TK.body = takeBody(tk, big, (FR.game ? dd.games : daily && daily.games) || [], MV && MV.t.replace("Big move · ", ""), (dd && dd.pick) || (daily && daily.pick));
     if(MV){ var bi = L.map(function(x){ return x.fk; }).indexOf("big"); L.splice(bi >= 0 ? bi + 1 : 1, 0, MV); }   // Breaking news first, then your stock's big move
     var cq = callQ(), cs = callSt(); if(cq && !(cs && cs.q === cq.id && $("pdV").hidden)) L.push({id: ed + ":call:" + cq.id, cls: "call", t: CALL, w: "today's money question", call: cq, body: ""});
     var W = WILD(); L.forEach(function(x){ if(W && x.fk === W){ var c = CATS[ix(W)]; x.wild = 1; x.t = "Wildcard · " + c[1]; x.body = x.body.replace('<div class="pd-k">', '<div class="pd-k">🎲 WILDCARD · '); } });
@@ -6898,7 +7026,7 @@ TRACKER DATA:
       g = fresh.filter(function(x){ return x.live; })[0] || fresh.filter(function(x){ return x.league !== lastLg; })[0] || fresh[0] || G[sl % G.length]; st.by[sl] = g.name; ls("pd-games", st); }
     return {g: g, mine: betOn(g), more: G.filter(function(x){ return x !== g; }).slice(0, 3)}; }
   // Pato's take (Marco Nov 11): ONE constructive sentence. Never repeats another slide (no news, no game, no Big-move ticker).
-  function takeBody(tk, big, G, skip){
+  function takeBody(tk, big, G, skip, PK){
     var h = '<div class="pd-k">PATO\'S TAKE · ' + esc(dlabel(day()).toUpperCase()) + '</div>', mv = pos.filter(function(p){ return p.prev > 0 && p.precio > 0; }), line = "";
     // Marco Nov 12: "the take needs to be way smarter", real knowledge about HIS money, never a recap of today's gain (Big move covers the day)
     var pf0 = window.__patoFacts || {}, ideas = [], val = 0, c0 = 0, g0 = 0, big0 = null;
@@ -6908,17 +7036,45 @@ TRACKER DATA:
     else if(wt >= 40) ideas.push("All your stock money is in " + big0.t + " right now. One great company is still one risk; spreading the next buys across a broad index fund is how most long-term investors protect the upside.");
     if(since != null) ideas.push(since < 0 ? "You're " + Math.abs(since).toFixed(1) + "% below what you paid overall. That only becomes a real loss if you sell; buying the same companies lower brings your average cost down, which is why a dip with a plan beats a dip with panic." : "You're " + since.toFixed(1) + "% above what you paid overall. The trap now is chasing: buying more just because it went up. Set the price you'd be happy to pay and let the market come to you.");
     if(pf0.goal > 0 && pf0.saved > 0 && pf0.saved < pf0.goal){ var gp = Math.round(pf0.saved/pf0.goal*100), r10 = Math.round(pf0.saved*.1/1000)*1000; ideas.push("You're " + gp + "% of the way to RD$" + Math.round(pf0.goal).toLocaleString("en-US") + ". At this stage what you save matters more than what you earn on it: even a strong 10% year on what you have adds about RD$" + r10.toLocaleString("en-US") + ". Your monthly saving is the real engine."); }
-    if(ideas.length){ var dn0 = Math.floor((Date.now() - 4*3600e3)/864e5); line = ideas[dn0 % ideas.length]; }
-    else line = (tk.you && tk.you.text) || fallback().you.text;
+    var byA = {stocks: ideas.slice(), goal: [], spending: [], loans: [], bets: []};
+    if(pf0.goal > 0 && pf0.saved > 0 && pf0.saved < pf0.goal) byA.goal.push(ideas.pop());
+    if(pf0.limit > 0 && pf0.daysLeft > 0){ var used = Math.round(pf0.spentMonth/pf0.limit*100), dim = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate(), tp = Math.round((dim - pf0.daysLeft)/dim*100);
+      byA.spending.push(used > tp + 5 ? "You've used " + used + "% of your monthly limit with " + pf0.daysLeft + " days left. Small daily spends are the sneaky ones: they don't feel like decisions, so they don't feel like money." : "You've used " + used + "% of your limit and the month is " + tp + "% done. Spending less than you could is the quietest way to get rich: every peso left over is a peso invested."); }
+    if(pf0.loansOpen){ byA.loans.push("You have RD$" + pf0.lentOut.toLocaleString("en-US") + " lent out" + (pf0.lateLoans ? ", and " + pf0.lateLoans + (pf0.lateLoans === 1 ? " loan is" : " loans are") + " late" : "") + ". Lending pays only if it comes back: a simple rule many lenders use is never lend more than you could live without if it didn't."); }
+    var bw0 = bets.filter(function(b){ return b.result === "won"; }).length, bl0 = bets.filter(function(b){ return b.result === "lost"; }).length;
+    if(bw0 + bl0 >= 3) byA.bets.push("Your settled bets: " + bw0 + " won, " + bl0 + " lost. Sportsbooks build a margin into every line, so even good pickers need to win more than half just to break even; small, fixed stakes keep it fun.");
+    var ang = angleOf(), pool0 = (byA[ang] && byA[ang].length ? byA[ang] : []).concat(byA.stocks, byA.goal, byA.spending, byA.loans, byA.bets);
+    if(pool0.length) line = pool0[0];
+    else line = "Rich isn't a number, it's a gap: the space between what you earn and what you spend. Pato's job is to help you widen it a little every month.";
     var pf = window.__patoFacts || {}, tip = "";
     if(tk.pato && tk.pato.line){ line = tk.pato.line; tip = tk.pato.tip || ""; }   // the 7am AI take: Pato talking to you with your real numbers (checked on the server)
     if(!tip && pf.limit > 0 && pf.daysLeft > 0){ var lft = pf.limit - pf.spentMonth; tip = lft > 0 ? "Keep spending under RD$" + Math.max(0, pf.perDayLeft).toLocaleString("en-US") + " a day and you finish the month inside your RD$" + pf.limit.toLocaleString("en-US") + " limit." : "You're past your monthly limit; every peso you don't spend now goes straight back to your goal."; }
     else if(!tip && pf.goal > 0 && pf.saved > 0) tip = "You're " + (Math.floor(pf.saved/pf.goal*1000)/10) + "% of the way to RD$" + pf.goal.toLocaleString("en-US") + ". One small transfer to savings today keeps the streak going.";
-    h += '<div class="pd-say"><img src="icon-192.png?v=7" alt=""><div class="pd-one">' + bold(line) + '</div></div>' + (tip ? '<div class="pd-tip"><i>PATO\'S MOVE</i><p>' + bold(tip) + '</p></div>' : '');
+    h += '<div class="pd-say"><img src="icon-192.png?v=7" alt=""><div class="pd-one' + (line.length > 150 ? ' xl' : line.length > 100 ? ' lg' : '') + '">' + bold(line) + '</div></div>' + (tip ? '<div class="pd-tip"><i>PATO\'S MOVE</i><p>' + bold(tip) + '</p></div>' : '');
+    var pk = pickText(PK) || (!PK ? pickOf(G) : null); if(pk) h += '<div class="pd-tip pd-pick"><i>PATO\'S PICK · ' + esc(pk.lg.toUpperCase()) + '</i><p>' + bold(pk.txt) + '</p><small>' + esc(pk.sub) + '</small>' + (pk.rec ? '<div class="pd-rec">' + pk.rec + '</div>' : '') + '</div>';
     var now = new Date(Date.now() - 4*3600e3).toISOString().slice(0, 10), ev = evs.filter(function(e){ return e.fecha >= now && e.t && pos.some(function(p){ return p.t === e.t; }); }).sort(function(a, b){ return a.fecha.localeCompare(b.fecha); })[0];
     if(ev){ var d2 = Math.round((Date.parse(ev.fecha + "T12:00:00Z") - Date.parse(now + "T12:00:00Z"))/864e5); if(d2 <= 14) h += '<div class="pd-nx">🗓️ Next: <b>' + esc(ev.t + " " + (ev.txt || "event").toLowerCase()) + '</b> · ' + (ev.est ? "~" : "") + esc(dlabel(ev.fecha)) + ' · ' + (d2 === 0 ? "today" : d2 === 1 ? "tomorrow" : "in " + d2 + " days") + '</div>'; }
     return h;
   }
+  // Pato's pick (Marco Nov 12: "a sports bets pick, do some deep data research"): where ESPN's win model and the betting odds disagree most = value
+  // the locked, graded pick from the server (one per day, same for everyone) + Pato's running record
+  function pickText(PK){ if(!PK) return null; var r = PK.rec || {}, T = PK.today, L = PK.last, rec = "";
+    if(r.n) rec = '<b>Pato\'s record: ' + r.won + '-' + (r.n - r.won) + ' (' + Math.round(r.won/r.n*100) + '%)</b> · ' + (r.units >= 0 ? "+" : "") + r.units.toFixed(1) + ' units' + (L ? ' · Last: ' + esc(L.team) + ' ' + (L.res === "won" ? "✅" : L.res === "push" ? "➖" : "❌") + (L.score ? ' ' + esc(L.score) : '') : '');
+    else rec = 'Pato\'s record starts with this pick. Every pick gets graded.';
+    if(T && !T.none) return {lg: T.league || "Sports", txt: "Data lean: " + T.team + " (" + T.ml + "). ESPN's model gives them " + T.w + "%, but the odds only price them at " + T.p + "%. A gap of " + T.edge + " points is what sharp bettors call value." + (T.form ? " They've won " + (T.form.match(/W/g) || []).length + " of their last " + T.form.length + "." : ""), sub: T.game + " · A lean, not a lock: keep the stake small.", rec: rec};
+    if(T && T.none) return {lg: "Sports", txt: "No value on today's board: in " + T.seen + (T.seen === 1 ? " game" : " games") + " the odds match what the data says. The best bet on a day like this is no bet.", sub: "Pato checks win models, odds and recent form every drop.", rec: rec};
+    return r.n ? {lg: "Sports", txt: "No pick yet today. Pato only picks when the data and the odds disagree.", sub: "Checked every drop.", rec: rec} : null; }
+  function impl(ml){ var m = parseFloat(ml); return !isFinite(m) || m === 0 ? null : m < 0 ? -m/(-m + 100) : 100/(m + 100); }
+  function pickOf(G){ var best = null, seen0 = 0;
+    (G || []).forEach(function(g){ if(!g.win || g.win.length !== 2 || !g.odds || !g.odds.ml || g.win[0] + g.win[1] < 97 || (g.t && g.t < Date.now())) return;
+      var a = impl(g.odds.ml[0]), b = impl(g.odds.ml[1]); if(a == null || b == null) return; var vig = a + b, P = [a/vig*100, b/vig*100];
+      [0, 1].forEach(function(i){ var e = g.win[i] - P[i], T = (g.teams || [])[i] || {}, f = (g.form || []).filter(function(x){ return x.team === T.n; })[0], wn = f ? (f.r.match(/W/g) || []).length : null;
+        var sc = e + (wn == null ? 0 : (wn - 2.5)*1.5);   // history: recent form nudges the model edge up or down
+        if(e >= 3 && (wn == null || wn >= 2) && sc >= 4 && (!best || sc > best.sc)) best = {sc: sc, e: e, i: i, g: g, n: T.n || "", o: g.odds.ml[i], w: g.win[i], p: Math.round(P[i]), f: f, wn: wn}; }); seen0++; });
+    if(!best) return seen0 ? {lg: "Sports", txt: "No value on today's board: in " + seen0 + (seen0 === 1 ? " game" : " games") + " the odds match what the data says. The best bet on a day like this is no bet.", sub: "Pato checks win models, odds and recent form every drop."} : null;
+    var g = best.g, f = best.f, wins = best.wn;
+    return {lg: g.league || g.lg || "Sports", txt: "Data lean: " + best.n + " (" + best.o + "). ESPN's model gives them " + best.w + "%, but the odds only price them at " + best.p + "%. A gap of " + Math.round(best.e) + " points is what sharp bettors call value." + (wins != null ? " They've won " + wins + " of their last " + f.r.length + "." : ""),
+      sub: (g.name || g.short || "") + " · A lean, not a lock: keep the stake small."}; }
   var CONAME = {AAPL:"Apple",TSLA:"Tesla",NVDA:"Nvidia",AMZN:"Amazon",GOOGL:"Alphabet (Google)",GOOG:"Alphabet (Google)",META:"Meta",MSFT:"Microsoft",NFLX:"Netflix",AVGO:"Broadcom",AMD:"AMD",TSM:"TSMC",IBKR:"Interactive Brokers",VUAA:"S&P 500 fund",DIS:"Disney",NKE:"Nike",KO:"Coca-Cola",JPM:"JPMorgan",V:"Visa",MA:"Mastercard"};
   function breakBody(b, ch, st0){ var up = ch > 0, L = window.ST_LOGOS && window.ST_LOGOS[b.t], g = b.sh*(b.precio-b.prev), all = pos.filter(function(p){ return p.prev > 0 && p.precio > 0; }), tot = 0;
     all.forEach(function(p){ tot += p.sh*(p.precio-p.prev); });
@@ -7036,7 +7192,7 @@ TRACKER DATA:
     if(!w){ w = document.createElement("div"); w.id = "pdTopics"; var t = $("sgTabs"); if(t) sh.insertBefore(w, t); else sh.appendChild(w);
       w.addEventListener("change", function(e){ var c = e.target; if(!c.dataset || !c.dataset.k) return; var o = on().slice(), k = c.dataset.k, i = o.indexOf(k);
         if(c.checked && o.length >= TOP){ c.checked = false; $("pdTopM").textContent = "Max " + TOP + ". Turn one off first."; return; }
-        if(c.checked && i < 0) o.push(k); if(!c.checked && i >= 0) o.splice(i, 1); save(o); ls("pd-daily6", null); $("pdTopM").textContent = "Saved. Your next stories use these."; }); }
+        if(c.checked && i < 0) o.push(k); if(!c.checked && i >= 0) o.splice(i, 1); save(o); ls("pd-daily7", null); $("pdTopM").textContent = "Saved. Your next stories use these."; }); }
     var o = on(); w.innerHTML = '<span>Pato Daily topics</span>' + CATS.filter(function(c){ return FIX.indexOf(c[0]) < 0; }).map(function(c){ return '<label class="tg"><span>' + c[2] + ' ' + c[1] + '</span><input type="checkbox" data-k="' + c[0] + '"' + (o.indexOf(c[0]) >= 0 ? ' checked' : '') + '></label>'; }).join("") + '<div class="pd-tm" id="pdTopM">Up to ' + TOP + '. Top story and DR come every day.</div>'; }
   function save(o){ var fb = (prefs && prefs.fb) || {}, co = (prefs && prefs.co) || {}; prefs = {on: o, picked: true, fb: fb, co: co}; try{ db.doc("prefs/news").set({on: o, picked: true, fb: fb, co: co, at: Date.now()}); }catch(_){} }
   var peeked = 0, pk = 0, pc = 0, pt = null;
