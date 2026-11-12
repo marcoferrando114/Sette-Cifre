@@ -2054,7 +2054,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261112232649";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261112234731";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -7072,7 +7072,7 @@ TRACKER DATA:
       var A = [].concat(cats[k] || []); it = A[0]; if(!it) return; h = k === "rd" && !FR.rd && daily.take && daily.take.rd ? daily.take.rd : it.h;
       var by = function(x){ return esc(x.by && x.by.length > 1 ? x.by.join(" · ") : x.s) + " · " + ago(x.t) + " ago"; }, i2 = A[1];   // 1-2 stories per topic, ranked by the worker
       L.push({id: ed + ":" + k + ":" + it.h, id2: i2 ? ed + ":" + k + ":" + i2.h : "", cls: k === "rd" ? "rd" : "", t: c[1], w: ago(it.t) + " ago", u: i2 ? "" : it.u, pic: it.u, ph: it.h, ps: it.s, fk: k, sh: {k: c[1], h: h, s: it.s, u: it.u, kn: knowArr(k)}, body: '<div class="pd-k">' + esc((k === "tech" && /\b(AI|artificial intelligence|OpenAI|ChatGPT|chatbots?)\b/.test(it.h) ? "AI news" : c[1]).toUpperCase()) + '</div>' + (function(){ var N = hnm(h); return '<div class="pd-h1' + ((it.n || 0) >= 4 ? ' pd-hx' : '') + '">' + esc(N ? N.t : h) + '</div>' + (N ? '<div class="pd-m">Comment by <b>' + esc(N.n) + '</b></div>' : ''); })() + (h !== it.h ? '<div class="pd-m" style="font-style:italic">' + esc(it.h) + '</div>' : '') + '<div class="pd-m">' + by(it) + (i2 ? ' · <a class="pd-r2" data-u="' + esc(it.u) + '">Read ›</a>' : '') + '</div>' + plain(it) + know(k) + note(notes[k]) +
-        (i2 ? '<div class="pd-two"><div class="pd-k">ALSO</div><div class="pd-h2">' + esc(i2.h) + '</div><div class="pd-m">' + by(i2) + ' · <a class="pd-r2" data-u="' + esc(i2.u) + '">Read ›</a></div></div>' : '')}); });
+        (i2 ? '<div class="pd-two"><div class="pd-k">' + (i2.deep ? '🧭 DEEP READ' : 'ALSO') + '</div><div class="pd-h2">' + esc(i2.h) + '</div><div class="pd-m">' + by(i2) + ' · <a class="pd-r2" data-u="' + esc(i2.u) + '">Read ›</a></div>' + (i2.pl ? '<div class="pd-m" style="color:#E4ECE7;margin-top:6px">' + esc(i2.pl) + '</div>' : '') + '</div>' : '')}); });
     TK.body = takeBody(tk, big, (FR.game ? dd.games : daily && daily.games) || [], MV && MV.t.replace("Big move · ", ""), (dd && dd.pick) || (daily && daily.pick));
     // Marco Nov 12: Big move is not its own slide any more: a big move shows inside "Your companies" and in Pato's take
     var cq = callQ(), cs = callSt(); if(cq && !(cs && cs.q === cq.id && $("pdV").hidden)) L.push({id: ed + ":call:" + cq.id, cls: "call", t: CALL, w: "today's money question", call: cq, body: ""});

@@ -28,7 +28,7 @@ async function verify(token) {
 
 // ---------- Pato Daily (Google News RSS + ESPN schedules, cached at Cloudflare's edge; one Haiku call per user per day for Pato's take) ----------
 const GN = "https://news.google.com/rss", EN = "hl=en-US&gl=US&ceid=US:en", ES = "hl=es-419&gl=DO&ceid=DO:es-419";
-const TRUSTED = /^(Reuters|Associated Press|The Associated Press|USA TODAY|USA Today|Yahoo News|Fortune|Newsweek|Sky News|The Independent|TIME|Time|Los Angeles Times|Investing\.com|AP News|CNBC|Bloomberg|Bloomberg\.com|Yahoo Finance|Yahoo|MarketWatch|The Wall Street Journal|WSJ|Financial Times|CNN|CNN Business|Business Insider|Barron's|Fox Business|Axios|The Verge|TechCrunch|Wired|Ars Technica|Engadget|CoinDesk|Cointelegraph|Decrypt|Forbes|ESPN|The Athletic|CBS Sports|NBC Sports|Yahoo Sports|Sports Illustrated|BBC|BBC News|The Guardian|NPR|The New York Times|The Washington Post|Politico|The Hill|NBC News|ABC News|CBS News|Al Jazeera|Variety|Billboard|Rolling Stone|The Hollywood Reporter|Deadline|IGN|Polygon|GameSpot|Kotaku|STAT|Healthline|Medical News Today|Car and Driver|MotorTrend|Road & Track|Top Gear|Vogue|GQ|Hypebeast|Highsnobiety|Business of Fashion|WWD|Elle|Diario Libre|Listín Diario|Listin Diario|El Día|El Dia|Hoy Digital|Periódico Hoy|N Digital|CDN|El Nuevo Diario|Noticias SIN|Acento|De Último Minuto|Diario Libre RD|PokerNews|Investopedia|Bloomberg Línea)$/i;
+const TRUSTED = /^(The Economist|The Atlantic|Foreign Affairs|Foreign Policy|Vox|MIT Technology Review|Harvard Business Review|The New Yorker|Noema|Reuters|Associated Press|The Associated Press|USA TODAY|USA Today|Yahoo News|Fortune|Newsweek|Sky News|The Independent|TIME|Time|Los Angeles Times|Investing\.com|AP News|CNBC|Bloomberg|Bloomberg\.com|Yahoo Finance|Yahoo|MarketWatch|The Wall Street Journal|WSJ|Financial Times|CNN|CNN Business|Business Insider|Barron's|Fox Business|Axios|The Verge|TechCrunch|Wired|Ars Technica|Engadget|CoinDesk|Cointelegraph|Decrypt|Forbes|ESPN|The Athletic|CBS Sports|NBC Sports|Yahoo Sports|Sports Illustrated|BBC|BBC News|The Guardian|NPR|The New York Times|The Washington Post|Politico|The Hill|NBC News|ABC News|CBS News|Al Jazeera|Variety|Billboard|Rolling Stone|The Hollywood Reporter|Deadline|IGN|Polygon|GameSpot|Kotaku|STAT|Healthline|Medical News Today|Car and Driver|MotorTrend|Road & Track|Top Gear|Vogue|GQ|Hypebeast|Highsnobiety|Business of Fashion|WWD|Elle|Diario Libre|Listín Diario|Listin Diario|El Día|El Dia|Hoy Digital|Periódico Hoy|N Digital|CDN|El Nuevo Diario|Noticias SIN|Acento|De Último Minuto|Diario Libre RD|PokerNews|Investopedia|Bloomberg Línea)$/i;
 const BADSRC = /youtube|tiktok|reddit|instagram|facebook|\bx\.com|twitter|msn video|benzinga|motley fool|fool\.com|seeking alpha|zacks|gurufocus|stocktwits/i;
 const JUNK = /(provides (business|corporate|operational) update|announces (date|timing) (of|for) (its )?(first|second|third|fourth)? ?quarter|stock analysis|big announcement|game plan revealed|my trading|trading plan|my portfolio|everything just changed|!\)|you won'?t believe|\?{2}|\bhere'?s why\b|\bwatch:)|\b(opinion|sponsored|\d+ (stocks?|ways|things|reasons|picks|best)|top \d+|best .{0,30} to buy|should you (buy|sell)|is it time to|buy now|before it'?s too late|millionaire|prediction:|could make you rich|live updates?|quiz|podcast|horoscope|deal alert|% off|coupon|review:)\b/i;
 const MOVERS = /\b(fed|federal reserve|powell|rates?|inflation|cpi|jobs report|payrolls|s&p|nasdaq|dow|stocks?|wall street|bitcoin|crypto|dollar|earnings|oil|treasur(y|ies)|recession|tariffs?|ipo|market)\b/i;
@@ -275,7 +275,11 @@ async function kvFresh(env, key, mins, make) {
 }
 const AQ = srch("analysts upgrade stock buy rating");
 // The shared topics every drop needs (same for all users); the cron splits them in two runs before each drop
-const SHARED = () => [sec("BUSINESS"), sec("WORLD"), ...Object.values(CATS), AQ, LQ, RQ];
+// Deep reads (Marco Nov 12: Economist-style explainers, "not exactly news"): one per drop, shown inside the matching topic tab (no new tab)
+const DQ = srch('(explained OR analysis OR "why" OR "how" OR "inside" OR "what it means" OR "long read" OR "deep dive") ("The Economist" OR "The Atlantic" OR "Foreign Affairs" OR "Foreign Policy" OR Vox OR "Financial Times" OR Bloomberg OR "Wall Street Journal" OR "New York Times" OR BBC OR "The Guardian" OR Wired OR TIME OR Fortune OR Reuters OR Axios OR "MIT Technology Review" OR "The New Yorker")').replace("when%3A1d", "when%3A3d");
+const DEEPSRC = /^(The Economist|The Atlantic|Foreign Affairs|Foreign Policy|Vox|MIT Technology Review|Harvard Business Review|The New Yorker|Noema|Financial Times|Bloomberg|The Wall Street Journal|WSJ|The New York Times|The Washington Post|BBC|The Guardian|Reuters|Wired|TIME|Time|Fortune|Axios)/;
+const DEEPH = /\b(why|how|inside|explained|explainer|analysis|what .{0,25} means|behind|long read|deep dive|the (rise|fall|race|problem|truth|case|real|end|future))\b|:\s|\?$/i;
+const SHARED = () => [sec("BUSINESS"), sec("WORLD"), ...Object.values(CATS), AQ, LQ, RQ, DQ];
 async function bundle(P, env) {
   const tick = (P.get("t") || "").toUpperCase().split(",").filter(x => /^[A-Z.]{1,6}$/.test(x)).slice(0, 5);
   const wl = k => (P.get(k) || "").split(",").map(v => v.trim().toLowerCase()).filter(v => /^[a-z0-9]{3,20}$/.test(v)).slice(0, 8), LK = wl("lk"), DK = wl("dk");   // Nov 12: words you 👍/👎 (sent by the app, nothing stored here)
@@ -284,7 +288,7 @@ async function bundle(P, env) {
   const [top, world, ...rest] = await Promise.all([kfeed(env, sec("BUSINESS"), 200), kfeed(env, sec("WORLD"), 75),
     ...want.map(k => kfeed(env, CATS[k], 200)), ...tick.map(t => kfeed(env, srch(t + " stock"), 180)), kfeed(env, AQ, 200)]);
   const N1 = SUBN;
-  const [LF, RF] = await Promise.all([kfeed(env, LQ, 200), kfeed(env, RQ, 200)]);
+  const [LF, RF, DF] = await Promise.all([kfeed(env, LQ, 200), kfeed(env, RQ, 200), kfeed(env, DQ, 200)]);
   const [MK, GM] = await Promise.all([kvFresh(env, "mk2", 90, markets), P.get("g") === "0" ? Promise.resolve([]) : kvFresh(env, "gm2:" + drDay(), 60, games)]); rest.push(GM); const N2 = SUBN;
   const stocks = {}; tick.forEach((t, i) => { const it = pick(rest[want.length + i].items || [])[0]; if (it) stocks[t] = it; });
   // Breaking (Marco Nov 11): the story that matters most to YOU today: big world events, scandals about the people behind your companies, major accidents, analyst calls on your stocks.
@@ -306,6 +310,10 @@ async function bundle(P, env) {
   // Nov 12 fix: skip stories already shown BEFORE ranking, so a category falls back to its next-best story instead of disappearing
   const shown = W ? [W.h] : [], cats = {}; want.forEach((k, i) => { const it = top2((rest[i].items || []).filter(x => x && x.h && !shown.some(h => same(h, x.h))), tick, P.get("busy") === "1", lk); if (it.length) { cats[k] = it; it.forEach(x => shown.push(x.h)); } });
   MORE = MORE.filter(it => !shown.some(h => same(h, it.h)));
+  { const cs = clean(DF.items || [], 96).filter(i => DEEPSRC.test(i.s || "") && DEEPH.test(i.h) && !/\b(stocks?|shares|earnings|futures|Dow|Nasdaq|S&P)\b.{0,30}\b(rise|fall|jump|slide|drop|gain|close)/i.test(i.h) && !shown.some(h => same(h, i.h))).sort((x, y) => ((TASTE.test(y.h) ? 12 : 0) + lk(y.h)) - ((TASTE.test(x.h) ? 12 : 0) + lk(x.h)) || y.t - x.t).slice(0, 6);
+    const dp = cs.length ? cs[Math.floor(Date.now() / 108e5) % cs.length] : null;   // a different one each 3-hour drop
+    if (dp) { const pk = /\b(AI|chips?|Nvidia|OpenAI|tech|software|robots?|startups?)\b/i.test(dp.h) && cats.tech ? "tech" : /\b(econom\w*|market|inflation|debt|trade|bank|spend\w*|tariffs?|fiscal|budget|wages?|jobs?)\b/i.test(dp.h) && cats.business ? "business" : ["politics", "business", "tech", "rd"].concat(Object.keys(cats)).find(k => cats[k]);
+      if (pk) { cats[pk].splice(1, 0, Object.assign({}, dp, { deep: 1 })); shown.push(dp.h); } } }
   if (W) W.mk = marketFor(MK, W.h); Object.keys(cats).forEach(k => { const it = cats[k][0]; if (it) it.mk = marketFor(MK, it.h); });
   return { at: top.at || Date.now(), day: edDay(), big: W, calls: CL, more: MORE, preds: pickMarkets(MK, tick), launch: launches(LF.items || [], tick), rising: rising(RF.items || []), cats, stocks, games: rest[rest.length - 1] || [],
     _n: [N1, N2, MK.length, (GM || []).length], ticker: T.filter(i => MOVERS.test(i.h)).concat(T).filter((v, i, a) => a.indexOf(v) === i).slice(0, 5) };
@@ -359,17 +367,17 @@ async function take(env, uid, body, b) {
 }
 
 // "In plain words" (Marco Nov 12: some headlines are jargon, e.g. NGX / Seplat / MTN, or a name nobody knows). One cheap batched call per new set of headlines, shared by everyone and kept in KV.
-const PLAIN = `For each numbered news headline, decide if a 20-year-old who does not follow the topic would be confused by it: politics, world events, foreign markets or companies, unfamiliar names, jargon. If yes, write BACKGROUND context: 1 or 2 short sentences (max 40 words) saying who or what is involved and why it is happening or why it matters, e.g. what an institution is, who a person is, what led to this. Use ONLY the headline and widely known general knowledge. Never invent numbers, causes, quotes or outcomes; if unsure, return "". If the headline is already clear to anyone (sports results, product launches, simple company news), return "". Return ONLY JSON like {"0":"...","1":""}.`;
+const PLAIN = `Headlines marked [DEEP READ] are analysis pieces, not news: ALWAYS write 1 or 2 short sentences (max 35 words) on what the piece is about and why it matters, using only the headline and widely known facts, never inventing claims. For the other headlines: for each numbered news headline, decide if a 20-year-old who does not follow the topic would be confused by it: politics, world events, foreign markets or companies, unfamiliar names, jargon. If yes, write BACKGROUND context: 1 or 2 short sentences (max 40 words) saying who or what is involved and why it is happening or why it matters, e.g. what an institution is, who a person is, what led to this. Use ONLY the headline and widely known general knowledge. Never invent numbers, causes, quotes or outcomes; if unsure, return "". If the headline is already clear to anyone (sports results, product launches, simple company news), return "". Return ONLY JSON like {"0":"...","1":""}.`;
 async function plainAll(env, b) {
   if (!env.ANTHROPIC_KEY || !env.LIMITS || !b || !b.cats) return;
   const items = []; Object.values(b.cats).forEach(a => (a || []).slice(0, 2).forEach(it => { if (it && it.h) items.push(it); }));
   if (!items.length) return;
-  const hk = it => it.h.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 60);
+  const hk = it => (it.deep ? "d:" : "") + it.h.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 60);
   let M = {}; try { M = JSON.parse((await env.LIMITS.get("pl2")) || "{}"); } catch (e) { M = {}; }
   const miss = items.filter(it => !(hk(it) in M));
   if (miss.length) {
     const list = miss.slice(0, 16), r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "content-type": "application/json", "x-api-key": env.ANTHROPIC_KEY, "anthropic-version": "2023-06-01" },
-      body: JSON.stringify({ model: "claude-haiku-5-5", max_tokens: 1400, messages: [{ role: "user", content: PLAIN + "\n\nHEADLINES:\n" + list.map((it, i) => i + ". " + it.h + " (" + (it.s || "") + ")").join("\n") }] }) }).catch(() => null);
+      body: JSON.stringify({ model: "claude-haiku-5-5", max_tokens: 1400, messages: [{ role: "user", content: PLAIN + "\n\nHEADLINES:\n" + list.map((it, i) => i + ". " + (it.deep ? "[DEEP READ] " : "") + it.h + " (" + (it.s || "") + ")").join("\n") }] }) }).catch(() => null);
     if (r && r.ok) {
       const j = await r.json(), txt = ((j.content || []).find(c => c.type === "text") || {}).text || "", m = txt.match(/\{[\s\S]*\}/); let o = null; try { o = JSON.parse(m[0]); } catch (e) { o = null; }
       if (o) { list.forEach((it, i) => { M[hk(it)] = typeof o[i] === "string" ? o[i].trim().slice(0, 300) : ""; }); const ks = Object.keys(M); if (ks.length > 220) ks.slice(0, ks.length - 220).forEach(k => delete M[k]); await env.LIMITS.put("pl2", JSON.stringify(M), { expirationTtl: 604800 }); }
