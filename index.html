@@ -2054,7 +2054,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261112235320";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261112235801";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -7193,6 +7193,20 @@ TRACKER DATA:
     if(!tip && pf.limit > 0 && pf.daysLeft > 0){ var lft = pf.limit - pf.spentMonth; tip = lft > 0 ? "Keep spending under RD$" + Math.max(0, pf.perDayLeft).toLocaleString("en-US") + " a day and you finish the month inside your RD$" + pf.limit.toLocaleString("en-US") + " limit." : "You're past your monthly limit; every peso you don't spend now goes straight back to your goal."; }
     else if(!tip && pf.goal > 0 && pf.saved > 0) tip = "You're " + (Math.floor(pf.saved/pf.goal*1000)/10) + "% of the way to RD$" + pf.goal.toLocaleString("en-US") + ". One small transfer to savings today keeps the streak going.";
     h += '<div class="pd-say"><img src="icon-192.png?v=7" alt=""><div class="pd-one' + (line.length > 150 ? ' xl' : line.length > 100 ? ' lg' : '') + '">' + bold(line) + '</div></div>' + (tip ? '<div class="pd-tip"><i>PATO\'S MOVE</i><p>' + bold(tip) + '</p></div>' : '');
+    // Pato's lesson (Marco Nov 12, from "48 Laws of Power": the defensive and discipline side only): one money habit per day, rotating, no AI needed
+    var LS = [["Be bold on the entry, never on the chase.", "Decide your price and your size before you buy, and use a limit order. If the stock runs away without you, you lose nothing. Chasing is how good plans become bad trades."],
+      ["Set a stop-win line before you play.", "Most big losses at the table or on bets come right after a win. Decide the number where you walk away happy, and when you hit it, you're done."],
+      ["Don't go past the mark you aimed for.", "You set a target for a reason. Taking profit at the plan beats waiting for a perfect top that rarely comes."],
+      ["If the pitch is too good, slow down.", "When someone promises big returns fast, ask who gets paid if you say yes. The deals that sound easiest are the ones worth checking twice."],
+      ["Know who you're lending to.", "Before a loan, ask: have they paid on time before, and could I live without this money? Lend only what you can lose without anger."],
+      ["Your attention is your edge.", "Checking prices every five minutes doesn't make you smarter, it makes you nervous. Set a plan, check on a schedule, and let time do the work."],
+      ["Stay flexible when the facts change.", "A plan is a tool, not a promise. If the reason you bought is gone, change the plan. Defending an old decision costs more than admitting it."],
+      ["Don't tell everyone your plan.", "People who know your money moves give opinions, not help. Share your goal with one person who keeps you honest, and keep the rest quiet."],
+      ["Reputation is an asset.", "Paying back on time, keeping your word and being easy to trust opens doors that money alone can't. It's the cheapest thing you'll ever build."],
+      ["Let others do the loud part.", "You don't need to prove you're right in public. Quiet results, month after month, beat loud predictions every time."],
+      ["Patience is a power move.", "The investor who can wait for a good price has an edge over the one who has to act today. Keep some cash so you're never forced to sell."],
+      ["Beware the story that flatters you.", "A tip that makes you feel smart is a tip to double-check. If it sounds like a secret everyone knows, the price already moved."]];
+    var li = Math.floor((Date.now() - 4*3600e3)/864e5) % LS.length; h += '<div class="pd-know"><i>PATO\'S LESSON</i><p style="margin:6px 0 0;font-size:1rem;line-height:1.4;color:#fff"><b>' + esc(LS[li][0]) + '</b> ' + esc(LS[li][1]) + '</p></div>';
     // Pato's pick lives in the Sports tab now (Marco Nov 12)
     var now = new Date(Date.now() - 4*3600e3).toISOString().slice(0, 10), ev = evs.filter(function(e){ return e.fecha >= now && e.t && pos.some(function(p){ return p.t === e.t; }); }).sort(function(a, b){ return a.fecha.localeCompare(b.fecha); })[0];
     if(ev){ var d2 = Math.round((Date.parse(ev.fecha + "T12:00:00Z") - Date.parse(now + "T12:00:00Z"))/864e5); if(d2 <= 14) h += '<div class="pd-nx">🗓️ Next: <b>' + esc(ev.t + " " + (ev.txt || "event").toLowerCase()) + '</b> · ' + (ev.est ? "~" : "") + esc(dlabel(ev.fecha)) + ' · ' + (d2 === 0 ? "today" : d2 === 1 ? "tomorrow" : "in " + d2 + " days") + '</div>'; }
