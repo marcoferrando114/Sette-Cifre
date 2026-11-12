@@ -1857,7 +1857,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261112010500";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261112011000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -7009,7 +7009,7 @@ TRACKER DATA:
     bub.addEventListener("click", function(){ openV(Number(bub.dataset.i)); });
     document.addEventListener("click", function(e){ if(e.target.closest && e.target.closest(".tabs [data-tab]")) setTimeout(peek, 700); }, true);
     setInterval(peek, 45000);
-    var sc = null, dive = function(){ var w = $("pdPeek"); if(!w) return; if(!w.classList.contains("dive")){ hidePeek(); w.classList.add("dive"); } clearTimeout(sc); sc = setTimeout(function(){ w.classList.remove("dive"); }, 4000); };   // Marco: wait 4s after you stop scrolling before the duck comes back
+    var sc = null, dive = function(){ var w = $("pdPeek"); if(!w) return; if(!w.classList.contains("dive")){ hidePeek(); w.classList.add("dive"); } clearTimeout(sc); sc = setTimeout(function(){ w.classList.remove("dive"); }, 2500); };   // Marco: wait 4s after you stop scrolling before the duck comes back
     window.addEventListener("scroll", dive, {passive: true}); document.addEventListener("touchmove", function(){ if($("pdV").hidden) dive(); }, {passive: true});   // duck dives while you scroll, so it never sits on your numbers
     // viewer: tap right = next, tap left = back, hold = pause, swipe down = close
     var V = $("pdV"), S0 = $("pdS"), ty, tx, t0, held;
