@@ -491,9 +491,9 @@ async function storyImg(u, h, debug) {
 export default {
   // every 15 min (tools/wrangler.toml crons): refresh games and predictions in their own run, so /news only reads them
   // Every 15 min. At :30 and :45 before each drop (7, 10, 1, 4, 7, 10 DR = 11, 14, 17, 20, 23, 2 UTC) it prepares the drop's news; other runs refresh games, predictions and world news.
-  async scheduled(ev, env, ctx) { SUBN = 0; await loadHL(env); const d = new Date(ev.scheduledTime || Date.now()), m = Math.floor(d.getUTCMinutes() / 15) * 15, pre = [10, 13, 16, 19, 22, 1].includes(d.getUTCHours()) && m >= 30;
-    if (pre) { const L = SHARED(), half = Math.ceil(L.length / 2), part = m === 30 ? L.slice(0, half) : L.slice(half);
-      ctx.waitUntil((async () => { if (m === 30) await deepAll(env, true).catch(() => 0); for (const u of part) await refreshFeed(env, u).catch(() => 0); await saveHL(env); })()); return; }
+  async scheduled(ev, env, ctx) { SUBN = 0; await loadHL(env); const d = new Date(ev.scheduledTime || Date.now()), m = Math.floor(d.getUTCMinutes() / 15) * 15, pre = ([10, 13, 16, 19, 22, 1].includes(d.getUTCHours()) && m >= 30) || (d.toISOString().slice(0, 10) === "2026-11-13" && d.getUTCHours() === 1 && m < 30);   // 9:15pm DR one-off drop
+    if (pre) { const L = SHARED(), half = Math.ceil(L.length / 2), part = m === 30 || m === 0 ? L.slice(0, half) : L.slice(half);
+      ctx.waitUntil((async () => { if (m === 30 || m === 0) await deepAll(env, true).catch(() => 0); for (const u of part) await refreshFeed(env, u).catch(() => 0); await saveHL(env); })()); return; }
     ctx.waitUntil(Promise.all([kvFresh(env, "mk2", 0, markets), kvFresh(env, "gm2:" + drDay(), 0, games), m === 0 ? refreshFeed(env, sec("WORLD")).catch(() => 0) : null]).then(() => saveHL(env))); },
   async fetch(req, env) {
     SUBN = 0;
