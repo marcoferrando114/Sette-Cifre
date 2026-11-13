@@ -291,11 +291,20 @@ async function kvFresh(env, key, mins, make) {
 }
 const AQ = srch("analysts upgrade stock buy rating");
 // The shared topics every drop needs (same for all users); the cron splits them in two runs before each drop
-// Deep reads (Marco Nov 12: Economist-style explainers, "not exactly news"): one per drop, shown inside the matching topic tab (no new tab)
-const DQ = srch('(explained OR analysis OR "why" OR "how" OR "inside" OR "what it means" OR "long read" OR "deep dive") ("The Economist" OR "The Atlantic" OR "Foreign Affairs" OR "Foreign Policy" OR Vox OR "Financial Times" OR Bloomberg OR "Wall Street Journal" OR "New York Times" OR BBC OR "The Guardian" OR Wired OR TIME OR Fortune OR Reuters OR Axios OR "MIT Technology Review" OR "The New Yorker")').replace("when%3A1d", "when%3A3d");
+// Deep reads (Marco Nov 12: Economist-style explainers, "not exactly news"): one per drop, shown inside the matching topic tab (no new tab).
+// Read straight from each outlet's own RSS (the news search could not find them), kept 200 min in KV (dp2), prepared by the cron before each drop.
+const DFEEDS = [["https://www.economist.com/briefing/rss.xml", "The Economist"], ["https://www.economist.com/finance-and-economics/rss.xml", "The Economist"], ["https://www.economist.com/international/rss.xml", "The Economist"], ["https://www.foreignaffairs.com/rss.xml", "Foreign Affairs"], ["https://www.wired.com/feed/rss", "Wired"], ["https://www.technologyreview.com/feed/", "MIT Technology Review"], ["https://www.theguardian.com/news/series/the-long-read/rss", "The Guardian"]];
+async function deepAll(env, force) {
+  const kv = env && env.LIMITS; let old = null;
+  if (kv) { try { old = await kv.get("dp2", "json"); } catch (e) { old = null; } if (old && !force && Date.now() - old.at < 200 * 6e4) return old.items || []; }
+  const got = await Promise.all(DFEEDS.map(async ([u, s]) => { try { const r = await xf(u, { headers: { ...PUA, accept: "application/rss+xml, application/xml;q=0.9, */*;q=0.5" } }); if (!r.ok) return []; return parse(await r.text()).slice(0, 12).map(i => Object.assign(i, { s })); } catch (e) { return []; } }));
+  const items = got.flat().filter(i => i.h && i.t);
+  if (items.length) { if (kv) await kv.put("dp2", JSON.stringify({ at: Date.now(), items }), { expirationTtl: 172800 }).catch(() => {}); return items; }
+  return old ? old.items || [] : [];
+}
 const DEEPSRC = /^(The Economist|The Atlantic|Foreign Affairs|Foreign Policy|Vox|MIT Technology Review|Harvard Business Review|The New Yorker|Noema|Financial Times|Bloomberg|The Wall Street Journal|WSJ|The New York Times|The Washington Post|BBC|The Guardian|Reuters|Wired|TIME|Time|Fortune|Axios)/;
 const DEEPH = /\b(why|how|inside|study|reveals?|explained|explainer|analysis|what .{0,25} means|behind|long read|deep dive|the (rise|fall|race|problem|truth|case|real|end|future))\b|:\s|\?$/i;
-const SHARED = () => [sec("BUSINESS"), sec("WORLD"), ...Object.values(CATS), AQ, LQ, RQ, DQ];
+const SHARED = () => [sec("BUSINESS"), sec("WORLD"), ...Object.values(CATS), AQ, LQ, RQ];
 async function bundle(P, env) {
   const tick = (P.get("t") || "").toUpperCase().split(",").filter(x => /^[A-Z.]{1,6}$/.test(x)).slice(0, 5);
   const wl = k => (P.get(k) || "").split(",").map(v => v.trim().toLowerCase()).filter(v => /^[a-z0-9]{3,20}$/.test(v)).slice(0, 8), LK = wl("lk"), DK = wl("dk");   // Nov 12: words you 👍/👎 (sent by the app, nothing stored here)
@@ -304,7 +313,7 @@ async function bundle(P, env) {
   const [top, world, ...rest] = await Promise.all([kfeed(env, sec("BUSINESS"), 200), kfeed(env, sec("WORLD"), 75),
     ...want.map(k => kfeed(env, CATS[k], 200)), ...tick.map(t => kfeed(env, srch(t + " stock"), 180)), kfeed(env, AQ, 200)]);
   const N1 = SUBN;
-  const [LF, RF, DF] = await Promise.all([kfeed(env, LQ, 200), kfeed(env, RQ, 200), kfeed(env, DQ, 200)]);
+  const [LF, RF, DFI] = await Promise.all([kfeed(env, LQ, 200), kfeed(env, RQ, 200), deepAll(env)]);
   const [MK, GM] = await Promise.all([kvFresh(env, "mk2", 90, markets), P.get("g") === "0" ? Promise.resolve([]) : kvFresh(env, "gm2:" + drDay(), 60, games)]); rest.push(GM); const N2 = SUBN;
   const stocks = {}; tick.forEach((t, i) => { const it = pick(rest[want.length + i].items || [])[0]; if (it) stocks[t] = it; });
   // Breaking (Marco Nov 11): the story that matters most to YOU today: big world events, scandals about the people behind your companies, major accidents, analyst calls on your stocks.
@@ -326,11 +335,13 @@ async function bundle(P, env) {
   // Nov 12 fix: skip stories already shown BEFORE ranking, so a category falls back to its next-best story instead of disappearing
   const shown = W ? [W.h] : [], cats = {}; want.forEach((k, i) => { const it = top2((rest[i].items || []).filter(x => x && x.h && !shown.some(h => same(h, x.h))), tick, P.get("busy") === "1", lk); if (it.length) { cats[k] = it; it.forEach(x => shown.push(x.h)); } });
   MORE = MORE.filter(it => !shown.some(h => same(h, it.h)));
-  { const cs = clean(DF.items || [], 96).filter(i => DEEPSRC.test(i.s || "") && DEEPH.test(i.h) && !/\b(stocks?|shares|earnings|futures|Dow|Nasdaq|S&P)\b.{0,30}\b(rise|fall|jump|slide|drop|gain|close)/i.test(i.h) && !shown.some(h => same(h, i.h))).sort((x, y) => ((TASTE.test(y.h) ? 12 : 0) + lk(y.h)) - ((TASTE.test(x.h) ? 12 : 0) + lk(x.h)) || y.t - x.t).slice(0, 6);
+  { const cs = clean(DFI || [], 96).filter(i => DEEPSRC.test(i.s || "") && DEEPH.test(i.h) && !/\b(stocks?|shares|earnings|futures|Dow|Nasdaq|S&P)\b.{0,30}\b(rise|fall|jump|slide|drop|gain|close)/i.test(i.h) && !shown.some(h => same(h, i.h))).sort((x, y) => ((TASTE.test(y.h) ? 12 : 0) + lk(y.h)) - ((TASTE.test(x.h) ? 12 : 0) + lk(x.h)) || y.t - x.t).slice(0, 6);
     const dp = cs.length ? cs[Math.floor(Date.now() / 108e5) % cs.length] : null;   // a different one each 3-hour drop
     if (dp) { const pk = /\b(AI|chips?|Nvidia|OpenAI|tech|software|robots?|startups?)\b/i.test(dp.h) && cats.tech ? "tech" : /\b(econom\w*|market|inflation|debt|trade|bank|spend\w*|tariffs?|fiscal|budget|wages?|jobs?)\b/i.test(dp.h) && cats.business ? "business" : ["politics", "business", "tech", "rd"].concat(Object.keys(cats)).find(k => cats[k]);
       if (pk) { cats[pk].splice(1, 0, Object.assign({}, dp, { deep: 1 })); shown.push(dp.h); } } }
   if (W) W.mk = marketFor(MK, W.h); Object.keys(cats).forEach(k => { const it = cats[k][0]; if (it) it.mk = marketFor(MK, it.h); });
+  { const cand = [W].concat(Object.keys(cats).map(k => cats[k][0])).filter(it => it && it.mk), used = new Set(); let kept = 0;   // Nov 12 (Marco): polls inside stories only sometimes, so nobody gets tired of them: at most 2 per edition, never the same poll twice
+    cand.forEach(it => { if (kept >= 2 || used.has(it.mk.u)) delete it.mk; else { kept++; used.add(it.mk.u); } }); }
   return { at: top.at || Date.now(), day: edDay(), big: W, calls: CL, more: MORE, preds: pickMarkets(MK, tick), launch: launches(LF.items || [], tick), rising: rising(RF.items || []), cats, stocks, games: rest[rest.length - 1] || [],
     _n: [N1, N2, MK.length, (GM || []).length], ticker: T.filter(i => MOVERS.test(i.h)).concat(T).filter((v, i, a) => a.indexOf(v) === i).slice(0, 5) };
 }
@@ -479,7 +490,7 @@ export default {
   // Every 15 min. At :30 and :45 before each drop (7, 10, 1, 4, 7, 10 DR = 11, 14, 17, 20, 23, 2 UTC) it prepares the drop's news; other runs refresh games, predictions and world news.
   async scheduled(ev, env, ctx) { SUBN = 0; await loadHL(env); const d = new Date(ev.scheduledTime || Date.now()), m = Math.floor(d.getUTCMinutes() / 15) * 15, pre = [10, 13, 16, 19, 22, 1].includes(d.getUTCHours()) && m >= 30;
     if (pre) { const L = SHARED(), half = Math.ceil(L.length / 2), part = m === 30 ? L.slice(0, half) : L.slice(half);
-      ctx.waitUntil((async () => { for (const u of part) await refreshFeed(env, u).catch(() => 0); await saveHL(env); })()); return; }
+      ctx.waitUntil((async () => { if (m === 30) await deepAll(env, true).catch(() => 0); for (const u of part) await refreshFeed(env, u).catch(() => 0); await saveHL(env); })()); return; }
     ctx.waitUntil(Promise.all([kvFresh(env, "mk2", 0, markets), kvFresh(env, "gm2:" + drDay(), 0, games), m === 0 ? refreshFeed(env, sec("WORLD")).catch(() => 0) : null]).then(() => saveHL(env))); },
   async fetch(req, env) {
     SUBN = 0;
@@ -499,7 +510,7 @@ export default {
       return json(out, 200, origin);
     }
     if (req.method === "GET" && url.pathname === "/news" && url.searchParams.get("debug") === "deep") {   // test link: what the deep-read search returns and what survives the filters
-      await loadHL(env); const r = await kfeed(env, DQ, 200), it = r.items || [], t = clean(it, 96);
+      await loadHL(env); const it = await deepAll(env, true), t = clean(it, 96);
       return json({ raw: it.length, clean: t.length, src: t.filter(i => DEEPSRC.test(i.s || "")).length, head: t.filter(i => DEEPSRC.test(i.s || "") && DEEPH.test(i.h)).length, sample: it.slice(0, 8).map(i => i.s + " | " + i.h), kept: t.slice(0, 8).map(i => i.s + " | " + i.h) }, 200, origin);
     }
     if (req.method === "GET" && url.pathname === "/news" && url.searchParams.get("debug") === "1") {   // test link: how many stories each topic feed gives right now
