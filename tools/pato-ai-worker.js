@@ -498,6 +498,10 @@ export default {
       const c = await caches.default.match(new Request(T[0])); out.push({ cachedEspn: !!c, cachedLen: c ? (await c.text()).length : 0 });
       return json(out, 200, origin);
     }
+    if (req.method === "GET" && url.pathname === "/news" && url.searchParams.get("debug") === "deep") {   // test link: what the deep-read search returns and what survives the filters
+      await loadHL(env); const r = await kfeed(env, DQ, 200), it = r.items || [], t = clean(it, 96);
+      return json({ raw: it.length, clean: t.length, src: t.filter(i => DEEPSRC.test(i.s || "")).length, head: t.filter(i => DEEPSRC.test(i.s || "") && DEEPH.test(i.h)).length, sample: it.slice(0, 8).map(i => i.s + " | " + i.h), kept: t.slice(0, 8).map(i => i.s + " | " + i.h) }, 200, origin);
+    }
     if (req.method === "GET" && url.pathname === "/news" && url.searchParams.get("debug") === "1") {   // test link: how many stories each topic feed gives right now
       const ks = ["rd", "business", "tech", "politics", "crypto", "ent", "gaming", "health", "cars", "fashion"], out = {};
       await Promise.all(ks.map(async k => { try { const it = (await feed(CATS[k], 7200)).items;
