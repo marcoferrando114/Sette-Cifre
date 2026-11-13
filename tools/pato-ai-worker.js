@@ -145,6 +145,7 @@ async function games() {
     (f.body.events || []).forEach(e => {
       if (only && !only.test(e.name || e.shortName || "")) return;   // Marco Nov 12: MLS = Inter Miami only, Ligue 1 = PSG only
       const st = e.status && e.status.type && e.status.type.state; if (st === "post") return;
+      if (/^tennis/.test(path)) { if (!/\b(Open|Masters|Finals|Slam|Wimbledon|Roland|ATP 500|ATP 1000|WTA 1000|Cup)\b/i.test(e.name || "")) return; e.name = e.name + " tennis tournament (matches today)"; }   // Marco Nov 13: "Austin 125" meant nothing; small events are dropped and big ones say what they are
       const c = (e.competitions || [])[0] || {}, tv = (c.broadcasts || []).flatMap(b => b.names || []), note = ((c.notes || [])[0] || {}).headline || "";
       const ranked = (c.competitors || []).filter(x => x.curatedRank && x.curatedRank.current && x.curatedRank.current <= 10).length;
       const nat = tv.some(n => /ESPN|ABC|TNT|NBC|CBS|FOX|Prime|Netflix|Peacock|TBS|Paramount/i.test(n));
@@ -405,13 +406,13 @@ async function plainAll(env, b) {
   const miss = items.filter(it => !(hk(it) in M));
   if (miss.length) {
     const list = miss.slice(0, 16), r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "content-type": "application/json", "x-api-key": env.ANTHROPIC_KEY, "anthropic-version": "2023-06-01" },
-      body: JSON.stringify({ model: "claude-haiku-5-5", max_tokens: 1400, messages: [{ role: "user", content: PLAIN + "\n\nHEADLINES:\n" + list.map((it, i) => i + ". " + (it.deep ? "[DEEP READ] " : "") + it.h + " (" + (it.s || "") + ")").join("\n") }] }) }).catch(() => null);
+      body: JSON.stringify({ model: "claude-haiku-5-5", max_tokens: 1400, messages: [{ role: "user", content: PLAIN + "\n\nHEADLINES:\n" + list.map((it, i) => i + ". " + (it.deep ? "[DEEP READ] " : "") + it.h + " (" + (it.s || "") + ")" + (it.deep && it.d ? " SNIPPET: " + String(it.d).replace(/<[^>]*>/g, " ").slice(0, 400) : "")).join("\n") }] }) }).catch(() => null);
     if (r && r.ok) {
       const j = await r.json(), txt = ((j.content || []).find(c => c.type === "text") || {}).text || "", m = txt.match(/\{[\s\S]*\}/); let o = null; try { o = JSON.parse(m[0]); } catch (e) { o = null; }
-      if (o) { list.forEach((it, i) => { M[hk(it)] = typeof o[i] === "string" ? o[i].trim().slice(0, 300) : ""; }); const ks = Object.keys(M); if (ks.length > 220) ks.slice(0, ks.length - 220).forEach(k => delete M[k]); await env.LIMITS.put("pl2", JSON.stringify(M), { expirationTtl: 604800 }); }
+      if (o) { list.forEach((it, i) => { const v = typeof o[i] === "string" ? o[i].trim().slice(0, 300) : ""; if (v || !it.deep) M[hk(it)] = v; }); const ks = Object.keys(M); if (ks.length > 220) ks.slice(0, ks.length - 220).forEach(k => delete M[k]); await env.LIMITS.put("pl2", JSON.stringify(M), { expirationTtl: 604800 }); }
     }
   }
-  items.forEach(it => { const t = M[hk(it)]; if (t) it.pl = t; });
+  items.forEach(it => { const t = M[hk(it)]; if (t) it.pl = t; else if (it.deep && it.d) { const sn = String(it.d).replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim(); if (sn.length > 40) it.pl = sn.split(/(?<=[.!?]) /).slice(0, 2).join(" ").slice(0, 260); } });   // a deep read never goes out without a line saying what it is about
 }
 // Breaking key facts (Marco Nov 11: "give the most important data, not only a headline"). One AI call per story, shared by all users (KV), grounded only in the feed text.
 const BRIEF = `You explain one news story to a busy young reader in a money app. From ONLY the text below, return JSON {"facts":["",""," "],"why":""}.
