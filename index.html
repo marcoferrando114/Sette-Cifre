@@ -2054,7 +2054,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261113003435";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261113003436";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -6988,7 +6988,7 @@ TRACKER DATA:
   // Marco Nov 12: the duck stays hidden until this drop's stories are in (max 25s wait, then it shows what it has)
   var waitAt = Date.now(); setTimeout(function(){ render(); }, 25500);
   function fresh(){ var sl = slot(); return !!((drop && drop.day === day() && drop.slot === sl && (drop.got || 0) >= waitAt - 18e5) || (!sl && daily && Object.keys(daily.cats || {}).length)); }
-  function ready(){ return DEMO || fresh() || Date.now() - waitAt > 25e3; }
+  function ready(){ return DEMO || (fresh() && pend < 1) || Date.now() - waitAt > 25e3; }
   function getDrop(){ if(DEMO) return; var sl = slot(), same = drop && drop.day === day() && drop.slot === sl && drop.sig === sig(); if(!base() || (getDrop.busy && Date.now() - getDrop.busy < 9e4) || (same && Date.now() - (drop.got || 0) < 20*6e4)) return; if(!sl && !same && !(drop && drop.day === day()) && daily && Object.keys(daily.cats || {}).length) return;   // 7am: the AI edition leads, unless it failed getDrop.busy = Date.now();
     fetch(base() + "/news?" + q().replace("&busy=1", "") + "&busy=1" + lwq()).then(function(r){ return r.ok ? r.json() : null; })
       .then(function(d){ getDrop.busy = 0; if(!d || !d.cats || (!d.big && !Object.keys(d.cats).length)) return;   // never keep an empty drop
@@ -7305,7 +7305,8 @@ TRACKER DATA:
       $("pnTrack").innerHTML = one + one; $("pnAt").textContent = " · Updated " + hr((tick && tick.at) || daily.at).replace(/:\d\d/, ""); $("pnTick").hidden = false;
       requestAnimationFrame(function(){ var w = $("pnTrack").scrollWidth / 2; $("pnTrack").style.setProperty("--pn-dur", Math.max(17, w / 51.75) + "s"); }); }
     if(!$("pdV").hidden) return;
-    S = stories(); var u = unseen(), first = !(prefs && prefs.picked);
+    S = stories(); if(PHOTOS()) S.forEach(function(x){ if(x.pic){ if(!(x.pic in IM.m)) pic(x.pic, null, x.ph); else pre(IM.m[x.pic]); } });
+     var u = unseen(), first = !(prefs && prefs.picked);
     $("pdFab").hidden = !S.length || !ready(); $("pdN").textContent = u.length || ""; $("pdN").hidden = !u.length;
     placePeek(); var pw = $("pdPeek"); if(pw) pw.scrollTop = 0; if(pw && !pw.classList.contains("out") && !pw.classList.contains("dive")) pw.className = u.length ? "" : "idle";
     if(S.length && u.length && ready() && !peeked){ if(blocked()) setTimeout(render, 2000); else { peeked = 1; if(!cover()) setTimeout(peek, 1500); } }
@@ -7316,8 +7317,10 @@ TRACKER DATA:
   function DEMO(){ var m = window.MP_ME; return !!(m && /^pato-?demo/i.test(m.email || "")); }
   function PICS(){ var m = window.MP_ME; return !!(m && (m.owner || /^pato-?demo/i.test(m.email || ""))); }   // trial: demo account only until Marco approves
   function PHOTOS(){ return !!window.MP_ME; }   // Marco Nov 12: photos for everyone
-  function pic(u, cb, h){ if(!u || !base() || !PHOTOS() || (u in IM.m)) return; IM.m[u] = null;
-    fetch(base() + "/img?u=" + encodeURIComponent(u) + (h ? "&h=" + encodeURIComponent(h) : "")).then(function(r){ return r.ok ? r.json() : {}; }).then(function(d){ IM.m[u] = (d && d.img) || ""; if(IM.m[u]) ls("pd-img3", {day: IM.day, m: Object.keys(IM.m).reduce(function(o, k){ if(IM.m[k]) o[k] = IM.m[k]; return o; }, {})}); if(cb) cb(); }).catch(function(){ delete IM.m[u]; }); }
+  var PRE = {}, pend = 0;   // Nov 13 Marco: photos must be 100% loaded before a story is opened, so the duck waits for them
+  function pre(u){ if(!u || PRE[u]) return; PRE[u] = 1; pend++; var m = new Image(), d = function(ok){ if(!ok || m.naturalWidth < 640 || m.naturalHeight < 360) Object.keys(IM.m).forEach(function(k){ if(IM.m[k] === u) IM.m[k] = ""; }); pend--; render(); }; m.onload = function(){ d(1); }; m.onerror = function(){ d(0); }; m.src = u; }
+  function pic(u, cb, h){ if(!u || !base() || !PHOTOS() || (u in IM.m)) return; IM.m[u] = null; pend++;
+    fetch(base() + "/img?u=" + encodeURIComponent(u) + (h ? "&h=" + encodeURIComponent(h) : "")).then(function(r){ return r.ok ? r.json() : {}; }).then(function(d){ IM.m[u] = (d && d.img) || ""; pre(IM.m[u]); pend--; if(IM.m[u]) ls("pd-img3", {day: IM.day, m: Object.keys(IM.m).reduce(function(o, k){ if(IM.m[k]) o[k] = IM.m[k]; return o; }, {})}); if(cb) cb(); }).catch(function(){ delete IM.m[u]; pend--; }); }
   function picHtml(x){ var im = PHOTOS() && x.pic && IM.m[x.pic], ix0 = S.indexOf(x); if(im && S.some(function(y, j){ return j < ix0 && y.pic && IM.m[y.pic] === im; })) im = "";   // never the same photo twice
     return im ? '<div class="pd-img"><img src="' + esc(im) + '" alt="" referrerpolicy="no-referrer" onerror="this.parentNode.remove()" onload="if(this.naturalWidth<640||this.naturalHeight<360)this.parentNode.remove()">' + (x.ps ? '<span>' + esc(x.ps) + '</span>' : '') + '</div>' : ''; }
   var lastBase = null, NEW = {};   // what was unread when you opened: those chips get a dot, the slide gets a NEW tag
