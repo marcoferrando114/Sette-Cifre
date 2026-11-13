@@ -1,0 +1,17 @@
+name: news-check
+on:
+  push:
+    branches: [claude/project-thread-kymne3]
+jobs:
+  c:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          curl -s -m 100 -H "Origin: https://marcoferrando114.github.io" "https://pato-ai.marcoferrando.workers.dev/news?k=rd,business,tech,politics,crypto&t=MSFT,NVDA,AAPL&busy=1" -o n.json
+          node -e '
+          const d=JSON.parse(require("fs").readFileSync("n.json","utf8"));
+          console.log("big", d.big&&d.big.h, "| brief", !!(d.big&&d.big.brief));
+          Object.entries(d.cats||{}).forEach(([k,a])=>a.forEach((i,n)=>console.log("cat "+k+"#"+n+(i.deep?" DEEP":"")+" "+i.s+" | "+i.h+" | pl:"+(i.pl||"-").slice(0,100)+" | mk:"+(i.mk?i.mk.q:"-"))));
+          console.log("preds", (d.preds||[]).map(p=>p.src+":"+p.q).join(" ## "));
+          console.log("games", (d.games||[]).map(g=>g.league+":"+g.name).join(" ## "));
+          '
