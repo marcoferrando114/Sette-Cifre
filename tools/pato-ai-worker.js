@@ -145,7 +145,8 @@ async function games() {
     (f.body.events || []).forEach(e => {
       if (only && !only.test(e.name || e.shortName || "")) return;   // Marco Nov 12: MLS = Inter Miami only, Ligue 1 = PSG only
       const st = e.status && e.status.type && e.status.type.state; if (st === "post") return;
-      if (/^tennis/.test(path)) { if (!/\b(Open|Masters|Finals|Slam|Wimbledon|Roland|ATP 500|ATP 1000|WTA 1000|Cup)\b/i.test(e.name || "")) return; e.name = e.name + " tennis tournament (matches today)"; }   // Marco Nov 13: "Austin 125" meant nothing; small events are dropped and big ones say what they are
+      if (/^tennis/.test(path)) { const tn = e.name || "", slam = /Australian Open|French Open|Roland Garros|Wimbledon|US Open|Six Kings/i.test(tn), atp = /Indian Wells|BNP Paribas Open|Miami Open|Monte[- ]Carlo|Madrid|Italian Open|Stuttgart|Charleston|Berlin|Eastbourne|Linz|Guadalajara|Rome|Canadian Open|National Bank Open|Cincinnati|Shanghai|Paris Masters|Rolex Paris|ATP Finals|WTA Finals|Nitto|Rotterdam|Dubai|Acapulco|Barcelona|Halle|Queen'?s|Hamburg|Washington|Beijing|China Open|Tokyo|Japan Open|Basel|Vienna|Erste Bank|Rio Open|Doha|Qatar/i.test(tn);
+      if (!(slam || atp)) return; e.name = tn + " tennis tournament (matches today)"; }   // Marco Nov 13: "Austin 125" meant nothing; small events are dropped and big ones say what they are
       const c = (e.competitions || [])[0] || {}, tv = (c.broadcasts || []).flatMap(b => b.names || []), note = ((c.notes || [])[0] || {}).headline || "";
       const ranked = (c.competitors || []).filter(x => x.curatedRank && x.curatedRank.current && x.curatedRank.current <= 10).length;
       const nat = tv.some(n => /ESPN|ABC|TNT|NBC|CBS|FOX|Prime|Netflix|Peacock|TBS|Paramount/i.test(n));
