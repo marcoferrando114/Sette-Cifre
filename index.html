@@ -2054,7 +2054,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261113000051";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261113003435";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -6979,7 +6979,7 @@ TRACKER DATA:
         ls("pd-daily7", {day: day(), sig: sig(), at: Date.now(), data: d}); render(); }).catch(function(){ busy = 0; render(); });
   }
   // Drops (Marco Nov 11): 7am full edition (AI take), then 12pm and 6pm each topic swaps to the best story you haven't seen. Free: /news, no AI.
-  var FR = {}, drop = ls("pd-drop3");
+  var FR = {}, drop = ls("pd-drop4");
   var DROPS = [7, 10, 13, 16, 19, 22];   // Marco Nov 11: every 3 hours, 7am to 10pm (DR)
   function slot(){ if(DEMO) return 0; var h = drd().getUTCHours(); if(h < 7) return 4; for(var i = DROPS.length - 1; i >= 0; i--) if(h >= DROPS[i]) return i; return 0; }
   function hh(h){ return (h % 12 || 12) + ":00 " + (h < 12 ? "AM" : "PM"); }
@@ -6998,7 +6998,7 @@ TRACKER DATA:
           if(d.pick) o.pick = d.pick; drop.got = Date.now();
           if(Object.keys(d.cats).length > Object.keys(o.cats || {}).length || !o.big){ drop.d = Object.assign({}, d, {big: o.big || d.big, pick: o.pick}); } }   // Nov 12: a thin drop gets filled in on the next check   // the pick's record updates quietly (no alert)
         else drop = {day: day(), slot: sl, sig: sig(), d: d, got: Date.now()};
-        ls("pd-drop3", drop); render(); }).catch(function(){ getDrop.busy = 0; }); }
+        ls("pd-drop4", drop); render(); }).catch(function(){ getDrop.busy = 0; }); }
   function about(t, it){ if(!it || !it.h) return null; var re = CO[t] || new RegExp("\\b" + t + "\\b"); return re.test(it.h) ? it : null; }   // a stock's news must name that company (Marco: no Costco story on IBKR)
   // Wall Street on your stocks (Marco Nov 12: analysts needs real output): buy/hold/sell counts from Finnhub (your own key), kept 6 hours
   var RC = ls("pd-recs") || {at: 0, d: {}};
