@@ -245,9 +245,9 @@ const MON = /\b(jan(uary)?|feb(ruary)?|mar(ch)?|apr(il)?|may|june?|july?|aug(ust
 const themeOf = m => { const t = String(m.t + " " + m.q); return /\b(Fed|FOMC|interest rates?|rate (cut|hike)|bps)\b/i.test(t) ? "fed" : /\b(bitcoin|btc|ethereum|crypto|solana|xrp)\b/i.test(t) ? "crypto" : String(m.t).toLowerCase().replace(MON, " ").replace(/[0-9]+|[^a-z ]/g, " ").replace(/\b(by|in|on|the|will|be|of|a|to|before|after|for|and)\b/g, " ").split(/\s+/).filter(Boolean).slice(0, 3).join(" "); };
 function pickMarkets(M, tick) { M = okM(M); const me = tick.length ? new RegExp("\\b(" + tick.map(t => t + (CO[t] ? "|" + CO[t] : "")).join("|") + ")\\b", "i") : null;
   return M.filter(m => m.p >= 4 && m.p <= 96 && m.u.length > 30).map(m => Object.assign({}, m, { sc: Math.log10(m.vol + 10) + (PWORLD.test(m.t + " " + m.q) ? 3 : 0) + (me && me.test(m.t + " " + m.q) ? 4 : 0) + Math.min(3, Math.abs(m.ch) / 4) }))
-    .sort((a, b) => b.sc - a.sc).filter((m, i, a) => a.findIndex(o => themeOf(o) === themeOf(m)) === i).slice(0, 4).map(m => { delete m.sc; return m; }); }
+    .sort((a, b) => b.sc - a.sc).filter((m, i, a) => a.findIndex(o => themeOf(o) === themeOf(m)) === i).reduce((acc, m, i, all) => { if (acc.length < 4) acc.push(m); else if (acc.length === 4 && !acc.some(x => x.src === "Kalshi")) { const k = all.find(x => x.src === "Kalshi"); if (k) acc[3] = k; acc.push(null); } return acc; }, []).filter(Boolean).slice(0, 4).map(m => { delete m.sc; return m; }); }
 const GENERIC = new Set("this that with from have will what when where which after before about into over under their there these those been were your more most just only than then them they said says here also back next last first news report reports update after amid week year years today new latest says could would should might says plan plans deal deals shares stock stocks market markets price prices company companies people government president state states world global group bank banks year inside why how".split(" "));
-const toks = t => [...new Set((String(t).match(/\b[A-Z][a-zA-Z]{2,}\b/g) || []).filter(x => !GENERIC.has(x.toLowerCase()) && (x.length >= 4 || /^(Fed|OPEC|NATO|SEC|FTC|IPO|ETF)$/.test(x))))];
+const toks = t => [...new Set((String(t).match(/\b[A-Z][a-zA-Z]{2,}\b/g) || []).filter(x => !GENERIC.has(x.toLowerCase()) && (x.length >= 4 || /^(Fed|OPEC|NATO|SEC|FTC|IPO|ETF)$/.test(x))).map(x => x.toLowerCase()))];
 // Nov 12 (Marco): "whenever a story can match a poll, do it": one distinctive shared name in the poll's TITLE is enough (Fed, Nvidia, Trump, Bitcoin...)
 function marketFor(M, h) { if (!h) return null; M = okM(M); const w = new Set(toks(h)); if (w.size < 1) return null; let best = null, bs = 0;
   M.forEach(m => { if (!(m.p >= 3 && m.p <= 97)) return; const tt = new Set(toks(m.t)), tq = new Set(toks(m.q)), n = [...w].filter(x => tt.has(x) || tq.has(x)).length, nt = [...w].filter(x => tt.has(x)).length; if (!(n >= 2 || nt >= 1)) return; const sc = n * 10 + nt * 5 + Math.log10((m.vol || 0) + 10); if (sc > bs) { bs = sc; best = m; } });
@@ -410,7 +410,7 @@ async function brief(env, it) {
   const k = "brief1:" + it.h.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 120), hit = await env.LIMITS.get(k); if (hit) return JSON.parse(hit);
   const text = JSON.stringify({ headline: it.h, outlet: it.s, snippet: it.d || "", otherHeadlines: (it.also || []).slice(0, 4) });
   const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "content-type": "application/json", "x-api-key": env.ANTHROPIC_KEY, "anthropic-version": "2023-06-01" },
-    body: JSON.stringify({ model: "claude-haiku-5-5", max_tokens: 400, messages: [{ role: "user", content: BRIEF + "\n\nTEXT: " + text }] }) }).catch(() => null);
+    body: JSON.stringify({ model: "claude-haiku-5-5", max_tokens: 800, messages: [{ role: "user", content: BRIEF + "\n\nTEXT: " + text }] }) }).catch(() => null);
   if (!r || !r.ok) return null;
   const j = await r.json(), txt = ((j.content || []).find(c => c.type === "text") || {}).text || "", m = txt.match(/\{[\s\S]*\}/);
   let out = null; try { out = JSON.parse(m[0]); } catch (e) { return null; }
