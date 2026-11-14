@@ -1,0 +1,19 @@
+# Pato cron (Cloudflare worker "pato-cron"): stock prices + loan reminder push, no Claude needed. GitHub deploys it when tools/cron/ changes.
+name = "pato-cron"
+main = "worker.js"
+compatibility_date = "2024-09-23"
+workers_dev = true
+keep_vars = true   # keep BOT_PASSWORD and VAPID_PRIVATE set in the Cloudflare dashboard
+
+[[kv_namespaces]]
+binding = "LIMITS"
+id = "1b3dc8d572c64e46a714ec50c34d4abc"
+
+[triggers]
+# Dominican Republic time is UTC-4 all year. Cron is in UTC.
+crons = [
+  "*/30 14-21 * * 1-5",   # stocks every 30 min while the market is open (10:00am to 5:30pm DR)
+  "5 13,21,23 * * 1-5",   # pre-market 9:05am, after-hours 5:05pm and 7:05pm DR
+  "5 1 * * 2-6",          # after-hours 9:05pm DR (Mon to Fri evening)
+  "42 12 * * *"           # loan reminders 8:42am DR every day
+]
