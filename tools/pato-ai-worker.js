@@ -722,6 +722,7 @@ async function getEdition(env, force, dbg, ctx) {   // what a phone gets: this d
   const idx = dropIdx(Date.now()), key = "ed9:" + idx, kv = env.LIMITS; let E = kv ? await kv.get(key, "json").catch(() => null) : null;
   if (E && E.pub) { const o = finalize(E.b); o.fin = 1; if (dbg) { o._dbg = E.b._dbg; o._q = E.q; o._log = E.log; } return o; }
   let L = null; try { const pt = kv && await kv.get("edpub", "json"); if (pt) L = await kv.get(pt.key, "json"); } catch (e) { L = null; }
+  if (!L && kv) { for (const k8 of ["ed8:" + idx, "ed8:" + (idx - 1)]) { const v = await kv.get(k8, "json").catch(() => null); if (v && v.b && v.st === "ready") { L = v; break; } } }   // first deploy: the previous generation's finished edition keeps showing while the new one is built
   const failed = E && E.pub === false;
   if (ctx && kv && !failed) { const lk = await kv.get("edl:" + idx).catch(() => null); if (!lk) { await kv.put("edl:" + idx, "1", { expirationTtl: 40 }).catch(() => 0); ctx.waitUntil(advance(env, idx).catch(() => 0)); } }
   if (L && L.b) { const o = finalize(L.b); o.stale = 1; o.fin = failed ? 1 : 0; if (dbg) { o._dbg = L.b._dbg; o._why = failed ? E.q : "building"; } return o; }
