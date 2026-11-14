@@ -507,7 +507,7 @@ async function meansAll(env, b) {
       body: JSON.stringify({ model: "claude-haiku-5-5", max_tokens: 2800, messages: [{ role: "user", content: MEANS + "\n\nITEMS:\n" + list.map((it, i) => i + ". HEADLINE: " + it.h + " (" + (it.s || "") + ")" + ((it.d2 || it.d) ? "\nTEXT: " + String(it.d2 || it.d).replace(/<[^>]*>/g, " ").slice(0, 700) : "") + ((it.also || []).length ? "\nOTHER OUTLETS: " + it.also.slice(0, 3).join(" | ") : "")).join("\n\n") }] }) }).catch(() => null);
     if (!r || !r.ok) DBG.means = r ? "http " + r.status + " " + (await r.text().catch(() => "")).slice(0, 140) : "fetch failed";
     if (r && r.ok) {
-      const j = await r.json(), txt = ((j.content || []).find(c => c.type === "text") || {}).text || "", m = txt.match(/\{[\s\S]*\}/); let o = null; try { o = JSON.parse(m[0]); } catch (e) { o = null; DBG.means = "parse " + txt.slice(-100); }
+      const j = await r.json(), txt = ((j.content || []).find(c => c.type === "text") || {}).text || "", m = txt.match(/\{[\s\S]*\}/); let o = null; try { o = JSON.parse(m[0]); } catch (e) { o = null; DBG.means = "parse stop=" + j.stop_reason + " types=" + (j.content || []).map(c => c.type).join(",") + " len=" + txt.length + " tail=" + txt.slice(-80); }
       if (o) { DBG.means = "ok " + Object.keys(o).length; list.forEach((it, i) => { const v = o[i]; if (!v || typeof v !== "object") return; const S = (x, n) => typeof x === "string" ? x.trim().slice(0, n) : "", src = blob(it);
         let k = S(v.k, 140); const nums = [...k.matchAll(/(\d[\d,]*(?:\.\d+)?)/g)].map(x => x[1].replace(/,/g, "")).filter(n => !/^(19|20)\d\d$/.test(n));
         if (nums.some(n => !src.includes(n))) k = "";   // a number that isn't in the story's own words never goes out
@@ -661,19 +661,21 @@ function finalize(b0) { const b = Object.assign({}, b0); delete b._cand; delete 
   const first = "ceo", other = first === "ceo" ? "deep" : "ceo", pk = b[first] ? first : b[other] ? other : "";
   b.last = pk ? Object.assign({}, b[pk], { kind: pk }) : null; return b;
 }
-async function buildSave(env, idx, key) { await loadHL(env); const b = await buildEdition(env, idx); await finishEdition(env, b, 6);
-  if (env.LIMITS && Object.keys(b.cats).length >= 2) await env.LIMITS.put(key, JSON.stringify({ at: Date.now(), st: "ready", b }), { expirationTtl: 172800 }).catch(() => 0); return b; }
+async function buildSave(env, idx, key) { await loadHL(env); const b = await buildEdition(env, idx);   // stage 1 only: the photos and AI lines are finished by the next request in a fresh invocation (the platform allows ~50 outside calls per invocation)
+  if (env.LIMITS && Object.keys(b.cats).length >= 2) await env.LIMITS.put(key, JSON.stringify({ at: Date.now(), st: "built", b }), { expirationTtl: 172800 }).catch(() => 0); await saveHL(env).catch(() => 0); return b; }
 async function getEdition(env, force, dbg, ctx) {
-  const idx = dropIdx(Date.now()), key = "ed5:" + idx;
+  const idx = dropIdx(Date.now()), key = "ed6:" + idx;
   if (env.LIMITS && !force) { const E = await env.LIMITS.get(key, "json").catch(() => null);
     if (E && E.b && E.b.cats && Object.keys(E.b.cats).length >= 2) {
       if (!E.b.cotd && E.b._cand && E.b._cand.length && Date.now() - (E.rt || 0) > 6e5) {   // Company of the day is never left empty: retry it (at most every 10 minutes) when the first try failed
         DBG = {}; E.rt = Date.now(); E.b.cotd = await cotdPick(env, E.b._cand).catch(() => null); E.b._dbg = Object.assign({}, E.b._dbg, { retry: DBG.cotd || "ok" });
         if (E.b.cotd) { await imagesFor(env, { cotd: E.b.cotd, cats: {} }, 4).catch(() => 0); }
         await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }).catch(() => 0); }
-      const o = finalize(E.b); if (dbg) o._dbg = E.b._dbg; return o; }
+      if (E.st !== "ready" && ctx) { const lk = await env.LIMITS.get("edf:" + idx).catch(() => null); if (!lk) { await env.LIMITS.put("edf:" + idx, "1", { expirationTtl: 100 }).catch(() => 0);
+        ctx.waitUntil((async () => { await loadHL(env); await finishEdition(env, E.b, 36); E.st = "ready"; E.at = Date.now(); await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }); })().catch(() => 0)); } }
+      const o = finalize(E.b); o.fin = E.st === "ready" ? 1 : 0; if (dbg) o._dbg = E.b._dbg; return o; }
     // Nov 14 (Marco: "there was only 1 story"): never make a phone wait for a build. If this drop's edition isn't ready, send the last good one right now and build in the background (one build at a time).
-    if (ctx) { let prev = null; for (let d = 1; d <= 4 && !prev; d++) { const P = await env.LIMITS.get("ed5:" + (idx - d), "json").catch(() => null); if (P && P.b && P.b.cats && Object.keys(P.b.cats).length >= 2) prev = P; }
+    if (ctx) { let prev = null; for (let d = 1; d <= 4 && !prev; d++) { const P = await env.LIMITS.get("ed6:" + (idx - d), "json").catch(() => null); if (P && P.b && P.b.cats && Object.keys(P.b.cats).length >= 2) prev = P; }
       if (prev) { const lock = await env.LIMITS.get("edl:" + idx).catch(() => null); if (!lock) { await env.LIMITS.put("edl:" + idx, "1", { expirationTtl: 150 }).catch(() => 0); ctx.waitUntil(buildSave(env, idx, key).catch(() => 0)); }
         const o = finalize(prev.b); o.stale = 1; return o; } } }
   await loadHL(env); const b = await buildEdition(env, idx); await finishEdition(env, b, 6);
@@ -764,8 +766,8 @@ export default {
     if ([10, 16, 22].includes(h)) { const idx = dropIdx(d.getTime() + 3600e3);
       if (m < 30) { const L = SHARED(), half = Math.ceil(L.length / 2), part = m === 0 ? L.slice(0, half) : L.slice(half);
         ctx.waitUntil((async () => { if (m === 0) await deepAll(env, true).catch(() => 0); for (const u of part) await refreshFeed(env, u).catch(() => 0); await saveHL(env); })()); return; }
-      if (m === 30) { ctx.waitUntil((async () => { const b = await buildEdition(env, idx); if (Object.keys(b.cats).length >= 2) await kv.put("ed5:" + idx, JSON.stringify({ at: Date.now(), st: "built", b }), { expirationTtl: 172800 }); await saveHL(env); })().catch(() => 0)); return; }
-      ctx.waitUntil((async () => { const E = await kv.get("ed5:" + idx, "json"); if (!E || !E.b) return; await finishEdition(env, E.b, 36); E.st = "ready"; E.at = Date.now(); await kv.put("ed5:" + idx, JSON.stringify(E), { expirationTtl: 172800 }); })().catch(() => 0)); return;
+      if (m === 30) { ctx.waitUntil((async () => { const b = await buildEdition(env, idx); if (Object.keys(b.cats).length >= 2) await kv.put("ed6:" + idx, JSON.stringify({ at: Date.now(), st: "built", b }), { expirationTtl: 172800 }); await saveHL(env); })().catch(() => 0)); return; }
+      ctx.waitUntil((async () => { const E = await kv.get("ed6:" + idx, "json"); if (!E || !E.b) return; await finishEdition(env, E.b, 36); E.st = "ready"; E.at = Date.now(); await kv.put("ed6:" + idx, JSON.stringify(E), { expirationTtl: 172800 }); })().catch(() => 0)); return;
     }
     const pre = [13, 19, 1].includes(h) && m >= 30;   // the other drops of the current edition (10am, 4pm, 10pm DR)
     if (pre) { const L = SHARED(), half = Math.ceil(L.length / 2), part = m === 30 ? L.slice(0, half) : L.slice(half);
