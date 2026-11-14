@@ -2079,7 +2079,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261115070000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261115080000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -7502,9 +7502,11 @@ TRACKER DATA:
   function close(){ clearTimeout(timer); $("pdV").hidden = true; $("pdS").style.transform = ""; document.documentElement.style.overflow = "";
     if(!(prefs && prefs.picked)) save(on(), ND() ? autoT().map(function(a){ return a[0]; }).filter(function(k){ return on().indexOf(k) >= 0; }) : undefined); render(); }
   // Topics live in Settings (Marco Nov 11: picking topics is a setting, not a daily slide)
-  function topicsRow(){ var sh = $("palSheet"); if(!sh) return; var w = $("pdTopics");
+  function topicsRow(){ var sh = $("palSheet"), sp = sh && sh.parentNode, a = sh ? sh.scrollTop : 0, b = sp ? sp.scrollTop : 0; topicsRow0(); if(sh){ sh.scrollTop = a; if(sp) sp.scrollTop = b; } }   // redraw in place and keep the scroll position
+  function topicsRow0(){ var sh = $("palSheet"); if(!sh) return; var w = $("pdTopics");
     if(!w){ w = document.createElement("div"); w.id = "pdTopics"; var t = $("sgTabs"); if(t) sh.insertBefore(w, t); else sh.appendChild(w);
-      w.addEventListener("click", function(e){ var b = e.target.closest && e.target.closest("button[data-mv]"); if(!b) return; e.preventDefault(); var pr = b.dataset.mv.split(":"), o = on().slice(), i = o.indexOf(pr[0]), j = i + Number(pr[1]); if(i < 0 || j < 0 || j >= o.length) return; var t = o[i]; o[i] = o[j]; o[j] = t; save(o); ls("pd-daily7", null); topicsRow(); $("pdTopM").textContent = "Order saved."; });
+      w.addEventListener("click", function(e){ e.stopPropagation(); var b = e.target.closest && e.target.closest("button[data-mv]"); if(!b) return; e.preventDefault();   // stopPropagation: the list redraws under the tap, and the sheet's outside-tap handler then thought the tap was outside and closed the screen (Marco Nov 14)
+        var pr = b.dataset.mv.split(":"), o = on().slice(), i = o.indexOf(pr[0]), j = i + Number(pr[1]); if(i < 0 || j < 0 || j >= o.length) return; var t = o[i]; o[i] = o[j]; o[j] = t; save(o); ls("pd-daily7", null); topicsRow(); $("pdTopM").textContent = "Order saved."; });
       w.addEventListener("change", function(e){ var c = e.target; if(!c.dataset || !c.dataset.k) return; var o = on().slice(), k = c.dataset.k, i = o.indexOf(k);
         if(c.checked && o.length >= TOP){ c.checked = false; $("pdTopM").textContent = "Max " + TOP + ". Turn one off first."; return; }
         if(c.checked && i < 0) o.push(k); if(!c.checked && i >= 0) o.splice(i, 1); save(o); ls("pd-daily7", null); $("pdTopM").textContent = "Saved. Your next stories use these."; }); }
