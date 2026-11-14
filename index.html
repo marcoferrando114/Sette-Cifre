@@ -1331,7 +1331,7 @@ html.mp-guest #p-stocks > #pnTick:not([hidden]){display:flex!important}
 .pd-kf ul li{font-weight:600;color:#fff}
 .pd-h1,.pd-bigh,.pd-h2{font-family:var(--serif,"Playfair Display"),Georgia,serif;letter-spacing:0}.pd-h1.pd-hx{font-size:1.75rem;line-height:1.18}
 .pd-bd .pd-img{margin:-28px -24px 18px;border-radius:0;aspect-ratio:4/3}.pd-bd .pd-img::after{content:"";position:absolute;inset:auto 0 0 0;height:45%;background:linear-gradient(to top,rgba(10,18,14,.85),transparent);pointer-events:none}
-.pd-s.brk .pd-bd .pd-img{aspect-ratio:1/1;margin-bottom:-44px}.pd-s.brk .pd-bd .pd-img::after{height:70%;background:linear-gradient(to top,#1E100D,transparent)}.pd-s.brk .pd-brkrow,.pd-s.brk .pd-bigh{position:relative;z-index:1}.pd-s.brk .pd-img>span{display:none}
+.pd-s.brk .pd-bd .pd-img{aspect-ratio:4/3;margin-bottom:-44px}.pd-s.brk .pd-bd .pd-img::after{height:70%;background:linear-gradient(to top,#1E100D,transparent)}.pd-s.brk .pd-brkrow,.pd-s.brk .pd-bigh{position:relative;z-index:1}.pd-s.brk .pd-img>span{display:none}
 .pd-img>span{z-index:1}
 .pd-s.launch{background:linear-gradient(170deg,#3A2412 0%,#140B05 80%);border-color:#A8662E}.pd-s.rise{background:linear-gradient(170deg,#0F3A3A 0%,#06171A 80%);border-color:#2E9A8E}.pd-lr{padding:12px 14px}.pd-lr .pd-pmq{font-size:.98rem}.pd-lrm{margin-top:6px;font-size:.78rem;color:#CFE0D6}.pd-lrm b{color:#E3BC6A;font-weight:800}.pd-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.pd-chips span{padding:4px 10px;border-radius:999px;background:rgba(80,220,200,.14);border:1px solid rgba(80,220,200,.35);color:#9FF0E2;font-weight:800;font-size:.8rem}
 .pd-s.preds{background:linear-gradient(170deg,#2A2350 0%,#0F0C1F 80%);border-color:#5B4FA8}.pd-pm{display:block;cursor:pointer;margin-top:14px;padding:13px 14px;border-radius:16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:inherit;text-decoration:none}.pd-pmq{font-weight:700;font-size:1rem;line-height:1.3}.pd-pmq small{display:block;font-weight:500;color:#B8B0E6;margin-top:3px;font-size:.82rem}.pd-pmr{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:6px 12px;margin-top:9px}.pd-pmr b{font-size:1.6rem;font-weight:900;color:#B9A8FF}.pd-pmr i{height:8px;border-radius:8px;background:rgba(255,255,255,.12);overflow:hidden}.pd-pmr i u{display:block;height:100%;background:linear-gradient(90deg,#8C7BFF,#B9A8FF);border-radius:8px}.pd-pmr small{grid-column:1/-1;font-size:.76rem;color:#9C95C6}.pd-pmr em{font-style:normal;font-weight:700}.pd-pmr em.up{color:#7BE0A6}.pd-pmr em.dn{color:#FF8A80}.pd-mk{display:block;cursor:pointer;margin-top:16px;padding:11px 13px;border-radius:14px;background:rgba(140,123,255,.14);border:1px solid rgba(140,123,255,.35);color:#E6E1FF;font-size:.9rem;line-height:1.35;text-decoration:none}.pd-mk span{display:block;font-size:.66rem;font-weight:800;letter-spacing:.12em;color:#B9A8FF;margin-bottom:4px}.pd-mk b{font-size:1.05rem;color:#fff;margin-right:4px}.pd-mk small{color:#B8B0E6}
@@ -1479,7 +1479,7 @@ main{padding-bottom:calc(128px + env(safe-area-inset-bottom,0px))!important}
 .pd-colg{flex:none;width:58px;height:58px;border-radius:15px;background:#fff;display:grid;place-items:center;overflow:hidden;color:#222;font-weight:800}
 .pd-colg img{width:70%;height:70%;object-fit:contain}
 .pd-s.preds .pd-pm{cursor:default;margin-top:9px;padding:9px 12px;border-radius:14px}.pd-s.preds .pd-pmq{font-size:.9rem}.pd-s.preds .pd-pmq small{font-size:.76rem}.pd-s.preds .pd-pmr{margin-top:6px}.pd-s.preds .pd-pmr b{font-size:1.25rem}.pd-s.preds .pd-pmr small{font-size:.72rem}.pd-go{color:#B9A8FF;font-weight:700;text-decoration:none;cursor:pointer;padding:2px 4px}
-.pd-more{position:sticky;bottom:0;margin:0 -24px -20px;padding:40px 0 20px;text-align:center;font-size:.78rem;font-weight:800;letter-spacing:.08em;color:#FFD9CF;background:linear-gradient(to top,#1E100D 50%,transparent);pointer-events:none;animation:pdbob 1.4s ease-in-out infinite;transition:opacity .2s}.pd-s.sc .pd-more{opacity:0;animation:none}@keyframes pdbob{50%{transform:translateY(-4px)}}
+.pd-more{position:sticky;bottom:0;margin:0 -24px -20px;padding:40px 0 20px;text-align:center;font-size:.78rem;font-weight:800;letter-spacing:.08em;color:#FFD9CF;background:linear-gradient(to top,#1E100D 50%,transparent);pointer-events:none;animation:pdbob 1.4s ease-in-out infinite;transition:opacity .2s}.pd-s.sc .pd-more{opacity:0;animation:none}.pd-more.mini{margin:0 0 -20px auto;width:46px;padding:22px 12px 14px 0;font-size:0;letter-spacing:0;text-align:right;background:none;text-shadow:0 1px 6px #000}.pd-more.mini::after{content:"⌄";font-size:1.3rem;line-height:1}@keyframes pdbob{50%{transform:translateY(-4px)}}
 .pd-ft{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 14px 14px}.pd-fmid{flex:1;text-align:center;line-height:1.35}.pd-fsp{width:36px;flex:none}.pd-ft .pd-fb{width:36px;height:36px;flex:none;font-size:.9rem;opacity:.75}.pd-ft .pd-fb.on{opacity:1}
 .pd-s.pd-in{animation:pdIn .26s ease backwards}.pd-s.pd-in2{animation:pdIn2 .5s ease backwards}@keyframes pdIn{from{opacity:.35;transform:translateX(18px)}}@keyframes pdIn2{from{opacity:0;transform:translateY(22px) scale(.97)}}
 .pd-s.game .pd-pick{margin:0 0 20px}
@@ -2098,7 +2098,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261115170000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261115200000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -7655,7 +7655,7 @@ TRACKER DATA:
       requestAnimationFrame(function(){ var w = $("pnTrack").scrollWidth / 2; $("pnTrack").style.setProperty("--pn-dur", Math.max(17, w / 51.75) + "s"); }); }
     if(!$("pdV").hidden) return;
     S = stories(); if(PHOTOS()) S.slice(0, ND() ? 3 : S.length).forEach(function(x){ if(x.pic){ if(!(x.pic in IM.m)) pic(x.pic, null, x.ph); else pre(IM.m[x.pic]); } });
-     if(NDD()) ls("pd-seen2", {day: day(), ids: {}});
+     if(NDD() && !window.__pdDemoReset){ window.__pdDemoReset = 1; ls("pd-seen2", {day: day(), ids: {}}); }
      var u = unseen(), first = !(prefs && prefs.picked);
     $("pdFab").hidden = !S.length || !ready(); $("pdN").textContent = u.length || ""; $("pdN").hidden = !u.length;
     placePeek(); var pw = $("pdPeek"); if(pw) pw.scrollTop = 0; if(pw && !pw.classList.contains("out") && !pw.classList.contains("dive")) pw.className = u.length ? "" : "idle";
@@ -7689,7 +7689,7 @@ TRACKER DATA:
     $("pdBd").classList.remove("tk1", "tk2", "tk3", "tk4");   // the shrink steps belong to Pato's take only: they leaked into other slides and made their fonts smaller (Marco Nov 14)
     $("pdBd").innerHTML = x.call ? callBody(x.call) : picHtml(x) + x.body + act(x);
     if(x.cls === "take"){ fitTake(); setTimeout(fitTake, 250); setTimeout(fitTake, 900); }   // Pato's take must fit the frame without scrolling (Marco Nov 14)
-    (function(bd){ bd.scrollTop = 0; bd.onscroll = function(){ $("pdS").classList.toggle("sc", bd.scrollTop > 16); }; var m = function(){ var e = bd.querySelector(".pd-more"); if(e) e.style.display = bd.scrollHeight > bd.clientHeight + 30 ? "" : "none"; }; setTimeout(m, 60); setTimeout(m, 700); })($("pdBd"));   // Nov 12: Breaking says when there is more below
+    (function(bd){ bd.scrollTop = 0; bd.onscroll = function(){ $("pdS").classList.toggle("sc", bd.scrollTop > 16); }; var m = function(){ var e = bd.querySelector(".pd-more"); if(e){ e.style.display = bd.scrollHeight > bd.clientHeight + 30 ? "" : "none"; e.classList.remove("mini"); var r = e.getBoundingClientRect(), hh = bd.querySelectorAll(".pd-bigh,.pd-h1,.pd-hh,h2,h3"); for(var q = 0; q < hh.length; q++){ var t = hh[q].getBoundingClientRect(); if(t.bottom > r.top + 8 && t.top < r.bottom - 8){ e.classList.add("mini"); break; } } } }; setTimeout(m, 60); setTimeout(m, 700); })($("pdBd"));   // Nov 12: Breaking says when there is more below
     if(x.call && callSt() && callSt().n === 0) callSync(x.call, null);
     var grp = function(y){ return /:take$/.test(y.id) ? "t" : NEW[y.id] ? "n" : "s"; }, cnt = {t: 0, n: 0, s: 0}; S.forEach(function(y){ cnt[grp(y)]++; });   // Marco Nov 12: new and seen stories must be clearly divided
     $("pdBars").innerHTML = S.map(function(y, j){ return '<i class="' + (j === cur ? "n" : s.ids[y.id] ? "d" : "nw") + (j && grp(y) !== grp(S[j - 1]) ? " g" : "") + '"></i>'; }).join("");
@@ -7702,7 +7702,7 @@ TRACKER DATA:
     if(t) timer = setTimeout(function(){ if(!$("pdV").classList.contains("paused")) next(); }, t); else $("pdBars").children[cur].className = "d";
   }
   function next(){ if(cur >= S.length - 1) return close(); show(cur + 1); }
-  function openV(at){ if(NDD()) ls("pd-seen2", {day: day(), ids: {}});   // demo only: every open replays the whole drop as new (Marco Nov 14)
+  function openV(at){ if(NDD() && !window.__pdDemoReset){ window.__pdDemoReset = 1; ls("pd-seen2", {day: day(), ids: {}}); }   // demo only: every open replays the whole drop as new (Marco Nov 14)
     lastBase = null; liveScores(); S = stories(); var want = at >= 0 && S[at] ? S[at].id : ""; S.forEach(function(x){ pic(x.pic, null, x.ph); }); hidePeek(); var u = unseen(); NEW = {}; u.forEach(function(x){ NEW[x.id] = 1; });
     var tkx = S.filter(function(x){ return /:take$/.test(x.id); }); S = tkx.concat(S.filter(function(x){ return NEW[x.id] && tkx.indexOf(x) < 0; }), S.filter(function(x){ return !NEW[x.id] && tkx.indexOf(x) < 0; }));   // Pato's take always first (Marco), then new, then seen
     if(want) at = S.map(function(x){ return x.id; }).indexOf(want);   // organized: everything new first, then what you already saw (Marco Nov 11)
