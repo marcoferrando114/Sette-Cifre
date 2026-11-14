@@ -2079,7 +2079,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261115080000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261115090000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -7021,7 +7021,7 @@ TRACKER DATA:
   function setArr(a, b){ a.length = 0; b.forEach(function(x){ a.push(x); }); }
   var OWNER_NEW = true;   // Marco approved the 7-1-7 / 9-slide edition for his own account (Nov 14). Rollback = set false (old Pato Daily code is untouched).
   function NDD(){ var m = window.MP_ME; return !!(m && /^pato-?demo/i.test(m.email || "")); }   // demo account only: replays the whole drop on every open
-  function ND(){ var m = window.MP_ME, n = !!(m && (NDD() || (OWNER_NEW && m.owner))) && !DEMO; if(n !== NDm){ NDm = n; setArr(CATS, n ? CATS_NEW : CATS_OLD); setArr(FIX, n ? ["big", "game"] : FIX_OLD); setArr(DROPS, n ? [7, 13, 19] : DROPS_OLD); TOP = n ? 3 : 5; if(n){ drop = ls("pd-drop5") || null; if(!NDD() && !ls("pd-new9")){ ls("pd-new9", 1); ls("pd-seen2", {day: day(), ids: {}}); ls("pd-drop5", null); drop = null; } } } return n; }
+  function ND(){ var m = window.MP_ME, n = !!(m && (NDD() || (OWNER_NEW && m.owner))) && !DEMO; if(n !== NDm){ NDm = n; setArr(CATS, n ? CATS_NEW : CATS_OLD); setArr(FIX, n ? ["big", "game"] : FIX_OLD); setArr(DROPS, n ? [7, 13, 19] : DROPS_OLD); TOP = 5; if(n){ drop = ls("pd-drop5") || null; if(!NDD() && !ls("pd-new9")){ ls("pd-new9", 1); ls("pd-seen2", {day: day(), ids: {}}); ls("pd-drop5", null); drop = null; } } } return n; }
   function slot(){ if(DEMO) return 0; ND(); var dd = drd(), h = dd.getUTCHours() + dd.getUTCMinutes() / 60; if(h < 7) return ND() ? DROPS.length - 1 : 4; for(var i = DROPS.length - 1; i >= 0; i--) if(h >= DROPS[i]) return i; return 0; }
   function hh(h){ var f = Math.floor(h), m = Math.round((h - f) * 60); return (f % 12 || 12) + ":" + (m < 10 ? "0" : "") + m + " " + (f < 12 ? "AM" : "PM"); }
   function clock(){ var sl = slot(); return "Updated " + hh(DROPS[sl]) + " · next " + hh(DROPS[(sl + 1) % DROPS.length]); }
@@ -7207,7 +7207,7 @@ TRACKER DATA:
     var autoSet = (prefs && prefs.auto) || [], why = {stocks: "you own stocks", game: "you track sports bets"};
     var T = on().filter(function(k){ return k !== "game" && cats[k] && cats[k][0]; }), pairs = [];
     CATS.forEach(function(c){ if(T.length < 3 && c[0] !== "big" && c[0] !== "game" && T.indexOf(c[0]) < 0 && cats[c[0]] && cats[c[0]][0]) T.push(c[0]); });   // always three topic stories (Marco Nov 14): if you picked fewer, Pato fills in
-    if(T.length){ var st = curIdx() % T.length; for(var q3 = 0; q3 < Math.min(3, T.length); q3++) pairs.push(T[(st + q3) % T.length]); }
+    if(T.length){ if(T.length > 3){ var PAT = T.length >= 5 ? [[0, 1, 2], [0, 3, 1], [0, 2, 4]] : [[0, 1, 2], [0, 1, 3], [0, 2, 3]]; PAT[slot() % 3].forEach(function(ix2){ pairs.push(T[ix2]); }); } else T.slice(0, 3).forEach(function(k3){ pairs.push(k3); }); }   // pick up to 5 topics, each drop shows 3 of them: a fixed pattern by drop (7am/1pm/7pm), the top of your list shows most, every topic at least once a day (Marco Nov 14)
     pairs.forEach(function(k, pi){ var c = CATS[ix(k)], it = cats[k][0], h = k === "rd" && !FR.rd && sameEd && daily.take && daily.take.rd ? daily.take.rd : it.h;
       L.push({id: ed + ":" + k + ":" + it.h, ord: pi === 2 ? 8 : 3 + pi, cls: k === "rd" ? "rd" : "", news: 1, t: c[1], w: ago(it.t) + " ago", u: it.u, pic: it.u, ph: it.h, ps: it.s, fk: k, sh: {k: c[1], h: h, s: it.s, u: it.u, kn: knowArr(k)}, body: '<div class="pd-k">' + esc((k === "tech" && /\b(AI|artificial intelligence|OpenAI|ChatGPT|chatbots?)\b/.test(it.h) ? "AI news" : c[1]).toUpperCase()) + '</div>' + (function(){ var N = hnm(h); return '<div class="pd-h1' + ((it.n || 0) >= 4 ? ' pd-hx' : '') + '">' + esc(N ? N.t : h) + '</div>' + (N ? '<div class="pd-m">Comment by <b>' + esc(N.n) + '</b></div>' : ''); })() + (h !== it.h ? '<div class="pd-m" style="font-style:italic">' + esc(it.h) + '</div>' : '') + '<div class="pd-m">' + by(it) + '</div>' +
         (autoSet.indexOf(k) >= 0 && why[k] ? '<div class="pd-m" style="font-style:italic">Added by Pato because ' + why[k] + '.</div>' : '') + (kfBox(it) || plain(it) || know(k)) + jgBox(it) + fyBox(notes[k] || (ownT(it) + (it.fy || "")))}); });
