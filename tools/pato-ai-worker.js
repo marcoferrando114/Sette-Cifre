@@ -661,7 +661,9 @@ function finalize(b0) { const b = Object.assign({}, b0); delete b._cand; delete 
   const first = "ceo", other = first === "ceo" ? "deep" : "ceo", pk = b[first] ? first : b[other] ? other : "";
   b.last = pk ? Object.assign({}, b[pk], { kind: pk }) : null; return b;
 }
-async function getEdition(env, force, dbg) {
+async function buildSave(env, idx, key) { await loadHL(env); const b = await buildEdition(env, idx); await finishEdition(env, b, 6);
+  if (env.LIMITS && Object.keys(b.cats).length >= 2) await env.LIMITS.put(key, JSON.stringify({ at: Date.now(), st: "ready", b }), { expirationTtl: 172800 }).catch(() => 0); return b; }
+async function getEdition(env, force, dbg, ctx) {
   const idx = dropIdx(Date.now()), key = "ed5:" + idx;
   if (env.LIMITS && !force) { const E = await env.LIMITS.get(key, "json").catch(() => null);
     if (E && E.b && E.b.cats && Object.keys(E.b.cats).length >= 2) {
@@ -669,7 +671,11 @@ async function getEdition(env, force, dbg) {
         DBG = {}; E.rt = Date.now(); E.b.cotd = await cotdPick(env, E.b._cand).catch(() => null); E.b._dbg = Object.assign({}, E.b._dbg, { retry: DBG.cotd || "ok" });
         if (E.b.cotd) { await imagesFor(env, { cotd: E.b.cotd, cats: {} }, 4).catch(() => 0); }
         await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }).catch(() => 0); }
-      const o = finalize(E.b); if (dbg) o._dbg = E.b._dbg; return o; } }
+      const o = finalize(E.b); if (dbg) o._dbg = E.b._dbg; return o; }
+    // Nov 14 (Marco: "there was only 1 story"): never make a phone wait for a build. If this drop's edition isn't ready, send the last good one right now and build in the background (one build at a time).
+    if (ctx) { let prev = null; for (let d = 1; d <= 4 && !prev; d++) { const P = await env.LIMITS.get("ed5:" + (idx - d), "json").catch(() => null); if (P && P.b && P.b.cats && Object.keys(P.b.cats).length >= 2) prev = P; }
+      if (prev) { const lock = await env.LIMITS.get("edl:" + idx).catch(() => null); if (!lock) { await env.LIMITS.put("edl:" + idx, "1", { expirationTtl: 150 }).catch(() => 0); ctx.waitUntil(buildSave(env, idx, key).catch(() => 0)); }
+        const o = finalize(prev.b); o.stale = 1; return o; } } }
   await loadHL(env); const b = await buildEdition(env, idx); await finishEdition(env, b, 6);
   if (env.LIMITS && Object.keys(b.cats).length >= 2) await env.LIMITS.put(key, JSON.stringify({ at: Date.now(), st: "ready", b }), { expirationTtl: 172800 }).catch(() => 0);
   const o = finalize(b); if (dbg) o._dbg = b._dbg; return o;
@@ -765,7 +771,7 @@ export default {
     if (pre) { const L = SHARED(), half = Math.ceil(L.length / 2), part = m === 30 ? L.slice(0, half) : L.slice(half);
       ctx.waitUntil((async () => { if (m === 30) await deepAll(env, true).catch(() => 0); for (const u of part) await refreshFeed(env, u).catch(() => 0); await saveHL(env); })()); return; }
     ctx.waitUntil(Promise.all([kvFresh(env, "mk2", 0, markets), kvFresh(env, "gm2:" + drDay(), 0, games), m === 0 ? refreshFeed(env, sec("WORLD")).catch(() => 0) : null]).then(() => saveHL(env))); },
-  async fetch(req, env) {
+  async fetch(req, env, ctx) {
     SUBN = 0;
     const origin = req.headers.get("origin") || "";
     if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(origin) });
@@ -798,7 +804,7 @@ export default {
     }
     if (req.method === "GET" && url.pathname === "/edition") {   // the prebuilt edition (demo account first): one fast read, same for everyone
       if (!ORIGINS.includes(origin)) return json({ error: { type: "forbidden" } }, 403, origin);
-      try { return json(await getEdition(env, false, url.searchParams.get("dbg") === "1"), 200, origin); } catch (e) { return json({ error: { type: "news_failed" } }, 502, origin); }
+      try { return json(await getEdition(env, false, url.searchParams.get("dbg") === "1", ctx), 200, origin); } catch (e) { return json({ error: { type: "news_failed" } }, 502, origin); }
     }
     if (req.method === "GET" && url.pathname === "/scores") {   // live scores for the games on screen (Marco Nov 12: update when you come back), cached 60s
       if (!ORIGINS.includes(origin)) return json({ error: { type: "forbidden" } }, 403, origin);
@@ -835,7 +841,7 @@ export default {
     }
     if (url.pathname === "/insight") { try { return json((await insight(env, uid, body)) || {}, 200, origin); } catch (e) { return json({}, 200, origin); } }
     if (url.pathname === "/daily2") {   // Pato's take on top of the prebuilt edition (demo account first)
-      try { const b = await getEdition(env); return json({ ...b, take: await take(env, uid, body, b).catch(() => null) }, 200, origin); }
+      try { const b = await getEdition(env, false, false, ctx); return json({ ...b, take: await take(env, uid, body, b).catch(() => null) }, 200, origin); }
       catch (e) { return json({ error: { type: "news_failed" } }, 502, origin); }
     }
     if (url.pathname === "/daily") {

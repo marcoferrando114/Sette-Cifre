@@ -2063,7 +2063,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261114150000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261114153000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -7021,13 +7021,13 @@ TRACKER DATA:
         else drop = {day: day(), slot: sl, sig: sig(), d: d, got: Date.now()};
         ls("pd-drop4", drop); render(); }).catch(function(){ getDrop.busy = 0; }); }
   var curIdx = function(){ return Math.floor((Date.now() - 11*3600e3) / (6*3600e3)); };   // same count the server uses: one edition per drop
-  function edOf(){ var c = [drop && drop.d, daily].filter(function(x){ return x && x.idx === curIdx(); })[0]; if(!c && Date.now() - waitAt > 8e3) c = (drop && drop.d) || daily || null; return c; }   // this drop's edition only; the last one only if the phone is offline
-  function fresh(){ return ND() ? [drop && drop.d, daily].some(function(x){ return x && x.idx === curIdx(); }) : freshOld(); }
+  function edOf(){ var c = [drop && drop.d, daily].filter(function(x){ return x && x.idx === curIdx(); })[0]; if(!c) c = (drop && drop.d && drop.d.big ? drop.d : null) || (daily && daily.big ? daily : null) || null; return c; }   // never an empty Pato: until this drop's edition is in, the last good one shows (Marco Nov 14: "there was only 1 story")   // this drop's edition only; the last one only if the phone is offline
+  function fresh(){ return ND() ? !!edOf() : freshOld(); }
   function ready(){ return ND() ? ((fresh() && pend < 1) || Date.now() - waitAt > 6e3) : readyOld(); }   // stories show as soon as they're in; only the first photos are waited for (max 2.5s)
   function getDrop(){ if(!ND()) return getDropOld(); var same = drop && drop.d && drop.d.idx === curIdx(); if(!base() || same || (getDrop.busy && Date.now() - getDrop.busy < 9e4)) return; getDrop.busy = Date.now();   // one request per drop: the server prebuilt it, photos included
     fetch(base() + "/edition").then(function(r){ return r.ok ? r.json() : null; })
       .then(function(d){ getDrop.busy = 0; if(!d || !d.cats || !(d.big || Object.keys(d.cats).length) || d.idx == null) return;   // never keep an empty drop
-        drop = {day: day(), slot: slot(), d: d, got: Date.now()}; ls("pd-drop5", drop); render(); }).catch(function(){ getDrop.busy = 0; }); }
+        drop = {day: day(), slot: slot(), d: d, got: Date.now()}; ls("pd-drop5", drop); if(d.stale || d.idx !== curIdx()) setTimeout(getDrop, 20e3); render(); }).catch(function(){ getDrop.busy = 0; }); }
   function about(t, it){ if(!it || !it.h) return null; var re = CO[t] || new RegExp("\\b" + t + "\\b"); return re.test(it.h) ? it : null; }   // a stock's news must name that company (Marco: no Costco story on IBKR)
   // Wall Street on your stocks (Marco Nov 12: analysts needs real output): buy/hold/sell counts from Finnhub (your own key), kept 6 hours
   var RC = ls("pd-recs") || {at: 0, d: {}};
