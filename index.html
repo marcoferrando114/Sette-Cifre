@@ -2066,7 +2066,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261114220000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261114230000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -7217,6 +7217,7 @@ TRACKER DATA:
           '<small>' + (m.ch ? '<em class="' + (m.ch > 0 ? "up" : "dn") + '">' + (m.ch > 0 ? "▲ " : "▼ ") + Math.abs(m.ch) + ' today</em> · ' : '') + (dl != null && dl >= 0 ? (dl === 0 ? "Settles today" : "Settles " + dlabel(m.end) + (dl <= 60 ? " · " + dl + "d" : "")) : "") + ' · <a class="pd-r2 pd-go" data-u="' + esc(m.u) + '">Open ›</a></small></div></div>'; }).join("") +
         '<div class="pd-m" style="margin-top:14px">% = what people betting real money think the chance is. Not advice.</div>'});
     // 7. Sports (only if you follow it)
+    var SN2 = (E.sportsNews || []).filter(function(it){ return it && it.h && it.u; }).slice(0, 3);   // sports stories from the news feeds live in the Sports tab (Marco Nov 14)
     if(on().indexOf("game") >= 0){ var pg = pickGame(E.games), g = pg && scOf(pg.g), mine = pg && pg.mine;
       if(g){ pg.more = (pg.more || []).map(scOf);
         var TM = g.teams || [], vs = TM.length === 2 && TM[0].n && TM[1].n ? '<div class="pd-vs">' + TM.map(function(t){ return '<div class="pd-team">' + (t.logo ? '<img src="' + esc(t.logo) + '" alt="" onerror="this.outerHTML=\'<span class=pd-tl>' + esc(t.n.slice(0,3).toUpperCase()) + '</span>\'">' : '<span class="pd-tl">' + esc(t.n.slice(0,3).toUpperCase()) + '</span>') +
@@ -7225,6 +7226,7 @@ TRACKER DATA:
           gameMore(g) + (g.inj && g.inj.length ? '<div class="pd-know pd-inj"><i>INJURY REPORT</i>' + g.inj.map(function(t){ return '<p><b>' + esc(t.team) + '</b> ' + esc(t.out.map(function(o){ return o.n + " (" + o.st + ")"; }).join(", ")) + '</p>'; }).join("") + '</div>' : '') +
           (g.lineup && g.lineup.length ? '<div class="pd-know pd-inj"><i>STARTING LINEUPS</i>' + g.lineup.map(function(t){ return '<p><b>' + esc(t.team) + '</b> ' + esc(t.xi.join(", ")) + '</p>'; }).join("") + '</div>' : '') +
           (pg.more.length ? '<div class="pd-know pd-also"><i>ALSO TODAY</i>' + pg.more.map(function(x){ return '<p><span>' + esc(x.league) + '</span><b>' + esc(x.name.replace(" at ", " vs ")) + '</b><small>' + esc([x.live ? "LIVE" : x.t ? hr(x.t) : "", x.odds && x.odds.line ? x.odds.line : ""].filter(Boolean).join(" · ")) + '</small></p>'; }).join("") + '</div>' : '') +
+          (SN2.length ? '<div class="pd-know pd-sn"><i>SPORTS NEWS</i>' + SN2.map(function(it){ return '<a class="pd-r2 pd-pm pd-lr" data-u="' + esc(it.u) + '"><div class="pd-pmq">' + esc(it.h) + '</div><div class="pd-lrm">' + esc(it.s) + ' · ' + ago(it.t) + ' ago</div></a>'; }).join("") + '</div>' : '') +
           (mine ? '<div class="pd-note"><i>YOUR BET</i><p>' + bold("You have RD$" + (Number(mine.stake)||0).toLocaleString("en-US") + " on this game.") + '</p></div>' : "")}); } }
     // 8. A CEO / founder story or a deep read, alternating (Marco Nov 14)
     var LS = E.last; if(LS && LS.h){ var ceo = LS.kind === "ceo";
