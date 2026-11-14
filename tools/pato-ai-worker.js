@@ -266,8 +266,9 @@ async function pickPreds3(env, M, tick, idx, heads) {   // Marco Nov 14: 2 predi
   let used = {}; try { used = (env.LIMITS && await env.LIMITS.get("pu1", "json")) || {}; } catch (e) { used = {}; }
   const old = u => u in used && used[u] !== idx, sc = m => (hw.size && words(m.t + " " + m.q).filter(w => hw.has(w)).length >= 2 ? 3 : 0) + Math.log10((m.vol || 0) + 10) + (PWORLD.test(m.t + " " + m.q) ? 3 : 0) + (me && me.test(m.t + " " + m.q) ? 4 : 0) + Math.min(3, Math.abs(m.ch || 0) / 4);
   const all = okM(M).filter(m => m.u && m.u.length > 30).map(m => Object.assign({}, m, { _s: sc(m) })).sort((a, b) => b._s - a._s), out = [], th = new Set();
+  { const k = all.find(m => m.src === "Kalshi" && !old(m.u) && m.p >= 4 && m.p <= 96); if (k) { out.push(k); th.add(themeOf(k)); } }   // one Kalshi market in the 2 (Marco Nov 14), the other the best Polymarket
   const take = (pred, themes) => all.forEach(m => { if (out.length >= 2 || out.some(o => o.u === m.u) || !pred(m)) return; const t = themeOf(m); if (themes && th.has(t)) return; th.add(t); out.push(m); });
-  take(m => !old(m.u) && m.p >= 4 && m.p <= 96, true); take(m => !old(m.u) && m.p >= 2 && m.p <= 98, false); take(m => !old(m.u), false); take(() => true, false);   // only if the whole pool is smaller than 2 does an old one return
+  take(m => m.src !== "Kalshi" && !old(m.u) && m.p >= 4 && m.p <= 96, true); take(m => !old(m.u) && m.p >= 4 && m.p <= 96, true); take(m => !old(m.u) && m.p >= 2 && m.p <= 98, false); take(m => !old(m.u), false); take(() => true, false);   // only if the whole pool is smaller than 2 does an old one return
   out.forEach(m => { used[m.u] = idx; delete m._s; }); const ks = Object.keys(used); if (ks.length > 120) ks.slice(0, ks.length - 120).forEach(k => delete used[k]);
   if (env.LIMITS && out.length) await env.LIMITS.put("pu1", JSON.stringify(used), { expirationTtl: 1209600 }).catch(() => 0);
   return out;

@@ -2079,7 +2079,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261115100000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261115110000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -7230,7 +7230,7 @@ TRACKER DATA:
     if(PR.length) L.push({id: ed + ":preds:" + PR[0].q.slice(0, 80), cls: "preds", t: "Predictions", w: "Polymarket · Kalshi", nav: "🔮 Predictions", fk: "preds",
       body: '<div class="pd-k">🔮 WHAT THE MARKET THINKS</div><div class="pd-h1" style="font-size:1.3rem">' + (PR.length > 1 ? "Today\'s top " + PR.length + " predictions" : "Today\'s hottest prediction") + '</div>' + PR.map(function(m){ var dl = m.end ? Math.round((Date.parse(m.end + "T12:00:00Z") - Date.now())/864e5) : null;
         return '<div class="pd-pm"><div class="pd-pmq">' + esc(m.multi ? m.t : m.q) + (m.multi ? '<small>Most likely: ' + esc(lead(m)) + '</small>' : '') + '</div><div class="pd-pmr"><b>' + m.p + '%</b><i><u style="width:' + m.p + '%"></u></i>' +
-          '<small>' + (m.ch ? '<em class="' + (m.ch > 0 ? "up" : "dn") + '">' + (m.ch > 0 ? "▲ " : "▼ ") + Math.abs(m.ch) + ' today</em> · ' : '') + (dl != null && dl >= 0 ? (dl === 0 ? "Settles today" : "Settles " + dlabel(m.end) + (dl <= 60 ? " · " + dl + "d" : "")) : "") + ' · <a class="pd-r2 pd-go" data-u="' + esc(m.u) + '">Open ›</a></small></div></div>'; }).join("") +
+          '<small>' + (m.ch ? '<em class="' + (m.ch > 0 ? "up" : "dn") + '">' + (m.ch > 0 ? "▲ " : "▼ ") + Math.abs(m.ch) + ' today</em> · ' : '') + (dl != null && dl >= 0 ? (dl === 0 ? "Settles today" : "Settles " + dlabel(m.end) + (dl <= 60 ? " · " + dl + "d" : "")) : "") + ' · ' + esc(m.src || "Polymarket") + ' · <a class="pd-r2 pd-go" data-u="' + esc(m.u) + '">Open ›</a></small></div></div>'; }).join("") +
         '<div class="pd-m" style="margin-top:14px">% = what people betting real money think the chance is. Not advice.</div>'});
     // 7. Sports (only if you follow it)
     var SN2 = (E.sportsNews || []).filter(function(it){ return it && it.h && it.u; }).slice(0, 3);   // sports stories from the news feeds live in the Sports tab (Marco Nov 14)
