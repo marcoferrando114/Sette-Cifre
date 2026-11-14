@@ -2092,13 +2092,13 @@ html:not(.mp-guest) #s-gst{display:none!important}
 .pd-vm span{position:static}.pd-vis .pd-vem{font-size:4.2rem}
 #pdBd.tk1 .pd-say .pd-one{font-size:1.3rem}#pdBd.tk1 .pd-tip,#pdBd.tk1 .pd-know{margin-top:12px}#pdBd.tk1 .pd-tip{padding:10px 14px}#pdBd.tk1 .pd-know p{font-size:.88rem!important;line-height:1.3!important}#pdBd.tk2 .pd-know p{font-size:.82rem!important;line-height:1.25!important}#pdBd.tk2 .pd-say{margin-top:0}#pdBd.tk2 .pd-say .pd-one{font-size:1.15rem}#pdBd.tk3 .pd-say .pd-one{font-size:1.02rem}#pdBd.tk3 .pd-tip{margin-top:8px;padding:8px 12px}#pdBd.tk3 .pd-know{margin-top:8px}
 #pdBd.tk4 .pd-say img{display:none}#pdBd.tk4 .pd-say .pd-one{font-size:.92rem;line-height:1.25}#pdBd.tk4 .pd-know p{font-size:.76rem!important;line-height:1.2!important;margin-top:4px!important}#pdBd.tk4 .pd-tip p{font-size:.85rem}.pd-s.take .pd-bd.tk4{padding-bottom:20px}
-.pd-s.pd-slf{animation:pdSlF .28s ease backwards}.pd-s.pd-slb{animation:pdSlB .28s ease backwards}@keyframes pdSlF{from{opacity:.15;transform:translateX(34px)}}@keyframes pdSlB{from{opacity:.15;transform:translateX(-34px)}}
+.pd-s.pd-slf{animation:pdSlF .28s ease backwards}.pd-s.pd-slb{animation:pdSlB .28s ease backwards}.pd-s.pd-slc{animation:pdSlC .5s cubic-bezier(.2,.8,.2,1) backwards}@keyframes pdSlC{0%{opacity:0;transform:scale(.88) translateY(26px);filter:brightness(2.2) saturate(1.8)}55%{opacity:1;filter:brightness(1.25) saturate(1.3)}}@keyframes pdSlF{from{opacity:.15;transform:translateX(34px)}}@keyframes pdSlB{from{opacity:.15;transform:translateX(-34px)}}
 .pd-s .pd-know:not(.pd-inj):not(.pd-also) p,.pd-s .pd-know li,.pd-s .pd-note p{font-size:.94rem!important;font-weight:400!important;line-height:1.38!important}   /* ONE body style on every slide, the bullet look Marco likes (Nov 14); labels and headlines unchanged */
 .pd-s .pd-know:not(.pd-inj):not(.pd-also) p{color:#E4ECE7!important}.pd-s .pd-know li{margin-top:5px}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261115200000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261115210000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -7684,7 +7684,7 @@ TRACKER DATA:
   function show(i){
     clearTimeout(timer); cur = Math.max(0, Math.min(i, S.length - 1)); var x = S[cur], s = seen();
     if(!x.pick){ s.ids[x.id] = 1; if(x.id2) s.ids[x.id2] = 1; ls("pd-seen2", s); }
-    var base = "pd-s " + (x.cls||""); var pcur = window.__pdPrev; window.__pdPrev = cur; $("pdS").className = base; if(lastBase != null){ void $("pdS").offsetWidth; $("pdS").className = base + (pcur != null && cur < pcur ? " pd-slb" : " pd-slf"); } lastBase = base;   // every slide change slides in (from the right going forward, from the left going back), also between different layouts (Marco Nov 14)
+    var base = "pd-s " + (x.cls||""); var pcur = window.__pdPrev; window.__pdPrev = cur; $("pdS").className = base; if(lastBase != null){ void $("pdS").offsetWidth; $("pdS").className = base + (String(x.cls || "").trim() && S[pcur] && String(S[pcur].cls || "").trim() !== String(x.cls).trim() ? " pd-slc" : pcur != null && cur < pcur ? " pd-slb" : " pd-slf"); }   // coloured slides (Breaking, Predictions, Sports...) arrive with a colour pop and a rise, plain ones slide sideways (Marco Nov 14) lastBase = base;   // every slide change slides in (from the right going forward, from the left going back), also between different layouts (Marco Nov 14)
        // Marco Nov 12: moving to a new kind of slide fades in instead of snapping $("pdT").innerHTML = (NEW[x.id] ? '<span class="pd-new">NEW</span>' : (x.pick ? '' : '<span class="pd-old">✓ Seen</span>')) + esc(x.t); $("pdW").textContent = x.w || "";
     $("pdBd").classList.remove("tk1", "tk2", "tk3", "tk4");   // the shrink steps belong to Pato's take only: they leaked into other slides and made their fonts smaller (Marco Nov 14)
     $("pdBd").innerHTML = x.call ? callBody(x.call) : picHtml(x) + x.body + act(x);
