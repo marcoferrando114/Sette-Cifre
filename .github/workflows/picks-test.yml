@@ -8,7 +8,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Fetch each source once
+        shell: bash
         run: |
+          set +e
           UA="PatoBot/1.0 (personal research, low volume)"
           t(){
             code=$(curl -sS -L -m 20 -A "$UA" -o out.tmp -w "%{http_code} %{size_download}B" "$2" 2>&1 | tail -1)
@@ -44,9 +46,10 @@ jobs:
           t boxing https://www.predictem.com/boxing-picks/
           t any https://www.freeplays.com/
           t any https://rss.feedspot.com/mma_betting_rss_feeds/
-          t any https://gamma-api.polymarket.com/markets?limit=1
-          echo "--- robots.txt (Disallow count / blocks all?) ---"
+          t any "https://gamma-api.polymarket.com/markets?limit=1"
+          echo "--- robots.txt ---"
           for h in www.reddit.com www.vsin.com www.scoresandstats.com www.sportsbookreview.com www.sportsbettingdime.com www.bettingpros.com www.actionnetwork.com www.windrawwin.com www.racingpost.com planetsport.com www.bettingexpert.com www.predictem.com www.thespread.com; do
-            curl -sS -m 15 -A "$UA" "https://$h/robots.txt" -o r.tmp -w "%{http_code} " 2>&1 | tail -1
-            echo "$h disallow-all=$(grep -A3 -i 'user-agent: \*' r.tmp | grep -ciE '^disallow: /$')"
+            c=$(curl -sS -m 15 -A "$UA" "https://$h/robots.txt" -o r.tmp -w "%{http_code}" 2>&1 | tail -1)
+            echo "$h robots=$c disallow-all=$(grep -A3 -i 'user-agent: \*' r.tmp | grep -ciE '^disallow: /$')"
           done
+          exit 0
