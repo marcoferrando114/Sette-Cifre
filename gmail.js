@@ -108,6 +108,10 @@
     paint();
     if (st && st.connected && Date.now() - lastTry > 10 * 60e3) run(false);
   }
+  window.__patoGm = {   // used by the first-run setup
+    status: async function(){ try { return await call("/status"); } catch (e) { return String(e.message) === "not_set_up" ? { off: true } : { connected: false }; } },
+    start: async function(m){ var r = await call("/start", { months: m || 3 }); location.href = r.url; }
+  };
   document.addEventListener("visibilitychange", function(){ if (!document.hidden && db && !busy) setTimeout(status, 800); });
   (async function(){
     if (!window.claude) return;
