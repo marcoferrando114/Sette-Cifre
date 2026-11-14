@@ -652,7 +652,7 @@ async function founderOf(env, now) {   // one per day, rotating through the rost
 const dropIdx = ms => Math.floor((ms - 11 * 3600e3) / (6 * 3600e3));   // a new edition every 6 hours, at 11, 17, 23 UTC
 let FN = 0; const cf = (...a) => { FN++; return fetch(...a); };
 async function buildEdition(env, idx) {   // stage 1 (6:30, 12:30, 6:30pm DR): pick everything from the prepared feeds
-  const b = await bundleEd(new URLSearchParams("k=rd,business,tech,crypto,stocks,startups&busy=1"), env);
+  const b = await bundleEd(new URLSearchParams("k=rd,business,tech,crypto,stocks,startups,politics&busy=1"), env);
   DBG = {}; b.cotd = await cotdPick(env, b._cand).catch(() => null); if (!b.cotd && !DBG.cotd) DBG.cotd = "none " + (b._cand || []).length; b._dbg = DBG; b.ceo = await founderOf(env, Date.now()).catch(() => b.ceo); b.preds = await pickPreds3(env, await kvFresh(env, "mk2", 90, markets).catch(() => []), (b.tickers || []), idx).catch(() => b.preds);   // the CEO slot is now one personal founder story a day
   b.pick = await patoPick(env, b.games).catch(() => null); b.idx = idx; return b;
 }
