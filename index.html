@@ -2477,7 +2477,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
     </details>
   </section>
   <section id="s-topay">
-    <div class="shead"><h2>To pay</h2><span class="num" id="tpHead"></span></div>
+    <div class="shead"><h2>I owe</h2><span class="num" id="tpHead"></span></div>
     <div id="tpList"></div>
     <details class="newloan" id="tpNew">
       <summary>+ Add</summary>
@@ -6756,7 +6756,7 @@ TRACKER DATA:
   };
   function texts(){
     var t = function(sel, s){ var e = document.querySelector(sel); if(e && e.textContent !== s) e.textContent = s; };
-    t("#s-cobrar h2", "To collect"); t("#s-debts .shead h2", "Other debts"); t(".pk-head h2", "Games"); t('#pkSeg [data-v="ar"]', "Casino"); t('#pkSeg [data-v="ot"]', "Poker"); t("#tab-poker span", "Games");
+    t("#s-cobrar h2", "Owed to me"); t("#s-debts .shead h2", "Other owed to me"); t(".pk-head h2", "Games"); t('#pkSeg [data-v="ar"]', "Casino"); t('#pkSeg [data-v="ot"]', "Poker"); t("#tab-poker span", "Games");
   }
   function render(){
     var L = $("tpList"); if(!L) return;
@@ -6789,7 +6789,7 @@ TRACKER DATA:
     var o = owe(), b = tt.querySelector("b");
     if(b){ if(b.dataset.base == null || !b.dataset.mine) { b.dataset.base = num(b.textContent); b.dataset.mine = "1"; } b.textContent = fmt(Number(b.dataset.base) - o); }
     var last = tt.lastChild; if(last && last.nodeType === 3) last.textContent = o > 0 ? "after what you owe" : "in your accounts plus what you’re owed";
-    if(o > 0){ var d = document.createElement("div"); d.className = "nw-g tp-g"; d.innerHTML = '<div class="nw-gh"><span>To pay</span><b>−'+fmt(o)+'</b></div>' + items.filter(function(x){ return left(x) > 0.5; }).map(function(x){ return '<div class="nw-r"><i style="background:var(--c-owe)"></i><span>'+esc(x.nombre)+'</span><b>−'+fmt(left(x))+'</b><small></small></div>'; }).join(""); s.appendChild(d); }
+    if(o > 0){ var d = document.createElement("div"); d.className = "nw-g tp-g"; d.innerHTML = '<div class="nw-gh"><span>I owe</span><b>−'+fmt(o)+'</b></div>' + items.filter(function(x){ return left(x) > 0.5; }).map(function(x){ return '<div class="nw-r"><i style="background:var(--c-owe)"></i><span>'+esc(x.nombre)+'</span><b>−'+fmt(left(x))+'</b><small></small></div>'; }).join(""); s.appendChild(d); }
     setTimeout(function(){ busy = false; }, 0);
   }
   function form(){
