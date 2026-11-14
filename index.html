@@ -6071,6 +6071,8 @@ Numbers on the receipt may use a comma for decimals (RD$2.000,00 means 2000). If
   }
   const isSpend = e => e.type==="out" && e.source!=="Préstamo";
   // key: "YYYY-MM" ("" = all time); upTo: optional last date to include (for "same days last month")
+  // debt payments received (from people in your debts list): income in the savings rate and in the income-by-month chart alike
+  function debtIn(inP){ const dn = new Set((config.deudas||[]).map(x=>String(x.nombre||"").toLowerCase())); return entries.filter(e=>e.type!=="out" && inP(e.date) && !bCat(e.source) && dn.has(String(e.source||"").toLowerCase())).reduce((t,e)=>t+e.amount,0); }
   function rateFor(key, upTo){
     const inP = d => !!d && (key ? d.startsWith(key) : d >= START_KEY+"-01") && (!upTo || d <= upTo);
     let inc = 0;
@@ -6081,7 +6083,7 @@ Numbers on the receipt may use a comma for decimals (RD$2.000,00 means 2000). If
     const poLoss = pokerOtra.filter(x=>x.monto<0 && inP(x.fecha) && bCat(x.source)).reduce((t,x)=>t+x.monto,0);
     inc += po + poLoss + interestBy(inP);
     // debt payments received count as income too (they are inside "saved"), so the rate can't pass what really came in
-    { const dn = new Set((config.deudas||[]).map(x=>String(x.nombre||"").toLowerCase())); entries.filter(e=>e.type!=="out" && inP(e.date) && !bCat(e.source) && dn.has(String(e.source||"").toLowerCase())).forEach(e => inc += e.amount); }
+    inc += debtIn(inP);
     const other = po + interestBy(inP, "otra");
     const outs = entries.filter(e=>isSpend(e) && inP(e.date));
     const spent = outs.reduce((t,e)=>t+netOut(e),0);
@@ -6104,8 +6106,9 @@ Numbers on the receipt may use a comma for decimals (RD$2.000,00 means 2000). If
       entries.filter(e=>(e.date||"").startsWith(k)).forEach(e => { const c=bCat(e.source); if(c && (e.type!=="out" || POKER_SRC.includes(e.source))) v[c] += e.type==="out" ? -e.amount : e.amount; });
       pokerOtra.filter(x=>(x.fecha||"").startsWith(k)).forEach(x => { const c=bCat(x.source); if(c) v[c] += x.monto; });
       v.int = interestIn(k);
+      v.ot += debtIn(d => !!d && d.startsWith(k));
       const raw = {...v}; Object.keys(v).forEach(c => v[c] = Math.max(0, v[c]));
-      return {k, v, raw, tot: Object.values(v).reduce((a,b)=>a+b,0)};
+      return {k, v, raw, tot: Math.max(0, rateFor(k).inc)};   // same income number the savings rate divides by
     });
     bData.forEach(m => { m.saved = rateFor(m.k).saved; });
     const totBy = c => bData.reduce((t,m)=>t+m.v[c[0]],0);
