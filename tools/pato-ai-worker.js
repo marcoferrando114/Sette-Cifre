@@ -130,7 +130,7 @@ function clean(items, hours) {
   const now = Date.now(), seen = new Set();
   return items.filter(i => {
     const k = i.h.toLowerCase().replace(/[^a-z0-9 ]/g, "").split(" ").slice(0, 6).join(" ");
-    if (!i.h || i.h.trim().split(/\s+/).length < 4 || !(i.bing || TRUSTED.test(i.s)) || BADSRC.test(i.s || "") || JUNK.test(i.h) || seen.has(k) || (i.t && now - i.t > hours * 3600e3)) return false;
+    if (!i.h || i.h.trim().split(/\s+/).length < 4 || !(i.bing || TRUSTED.test(i.s)) || BADSRC.test(i.s || "") || /^note(\.com)?$/i.test(i.s || "") || /[\u0400-\u04FF\u0590-\u08FF\u0900-\u0DFF\u0E00-\u0EFF\u1100-\u11FF\u3040-\uD7AF]/.test(i.h) || JUNK.test(i.h) || seen.has(k) || (i.t && now - i.t > hours * 3600e3)) return false;
     seen.add(k); return true;
   });
 }
@@ -368,7 +368,8 @@ async function bundleEd(P, env) {
   const WL = clean(world.items || [], 14), me = tick.length ? new RegExp("\\b(" + tick.map(t => t.toLowerCase() + (CO[t] ? "|" + CO[t] : "")).join("|") + ")", "i") : null, now = Date.now();
   const pool = WL.concat(pick(top.items || []), ...tick.map((t, i) => pick(rest[want.length + i].items || []).slice(0, 3)));
   const bs = i => (i.n || 1) * 10 + Math.max(0, 14 - (now - i.t) / 36e5) + (HUGE.test(i.h) ? 25 : 0) + (DRAMA.test(i.h) ? 18 : 0) + (me && me.test(i.h) ? 30 : 0) + (CALLS.test(i.h) && me && me.test(i.h) ? 10 : 0) + (TASTE.test(i.h) ? 12 : 0) + lk(i.h);
-  const B = pool.filter(i => i && i.h).sort((x, y) => bs(y) - bs(x))[0] || null;
+  const PB = pool.filter(i => i && i.h).sort((x, y) => bs(y) - bs(x));
+  const B = PB.find(i => (i.n || 1) >= 3 || HUGE.test(i.h) || DRAMA.test(i.h) || (me && me.test(i.h))) || PB.find(i => (i.n || 1) >= 2) || PB[0] || null;   // Nov 14 (Marco): Breaking must be big: covered by 3+ outlets, or a major event, or about your own companies
   const W = B ? Object.assign({}, B, { huge: (B.n || 0) >= 3 && HUGE.test(B.h), mine: !!(me && me.test(B.h)) }) : null;
   const CL = pick(rest[want.length + tick.length].items || []).filter(i => CALLS.test(i.h)).map(i => Object.assign({}, i, { mine: !!(me && me.test(i.h)) })).sort((x, y) => (y.mine - x.mine) || ((y.n || 1) - (x.n || 1)))[0] || null;
   const T = pick(top.items || []);
@@ -451,7 +452,7 @@ async function take(env, uid, body, b) {
 const PLAIN = `Headlines marked [CEO STORY] profile a business leader or founder: ALWAYS write 1 or 2 short sentences (max 40 words) on who they are and what the story shows about how this leader got there or leads (family, schooling, early career, risks, network), using only the headline and widely known facts; never invent claims and never explain anyone's success by ethnicity, religion or nationality. Headlines marked [DEEP READ] are analysis pieces, not news: ALWAYS write 1 or 2 short sentences (max 35 words) on what the piece is about and why it matters, using only the headline and widely known facts, never inventing claims. For the other headlines: for each numbered news headline, decide if a 20-year-old who does not follow the topic would be confused by it: politics, world events, foreign markets or companies, unfamiliar names, jargon. If yes, write BACKGROUND context: 1 or 2 short sentences (max 40 words) saying who or what is involved and why it is happening or why it matters, e.g. what an institution is, who a person is, what led to this. Use ONLY the headline and widely known general knowledge. Never invent numbers, causes, quotes or outcomes; if unsure, return "". If the headline is already clear to anyone (sports results, product launches, simple company news), return "". Return ONLY JSON like {"0":"...","1":""}.`;
 async function plainAll(env, b) {
   if (!env.ANTHROPIC_KEY || !env.LIMITS || !b || !b.cats) return;
-  const items = []; Object.values(b.cats).forEach(a => (a || []).slice(0, 2).forEach(it => { if (it && it.h) items.push(it); })); [b.deep, b.ceo].forEach(it => { if (it && it.h) items.push(it); });
+  const items = []; Object.values(b.cats).forEach(a => (a || []).slice(0, 2).forEach(it => { if (it && it.h) items.push(it); })); [b.deep, b.ceo].forEach(it => { if (it && it.h && !it.founder) items.push(it); });
   if (!items.length) return;
   const hk = it => (it.deep ? "d:" : it.ceo ? "c:" : "") + it.h.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 60);
   let M = {}; try { M = JSON.parse((await env.LIMITS.get("pl2")) || "{}"); } catch (e) { M = {}; }
@@ -475,7 +476,7 @@ j = up to 2 jargon terms used in k or m, each as ["term","plain definition, max 
 Never say buy or sell. No emojis. Plain English. Return ONLY JSON like {"0":{"k":"","m":"","f":"","j":[]}}.`;
 async function meansAll(env, b) {
   if (!env.ANTHROPIC_KEY || !env.LIMITS || !b) return;
-  const items = [b.big].concat(Object.values(b.cats || {}).map(a => (a || [])[0]), [b.deep, b.ceo]).filter(it => it && it.h);
+  const items = [b.big].concat(Object.values(b.cats || {}).map(a => (a || [])[0]), [b.deep, b.ceo]).filter(it => it && it.h && !it.founder);
   if (!items.length) return;
   const hk = it => it.h.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 60), blob = it => [it.h, it.d2 || it.d || "", (it.also || []).join(" ")].join(" ").replace(/,(?=\d{3})/g, "");
   let M = {}; try { M = JSON.parse((await env.LIMITS.get("mf2")) || "{}"); } catch (e) { M = {}; }
@@ -511,12 +512,117 @@ async function cotdPick(env, cand) {
   if (!out.name || !out.does || !out.bull.length || !out.why || !out.unp) return null;
   await env.LIMITS.put(key, JSON.stringify(out), { expirationTtl: 172800 }); return out;
 }
+// Marco Nov 14: ONE personal founder story a day (not news about unknown CEOs). Written by Pato from well-known, widely reported facts; the link goes to the person's Wikipedia page. Never explains success by ethnicity, religion or nationality.
+const FOUNDERS = [
+  { n: "Jensen Huang", w: "Jensen_Huang", h: "Jensen Huang: from washing dishes at Denny's to running Nvidia", pl: "Born in Taiwan, sent to the US as a boy, he sketched Nvidia at a Denny's booth and nearly lost it in year three.",
+    s: [["WHERE HE STARTED", "Born in Taiwan in 1963, he moved to the US as a kid and went to school in Oregon and Kentucky. As a teenager he washed dishes and cleaned bathrooms at Denny's. He later studied electrical engineering at Oregon State and Stanford."],
+        ["THE HARD PART", "In 1993 he co-founded Nvidia with two friends, in a Denny's booth. Their early chip flopped and the company came close to running out of money. He has said they were about a month from shutting down."],
+        ["THE TURNING POINT", "A 1997 graphics chip, the RIVA 128, saved the company. Then in 2006 he bet on CUDA, a way to use graphics chips for general computing. Years later that bet made Nvidia the engine of AI."]],
+    fy: "Staying alive long enough is a strategy. His company survived its worst year because he kept shipping." },
+  { n: "Sam Altman", w: "Sam_Altman", h: "Sam Altman: the Stanford dropout who was fired from OpenAI and came back", pl: "He dropped out at 19 to build a startup, ran Y Combinator, then got fired from the company he led and was back within days.",
+    s: [["WHERE HE STARTED", "Born in 1985 in St. Louis, he learned to code as a kid and went to Stanford. He dropped out at 19 to build Loopt, a phone app that shared your location, in the first group of Y Combinator."],
+        ["THE HARD PART", "Loopt never took off. It was sold in 2012 for about $43 million, which was a small result compared with the money raised and the hype."],
+        ["THE TURNING POINT", "He became president of Y Combinator in 2014 and co-founded OpenAI in 2015. In November 2023 the board fired him as CEO, and within days employees and investors pushed for his return."]],
+    fy: "A first startup that does not 'win' can still be the best school. Many founders use it that way." },
+  { n: "Dario Amodei", w: "Dario_Amodei", h: "Dario Amodei: a physicist who left OpenAI to build a safety-first AI lab", pl: "He studied physics and the brain before AI, then left OpenAI with his sister and others to start Anthropic.",
+    s: [["WHERE HE STARTED", "Born in San Francisco in 1983, he studied physics, then did a PhD at Princeton on how neurons work. He worked at Baidu and Google Brain on AI before joining OpenAI."],
+        ["THE HARD PART", "At OpenAI he became vice president of research. In 2021 he and several colleagues, including his sister Daniela, left because they wanted a company built around AI safety."],
+        ["THE TURNING POINT", "They founded Anthropic, which makes the AI assistant Claude. It grew from a small team into one of the most valuable AI companies in the world in a few years."]],
+    fy: "He moved from physics to biology to AI, following the hardest open problem each time." },
+  { n: "Tarek Mansour", w: "Tarek_Mansour", h: "Tarek Mansour: the MIT grad who spent years getting permission to launch Kalshi", pl: "He and his co-founder spent about two years convincing US regulators that people could legally trade on real-world events.",
+    s: [["WHERE HE STARTED", "He grew up in Lebanon, studied at MIT and worked in finance as a trader. There he saw how hedging risk is only open to big institutions."],
+        ["THE HARD PART", "He co-founded Kalshi with Luana Lopes Lara in 2018. Regulators were wary of betting on events, so the pair spent roughly two years in talks with the US derivatives regulator, the CFTC, before they could launch."],
+        ["THE TURNING POINT", "Kalshi became the first US exchange allowed to list event contracts, such as whether a number will beat a forecast. Its volume exploded around the 2024 election and it is now valued in the billions."]],
+    fy: "The boring, slow part, permission, can be the moat. Few rivals wait two years." },
+  { n: "Luana Lopes Lara", w: "Luana_Lopes_Lara", h: "Luana Lopes Lara: the ballet dancer who became a founder and billionaire before 30", pl: "She trained at the Bolshoi ballet school in Brazil, then studied computer science at MIT and co-founded Kalshi.",
+    s: [["WHERE SHE STARTED", "Born in Brazil, she trained as a classical ballet dancer and attended a Bolshoi Theatre school in Brazil. Then she switched to maths and computer science at MIT."],
+        ["THE HARD PART", "At 22 she co-founded Kalshi with Tarek Mansour. Getting US approval to run a prediction market took about two years of back and forth with regulators."],
+        ["THE TURNING POINT", "Kalshi's growth made her one of the youngest self-made women billionaires in the world. She has said dance taught her discipline and doing the same thing over and over until it is right."]],
+    fy: "Skills from one field, here discipline from dance, can be an unfair advantage in a totally different one." },
+  { n: "Alex Karp", w: "Alex_Karp", h: "Alex Karp: the dyslexic philosophy PhD who runs Palantir", pl: "He studied philosophy and law, not computer science, and still built one of the most talked-about data companies.",
+    s: [["WHERE HE STARTED", "Born in New York in 1967, he is dyslexic and says that shaped how he learned. He studied philosophy, went to law school at Stanford and got a PhD in social theory in Germany."],
+        ["THE HARD PART", "He had no tech background. In 2003 he became CEO of Palantir, which Peter Thiel co-founded, and for years the company lost money and struggled to win customers beyond government."],
+        ["THE TURNING POINT", "Palantir's software for analysing huge amounts of data became widely used by governments and later companies. It went public in 2020, and in 2025 it became one of the most valuable US software companies."]],
+    fy: "You do not need the 'obvious' degree. Seeing the problem differently can matter more." },
+  { n: "Peter Thiel", w: "Peter_Thiel", h: "Peter Thiel: the lawyer who co-founded PayPal and backed Facebook first", pl: "Born in Germany, he left law to start PayPal, then wrote Facebook's first big outside cheque.",
+    s: [["WHERE HE STARTED", "Born in Frankfurt in 1967, he moved to the US as a child and grew up in California. He studied philosophy and then law at Stanford and worked briefly as a lawyer and a trader."],
+        ["THE HARD PART", "In 1998 he co-founded a payments company that became PayPal after a merger. It faced fraud, big losses and fierce competition in its early years."],
+        ["THE TURNING POINT", "eBay bought PayPal for about $1.5 billion in 2002. In 2004 he invested $500,000 in Facebook, the first big outside investment, and later co-founded Palantir and the fund Founders Fund."]],
+    fy: "Sell early enough to reinvest: the PayPal sale funded his next bets." },
+  { n: "Mark Zuckerberg", w: "Mark_Zuckerberg", h: "Mark Zuckerberg: from a Harvard dorm to turning down a billion dollars", pl: "He built Facebook as a student, dropped out, and said no to Yahoo's $1 billion offer at 22.",
+    s: [["WHERE HE STARTED", "Born in 1984 and raised in New York state, he started coding as a kid with help from his dentist father and a tutor. He went to Harvard, where he built a campus site that became Facebook in 2004."],
+        ["THE HARD PART", "He dropped out and moved the team to California. In 2006 Yahoo offered about $1 billion and he turned it down, a risky bet at 22."],
+        ["THE TURNING POINT", "Facebook went public in 2012. He bought Instagram that year for about $1 billion and WhatsApp in 2014 for about $19 billion, both widely seen as brilliant defensive moves."]],
+    fy: "He was willing to say no to life-changing money to own something much bigger." },
+  { n: "Steve Jobs", w: "Steve_Jobs", h: "Steve Jobs: fired from his own company, then saved it", pl: "Adopted at birth, a college dropout, ousted from Apple in 1985 and back twelve years later to rescue it.",
+    s: [["WHERE HE STARTED", "Born in 1955 and adopted, he dropped out of Reed College but kept sitting in on classes, including calligraphy. He co-founded Apple in 1976 with Steve Wozniak, working out of a garage."],
+        ["THE HARD PART", "In 1985, after a fight with the board, he was pushed out of Apple. He started NeXT, a computer company that sold poorly, and bought what became Pixar."],
+        ["THE TURNING POINT", "Pixar made Toy Story. Apple bought NeXT in 1996, he returned, and the iMac, iPod and iPhone followed. Apple became the world's most valuable company."]],
+    fy: "Being kicked out gave him a decade to learn. He came back better, not just older." },
+  { n: "Lisa Su", w: "Lisa_Su", h: "Lisa Su: the engineer who pulled AMD back from the edge", pl: "When she became CEO in 2014 AMD was a few dollars a share and widely written off. Today it competes with giants.",
+    s: [["WHERE SHE STARTED", "Born in Taiwan, she moved to the US when she was two. She earned a bachelor's, master's and PhD in electrical engineering at MIT, then worked at Texas Instruments, IBM and Freescale."],
+        ["THE HARD PART", "She joined AMD in 2012 and became CEO in 2014, when the company was losing share to Intel and Nvidia, and its stock traded around $2 to $3."],
+        ["THE TURNING POINT", "She bet on a new chip design, called Zen. It worked, AMD took market share, and the stock rose many times over. She is now often cited as one of the best CEOs in tech."]],
+    fy: "A company 'written off' by everyone can be a great opportunity if the product bet is right." },
+  { n: "Palmer Luckey", w: "Palmer_Luckey", h: "Palmer Luckey: the teenager who built VR in a garage, got fired, and built a defense giant", pl: "He sold Oculus to Facebook for $2 billion at 21, was pushed out, and founded Anduril.",
+    s: [["WHERE HE STARTED", "Born in 1992, he taught himself electronics and began building virtual reality headsets in his parents' garage as a teenager."],
+        ["THE HARD PART", "He raised about $2.4 million on Kickstarter for the Oculus Rift in 2012. Facebook bought Oculus in 2014 for about $2 billion, but he left in 2017 after controversy."],
+        ["THE TURNING POINT", "In 2017 he co-founded Anduril, which builds drones and defense software. Within about eight years it was valued in the tens of billions of dollars."]],
+    fy: "A setback at 25 does not decide the next 25 years, but it asks you to build something new." },
+  { n: "Brian Armstrong", w: "Brian_Armstrong_(businessman)", h: "Brian Armstrong: the engineer who bet early on Bitcoin and built Coinbase", pl: "He quit a stable career at Airbnb to build a place to buy Bitcoin, and took Coinbase public in 2021.",
+    s: [["WHERE HE STARTED", "He grew up in San Jose and studied computer science and economics at Rice. He worked as a consultant and then as an engineer at Airbnb."],
+        ["THE HARD PART", "In 2012 he read about Bitcoin and thought buying it was too hard for most people. He applied to Y Combinator with an idea to fix that, although crypto was still tiny and risky."],
+        ["THE TURNING POINT", "Coinbase became the biggest US crypto exchange and went public in April 2021 through a direct listing. It has since weathered big crypto crashes."]],
+    fy: "He built a simple product for something confusing. That's often where a big company starts." },
+  { n: "Patrick Collison", w: "Patrick_Collison", h: "Patrick Collison: the Irish teenager who sold his first company at 19", pl: "From a small Irish town to Stripe, which now processes a large share of the internet's payments.",
+    s: [["WHERE HE STARTED", "He grew up in Ireland and won the Young Scientist competition at 16. With his brother John he built and sold the startup Auctomatic when he was still a teenager."],
+        ["THE HARD PART", "Then he went to MIT, dropped out and, with John, started Stripe in 2010. Taking card payments online was painful for developers, and big companies were not obviously interested in a tiny rival."],
+        ["THE TURNING POINT", "Stripe's few lines of code made online payments easy. It grew into one of the most valuable private tech companies, valued at nearly $100 billion."]],
+    fy: "Pick a hated, boring problem and make it radically simple." },
+  { n: "Whitney Wolfe Herd", w: "Whitney_Wolfe_Herd", h: "Whitney Wolfe Herd: she left Tinder and built a rival that went public", pl: "After leaving Tinder she started Bumble, where women make the first move, and took it public at 31.",
+    s: [["WHERE SHE STARTED", "Born in Utah, she studied at Southern Methodist University and started a small charity business. In 2012 she joined the team that built Tinder, as an early employee and co-founder."],
+        ["THE HARD PART", "She left Tinder in 2014 and filed a harassment and discrimination lawsuit that was later settled. She then felt unsure about starting again."],
+        ["THE TURNING POINT", "The same year she launched Bumble, where only women can message first. It grew quickly, and in 2021 she became the youngest woman to take a US company public."]],
+    fy: "A worse moment can become a clear idea of what you would build differently." },
+  { n: "Brian Chesky", w: "Brian_Chesky", h: "Brian Chesky: three air mattresses, a failed pitch deck, and Airbnb", pl: "He could not pay rent, so he rented out air mattresses in his apartment. Airbnb became a company worth tens of billions.",
+    s: [["WHERE HE STARTED", "He studied industrial design at the Rhode Island School of Design. In 2007 he and his roommate in San Francisco could not afford rent, so they rented out air mattresses to conference visitors."],
+        ["THE HARD PART", "Investors said no again and again. To keep going the founders sold cereal boxes themed on the 2008 US election, such as Obama O's, to pay their bills."],
+        ["THE TURNING POINT", "Y Combinator accepted them in 2009. Airbnb grew into a global company and went public in 2020, in the middle of the pandemic."]],
+    fy: "He solved a problem he had himself, paying rent. Many great startups start that way." },
+  { n: "Daniel Ek", w: "Daniel_Ek", h: "Daniel Ek: the Swedish teenager who built websites, then Spotify", pl: "From coding in his bedroom to convincing the music industry that streaming could beat piracy.",
+    s: [["WHERE HE STARTED", "Born in Stockholm in 1983, he started building websites as a teenager and earned money from it. He sold his first company, an advertising startup, before he turned 30."],
+        ["THE HARD PART", "He started Spotify in 2006 with Martin Lorentzon. The record labels distrusted streaming, because piracy was ruining the business."],
+        ["THE TURNING POINT", "He negotiated licences with the labels so music was legal, easy and cheap to stream. Spotify went public in 2018 and became the biggest music streaming service in the world."]],
+    fy: "Competing with free means making the legal option more convenient than the pirate one." },
+  { n: "Alexandr Wang", w: "Alexandr_Wang", h: "Alexandr Wang: the MIT dropout who became the youngest self-made billionaire", pl: "He started Scale AI at 19 to label the data that trains AI and was a billionaire by 24.",
+    s: [["WHERE HE STARTED", "Born in 1997 in New Mexico to physicist parents, he did coding contests as a teenager. He worked at the Q&A site Quora and then went to MIT."],
+        ["THE HARD PART", "He dropped out in 2016 and joined Y Combinator with Lucy Guo to start Scale AI. Building the AI was not the hard part. The slow, manual job of getting accurate labelled data for AI models was."],
+        ["THE TURNING POINT", "Scale AI became a key supplier of training data to the big AI labs. At 24 he became the youngest self-made billionaire, and in 2025 Meta invested heavily in the company and hired him."]],
+    fy: "In a gold rush, selling the picks and shovels can beat panning for gold." },
+  { n: "Aravind Srinivas", w: "Aravind_Srinivas", h: "Aravind Srinivas: the Chennai student who took on Google with Perplexity", pl: "From IIT Madras to a Berkeley PhD to an AI search company taking on Google.",
+    s: [["WHERE HE STARTED", "He grew up in Chennai, India, studied at IIT Madras and then did a PhD in computer science at UC Berkeley. He also did research internships at OpenAI and Google."],
+        ["THE HARD PART", "In 2022 he co-founded Perplexity, an AI-powered answer engine. Facing Google, with its massive data and distribution, looked nearly impossible."],
+        ["THE TURNING POINT", "Perplexity answered questions with sources and grew fast, with a valuation in the billions in a few years. He is one of the best-known young AI founders."]],
+    fy: "You can compete with a giant by making one single thing much better, here a direct answer instead of ten blue links." },
+  { n: "Mira Murati", w: "Mira_Murati", h: "Mira Murati: from Albania to helping build ChatGPT, then her own AI lab", pl: "She grew up in Albania, studied engineering in the US, and was OpenAI's CTO before founding Thinking Machines Lab.",
+    s: [["WHERE SHE STARTED", "Born in Albania in 1988, she moved abroad to study at a school in Canada, then studied mechanical engineering at Dartmouth. She worked at Tesla on the Model X."],
+        ["THE HARD PART", "She joined OpenAI in 2018 and became its chief technology officer. In 2023 she briefly served as interim CEO during the board crisis."],
+        ["THE TURNING POINT", "In 2024 she left OpenAI and in 2025 founded Thinking Machines Lab, which raised a record-sized seed round of about $2 billion."]],
+    fy: "She moved from cars to AI by following where the hardest engineering was." },
+];
+async function founderOf(env, now) {   // one per day, rotating through the roster so none repeats for weeks; photo from Wikipedia, a designed card if it isn't big and sharp enough
+  const day = Math.floor((now - 11 * 3600e3) / 864e5), f = FOUNDERS[day % FOUNDERS.length], it = { h: f.h, s: "Pato · Wikipedia", u: "https://en.wikipedia.org/wiki/" + f.w, t: now - 36e5, ceo: 1, founder: 1, pl: f.pl, sec: f.s, fy: f.fy, nav: "👤 CEOs & founders", name: f.n };
+  try { const r = await cf("https://en.wikipedia.org/api/rest_v1/page/summary/" + f.w, { headers: { "user-agent": "PatoNews/1.0 (+https://marcoferrando114.github.io/Sette-Cifre/)" } });
+    if (r.ok) { const j = await r.json(), o = j.originalimage || {}, th = j.thumbnail || {};
+      if (o.source && o.width >= 700 && o.height >= 700 && !/\.svg$/i.test(o.source)) it.img = o.width > 1400 && th.source ? th.source.replace(/\/\d+px-/, "/1000px-") : o.source; } } catch (e) {}
+  return it;
+}
 // The prebuilt edition (Marco Nov 14: "ready when the user opens the app"): built and image-resolved in the hour before each drop (7am, 1pm, 7pm DR), then served from KV in one fast call.
 const dropIdx = ms => Math.floor((ms - 11 * 3600e3) / (6 * 3600e3));   // a new edition every 6 hours, at 11, 17, 23 UTC
 let FN = 0; const cf = (...a) => { FN++; return fetch(...a); };
 async function buildEdition(env, idx) {   // stage 1 (6:30, 12:30, 6:30pm DR): pick everything from the prepared feeds
   const b = await bundleEd(new URLSearchParams("k=rd,business,tech,crypto,stocks,startups&busy=1"), env);
-  b.cotd = await cotdPick(env, b._cand).catch(() => null); delete b._cand;
+  b.cotd = await cotdPick(env, b._cand).catch(() => null); delete b._cand; b.ceo = await founderOf(env, Date.now()).catch(() => b.ceo);   // the CEO slot is now one personal founder story a day
   b.pick = await patoPick(env, b.games).catch(() => null); b.idx = idx; return b;
 }
 async function finishEdition(env, b, cap) {   // stage 2 (6:45, 12:45, 6:45pm DR): photos and the outlets' own words first, then the plain-language briefs written from them
@@ -525,11 +631,11 @@ async function finishEdition(env, b, cap) {   // stage 2 (6:45, 12:45, 6:45pm DR
   await plainAll(env, b).catch(() => null); await meansAll(env, b).catch(() => null); return finalize(b);
 }
 async function imagesFor(env, b, cap) {   // each story's own full-size photo and the outlet's own words, found once here so the phone never waits for them
-  const st = [b.big, b.cotd && b.cotd.u ? { u: b.cotd.u, h: b.cotd.h, _c: b.cotd } : null].concat(Object.values(b.cats || {}).map(a => (a || [])[0]), [b.deep, b.ceo]).filter(it => it && it.u && !it.img);
+  const st = [b.big, b.cotd && b.cotd.u ? { u: b.cotd.u, h: b.cotd.h, _c: b.cotd } : null].concat(Object.values(b.cats || {}).map(a => (a || [])[0]), [b.deep, b.ceo]).filter(it => it && it.u && !it.img && !it.founder);
   for (const it of st) { if (FN >= (cap || 36)) break; const col = {}; try { const o = await storyImg(it.u, it.h, false, col); const tgt = it._c || it; if (o && o.img) tgt.img = o.img; if (col.txt && !it._c) it.d2 = col.txt; } catch (e) {} }
 }
 function finalize(b) {   // slot 8 alternates: a CEO/founder story, then a deep read (Marco Nov 14)
-  const first = b.idx % 2 === 0 ? "ceo" : "deep", other = first === "ceo" ? "deep" : "ceo", pk = b[first] ? first : b[other] ? other : "";
+  const first = ((b.idx % 4) + 4) % 4 === 0 ? "ceo" : "deep", other = first === "ceo" ? "deep" : "ceo", pk = b[first] ? first : b[other] ? other : "";
   b.last = pk ? Object.assign({}, b[pk], { kind: pk }) : null; return b;
 }
 async function getEdition(env, force) {

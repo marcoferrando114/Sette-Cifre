@@ -2063,7 +2063,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261114120000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261114133000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -7217,8 +7217,8 @@ TRACKER DATA:
     // 8. A CEO / founder story or a deep read, alternating (Marco Nov 14)
     var LS = E.last; if(LS && LS.h){ var ceo = LS.kind === "ceo";
       L.push({id: ed + ":last:" + LS.h, cls: "", news: 1, t: ceo ? "CEOs & founders" : "Deep read", w: ago(LS.t) + " ago", u: LS.u, pic: LS.u, ph: LS.h, ps: LS.s, fk: "last", nav: ceo ? "👤 CEOs" : "🧭 Deep read", sh: {k: ceo ? "CEOs & founders" : "Deep read", h: LS.h, s: LS.s, u: LS.u},
-        body: '<div class="pd-k">' + (ceo ? "👤 HOW LEADERS GET THERE" : "🧭 DEEP READ") + '</div><div class="pd-h1">' + esc(LS.h) + '</div><div class="pd-m">' + by(LS) + ' · <a class="pd-r2" data-u="' + esc(LS.u) + '">Read ›</a></div>' +
-          kfBox(LS) + (LS.pl ? '<div class="pd-know"><i>' + (ceo ? "WHAT THIS SHOWS" : "WHAT IT IS ABOUT") + '</i>' + kp(LS.pl) + '</div>' : '') + jgBox(LS) + fyBox(ownT(LS) + (LS.fy || ""))}); }
+        body: '<div class="pd-k">' + (ceo ? (LS.founder ? "👤 FOUNDER STORY" : "👤 HOW LEADERS GET THERE") : "🧭 DEEP READ") + '</div><div class="pd-h1">' + esc(LS.h) + '</div><div class="pd-m">' + by(LS) + ' · <a class="pd-r2" data-u="' + esc(LS.u) + '">Read ›</a></div>' +
+          kfBox(LS) + (LS.sec ? (LS.pl ? kp(LS.pl) : "") + LS.sec.map(function(x){ return '<div class="pd-know"><i>' + esc(x[0]) + '</i>' + kp(x[1]) + '</div>'; }).join("") : (LS.pl ? '<div class="pd-know"><i>' + (ceo ? "WHAT THIS SHOWS" : "WHAT IT IS ABOUT") + '</i>' + kp(LS.pl) + '</div>' : '')) + jgBox(LS) + fyBox(ownT(LS) + (LS.fy || ""))}); }
     // the daily duel stays last, and disappears once answered
     var cq = callQ(), cs = callSt(); if(cq && !(cs && cs.q === cq.id && $("pdV").hidden)) L.push({id: ed + ":call:" + cq.id, cls: "call", t: CALL, w: "today's money question", call: cq, body: ""});
     L.forEach(function(x){ var src = x.fk === "big" ? big : x.fk && cats[x.fk] && cats[x.fk][0]; var mk = src && src.mk; if(!mk || !x.news) return;
@@ -7430,7 +7430,7 @@ TRACKER DATA:
   function visHtml(x){ var lg = logoOf(x), em = String(x.nav || "🦆").split(" ")[0];   // no photo? the company logo or a visual that adds to the story, never plain text (Marco Nov 14)
     return '<div class="pd-img pd-vis"><div class="pd-vm">' + (lg ? '<span class="pd-vlg"><img src="' + esc(lg) + '" alt="" onerror="this.parentNode.outerHTML=\'<span class=pd-vem>' + esc(em) + '</span>\'"></span>' : '<span class="pd-vem">' + esc(em) + '</span>') + '</div>' + (x.ps ? '<span>' + esc(x.ps) + '</span>' : '') + '</div>'; }
   function picHtml(x){ var raw = PHOTOS() && x.pic ? IM.m[x.pic] : "", im = raw, ix0 = S.indexOf(x), dup = false; if(im && S.some(function(y, j){ return j < ix0 && y.pic && IM.m[y.pic] === im; })){ dup = true; im = ""; }   // never the same photo twice
-    if(im) return '<div class="pd-img"' + (x.news ? ' data-vis="' + esc(visHtml(x)) + '"' : '') + '><img src="' + esc(im) + '" alt="" referrerpolicy="no-referrer" onerror="__pdSwap(this)" onload="if(this.naturalWidth<640||this.naturalHeight<360)__pdSwap(this)">' + (x.ps ? '<span>' + esc(x.ps) + '</span>' : '') + '</div>';
+    if(im) return '<div class="pd-img"' + (x.news || ND() ? ' data-vis="' + esc(visHtml(x)) + '"' : '') + '><img src="' + esc(im) + '" alt="" referrerpolicy="no-referrer" onerror="__pdSwap(this)" onload="if(this.naturalWidth<640||this.naturalHeight<360)__pdSwap(this)">' + (x.ps ? '<span>' + esc(x.ps) + '</span>' : '') + '</div>';
     return x.news && (!x.pic || !PHOTOS() || raw === "" || dup) ? visHtml(x) : ''; }
   var lastBase = null, NEW = {};   // what was unread when you opened: those chips get a dot, the slide gets a NEW tag
   function show(i){
