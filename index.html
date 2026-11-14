@@ -2079,7 +2079,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261115060000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261115070000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -6968,7 +6968,7 @@ TRACKER DATA:
   var onNew = function(){ var valid = function(x){ return FIX.indexOf(x) < 0 && CATS.some(function(c){ return c[0] === x; }); };
     var o = prefs && Array.isArray(prefs.on) ? prefs.on.filter(valid) : DEF.slice();
     if(!(prefs && prefs.v2)){ if(prefs && Array.isArray(prefs.on) && o.indexOf("rd") < 0) o.push("rd"); autoT().forEach(function(a){ if(o.indexOf(a[0]) < 0) o.push(a[0]); }); }
-    return o.slice(0, TOP); };
+    return o.filter(valid).slice(0, TOP); };   // Sports is a permanent tab for everyone (Marco Nov 14): never in the pick list, never counted in the max
   var on = function(){ return ND() ? onNew() : onOld(); };
   function tickers(){ var own = pos.map(function(p){ return p.t; }), co = (prefs && prefs.co) || {};
     var lr = Object.keys(co).filter(function(t){ return co[t] >= 2 && own.indexOf(t) < 0; }).sort(function(a, b){ return co[b] - co[a]; });
@@ -7017,11 +7017,11 @@ TRACKER DATA:
   var DROPS = [7, 10, 13, 16, 19, 22];   // Marco Nov 11: every 3 hours, 7am to 10pm (DR)
   try{ if(drd().toISOString().slice(0, 10) === "2026-11-12") DROPS[5] = 21.25; }catch(e){}   // one time only (Marco Nov 12): tonight's last edition drops at 9:15pm instead of 10pm
   // Marco Nov 14: the redesign (3 drops, 8 stories, prebuilt edition) runs on the demo account only until he approves it; everyone else keeps today's Pato Daily
-  var CATS_OLD = CATS.slice(), FIX_OLD = FIX.slice(), DROPS_OLD = DROPS.slice(), NDm = null, CATS_NEW = [["big","Breaking","🚨"],["rd","DR","🇩🇴"],["stocks","Stocks","📈"],["crypto","Crypto","🪙"],["tech","AI & tech","🤖"],["business","Business & CEOs","💼"],["startups","Startups","🚀"],["game","Sports","🏆"]];
+  var CATS_OLD = CATS.slice(), FIX_OLD = FIX.slice(), DROPS_OLD = DROPS.slice(), NDm = null, CATS_NEW = [["big","Breaking","🚨"],["rd","DR","🇩🇴"],["stocks","Stocks","📈"],["crypto","Crypto","🪙"],["tech","AI & tech","🤖"],["business","Business & CEOs","💼"],["startups","Startups","🚀"],["politics","Politics","🏛️"],["game","Sports","🏆"]];
   function setArr(a, b){ a.length = 0; b.forEach(function(x){ a.push(x); }); }
   var OWNER_NEW = true;   // Marco approved the 7-1-7 / 9-slide edition for his own account (Nov 14). Rollback = set false (old Pato Daily code is untouched).
   function NDD(){ var m = window.MP_ME; return !!(m && /^pato-?demo/i.test(m.email || "")); }   // demo account only: replays the whole drop on every open
-  function ND(){ var m = window.MP_ME, n = !!(m && (NDD() || (OWNER_NEW && m.owner))) && !DEMO; if(n !== NDm){ NDm = n; setArr(CATS, n ? CATS_NEW : CATS_OLD); setArr(FIX, n ? ["big"] : FIX_OLD); setArr(DROPS, n ? [7, 13, 19] : DROPS_OLD); TOP = n ? 3 : 5; if(n){ drop = ls("pd-drop5") || null; if(!NDD() && !ls("pd-new9")){ ls("pd-new9", 1); ls("pd-seen2", {day: day(), ids: {}}); ls("pd-drop5", null); drop = null; } } } return n; }
+  function ND(){ var m = window.MP_ME, n = !!(m && (NDD() || (OWNER_NEW && m.owner))) && !DEMO; if(n !== NDm){ NDm = n; setArr(CATS, n ? CATS_NEW : CATS_OLD); setArr(FIX, n ? ["big", "game"] : FIX_OLD); setArr(DROPS, n ? [7, 13, 19] : DROPS_OLD); TOP = n ? 3 : 5; if(n){ drop = ls("pd-drop5") || null; if(!NDD() && !ls("pd-new9")){ ls("pd-new9", 1); ls("pd-seen2", {day: day(), ids: {}}); ls("pd-drop5", null); drop = null; } } } return n; }
   function slot(){ if(DEMO) return 0; ND(); var dd = drd(), h = dd.getUTCHours() + dd.getUTCMinutes() / 60; if(h < 7) return ND() ? DROPS.length - 1 : 4; for(var i = DROPS.length - 1; i >= 0; i--) if(h >= DROPS[i]) return i; return 0; }
   function hh(h){ var f = Math.floor(h), m = Math.round((h - f) * 60); return (f % 12 || 12) + ":" + (m < 10 ? "0" : "") + m + " " + (f < 12 ? "AM" : "PM"); }
   function clock(){ var sl = slot(); return "Updated " + hh(DROPS[sl]) + " · next " + hh(DROPS[(sl + 1) % DROPS.length]); }
@@ -7233,7 +7233,7 @@ TRACKER DATA:
         '<div class="pd-m" style="margin-top:14px">% = what people betting real money think the chance is. Not advice.</div>'});
     // 7. Sports (only if you follow it)
     var SN2 = (E.sportsNews || []).filter(function(it){ return it && it.h && it.u; }).slice(0, 3);   // sports stories from the news feeds live in the Sports tab (Marco Nov 14)
-    if(on().indexOf("game") >= 0){ var pg = pickGame(E.games), g = pg && scOf(pg.g), mine = pg && pg.mine;
+    if(ND() || on().indexOf("game") >= 0){ var pg = pickGame(E.games), g = pg && scOf(pg.g), mine = pg && pg.mine;
       if(g){ pg.more = (pg.more || []).map(scOf);
         var TM = g.teams || [], vs = TM.length === 2 && TM[0].n && TM[1].n ? '<div class="pd-vs">' + TM.map(function(t){ return '<div class="pd-team">' + (t.logo ? '<img src="' + esc(t.logo) + '" alt="" onerror="this.outerHTML=\'<span class=pd-tl>' + esc(t.n.slice(0,3).toUpperCase()) + '</span>\'">' : '<span class="pd-tl">' + esc(t.n.slice(0,3).toUpperCase()) + '</span>') +
           '<b>' + esc(t.n) + '</b>' + ((g.live || g.fin) && t.score !== "" ? '<em' + (g.fin && t.won ? ' class="w"' : '') + '>' + esc(t.score) + '</em>' : t.rec ? '<small>' + esc(t.rec) + '</small>' : '') + '</div>'; }).join('<div class="pd-at">' + (g.fin ? '<i class="fin">FINAL</i>' : g.live ? '<i>LIVE</i>' + (g.det ? '<small>' + esc(g.det) + '</small>' : '') : 'VS') + '</div>') + '</div>' : '<div class="pd-h1">' + esc(g.name.replace(" at ", " vs ")) + '</div>';
