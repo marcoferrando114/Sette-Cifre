@@ -6042,7 +6042,7 @@ Numbers on the receipt may use a comma for decimals (RD$2.000,00 means 2000). If
   try{ new ResizeObserver(() => { if(Math.abs(($("cWrap").clientWidth||0) - chLastW) > 8) renderChart(); }).observe($("cWrap")); }catch(e){}
   // ---------- income by month ----------
   const BCATS = [["nl","Newlink","--c-nl"],["al","Monthly allowance","--c-al"],["rb","League rakeback","--c-rb"],["pk","Player winnings","--c-pk"],["int","Loan interest","--c-int"],["ot","Other","--c-ot"]];
-  const bCat = src => ({"Newlink":"nl","Mensualidad":"al","Rakeback de la liga":"rb","Póker jugando":"pk","Póker casino":"pk","Póker con amigos":"pk","Apuestas":"pk","Rakeback como jugador":"pk","Otro":"ot"})[src] || null;
+  const bCat = src => ({"Newlink":"nl","Mensualidad":"al","Rakeback de la liga":"rb","Póker jugando":"pk","Póker casino":"pk","Póker con amigos":"pk","Premio casino":"pk","Apuestas":"pk","Rakeback como jugador":"pk","Otro":"ot"})[src] || null;
   function interestIn(key){
     const share = l => (l.interes||0)/(100+(l.interes||0)); let t=0;
     loans.forEach(l => {
@@ -6074,6 +6074,8 @@ Numbers on the receipt may use a comma for decimals (RD$2.000,00 means 2000). If
     const po = pokerOtra.filter(x=>x.monto>0 && inP(x.fecha) && bCat(x.source)).reduce((t,x)=>t+x.monto,0);
     const poLoss = pokerOtra.filter(x=>x.monto<0 && inP(x.fecha) && bCat(x.source)).reduce((t,x)=>t+x.monto,0);
     inc += po + poLoss + interestBy(inP);
+    // debt payments received count as income too (they are inside "saved"), so the rate can't pass what really came in
+    { const dn = new Set((config.deudas||[]).map(x=>String(x.nombre||"").toLowerCase())); entries.filter(e=>e.type!=="out" && inP(e.date) && !bCat(e.source) && dn.has(String(e.source||"").toLowerCase())).forEach(e => inc += e.amount); }
     const other = po + interestBy(inP, "otra");
     const outs = entries.filter(e=>isSpend(e) && inP(e.date));
     const spent = outs.reduce((t,e)=>t+netOut(e),0);
