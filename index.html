@@ -1695,6 +1695,22 @@ html.sg-on #sfOffer,html.sg-on .tabs{display:none!important}
 #sgSetup input[type=text],#sgSetup select{width:100%}
 #sgSetup .tg{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid color-mix(in srgb,var(--ink) 10%,transparent);color:var(--ink)}
 #sgSetup .tg input{width:22px;height:22px;accent-color:var(--mango)}
+#sgTodo{margin:0 0 14px;padding:14px 16px;border-radius:16px;background:var(--card);color:var(--ink);outline:1.5px dashed color-mix(in srgb,var(--mango) 70%,transparent);outline-offset:-6px}
+#sgTodo b{display:block;margin-bottom:6px}
+#sgTodo button{display:flex;justify-content:space-between;width:100%;background:none;border:0;border-top:1px solid color-mix(in srgb,var(--ink) 10%,transparent);color:var(--ink);font:inherit;padding:11px 0;cursor:pointer}
+#sgTodo i{font-style:normal;color:var(--muted)}
+#sgSetup .sg-bar{height:5px;border-radius:5px;background:color-mix(in srgb,var(--ink) 12%,transparent);margin:0 0 18px;overflow:hidden}
+#sgSetup .sg-bar i{display:block;height:100%;width:0;background:var(--mango);border-radius:5px;transition:width .3s}
+#sgSetup .sg-x{position:absolute;right:22px;top:46px;font-size:.85rem}
+#sgSetup .sg-nav{margin-top:18px}#sgSetup .sg-nav .primary{margin-top:0}
+#sgSetup .sg-row2{display:flex;justify-content:space-between;margin-top:6px}
+#sgSetup .lnk{background:none;border:0;color:var(--muted);font:inherit;font-size:.9rem;padding:10px 4px;cursor:pointer}
+#sgSetup .sg-sw{display:flex;gap:10px}#sgSetup .sg-sw>button{flex:1;padding:16px 8px;border-radius:14px;border:2px solid transparent;font:inherit;font-weight:600;cursor:pointer}
+#sgSetup .sg-sw>button.on{border-color:var(--mango)}
+#sgSetup .sg-big{width:100%;margin-top:12px;padding:14px;border-radius:14px;border:1.5px solid var(--mango);background:none;color:var(--ink);font:inherit;font-weight:600;cursor:pointer}
+#sgSetup .sg-num{display:flex;justify-content:space-between;padding:12px 0;border-bottom:1px solid color-mix(in srgb,var(--ink) 10%,transparent);color:var(--ink)}
+#sgSetup .sg-num b{font-variant-numeric:tabular-nums}
+#sgSetup .sg-ok{color:var(--ink);font-weight:600;margin:12px 0}
 #sgSetup .primary{width:100%;margin-top:18px}
 #sgSetup .sg-chips{display:flex;flex-wrap:wrap;gap:8px}
 #sgSetup .sg-chips>*{padding:10px 14px;border-radius:999px;border:1.5px solid color-mix(in srgb,var(--ink) 18%,transparent);background:none;color:var(--ink);font:inherit;font-size:.95rem;cursor:pointer}
@@ -1737,6 +1753,7 @@ main{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))!important} /* l
 #sgTabs .tg{display:flex;align-items:center;justify-content:space-between;padding:9px 4px;border-bottom:1px solid color-mix(in srgb,var(--ink) 10%,transparent);color:var(--ink);font-size:.95rem}
 #sgTabs .tg input{width:20px;height:20px;accent-color:var(--mango)}
 html.mp-guest .tabs{justify-content:space-around}
+#sgRedo{display:block;margin:14px auto 0;background:none;border:0;color:var(--muted);font:inherit;text-decoration:underline;cursor:pointer}
 #sgOut{display:block;margin:14px auto 0;background:none;border:0;color:var(--muted);text-decoration:underline;font:inherit;font-size:.85rem}
 </style>
 <style id="pato-light">
@@ -2182,19 +2199,12 @@ html:not(.mp-guest) #s-gst{display:none!important}
 <div id="sfOffer" hidden><div class="g"><h2>Use Face ID?</h2><p>Only your face opens Pato. No password to type.</p>
 <button class="primary" type="button" id="sfYes">Turn on Face ID</button><br><button type="button" class="lnk" id="sfNo">Not now</button></div></div>
 <script>try{if(localStorage.getItem("stakd-faceid"))document.documentElement.classList.add("sf-locked");}catch(e){}</script>
-<div id="sgSetup" hidden><form class="g" id="sgForm"><h2>Welcome to Pato</h2><p>Set up your app. You can change this later.</p>
-<label class="f" for="sgGoal">Your savings goal (RD$)</label><input type="text" id="sgGoal" inputmode="numeric" placeholder="e.g. 500,000">
-<label class="f" for="sgLimit">Monthly spending limit (RD$, optional)</label><input type="text" id="sgLimit" inputmode="numeric" placeholder="e.g. 50,000">
-<label class="f" for="sgPal">Color</label><select id="sgPal"></select>
-<label class="f">What do you want to track?</label>
-<div class="sg-chips"><span class="on fixed">💰 Saving</span><button type="button" data-k="spending" class="on">💳 Spending</button><button type="button" data-k="stocks">📊 Stocks</button><button type="button" data-k="loans">🤝 Loans &amp; debts</button><button type="button" data-k="trends" class="on">📈 Trends</button></div>
-<label class="f">Games</label>
-<div class="sg-chips"><button type="button" data-k="poker">♠️ Poker</button><button type="button" data-k="casino">🎰 Casino</button><button type="button" data-k="bets">⚽ Sports bets</button></div>
-<button class="primary" type="submit">Start</button><div class="hint" id="sgMsg" aria-live="polite"></div></form></div>
+<div id="sgSetup" hidden><div class="g" id="sgForm"><div class="sg-bar"><i id="sgBarI"></i></div><button type="button" class="lnk sg-x" id="sgClose" hidden>Close</button><div id="sgBody"></div>
+<div class="sg-nav"><button class="primary" type="button" id="sgNext">Next</button><div class="sg-row2"><button type="button" class="lnk" id="sgBack">Back</button><button type="button" class="lnk" id="sgSkip">Skip</button></div></div><div class="hint" id="sgMsg" aria-live="polite"></div></div></div>
 <script src="mp-firebase.js?v=9"></script>
 <script src="faceid.js?v=2" defer></script>
 <script src="sync.js?v=6" defer></script>
-<script src="gmail.js?v=1" defer></script>
+<script src="gmail.js?v=2" defer></script>
 <div id="sdProbe" aria-hidden="true" style="position:fixed;left:0;bottom:0;width:1px;height:1px;pointer-events:none;visibility:hidden"></div>
 <script id="stakd-dockfix">(function(){
   var st = navigator.standalone || (window.matchMedia && matchMedia("(display-mode: standalone)").matches);
@@ -6463,38 +6473,223 @@ TRACKER DATA:
     if(window.__mpBuildSources) window.__mpBuildSources();
     syncSettings();
   }
-  function fillSetup(){
-    var s = document.getElementById("sgPal"); s.innerHTML = "";
-    document.querySelectorAll("#palSheet [data-pal]").forEach(function(b){ var o = document.createElement("option"); o.value = b.dataset.pal; o.textContent = b.textContent.trim(); s.appendChild(o); });
-    s.value = H.getAttribute("data-palette") || "goyards";
-    s.onchange = function(){ var b = document.querySelector('#palSheet [data-pal="'+s.value+'"]'); if(b) b.click(); };
+  /* ---- First-run setup (Nov 14): goal, profile, Gmail, stocks photo, topics, alerts, colors ---- */
+  var PUB = "BAg0woHIxVYnMieYNkLUB-H_aID7XGPWxXMsWw0EhkhdcJvqnX36l4LsXkt-KZf7-fVb50HkP5ee3GsIOzB-wis";
+  var TOPICS = [["business","Business","💼"],["tech","Tech","💡"],["politics","Politics","🏛️"],["crypto","Crypto","🪙"],["ent","Entertainment","🎬"],["gaming","Gaming","🎮"],["health","Health","🩺"],["cars","Cars","🏎️"],["fashion","Luxury","💎"]];
+  var PROF = [["save","💰 Save"],["invest","📈 Invest"],["lend","🤝 Lend"],["biz","🏢 Run a business"]];
+  var GAMES = [["poker","♠️ Poker"],["casino","🎰 Casino"],["bets","⚽ Sports bets"]];
+  var LAB = {mail:"Connect Gmail", stocks:"Add your stocks", topics:"Pick Pato Daily topics", alerts:"Turn on alerts", look:"Choose colors"};
+  var W = null, step = "basics", single = false, skipped = [], isOpen = false, cfgHas = false;
+  var $s = function(id){ return document.getElementById(id); };
+  var rdm = function(n){ return "RD$" + Math.round(Number(n)||0).toLocaleString("en-US"); };
+  var lsSet = function(k, v){ try{ if(v) localStorage.setItem(k, v); else localStorage.removeItem(k); }catch(_){} };
+  function profPicks(){
+    var p = W.prof, o = ["spending"];
+    if(p.indexOf("save") >= 0) o.push("trends");
+    if(p.indexOf("invest") >= 0) o.push("stocks");
+    if(p.indexOf("lend") >= 0) o.push("loans");
+    if(p.indexOf("biz") >= 0) o.push("loans", "trends");
+    return o.filter(function(k, i){ return o.indexOf(k) === i; });
   }
-  function showSetup(){
-    if(shown) return; shown = true; fillSetup();
-    var box = document.getElementById("sgSetup"); box.hidden = false; H.classList.add("sg-on");
-    box.querySelectorAll(".sg-chips button").forEach(function(b){ b.onclick = function(){ b.classList.toggle("on"); }; });
-    document.getElementById("sgForm").onsubmit = async function(e){
-      e.preventDefault();
-      var goal = num(document.getElementById("sgGoal").value) || 500000, lim = num(document.getElementById("sgLimit").value);
-      var picks = [].slice.call(document.querySelectorAll('#sgSetup .sg-chips button.on')).map(function(b){ return b.dataset.k; });
-      var tabs = TABS.filter(function(t){ return t === "poker" ? (picks.indexOf("poker") >= 0 || picks.indexOf("bets") >= 0 || picks.indexOf("casino") >= 0) : picks.indexOf(t) >= 0; });
-      var hitos = [0.5,0.65,0.8,1].map(function(f){ return Math.round(goal*f/1000)*1000; });
-      document.getElementById("sgMsg").textContent = "Saving…";
-      try{
-        await db.doc("prefs/ui").set({ pal: document.getElementById("sgPal").value, tabs: tabs, track: picks, at: Date.now() });
-        var c = { meta: goal, hitos: hitos, deudas: [], fijos: [], creada: new Date().toISOString().slice(0,10) };
-        if(lim > 0) c.limiteMensual = lim;
-        await db.doc("config/main").set(c);
-        box.hidden = true; H.classList.remove("sg-on"); apply(tabs); applyTrack(picks);
-      }catch(err){ console.error(err); document.getElementById("sgMsg").textContent = "Couldn’t save. Check your connection and try again."; }
-    };
+  function order(){ var o = ["basics", "mail"]; if(W.prof.indexOf("invest") >= 0) o.push("stocks"); return o.concat(["topics", "alerts", "look", "done"]); }
+  function chips(list, sel, key){ return '<div class="sg-chips">' + list.map(function(c){ return '<button type="button" data-' + key + '="' + c[0] + '" class="' + (sel.indexOf(c[0]) >= 0 ? "on" : "") + '">' + (c[2] ? c[2] + " " : "") + c[1] + '</button>'; }).join("") + '</div>'; }
+  function toggle(root, key, arr, max, onMax){ root.querySelectorAll("[data-" + key + "]").forEach(function(b){ b.onclick = function(){ var k = b.dataset[key], i = arr.indexOf(k); if(i >= 0) arr.splice(i, 1); else { if(max && arr.length >= max){ if(onMax) onMax(); return; } arr.push(k); } b.classList.toggle("on", i < 0); }; }); }
+  function once(ref){ return new Promise(function(res){ var un = null, dn = false, f = function(sn){ if(dn) return; dn = true; try{ if(typeof un === "function") un(); }catch(_){} res(sn); }; un = ref.onSnapshot(f, function(){ if(!dn){ dn = true; res(null); } }); if(dn && typeof un === "function"){ try{ un(); }catch(_){} } }); }
+  async function mset(ref, o){ var sn = await once(ref); if(sn && sn.exists) await ref.update(o); else await ref.set(o); }   // merge: the app's db wrapper has no get() or set-merge
+  function msg(t){ $s("sgMsg").textContent = t || ""; }
+  function pal(){ return H.getAttribute("data-palette") || "goyards"; }
+
+  async function load(){
+    try{
+      var c = await once(db.doc("config/main")); cfgHas = !!(c && c.exists);
+      if(cfgHas){ var d = c.data(); W.cfg = d; if(d.meta) W.goal = String(d.meta); if(d.limiteMensual) W.limit = String(d.limiteMensual); }
+      var u = await once(db.doc("prefs/ui")); if(u && u.exists){ var ud = u.data(); var tb = Array.isArray(ud.tabs) ? ud.tabs : []; if(cfgHas){ W.prof = ["save"]; if(tb.indexOf("stocks") >= 0) W.prof.push("invest"); if(tb.indexOf("loans") >= 0) W.prof.push("lend"); if(Array.isArray(ud.prof)) W.prof = ud.prof.slice(); W.games = (Array.isArray(ud.track) ? ud.track : []).filter(function(k){ return ["poker","casino","bets"].indexOf(k) >= 0; }); } }
+      var n = await once(db.doc("prefs/news")); if(n && n.exists && Array.isArray(n.data().on)){ var on = n.data().on.filter(function(k){ return TOPICS.some(function(t){ return t[0] === k; }); }); if(on.length) W.topics = on.slice(0, 5); }
+      var a = await once(db.doc("prefs/alerts")); if(a && a.exists){ var ad = a.data(); ["drop","late","hl"].forEach(function(k){ if(ad[k] === false) W.al[k] = false; }); }
+      var s = await once(db.doc("prefs/setup")); if(s && s.exists && Array.isArray(s.data().skipped)) skipped = s.data().skipped.slice();
+    }catch(e){ console.warn("setup load", e); }
+  }
+
+  async function showSetup(redo, rs, one){
+    if(isOpen) return; isOpen = true;
+    var sg = false; if(rs && /!$/.test(rs)){ sg = true; rs = rs.slice(0, -1); }
+    W = {goal: "", limit: "", prof: ["save"], games: [], months: 3, topics: ["business", "tech"], al: {drop: true, late: true, hl: true}, redo: !!redo};
+    single = !!one || sg; skipped = [];
+    await load();
+    var o = order(); step = (rs && o.indexOf(rs) >= 0) ? rs : "basics";
+    var box = $s("sgSetup"); box.hidden = false; H.classList.add("sg-on"); box.scrollTop = 0;
+    $s("sgClose").hidden = !(redo || cfgHas);
+    $s("sgClose").onclick = function(){ closeSetup(); };
+    $s("sgNext").onclick = next; $s("sgBack").onclick = back; $s("sgSkip").onclick = skip;
+    render();
+  }
+  function closeSetup(){ isOpen = false; $s("sgSetup").hidden = true; H.classList.remove("sg-on"); lsSet("pato-setup-step", ""); if(cfgHas) todoSync(skipped); }
+
+  function render(){
+    var o = single ? [step] : order(), i = o.indexOf(step), body = $s("sgBody"), btn = $s("sgNext");
+    msg(""); lsSet("pato-setup-step", step === "done" ? "" : step + (single ? "!" : ""));
+    $s("sgBarI").style.width = (single ? 100 : Math.round((i + 1) / o.length * 100)) + "%";
+    $s("sgBack").style.visibility = (single || i === 0) ? "hidden" : "visible";
+    $s("sgSkip").style.display = (step === "basics" || step === "done") ? "none" : "";
+    btn.disabled = false; btn.textContent = single ? "Save" : step === "done" ? "Open Pato" : "Next";
+    $s("sgBarI").parentNode.style.display = single ? "none" : "";
+    R[step](body);
+  }
+  var R = {
+    basics: function(b){
+      b.innerHTML = '<h2>' + (W.redo || cfgHas ? "Your setup" : "Welcome to Pato") + '</h2><p>A minute and you’re set. Skip anything later.</p>' +
+        '<label class="f" for="sgGoal">Savings goal (RD$)</label><input type="text" id="sgGoal" inputmode="numeric" placeholder="e.g. 500,000" value="' + (W.goal ? Number(W.goal).toLocaleString("en-US") : "") + '">' +
+        '<label class="f" for="sgLimit">Monthly spending limit (RD$)</label><input type="text" id="sgLimit" inputmode="numeric" placeholder="e.g. 50,000" value="' + (W.limit ? Number(W.limit).toLocaleString("en-US") : "") + '">' +
+        '<label class="f">What do you do with money?</label>' + chips(PROF, W.prof, "p") + '<label class="f">Games</label>' + chips(GAMES, W.games, "g");
+      toggle(b, "p", W.prof); toggle(b, "g", W.games);
+    },
+    mail: function(b){
+      b.innerHTML = '<h2>Bank emails</h2><p>Pato reads only your bank emails, read-only. Never sends or deletes anything. Disconnect any time.</p><label class="f">How far back?</label><div class="sg-chips" id="sgMo">' + [1, 3, 6].map(function(m){ return '<button type="button" data-m="' + m + '" class="' + (m === W.months ? "on" : "") + '">' + m + (m === 1 ? " month" : " months") + '</button>'; }).join("") + '</div><div id="sgGm"></div>';
+      b.querySelectorAll("[data-m]").forEach(function(x){ x.onclick = function(){ W.months = +x.dataset.m; b.querySelectorAll("[data-m]").forEach(function(y){ y.classList.toggle("on", y === x); }); }; });
+      var g = window.__patoGm, box = $s("sgGm");
+      if(!g){ box.innerHTML = '<div class="hint">Not available yet.</div>'; return; }
+      box.innerHTML = '<div class="hint">…</div>';
+      g.status().then(function(st){ if(step !== "mail") return;
+        if(st && st.off){ box.innerHTML = '<div class="hint">Not available yet.</div>'; return; }
+        if(st && st.connected){ W.gm = true; box.innerHTML = '<div class="sg-ok">✓ Gmail connected</div>'; $s("sgMo").style.display = "none"; return; }
+        box.innerHTML = '<button type="button" class="sg-big" id="sgGo">Continue with Google</button>';
+        $s("sgGo").onclick = async function(){ var me = this; me.disabled = true; me.textContent = "Opening Google…"; var o = order(), nx = o[o.indexOf("mail") + 1]; lsSet("pato-setup-step", single ? "" : nx);
+          try{ await g.start(W.months); }catch(e){ me.disabled = false; me.textContent = "Continue with Google"; lsSet("pato-setup-step", "mail" + (single ? "!" : "")); msg("Couldn’t open Google. Skip for now."); } };
+      });
+    },
+    stocks: function(b){
+      b.innerHTML = '<h2>Your stocks</h2><p>Upload a picture of your portfolio.</p><input type="file" id="sgPic" accept="image/*" style="display:none"><button type="button" class="sg-big" id="sgPicBtn">Upload a picture</button><div id="sgPicOut"></div>';
+      $s("sgPicBtn").onclick = function(){ $s("sgPic").click(); };
+      $s("sgPic").onchange = async function(){
+        var f = this.files && this.files[0]; this.value = ""; if(!f) return; var out = $s("sgPicOut"); out.innerHTML = '<div class="hint">Reading…</div>';
+        try{
+          var sm = await window.claude.use("sample"); if(!sm) throw new Error("none");
+          var d = await sm.json('You read a screenshot of a stock portfolio (positions). Answer with JSON only: {"positions":[{"t":ticker,"sh":shares number,"price":average cost per share if shown, otherwise last price}]}. Skip cash and anything that is not a stock or ETF. Numbers may use a comma for decimals. Use only what you can see.', {images: f});
+          var ps = (d && Array.isArray(d.positions) ? d.positions : []).filter(function(p){ return p && p.t && Number(p.sh) > 0 && Number(p.price) > 0; }).slice(0, 40);
+          if(!ps.length){ out.innerHTML = '<div class="hint">Couldn’t find stocks in that picture. Try a clearer one.</div>'; return; }
+          out.innerHTML = ps.map(function(p){ return '<div class="sg-num"><span>' + String(p.t).toUpperCase().replace(/[^A-Z0-9.\-]/g, "") + '</span><b>' + Number(p.sh) + ' sh · US$' + Number(p.price).toLocaleString("en-US", {maximumFractionDigits: 2}) + '</b></div>'; }).join("") + '<button type="button" class="sg-big" id="sgAdd">Add to my stocks</button>';
+          $s("sgAdd").onclick = async function(){ this.disabled = true; try{ var n = await window.__gstApply(ps.map(function(p){ return {t: p.t, side: "buy", sh: Number(p.sh), price: Number(p.price), status: "filled"}; })); W.stk = n; out.innerHTML = '<div class="sg-ok">✓ ' + n + ' added</div>'; }catch(e){ this.disabled = false; msg("Couldn’t save. Try again."); } };
+        }catch(e){ out.innerHTML = '<div class="hint">Couldn’t read the picture. Try again or skip.</div>'; }
+      };
+    },
+    topics: function(b){
+      b.innerHTML = '<h2>Pato Daily</h2><p>Pick up to 5 topics. Sports is always in.</p><div class="sg-chips"><span class="on fixed">🏆 Sports</span></div><div style="height:8px"></div>' + chips(TOPICS, W.topics, "t");
+      toggle(b, "t", W.topics, 5, function(){ msg("Max 5. Turn one off first."); });
+    },
+    alerts: function(b){
+      var L = [["drop","Pato drops"], ["late","Expected income is late"]]; if(W.prof.indexOf("invest") >= 0) L.push(["hl","A stock hits a new high or drops 10%"]);
+      b.innerHTML = '<h2>Alerts</h2><p>Pick what you want to hear about.</p>' + L.map(function(x){ return '<label class="tg"><span>' + x[1] + '</span><input type="checkbox" data-a="' + x[0] + '"' + (W.al[x[0]] !== false ? " checked" : "") + '></label>'; }).join("") + '<div id="sgPush"></div>';
+      b.querySelectorAll("[data-a]").forEach(function(c){ c.onchange = function(){ W.al[c.dataset.a] = c.checked; }; });
+      var ok = "serviceWorker" in navigator && "PushManager" in window && "Notification" in window, box = $s("sgPush");
+      if(!ok){ box.innerHTML = '<div class="hint">To get alerts, open Pato from its Home Screen icon (iPhone, iOS 16.4 or newer).</div>'; return; }
+      if(Notification.permission === "granted"){ box.innerHTML = '<div class="sg-ok">✓ Alerts are on for this phone</div>'; return; }
+      if(Notification.permission === "denied"){ box.innerHTML = '<div class="hint">Notifications are blocked. Turn them on in iPhone Settings → Notifications → Pato.</div>'; return; }
+      box.innerHTML = '<button type="button" class="sg-big" id="sgPushOn">Turn on alerts</button>';
+      $s("sgPushOn").onclick = async function(){ var me = this; me.disabled = true;
+        try{
+          var perm = await Notification.requestPermission(); if(perm !== "granted"){ me.disabled = false; msg("Not allowed. You can allow it in iPhone Settings."); return; }
+          var reg = await navigator.serviceWorker.register("sw.js"); await navigator.serviceWorker.ready;
+          var b2u = function(s){ s = s.replace(/-/g,"+").replace(/_/g,"/"); s += "===".slice((s.length+3)%4); var r = atob(s), a = new Uint8Array(r.length); for(var i=0;i<r.length;i++) a[i] = r.charCodeAt(i); return a; };
+          var sub = await reg.pushManager.getSubscription() || await reg.pushManager.subscribe({userVisibleOnly: true, applicationServerKey: b2u(PUB)}), j = sub.toJSON();
+          var ex = await once(db.doc("prefs/push")), subs = ((ex && ex.exists && ex.data().subs) || []).filter(function(x){ return x.endpoint !== j.endpoint; });
+          subs.push({endpoint: j.endpoint, keys: j.keys, at: Date.now(), ua: navigator.userAgent.slice(0, 120)});
+          await db.doc("prefs/push").set({subs: subs, at: Date.now()}); box.innerHTML = '<div class="sg-ok">✓ Alerts are on for this phone</div>';
+        }catch(e){ console.error(e); me.disabled = false; msg("Couldn’t turn on alerts. Open Pato from the Home Screen icon."); }
+      };
+    },
+    look: function(b){
+      var bs = [].slice.call(document.querySelectorAll("#palSheet [data-pal]"));
+      b.innerHTML = '<h2>Colors</h2><p>Pick your look.</p><div class="sg-sw">' + bs.map(function(x){ return '<button type="button" data-pl="' + x.dataset.pal + '" class="' + (x.dataset.pal === pal() ? "on" : "") + '">' + x.textContent.trim() + '</button>'; }).join("") + '</div>';
+      b.querySelectorAll("[data-pl]").forEach(function(x){ var src = document.querySelector('#palSheet [data-pal="' + x.dataset.pl + '"]'); if(src){ x.style.background = getComputedStyle(src).backgroundColor; x.style.color = getComputedStyle(src).color; } x.onclick = function(){ if(src) src.click(); b.querySelectorAll("[data-pl]").forEach(function(y){ y.classList.toggle("on", y === x); }); }; });
+    },
+    done: function(b){
+      var goal = num(W.goal) || 500000, lim = num(W.limit);
+      b.innerHTML = '<h2>You’re set</h2><p>Here’s where you start.</p><div id="sgNums"><div class="sg-num"><span>Goal</span><b>' + rdm(goal) + '</b></div>' + (lim ? '<div class="sg-num"><span>Monthly limit</span><b>' + rdm(lim) + '</b></div>' : "") + '</div>';
+      (async function(){
+        var add = function(l, v){ var d = $s("sgNums"); if(d && step === "done") d.insertAdjacentHTML("beforeend", '<div class="sg-num"><span>' + l + '</span><b>' + v + '</b></div>'); };
+        try{
+          var ym = new Date().toISOString().slice(0, 7), sp = await once(db.collection("spend")), tot = 0, n = 0;
+          sp.docs.forEach(function(x){ var d = x.data(); if(d.excluded || String(d.date || "").slice(0, 7) !== ym) return; tot += Number(d.rd != null ? d.rd : d.amount) || 0; n++; });
+          if(n) add("Spent this month", rdm(tot) + (lim ? " · " + Math.min(100, Math.round(tot / lim * 100)) + "% of limit" : ""));
+        }catch(_){}
+        try{
+          var hs = await once(db.collection("holdings")), v = 0, c = 0; hs.docs.forEach(function(x){ var d = x.data(); v += (Number(d.precio) || Number(d.costo) || 0) * (Number(d.sh) || 0); c++; });
+          if(c) add("Stocks", c + (c === 1 ? " stock" : " stocks") + " · US$" + Math.round(v).toLocaleString("en-US"));
+        }catch(_){}
+      })();
+    }
+  };
+
+  async function saveStep(){
+    if(step === "basics"){
+      var goal = num($s("sgGoal").value) || (W.cfg && W.cfg.meta) || 500000, lim = num($s("sgLimit").value);
+      if(!W.prof.length) W.prof = ["save"];
+      var picks = profPicks(), track = picks.concat(W.games.filter(function(k){ return picks.indexOf(k) < 0; }));
+      var tabs = TABS.filter(function(t){ return t === "poker" ? W.games.length > 0 : picks.indexOf(t) >= 0; });
+      W.goal = String(goal); W.limit = lim ? String(lim) : "";
+      await mset(db.doc("prefs/ui"), {tabs: tabs, track: track, prof: W.prof, pal: pal(), at: Date.now()});
+      if(!cfgHas){
+        var c = {meta: goal, hitos: [0.5, 0.65, 0.8, 1].map(function(f){ return Math.round(goal * f / 1000) * 1000; }), deudas: [], fijos: [], creada: new Date().toISOString().slice(0, 10)};
+        if(lim > 0) c.limiteMensual = lim; await db.doc("config/main").set(c); cfgHas = true;
+      } else {
+        var u = {}; if(goal !== (W.cfg && W.cfg.meta)){ u.meta = goal; u.hitos = [0.5, 0.65, 0.8, 1].map(function(f){ return Math.round(goal * f / 1000) * 1000; }); }
+        if(lim > 0 && lim !== (W.cfg && W.cfg.limiteMensual)) u.limiteMensual = lim;
+        if(Object.keys(u).length) await mset(db.doc("config/main"), u);
+      }
+      apply(tabs); applyTrack(track);
+    } else if(step === "topics"){
+      await mset(db.doc("prefs/news"), {on: W.topics.concat(["game"]), picked: true, at: Date.now()});
+    } else if(step === "alerts"){
+      await mset(db.doc("prefs/alerts"), Object.assign({}, W.al, {at: Date.now()}));
+    } else if(step === "look"){
+      await mset(db.doc("prefs/ui"), {pal: pal(), at: Date.now()});
+    }
+  }
+  async function saveSkipped(done){
+    var d = {skipped: skipped.filter(function(k){ return k !== "stocks" || W.prof.indexOf("invest") >= 0; }), at: Date.now()}; if(done) d.done = true;
+    try{ await mset(db.doc("prefs/setup"), d); }catch(e){ console.warn(e); }
+  }
+  async function advance(wasSkip){
+    var o = order(), i = o.indexOf(step);
+    if(wasSkip){ if(skipped.indexOf(step) < 0 && LAB[step]) skipped.push(step); }
+    else skipped = skipped.filter(function(k){ return k !== step; });
+    if(single){ await saveSkipped(false); closeSetup(); return; }
+    if(step === "done"){ await saveSkipped(true); closeSetup(); return; }
+    step = o[i + 1]; render();
+  }
+  async function next(){
+    var b = $s("sgNext"); b.disabled = true; msg(step === "done" ? "" : "Saving…");
+    try{
+      if(step === "mail" && !W.gm){ var g = window.__patoGm; if(g){ var st = await g.status(); if(st && st.connected) W.gm = true; } }
+      if(step === "mail" && !W.gm){ b.disabled = false; return advance(true); }
+      if(step === "stocks" && !W.stk){ b.disabled = false; return advance(true); }
+      await saveStep(); b.disabled = false; await advance(false);
+    }catch(e){ console.error(e); b.disabled = false; msg("Couldn’t save. Check your connection and try again."); }
+  }
+  function back(){ var o = order(), i = o.indexOf(step); if(i > 0){ step = o[i - 1]; render(); } }
+  async function skip(){ if(step === "basics") return; await advance(true); }
+
+  /* "Finish setting up": a card for anything skipped */
+  function todoCard(list){
+    var p = $s("p-savings"); if(!p) return; var c = $s("sgTodo");
+    list = (list || []).filter(function(k){ return LAB[k]; });
+    if(!list.length){ if(c) c.remove(); return; }
+    if(!c){ c = document.createElement("section"); c.id = "sgTodo"; p.insertBefore(c, p.firstChild); }
+    c.innerHTML = '<b>Finish setting up</b>' + list.map(function(k){ return '<button type="button" data-td="' + k + '"><span>' + LAB[k] + '</span><i>›</i></button>'; }).join("");
+    c.querySelectorAll("[data-td]").forEach(function(x){ x.onclick = function(){ showSetup(true, x.dataset.td, true); }; });
+  }
+  function todoSync(list){
+    list = list || [];
+    if(list.indexOf("mail") >= 0 && window.__patoGm) window.__patoGm.status().then(function(st){ todoCard(st && st.connected ? list.filter(function(k){ return k !== "mail"; }) : list); }).catch(function(){ todoCard(list); });
+    else todoCard(list);
   }
   function addSettings(){
     var sh = document.getElementById("palSheet"); if(!sh || document.getElementById("sgTabs")) return;
     var w = document.createElement("div"); w.id = "sgTabs";
-    w.innerHTML = '<span>Tabs</span>' + TABS.map(function(t){ var n = {spending:"Spend",stocks:"Stocks",poker:"Games",loans:"Loans",trends:"Trends"}[t]; return '<label class="tg"><span>'+n+'</span><input type="checkbox" data-st="'+t+'"></label>'; }).join("") + '<button type="button" id="sgOut">Sign out</button>';
+    w.innerHTML = '<span>Tabs</span>' + TABS.map(function(t){ var n = {spending:"Spend",stocks:"Stocks",poker:"Games",loans:"Loans",trends:"Trends"}[t]; return '<label class="tg"><span>'+n+'</span><input type="checkbox" data-st="'+t+'"></label>'; }).join("") + '<button type="button" id="sgRedo">Redo setup</button><button type="button" id="sgOut">Sign out</button>';
     sh.appendChild(w);
     w.querySelectorAll("[data-st]").forEach(function(c){ c.onchange = function(){ var t = TABS.filter(function(x){ var k = w.querySelector('[data-st="'+x+'"]'); return k && k.checked; }); apply(t); db.doc("prefs/ui").update({ tabs: t }).catch(function(){}); }; });
+    document.getElementById("sgRedo").onclick = function(){ var sh = document.getElementById("palSheet"); if(sh){ sh.hidden = true; } showSetup(true); };
     document.getElementById("sgOut").onclick = function(){ if(window.mpSignOut) window.mpSignOut(); };
   }
   function syncSettings(){ var w = document.getElementById("sgTabs"); if(!w || !cur) return; w.querySelectorAll("[data-st]").forEach(function(c){ c.checked = cur.indexOf(c.dataset.st) >= 0; }); }
@@ -6504,7 +6699,9 @@ TRACKER DATA:
     if(me.owner) return; // Marco: nothing changes
     addSettings();
     db.doc("prefs/ui").onSnapshot(function(s){ var x = s.exists ? s.data() : {}; apply(Array.isArray(x.tabs) ? x.tabs : ["spending","loans","trends"]); applyTrack(Array.isArray(x.track) ? x.track : ["bets","poker"]); syncSettings(); }, function(){});
-    db.doc("config/main").onSnapshot(function(s){ if(!s.exists) showSetup(); }, function(){});
+    var cfgOk = null, setDone = null, chk = function(){ if(cfgOk === null || setDone === null) return; var rs = ""; try{ rs = localStorage.getItem("pato-setup-step") || ""; }catch(_){} if(!setDone && (!cfgOk || rs)) showSetup(false, rs); };
+    db.doc("config/main").onSnapshot(function(s){ cfgOk = s.exists; chk(); }, function(){});
+    db.doc("prefs/setup").onSnapshot(function(s){ setDone = !!(s.exists && s.data().done); if(setDone && !isOpen) todoSync(s.data().skipped); else if(!isOpen) todoCard([]); chk(); }, function(){ setDone = false; chk(); });
   });
 })();
 </script>
