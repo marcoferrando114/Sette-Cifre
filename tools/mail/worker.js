@@ -115,7 +115,7 @@ async function sync(env, uid, body) {
   const msgs = await Promise.all(ids.map(id => google(G + "/" + id + "?format=full", at).catch(() => null)));
   const list = msgs.filter(Boolean).map(m => { const ts = Number(m.internalDate) || 0;
     return { id: m.id, ts, date: new Date(ts - 4 * 3600e3).toISOString().slice(0, 10), from: head(m, "from").slice(0, 80), subject: head(m, "subject").slice(0, 120),
-      text: bodyText(m.payload).slice(0, 700) || String(m.snippet || "") }; });
+      text: bodyText(m.payload).slice(0, 1000) || String(m.snippet || "") }; });
   run.pmax = list.reduce((a, e) => Math.max(a, Math.floor(e.ts / 1000)), run.max);
   const items = list.length ? await readEmails(env, list) : [];
   await env.LIMITS.put(rk, JSON.stringify(run), { expirationTtl: 30 * 86400 });
