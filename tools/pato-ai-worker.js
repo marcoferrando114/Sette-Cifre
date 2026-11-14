@@ -696,8 +696,9 @@ function qualityCheck(b, dayH) {
   const rep = []; [b.big].concat(tops.map(a => a[0])).forEach(it => { if (it && (dayH || []).some(h => simw(h, it.h) >= 0.6)) rep.push(it.h); }); if (rep.length) hard.push("repeats a story already shown today");
   return { hard, soft, rep };
 }
+async function dayList(env, idx) { const all = (await env.LIMITS.get("dayh2:" + edDay(), "json").catch(() => null)) || [], own = (await env.LIMITS.get("dayo:" + idx, "json").catch(() => null)) || []; return all.filter(h => own.indexOf(h) < 0); }   // stories shown in OTHER drops today (a rebuild of this same drop never counts against itself)
 async function repairEd(env, E, q) {   // one repair round: swap in the next best story, redo what is missing
-  const b = E.b, x = E.x = E.x || {}, dayH = (await env.LIMITS.get("dayh:" + edDay(), "json").catch(() => null)) || [], acts = [];
+  const b = E.b, x = E.x = E.x || {}, dayH = await dayList(env, b.idx != null ? b.idx : dropIdx(Date.now())), acts = [];
   const rep = (h, it) => (dayH || []).some(d => simw(d, h) >= 0.6) || edItems(b).some(o => o !== it && simw(o.h, h) >= 0.6);
   Object.keys(b.cats || {}).forEach(k => { const cur = (b.cats[k] || [])[0]; if (cur && dayH.some(h => simw(h, cur.h) >= 0.6)) { const alt = (b._alt && b._alt[k] || []).filter(a => !rep(a.h, cur)); if (alt.length) { b.cats[k] = [alt[0]]; b._alt[k] = alt.slice(1); acts.push("swapped " + k); x.img = 0; x.plain = 0; x.means = 0; x.ver = 0; } } });
   if (b.big && dayH.some(h => simw(h, b.big.h) >= 0.6 || !bigOk(b.big))) { const nb = (b._bigC || []).find(c => bigOk(c) && !rep(c.h, b.big)) || (!bigOk(b.big) ? null : (b._bigC || []).find(c => !rep(c.h, b.big))); if (nb) { b.big = Object.assign({}, nb, { huge: false }); acts.push("swapped Breaking"); x.img = 0; x.brief = 0; x.means = 0; x.ver = 0; } }
@@ -708,23 +709,23 @@ async function repairEd(env, E, q) {   // one repair round: swap in the next bes
   x.done = 0; E.st = "built"; return acts;
 }
 async function advance(env, idx) {   // one step per call (every cron tick, or every phone request while no cron has done it): build, finish, check, repair, publish or hold
-  const key = "ed9d:" + idx; let E = await env.LIMITS.get(key, "json").catch(() => null); if (E && E.pub !== undefined) return E;
+  const key = "ed9e:" + idx; let E = await env.LIMITS.get(key, "json").catch(() => null); if (E && E.pub !== undefined) return E;
   await loadHL(env);
   if (!E || !E.b) { const b = await buildEdition(env, idx); if (Object.keys(b.cats).length < 2) { await env.LIMITS.put("edh:" + idx, JSON.stringify({ at: Date.now(), level: "hard", reasons: ["could not build: too few stories"], pub: false }), { expirationTtl: 172800 }).catch(() => 0); return null; }
     E = { at: Date.now(), st: "built", b, x: {}, tries: 0 }; await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }); await saveHL(env).catch(() => 0); return E; }
   E.x = E.x || {};
   if (!E.x.done) { await finishSteps(env, E, key); return E; }
-  const dayH = (await env.LIMITS.get("dayh:" + edDay(), "json").catch(() => null)) || [], q = qualityCheck(E.b, dayH);
+  const dayH = await dayList(env, idx), q = qualityCheck(E.b, dayH);
   const done = async (pub, level, reasons) => { E.pub = pub; E.q = { hard: q.hard, soft: q.soft }; await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 });
     await env.LIMITS.put("edh:" + idx, JSON.stringify({ at: Date.now(), level, reasons, pub, tries: E.tries || 0 }), { expirationTtl: 172800 });
-    if (pub) { await env.LIMITS.put("edpub", JSON.stringify({ key, idx }), { expirationTtl: 1209600 }); await env.LIMITS.put("dayh:" + edDay(), JSON.stringify(dayH.concat(edItems(E.b).map(it => it.h)).slice(-60)), { expirationTtl: 172800 }); } return E; };
+    if (pub) { await env.LIMITS.put("edpub", JSON.stringify({ key, idx }), { expirationTtl: 1209600 }); const own = edItems(E.b).map(it => it.h); await env.LIMITS.put("dayo:" + idx, JSON.stringify(own), { expirationTtl: 172800 }); await env.LIMITS.put("dayh2:" + edDay(), JSON.stringify(dayH.concat(own).slice(-60)), { expirationTtl: 172800 }); } return E; };
   if (!q.hard.length) return done(true, q.soft.length ? "soft" : "ok", q.soft);
   if ((E.tries || 0) >= 3) return done(false, "hard", q.hard);   // still failing after 3 repair rounds: the last good edition stays
   E.tries = (E.tries || 0) + 1; E.log = (E.log || []).concat([{ t: Date.now(), fail: q.hard, did: await repairEd(env, E, q) }]).slice(-6);
   await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }); return E;
 }
 async function getEdition(env, force, dbg, ctx) {   // what a phone gets: this drop's edition once it has passed the check, otherwise the last good one (never a broken one)
-  const idx = dropIdx(Date.now()), key = "ed9d:" + idx, kv = env.LIMITS; let E = kv ? await kv.get(key, "json").catch(() => null) : null;
+  const idx = dropIdx(Date.now()), key = "ed9e:" + idx, kv = env.LIMITS; let E = kv ? await kv.get(key, "json").catch(() => null) : null;
   if (E && E.pub) { const o = finalize(E.b); o.fin = 1; if (dbg) { o._dbg = E.b._dbg; o._q = E.q; o._log = E.log; } return o; }
   let L = null; try { const pt = kv && await kv.get("edpub", "json"); if (pt) L = await kv.get(pt.key, "json"); } catch (e) { L = null; }
   if (!L && kv) { for (const k8 of ["ed8:" + idx, "ed8:" + (idx - 1)]) { const v = await kv.get(k8, "json").catch(() => null); if (v && v.b && v.st === "ready") { L = v; break; } } }   // first deploy: the previous generation's finished edition keeps showing while the new one is built
