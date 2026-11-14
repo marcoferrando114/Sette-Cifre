@@ -7263,7 +7263,7 @@ TRACKER DATA:
     if(!refs.length) return; scAt = Date.now();
     fetch(base() + "/scores?r=" + encodeURIComponent(refs.join(","))).then(function(r){ return r.ok ? r.json() : null; }).then(function(d){ if(!d) return; Object.keys(d).forEach(function(k){ SC[k] = d[k]; });
       if(S.length){ var ns = stories(); S.forEach(function(x){ if(x.fk !== "game") return; var y = ns.filter(function(z){ return z.id === x.id; })[0]; if(y) x.body = y.body; }); if(!$("pdV").hidden && S[cur] && S[cur].fk === "game") show(cur); } }).catch(function(){}); }
-  function pickGame(G){ if(ND()){ var GS = G.slice().sort(function(a, b){ return (b.score || 0) - (a.score || 0); }), top0 = GS[0];   // the day's biggest event (title fight, final, derby, big names) beats a routine game
+  function pickGame(G){ if(ND()){ var GS = (G || []).slice().sort(function(a, b){ return (b.score || 0) - (a.score || 0); }), top0 = GS[0];   // the day's biggest event (title fight, final, derby, big names) beats a routine game
       if(top0 && (top0.score || 0) >= 17 && (!GS[1] || (GS[1].score || 0) <= top0.score - 2)) return {g: top0, mine: betOn(top0), more: GS.slice(1, 4)}; G = GS; }
     G = rot(G); if(!G.length) return null; var sl = slot(), st = ls("pd-games"); if(!st || st.day !== day()) st = {day: day(), by: {}};
     var nm = st.by[sl], g = nm && G.filter(function(x){ return x.name === nm; })[0];
