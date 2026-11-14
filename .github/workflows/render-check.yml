@@ -1,0 +1,23 @@
+name: render-check
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '20 11,17,23 * * *'
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        acct: [owner, demo]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm i playwright@1.49.0 && npx playwright install --with-deps chromium
+      - name: fetch live edition
+        run: curl -s -H "Origin: https://marcoferrando114.github.io" "https://pato-ai.marcoferrando.workers.dev/edition" -o edition.json && head -c 300 edition.json
+      - name: serve app
+        run: (python3 -m http.server 8765 >/dev/null 2>&1 &) ; sleep 2
+      - name: render every slide on a phone-size screen
+        run: EDITION_FILE=edition.json ACCT=${{ matrix.acct }} node tools/render-check.js

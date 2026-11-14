@@ -2064,10 +2064,11 @@ html:not(.mp-guest) #s-gst{display:none!important}
 .pd-bk{position:absolute;inset:0;display:grid;place-items:center;background:radial-gradient(120% 140% at 20% 0%,rgba(227,188,106,.22),rgba(255,255,255,.05) 55%,rgba(0,0,0,.18))}.pd-img img{position:relative;z-index:1}.pd-img>span{z-index:2}
 .pd-s .pd-know>i,.pd-s .pd-note>i,.pd-s .pd-key>i,.pd-s .pd-pick>i,.pd-s .pd-inj>i{font-style:normal;font-family:inherit;font-size:.66rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
 .pd-vm span{position:static}.pd-vis .pd-vem{font-size:4.2rem}
+#pdBd.tk1 .pd-say .pd-one{font-size:1.3rem}#pdBd.tk1 .pd-tip,#pdBd.tk1 .pd-know{margin-top:12px}#pdBd.tk1 .pd-tip{padding:10px 14px}#pdBd.tk1 .pd-know p{font-size:.88rem!important;line-height:1.3!important}#pdBd.tk2 .pd-know p:nth-of-type(3){display:none}#pdBd.tk2 .pd-say .pd-one{font-size:1.15rem}#pdBd.tk3 .pd-know p:nth-of-type(2){display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261115000000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261115010000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -7319,7 +7320,7 @@ TRACKER DATA:
     var li = Math.floor((Date.now() - 4*3600e3)/864e5) % LS.length; h += '<div class="pd-know"><i>PATO\'S LESSON</i><p style="margin:6px 0 0;font-size:1rem;line-height:1.4;color:#fff"><b>' + esc(LS[li][0]) + '</b></p><p style="margin:8px 0 0;font-size:.95rem;line-height:1.45;color:#E4ECE7">' + esc(LS[li][1]) + '</p><p style="margin:8px 0 0;font-size:.95rem;line-height:1.4;color:#E3BC6A">' + esc(LS[li][2]) + '</p></div>';
     // Pato's pick lives in the Sports tab now (Marco Nov 12)
     var now = new Date(Date.now() - 4*3600e3).toISOString().slice(0, 10), ev = evs.filter(function(e){ return e.fecha >= now && e.t && pos.some(function(p){ return p.t === e.t; }); }).sort(function(a, b){ return a.fecha.localeCompare(b.fecha); })[0];
-    if(ev){ var d2 = Math.round((Date.parse(ev.fecha + "T12:00:00Z") - Date.parse(now + "T12:00:00Z"))/864e5); if(d2 <= 14) h += '<div class="pd-nx">🗓️ Next: <b>' + esc(ev.t + " " + (ev.txt || "event").toLowerCase()) + '</b> · ' + (ev.est ? "~" : "") + esc(dlabel(ev.fecha)) + ' · ' + (d2 === 0 ? "today" : d2 === 1 ? "tomorrow" : "in " + d2 + " days") + '</div>'; }
+    // Marco Nov 14: no upcoming-earnings line on Pato's take
     return h;
   }
   // Pato's pick (Marco Nov 12: "a sports bets pick, do some deep data research"): where ESPN's win model and the betting odds disagree most = value
@@ -7460,6 +7461,7 @@ TRACKER DATA:
     if(!x.pick){ s.ids[x.id] = 1; if(x.id2) s.ids[x.id2] = 1; ls("pd-seen2", s); }
     var base = "pd-s " + (x.cls||""); $("pdS").className = base + (lastBase == null ? "" : lastBase !== base ? " pd-in2" : " pd-in"); lastBase = base;   // Marco Nov 12: moving to a new kind of slide fades in instead of snapping $("pdT").innerHTML = (NEW[x.id] ? '<span class="pd-new">NEW</span>' : (x.pick ? '' : '<span class="pd-old">✓ Seen</span>')) + esc(x.t); $("pdW").textContent = x.w || "";
     $("pdBd").innerHTML = x.call ? callBody(x.call) : picHtml(x) + x.body + act(x);
+    if(x.cls === "take") fitTake();   // Pato's take must fit the frame without scrolling (Marco Nov 14)
     (function(bd){ bd.scrollTop = 0; bd.onscroll = function(){ $("pdS").classList.toggle("sc", bd.scrollTop > 16); }; var m = function(){ var e = bd.querySelector(".pd-more"); if(e) e.style.display = bd.scrollHeight > bd.clientHeight + 30 ? "" : "none"; }; setTimeout(m, 60); setTimeout(m, 700); })($("pdBd"));   // Nov 12: Breaking says when there is more below
     if(x.call && callSt() && callSt().n === 0) callSync(x.call, null);
     var grp = function(y){ return /:take$/.test(y.id) ? "t" : NEW[y.id] ? "n" : "s"; }, cnt = {t: 0, n: 0, s: 0}; S.forEach(function(y){ cnt[grp(y)]++; });   // Marco Nov 12: new and seen stories must be clearly divided
@@ -7494,6 +7496,7 @@ TRACKER DATA:
   function save(o, au){ var fb = (prefs && prefs.fb) || {}, co = (prefs && prefs.co) || {}, lw = (prefs && prefs.lw) || {}, nv = ND(); au = au || ((prefs && prefs.auto) || []).filter(function(k){ return o.indexOf(k) >= 0; }); prefs = nv ? {on: o, picked: true, v2: true, auto: au, fb: fb, co: co, lw: lw} : {on: o, picked: true, fb: fb, co: co, lw: lw}; try{ db.doc("prefs/news").set(Object.assign({}, prefs, {at: Date.now()})); }catch(_){} }
   function lwq(){ var lw = (prefs && prefs.lw) || {}, ks = Object.keys(lw).filter(function(k){ return /^[a-z0-9]{3,20}$/.test(k); }), up = ks.filter(function(k){ return lw[k] > 0; }).sort(function(a, b){ return lw[b] - lw[a]; }).slice(0, 8), dn = ks.filter(function(k){ return lw[k] < 0; }).sort(function(a, b){ return lw[a] - lw[b]; }).slice(0, 6); return (up.length ? "&lk=" + up.join(",") : "") + (dn.length ? "&dk=" + dn.join(",") : ""); }   // what you liked or disliked, sent with the request (not part of the cache key)
   var peeked = 0, pk = 0, pc = 0, pt = null;
+  function fitTake(){ var bd = $("pdBd"); if(!bd) return; ["tk1", "tk2", "tk3"].forEach(function(c){ bd.classList.remove(c); }); ["tk1", "tk2", "tk3"].some(function(c){ if(bd.scrollHeight <= bd.clientHeight + 1) return true; bd.classList.add(c); return false; }); }
   function peekLines(){ var u = unseen(), tk = (daily && daily.take) || fallback(), L = [];
     u.forEach(function(x){ var i = S.indexOf(x);
       if(x.id.indexOf(":take") > 0){ if(tk.you && tk.you.text) L.push({i: i, k: "FOR YOU", h: tk.you.text}); return; }   // your money first
