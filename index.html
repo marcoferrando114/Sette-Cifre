@@ -2060,10 +2060,11 @@ html:not(.mp-guest) #s-gst{display:none!important}
 #stCrypto .cr-p{text-align:right}
 #stCrypto .cr-p b{display:block;color:var(--ink);font-family:var(--sans,Inter,system-ui,sans-serif)}
 #stCrypto .cr-p small.up{color:var(--good,#7fd1a4)} #stCrypto .cr-p small.dn{color:var(--bad,#f09a8a)}
+.pd-s .pd-kf{margin-top:14px}.pd-s .pd-kf li{font-size:.95rem;line-height:1.35;margin-top:5px}.pd-s .pd-note{margin-top:14px;padding-top:10px}.pd-s .pd-note p{font-size:.92rem;line-height:1.35}.pd-s .pd-jg{margin-top:10px}.pd-s .pd-by{margin-top:12px}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261114160000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261114170000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -7159,12 +7160,18 @@ TRACKER DATA:
   function stories2(){
     var L = [], E = edOf() || {}, ed = day(), cats = E.cats || {}, big = E.big || null, sameEd = !!(DEMO || (daily && E.idx != null && daily.idx === E.idx)), notes = (sameEd && daily && daily.take && daily.take.notes) || {};
     FR = {}; if(!sameEd) ["big", "rd", "business", "tech", "crypto", "stocks", "startups", "game"].forEach(function(k){ FR[k] = 1; });   // the AI lines in Pato's take belong to the edition they were written for
-    var ix = function(k){ return CATS.map(function(c){ return c[0]; }).indexOf(k); }, fyBox = function(t){ t = String(t || "").trim(); return t ? '<div class="pd-note"><i>WHAT IT MEANS FOR YOU</i><p>' + bold(t) + '</p></div>' : ""; };
+    var ix = function(k){ return CATS.map(function(c){ return c[0]; }).indexOf(k); }, fyBox = function(t){ t = String(t || "").trim(); return t ? '<div class="pd-note"><i>' + (isEs(t) ? "PARA TI" : "WHAT IT MEANS FOR YOU") + '</i><p>' + bold(t) + '</p></div>' : ""; };
     var ownT = function(it){ var t = pos.map(function(p){ return p.t; }).filter(function(t){ return CO[t] && CO[t].test(it.h); })[0]; return t ? "You own " + t + ". " : ""; };
     var by = function(x){ return esc(x.by && x.by.length > 1 ? x.by.join(" · ") : x.s) + " · " + ago(x.t) + " ago"; };
     // Marco Nov 14: the real headline and source stay exactly as published; the key number, the plain-language line and the "for you" line sit alongside in their own labelled boxes
     var kp = function(t){ return '<p style="margin:6px 0 0;font-size:1rem;line-height:1.4;color:#fff">' + esc(t) + '</p>'; };
-    var kfBox = function(it){ return (it.kf ? '<div class="pd-key"><i>THE KEY FACT</i><p>' + bold(it.kf) + '</p></div>' : '') + (it.wm ? '<div class="pd-know"><i>WHAT IT MEANS</i>' + kp(it.wm) + '</div>' : ''); };
+    var sw = function(t){ return String(t||"").toLowerCase().replace(/[^a-z0-9\u00e0-\u00ff ]/g," ").split(/\s+/).filter(function(w){ return w.length > 3; }); }, sim = function(x, y){ var A = sw(x), B = sw(y); if(!A.length || !B.length) return 0; var n = A.filter(function(w){ return B.indexOf(w) >= 0; }).length; return n / Math.min(A.length, B.length); };
+    var isEs = function(t){ return /[\u00e1\u00e9\u00ed\u00f3\u00fa\u00f1\u00bf\u00a1]|\b(el|la|los|las|del|de la|por|para|con|una|sobre)\b/i.test(String(t || "")); };
+    // Marco Nov 14: one compact box (max 3 short lines) instead of key fact + what it means + key facts; a line that only repeats the headline is never shown
+    var kfBox = function(it){ var H = it.h || "", L2 = [], add = function(t){ t = String(t || "").trim(); if(!t || sim(t, H) >= .6 || L2.some(function(l){ return sim(l, t) >= .6; })) return; L2.push(t); };
+      add(it.kf); add(it.wm); if(it.brief && it.brief.facts) it.brief.facts.forEach(add); if(it.brief) add(it.brief.why);
+      L2 = L2.slice(0, 3); if(!L2.length) return ""; var es = isEs(H) && isEs(L2.join(" "));
+      return '<div class="pd-know pd-kf"><i>' + (es ? "LO CLAVE" : "KEY POINTS") + '</i><ul>' + L2.map(function(t){ return '<li>' + bold(t) + '</li>'; }).join("") + '</ul></div>'; };
     var jgBox = function(it){ return it.jg && it.jg.length ? '<div class="pd-jg">' + it.jg.slice(0, 2).map(function(j){ return '<p>💡 <b>' + esc(j[0]) + '</b> ' + esc(j[1]) + '</p>'; }).join("") + '</div>' : ""; };
     var tk = (daily && daily.take) || fallback(), MV = null;
     // 1. Pato's take
@@ -7176,7 +7183,7 @@ TRACKER DATA:
     if(big){ var BY = big.by && big.by.length ? big.by : [big.s].filter(Boolean);   // Breaking = the news of the day (Marco Nov 11), front-page look every day
       L.push({id: "big:" + big.h, hot: big.huge !== false, cls: "big brk", news: 1, t: "Breaking", w: ago(big.t) + " ago", u: big.u, pic: big.u, ph: big.h, ps: big.s, fk: "big", sh: {k: "Breaking", h: big.h, s: big.s, u: big.u, kn: knowArr("big")},
         body: '<div class="pd-brkrow"><span class="pd-brk"><span class="pd-dot"></span>BREAKING</span><span class="pd-ago">' + esc(ago(big.t)) + ' ago</span></div><div class="pd-bigh">' + esc(big.h) + '</div>' + kfBox(big) +
-          (BY.length ? '<div class="pd-by"><small>' + (Math.max(BY.length, big.n || 0) > 1 ? "Covered by " + Math.max(BY.length, big.n || 0) + " outlets" : "Source") + '</small>' + BY.slice(0, 4).map(function(o){ return '<span>' + esc(o) + '</span>'; }).join("") + '</div>' : '') + (big.brief && big.brief.facts && big.brief.facts.length ? '<div class="pd-know pd-kf"><i>KEY FACTS</i><ul>' + big.brief.facts.map(function(t){ return '<li>' + bold(t) + '</li>'; }).join("") + '</ul></div>' + (big.brief.why ? '<div class="pd-note"><i>WHY IT MATTERS</i><p>' + bold(big.brief.why) + '</p></div>' : '') : know("big")) + jgBox(big) + fyBox(notes.big || (ownT(big) + (big.fy || ""))) + '<div class="pd-more">⌄ Scroll for more</div>'}); }
+          (BY.length ? '<div class="pd-by"><small>' + (Math.max(BY.length, big.n || 0) > 1 ? "Covered by " + Math.max(BY.length, big.n || 0) + " outlets" : "Source") + '</small>' + BY.slice(0, 4).map(function(o){ return '<span>' + esc(o) + '</span>'; }).join("") + '</div>' : '') + jgBox(big) + fyBox(notes.big || (ownT(big) + (big.fy || ""))) + '<div class="pd-more">⌄ Scroll for more</div>'}); }
     // 3-4. Two of your topics, ONE story each (Marco Nov 14: quality over quantity); the pair rotates each drop so every topic gets its turn
     var autoSet = (prefs && prefs.auto) || [], why = {stocks: "you own stocks", game: "you track sports bets"};
     var T = on().filter(function(k){ return k !== "game" && cats[k] && cats[k][0]; }), pairs = [];
@@ -7184,7 +7191,7 @@ TRACKER DATA:
     if(T.length){ var st = curIdx() % T.length; for(var q3 = 0; q3 < Math.min(3, T.length); q3++) pairs.push(T[(st + q3) % T.length]); }
     pairs.forEach(function(k, pi){ var c = CATS[ix(k)], it = cats[k][0], h = k === "rd" && !FR.rd && sameEd && daily.take && daily.take.rd ? daily.take.rd : it.h;
       L.push({id: ed + ":" + k + ":" + it.h, ord: pi === 2 ? 8 : 3 + pi, cls: k === "rd" ? "rd" : "", news: 1, t: c[1], w: ago(it.t) + " ago", u: it.u, pic: it.u, ph: it.h, ps: it.s, fk: k, sh: {k: c[1], h: h, s: it.s, u: it.u, kn: knowArr(k)}, body: '<div class="pd-k">' + esc((k === "tech" && /\b(AI|artificial intelligence|OpenAI|ChatGPT|chatbots?)\b/.test(it.h) ? "AI news" : c[1]).toUpperCase()) + '</div>' + (function(){ var N = hnm(h); return '<div class="pd-h1' + ((it.n || 0) >= 4 ? ' pd-hx' : '') + '">' + esc(N ? N.t : h) + '</div>' + (N ? '<div class="pd-m">Comment by <b>' + esc(N.n) + '</b></div>' : ''); })() + (h !== it.h ? '<div class="pd-m" style="font-style:italic">' + esc(it.h) + '</div>' : '') + '<div class="pd-m">' + by(it) + '</div>' +
-        (autoSet.indexOf(k) >= 0 && why[k] ? '<div class="pd-m" style="font-style:italic">Added by Pato because ' + why[k] + '.</div>' : '') + kfBox(it) + (it.wm ? "" : plain(it)) + know(k) + jgBox(it) + fyBox(notes[k] || (ownT(it) + (it.fy || "")))}); });
+        (autoSet.indexOf(k) >= 0 && why[k] ? '<div class="pd-m" style="font-style:italic">Added by Pato because ' + why[k] + '.</div>' : '') + (kfBox(it) || plain(it) || know(k)) + jgBox(it) + fyBox(notes[k] || (ownT(it) + (it.fy || "")))}); });
     TK.body = takeBody(tk, big, E.games || [], MV && MV.t.replace("Big move · ", ""), E.pick);
     // 5. Company of the day (+ the startups rising today), anywhere in the world (Marco Nov 14)
     var CD = E.cotd;
@@ -7431,6 +7438,7 @@ TRACKER DATA:
   function pic(u, cb, h){ if(!u || !base() || !PHOTOS() || (u in IM.m)) return; IM.m[u] = null; pend++;
     fetch(base() + "/img?u=" + encodeURIComponent(u) + (h ? "&h=" + encodeURIComponent(h) : "")).then(function(r){ return r.ok ? r.json() : {}; }).then(function(d){ IM.m[u] = (d && d.img) || ""; pre(IM.m[u]); pend--; if(IM.m[u]) ls("pd-img3", {day: IM.day, m: Object.keys(IM.m).reduce(function(o, k){ if(IM.m[k]) o[k] = IM.m[k]; return o; }, {})}); if(cb) cb(); }).catch(function(){ if(ND()){ IM.m[u] = ""; pend--; if(cb) cb(); } else { delete IM.m[u]; pend--; } }); }
   window.__pdSwap = function(img){ var p = img && img.parentNode; if(!p) return; if(p.getAttribute("data-vis")) p.outerHTML = p.getAttribute("data-vis"); else p.remove(); };
+  setInterval(function(){ try { [].slice.call(document.querySelectorAll(".pd-img:not(.pd-vis) > img")).forEach(function(im){ var t = Number(im.getAttribute("data-t") || 0) || Date.now(); im.setAttribute("data-t", t); if((im.complete && im.naturalWidth === 0) || (!im.complete && Date.now() - t > 6000)) __pdSwap(im); }); } catch(e){} }, 1500);   // a photo that never loads is swapped for the logo/visual (Marco Nov 14: no blank area)
   function logoOf(x){ if(x.logo) return x.logo; var t = Object.keys(CO).filter(function(t){ return t !== "VUAA" && CO[t].test(x.ph || ""); })[0]; return t ? "https://assets.parqet.com/logos/symbol/" + t + "?format=png" : ""; }
   function visHtml(x){ var lg = logoOf(x), em = String(x.nav || "🦆").split(" ")[0];   // no photo? the company logo or a visual that adds to the story, never plain text (Marco Nov 14)
     return '<div class="pd-img pd-vis"><div class="pd-vm">' + (lg ? '<span class="pd-vlg"><img src="' + esc(lg) + '" alt="" onerror="this.parentNode.outerHTML=\'<span class=pd-vem>' + esc(em) + '</span>\'"></span>' : '<span class="pd-vem">' + esc(em) + '</span>') + '</div>' + (x.ps ? '<span>' + esc(x.ps) + '</span>' : '') + '</div>'; }
