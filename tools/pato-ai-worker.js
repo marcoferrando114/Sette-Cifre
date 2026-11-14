@@ -714,10 +714,10 @@ async function photoSwap(env, E) {   // every news story needs a verified photo:
   const day = (await env.LIMITS.get("dayimg:" + edDay(), "json").catch(() => null)) || [], have = new Set(edItems(b).map(it => it.img).filter(Boolean).map(u => String(u)));
   const slots = [];
   if (b.big && !b.big.img) slots.push({ it: b.big, pool: b._bigC || [], set: c => { b.big = Object.assign({}, c, { huge: false }); } });
-  Object.keys(b.cats || {}).forEach(k => { const cur = (b.cats[k] || [])[0]; if (cur && !cur.img) slots.push({ it: cur, pool: (b._alt && b._alt[k]) || [], set: c => { b.cats[k] = [c]; if (b._alt) b._alt[k] = (b._alt[k] || []).filter(a => a !== c); } }); });
+  Object.keys(b.cats || {}).forEach(k => { const cur = (b.cats[k] || [])[0]; if (cur && !cur.img) slots.push({ it: cur, pool: ((b._alt && b._alt[k]) || []).concat(/^(business|tech|startups|stocks|crypto)$/.test(k) ? ["business", "tech", "startups", "stocks", "crypto"].filter(o => o !== k).reduce((acc, o) => acc.concat((b._alt && b._alt[o]) || []), []).filter(c => !SPORTS.test(c.h || "")) : []), set: c => { b.cats[k] = [c]; if (b._alt) b._alt[k] = (b._alt[k] || []).filter(a => a !== c); } }); });
   for (const sl of slots) {
     const used = edItems(b).map(o => o.h), pool = sl.pool.filter(c => c.u && c.h && !used.some(h => simw(h, c.h) >= 0.6)).sort((a, c2) => hitRate(S, hostOf(c2.u)) - hitRate(S, hostOf(a.u))).slice(0, 4);
-    for (const c of pool) { if (tried >= 4) break; tried++; const hs = hostOf(c.u); hits[hs] = hits[hs] || [0, 0]; hits[hs][1]++;
+    for (const c of pool) { if (tried >= 5) break; tried++; const hs = hostOf(c.u); hits[hs] = hits[hs] || [0, 0]; hits[hs][1]++;
       let o = null; try { o = await storyImg(c.u, c.h, false, null); } catch (e) {} const raw = o && o.img; if (!raw) continue;
       if (!(await imgOk(raw))) continue; const px = IMGX + encodeURIComponent(raw), k = raw.split("?")[0].toLowerCase(); if (have.has(px) || day.some(d => String(d) === k)) continue;
       hits[hs][0]++; have.add(px); c.img = px; c.imgv = 1; sl.set(c); acts.push("photo swap: " + sl.it.h.slice(0, 40) + " -> " + c.h.slice(0, 40)); break; } }
@@ -765,7 +765,7 @@ async function repairEd(env, E, q) {   // one repair round: swap in the next bes
   x.done = 0; E.st = "built"; return acts;
 }
 async function advance(env, idx) {   // one step per call (every cron tick, or every phone request while no cron has done it): build, finish, check, repair, publish or hold
-  const key = "ed9k:" + idx; let E = await env.LIMITS.get(key, "json").catch(() => null); if (E && E.pub !== undefined) return E;
+  const key = "ed9m:" + idx; let E = await env.LIMITS.get(key, "json").catch(() => null); if (E && E.pub !== undefined) return E;
   await loadHL(env);
   if (!E || !E.b) { const b = await buildEdition(env, idx); if (Object.keys(b.cats).length < 2) { await env.LIMITS.put("edh:" + idx, JSON.stringify({ at: Date.now(), level: "hard", reasons: ["could not build: too few stories"], pub: false }), { expirationTtl: 172800 }).catch(() => 0); return null; }
     E = { at: Date.now(), st: "built", b, x: {}, tries: 0 }; await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }); await saveHL(env).catch(() => 0); return E; }
@@ -781,7 +781,7 @@ async function advance(env, idx) {   // one step per call (every cron tick, or e
   await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }); return E;
 }
 async function getEdition(env, force, dbg, ctx) {   // what a phone gets: this drop's edition once it has passed the check, otherwise the last good one (never a broken one)
-  const idx = dropIdx(Date.now()), key = "ed9k:" + idx, kv = env.LIMITS; let E = kv ? await kv.get(key, "json").catch(() => null) : null;
+  const idx = dropIdx(Date.now()), key = "ed9m:" + idx, kv = env.LIMITS; let E = kv ? await kv.get(key, "json").catch(() => null) : null;
   if (E && E.pub) { const o = finalize(E.b); o.fin = 1; if (dbg) { o._dbg = E.b._dbg; o._q = E.q; o._log = E.log; } return o; }
   let L = null; try { const pt = kv && await kv.get("edpub", "json"); if (pt) L = await kv.get(pt.key, "json"); } catch (e) { L = null; }
   if (!L && kv) { for (const k8 of ["ed8:" + idx, "ed8:" + (idx - 1)]) { const v = await kv.get(k8, "json").catch(() => null); if (v && v.b && v.st === "ready") { L = v; break; } } }   // first deploy: the previous generation's finished edition keeps showing while the new one is built
