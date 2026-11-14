@@ -681,7 +681,7 @@ const NONLATIN = /[Ѐ-ӿ֐-ࣿऀ-෿฀-໿ᄀ-ᇿ぀-힯]/;
 const edItems = b => [b.big].concat(Object.values(b.cats || {}).map(a => (a || [])[0]), [b.cotd, b.ceo]).filter(Boolean);
 async function imgOk(u) { try { const r = await cf(u, { headers: { range: "bytes=0-4095", "user-agent": "Mozilla/5.0 (compatible; PatoDaily/1.0)", accept: "image/*" }, redirect: "follow" });
   if (!(r.status === 200 || r.status === 206)) return false; const ct = r.headers.get("content-type") || "", cr = r.headers.get("content-range"), tot = cr ? Number((cr.match(/\/(\d+)$/) || [])[1]) : Number(r.headers.get("content-length") || 0);
-  try { await r.body.cancel(); } catch (e) {} return /^image\//i.test(ct) && !(tot && tot < 10000); } catch (e) { return false; } }
+  try { await r.body.cancel(); } catch (e) {} return /^image\//i.test(ct) && !(tot && tot < 40000); } catch (e) { return false; } }
 const IMGX = "https://pato-ai.marcoferrando.workers.dev/img?u=";
 async function verifyImgs(b) { let bad = 0; for (const it of edItems(b)) { if (it.img && it.img.startsWith(IMGX)) continue; if (it.img && !(await imgOk(it.img))) { it.img = ""; bad++; } else if (it.img) it.img = IMGX + encodeURIComponent(it.img); } b._dbg = Object.assign({}, b._dbg, { imgBad: bad }); }   // a photo that does not load is dropped: the app shows the company logo or a visual instead
 function qualityCheck(b, dayH) {
@@ -709,7 +709,7 @@ async function repairEd(env, E, q) {   // one repair round: swap in the next bes
   x.done = 0; E.st = "built"; return acts;
 }
 async function advance(env, idx) {   // one step per call (every cron tick, or every phone request while no cron has done it): build, finish, check, repair, publish or hold
-  const key = "ed9f:" + idx; let E = await env.LIMITS.get(key, "json").catch(() => null); if (E && E.pub !== undefined) return E;
+  const key = "ed9g:" + idx; let E = await env.LIMITS.get(key, "json").catch(() => null); if (E && E.pub !== undefined) return E;
   await loadHL(env);
   if (!E || !E.b) { const b = await buildEdition(env, idx); if (Object.keys(b.cats).length < 2) { await env.LIMITS.put("edh:" + idx, JSON.stringify({ at: Date.now(), level: "hard", reasons: ["could not build: too few stories"], pub: false }), { expirationTtl: 172800 }).catch(() => 0); return null; }
     E = { at: Date.now(), st: "built", b, x: {}, tries: 0 }; await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }); await saveHL(env).catch(() => 0); return E; }
@@ -725,7 +725,7 @@ async function advance(env, idx) {   // one step per call (every cron tick, or e
   await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }); return E;
 }
 async function getEdition(env, force, dbg, ctx) {   // what a phone gets: this drop's edition once it has passed the check, otherwise the last good one (never a broken one)
-  const idx = dropIdx(Date.now()), key = "ed9f:" + idx, kv = env.LIMITS; let E = kv ? await kv.get(key, "json").catch(() => null) : null;
+  const idx = dropIdx(Date.now()), key = "ed9g:" + idx, kv = env.LIMITS; let E = kv ? await kv.get(key, "json").catch(() => null) : null;
   if (E && E.pub) { const o = finalize(E.b); o.fin = 1; if (dbg) { o._dbg = E.b._dbg; o._q = E.q; o._log = E.log; } return o; }
   let L = null; try { const pt = kv && await kv.get("edpub", "json"); if (pt) L = await kv.get(pt.key, "json"); } catch (e) { L = null; }
   if (!L && kv) { for (const k8 of ["ed8:" + idx, "ed8:" + (idx - 1)]) { const v = await kv.get(k8, "json").catch(() => null); if (v && v.b && v.st === "ready") { L = v; break; } } }   // first deploy: the previous generation's finished edition keeps showing while the new one is built
@@ -864,7 +864,7 @@ export default {
       try { const u = new URL(url.searchParams.get("u") || ""); if (u.protocol !== "https:" || /^(localhost|\d+\.\d+\.\d+\.\d+|\[)/i.test(u.hostname) || !u.hostname.includes(".")) throw new Error("bad");
         const c = caches.default, hit = await c.match(req); if (hit) return hit;
         const r = await cf(u.href, { headers: { "user-agent": "Mozilla/5.0 (compatible; PatoDaily/1.0)", accept: "image/*", "accept-language": "en-US,en;q=0.9" }, redirect: "follow" }); const ct = r.headers.get("content-type") || "";
-        if (!r.ok || !/^image\//i.test(ct)) throw new Error("not image"); const buf = await r.arrayBuffer(); if (buf.byteLength < 10000 || buf.byteLength > 6000000) throw new Error("size");
+        if (!r.ok || !/^image\//i.test(ct)) throw new Error("not image"); const buf = await r.arrayBuffer(); if (buf.byteLength < 40000 || buf.byteLength > 6000000) throw new Error("size");
         const out = new Response(buf, { status: 200, headers: { "content-type": ct, "cache-control": "public, max-age=604800", "access-control-allow-origin": "*" } }); if (ctx) ctx.waitUntil(c.put(req, out.clone())); return out;
       } catch (e) { return new Response("", { status: 404 }); }
     }
