@@ -720,7 +720,7 @@ async function photoSwap(env, E) {   // every news story needs a verified photo:
   const b = E.b, S = await scoreLoad(env), hits = {}, acts = []; let tried = 0;
   const day = (await env.LIMITS.get("dayimg:" + edDay(), "json").catch(() => null)) || [], have = new Set(edItems(b).map(it => it.img).filter(Boolean).map(u => String(u)));
   const slots = [];
-  if (b.big && !b.big.img) slots.push({ it: b.big, pool: b._bigC || [], set: c => { b.big = Object.assign({}, c, { huge: false }); } });
+  if (b.big && !b.big.img) slots.push({ it: b.big, pool: (b._bigC || []).concat(Object.values(b._alt || {}).reduce((acc, v) => acc.concat((v || []).filter(c => (c.n || 1) >= 3 && !SPORTS.test(c.h || ""))), [])), set: c => { b.big = Object.assign({}, c, { huge: false }); } });
   Object.keys(b.cats || {}).forEach(k => { const cur = (b.cats[k] || [])[0]; if (cur && !cur.img) slots.push({ it: cur, pool: ((b._alt && b._alt[k]) || []).concat(/^(business|tech|startups|stocks|crypto)$/.test(k) ? ["business", "tech", "startups", "stocks", "crypto"].filter(o => o !== k).reduce((acc, o) => acc.concat((b._alt && b._alt[o]) || []), []).filter(c => !SPORTS.test(c.h || "")) : []), set: c => { b.cats[k] = [c]; if (b._alt) b._alt[k] = (b._alt[k] || []).filter(a => a !== c); } }); });
   for (const sl of slots) {
     const used = edItems(b).map(o => o.h), pool = sl.pool.filter(c => c.u && c.h && !c._pf && !used.some(h => simw(h, c.h) >= 0.6)).sort((a, c2) => hitRate(S, hostOf(c2.u)) - hitRate(S, hostOf(a.u))).slice(0, 4);
