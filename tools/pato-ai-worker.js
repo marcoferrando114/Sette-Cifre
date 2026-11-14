@@ -667,7 +667,7 @@ async function finishSteps(env, E, key) {
   if (!x.means) { DBG = {}; await meansAll(env, E.b).catch(() => null); E.b._dbg = Object.assign({}, E.b._dbg, { means: DBG.means || "cached", miss: DBG.miss }); x.means = 1; }
   x.done = 1; E.st = "ready"; E.at = Date.now(); await save();
 }
-function finalize(b0) { const b = Object.assign({}, b0); delete b._cand; delete b._dbg; delete b._alt; delete b._bigC;   // slot 8 alternates: a CEO/founder story, then a deep read (Marco Nov 14)
+function finalize(b0) { const b = Object.assign({}, b0); b.v = 9;   // edition format version: phones holding an older copy fetch again delete b._cand; delete b._dbg; delete b._alt; delete b._bigC;   // slot 8 alternates: a CEO/founder story, then a deep read (Marco Nov 14)
   const first = "ceo", other = first === "ceo" ? "deep" : "ceo", pk = b[first] ? first : b[other] ? other : "";
   b.last = pk ? Object.assign({}, b[pk], { kind: pk }) : null; return b;
 }
