@@ -493,7 +493,7 @@ k = the key number or hard fact the story leads with (earnings, valuation, marke
 m = what it means, in plain words anyone understands, max 20 words.
 f = what it means for a young person's money, savings, investments, studies or career, honest, max 16 words; if the link is indirect say so plainly.
 j = up to 2 jargon terms used in k or m, each as ["term","plain definition, max 14 words"]. Use [] if there is no jargon.
-LANGUAGE: if a HEADLINE is in Spanish, write its k, m, f and j in Spanish (same language as the story); otherwise English. k and m must add something the headline does not already say; if k only repeats the headline, return "" for k. Keep m and f short.\nNever say buy or sell. No emojis. Plain words. Return ONLY JSON like {"0":{"k":"","m":"","f":"","j":[]}}.`;
+If the story is about a number (a rate, price, score, vote count), k MUST state that number as it appears in TEXT or HEADLINE.\nLANGUAGE: if a HEADLINE is in Spanish, write its k, m, f and j in Spanish (same language as the story); otherwise English. k and m must add something the headline does not already say; if k only repeats the headline, return "" for k. Keep m and f short.\nNever say buy or sell. No emojis. Plain words. Return ONLY JSON like {"0":{"k":"","m":"","f":"","j":[]}}.`;
 async function meansAll(env, b) {
   if (!env.ANTHROPIC_KEY || !env.LIMITS || !b) return;
   const items = [b.big].concat(Object.values(b.cats || {}).map(a => (a || [])[0]), [b.deep, b.ceo]).filter(it => it && it.h && !it.founder);
@@ -516,6 +516,10 @@ async function meansAll(env, b) {
     }
   }
   items.forEach(it => { const t = M[hk(it)]; if (t) { if (t.k) it.kf = t.k; if (t.m) it.wm = t.m; if (t.f) it.fy = t.f; if (t.j && t.j.length) it.jg = t.j; } });
+  // Marco Nov 14: a story about the dollar rate must carry the actual number (day's USD to DOP rate), not "no figure in the text"
+  const fx = items.filter(it => /d[oó]lar|tasa de cambio|cotizaci[oó]n|divisa/i.test(it.h || "") && /rep[uú]blica dominicana|\bRD\b|dominican|\bDOP\b|peso/i.test((it.h || "") + " " + (it.d || "")));
+  if (fx.length) { let rate = 0; try { const r = await fetch("https://open.er-api.com/v6/latest/USD"); if (r.ok) { const j = await r.json(); rate = Number(j && j.rates && j.rates.DOP) || 0; } } catch (e) { rate = 0; }
+    if (rate > 20 && rate < 200) fx.forEach(it => { const es = /[áéíóúñ]|\b(hoy|del|la|de)\b/i.test(it.h); it.kf = es ? "US$1 = RD$" + rate.toFixed(2) + " hoy (tasa de mercado)" : "US$1 = RD$" + rate.toFixed(2) + " today (market rate)"; if (it.wm && /no (rate )?(figure|number)|sin cifra|no (se )?(indica|menciona)/i.test(it.wm)) it.wm = ""; }); }
 }
 // Company of the day (Marco Nov 14): ONE company a day, anywhere in the world, with a clear reason. One call a day, shared, kept in KV (cotd2:<edition day>).
 const COTD = `You pick ONE "Company of the day" for a money app for young people anywhere in the world. From the numbered CANDIDATE headlines (and widely known facts) choose the single most interesting company or startup with a clear, specific bullish case: a public company with a real catalyst, or a fast-growing private startup. Return ONLY JSON:
@@ -703,7 +707,7 @@ async function repairEd(env, E, q) {   // one repair round: swap in the next bes
   x.done = 0; E.st = "built"; return acts;
 }
 async function advance(env, idx) {   // one step per call (every cron tick, or every phone request while no cron has done it): build, finish, check, repair, publish or hold
-  const key = "ed9b:" + idx; let E = await env.LIMITS.get(key, "json").catch(() => null); if (E && E.pub !== undefined) return E;
+  const key = "ed9c:" + idx; let E = await env.LIMITS.get(key, "json").catch(() => null); if (E && E.pub !== undefined) return E;
   await loadHL(env);
   if (!E || !E.b) { const b = await buildEdition(env, idx); if (Object.keys(b.cats).length < 2) { await env.LIMITS.put("edh:" + idx, JSON.stringify({ at: Date.now(), level: "hard", reasons: ["could not build: too few stories"], pub: false }), { expirationTtl: 172800 }).catch(() => 0); return null; }
     E = { at: Date.now(), st: "built", b, x: {}, tries: 0 }; await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }); await saveHL(env).catch(() => 0); return E; }
@@ -719,7 +723,7 @@ async function advance(env, idx) {   // one step per call (every cron tick, or e
   await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }); return E;
 }
 async function getEdition(env, force, dbg, ctx) {   // what a phone gets: this drop's edition once it has passed the check, otherwise the last good one (never a broken one)
-  const idx = dropIdx(Date.now()), key = "ed9b:" + idx, kv = env.LIMITS; let E = kv ? await kv.get(key, "json").catch(() => null) : null;
+  const idx = dropIdx(Date.now()), key = "ed9c:" + idx, kv = env.LIMITS; let E = kv ? await kv.get(key, "json").catch(() => null) : null;
   if (E && E.pub) { const o = finalize(E.b); o.fin = 1; if (dbg) { o._dbg = E.b._dbg; o._q = E.q; o._log = E.log; } return o; }
   let L = null; try { const pt = kv && await kv.get("edpub", "json"); if (pt) L = await kv.get(pt.key, "json"); } catch (e) { L = null; }
   if (!L && kv) { for (const k8 of ["ed8:" + idx, "ed8:" + (idx - 1)]) { const v = await kv.get(k8, "json").catch(() => null); if (v && v.b && v.st === "ready") { L = v; break; } } }   // first deploy: the previous generation's finished edition keeps showing while the new one is built
