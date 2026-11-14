@@ -716,8 +716,8 @@ async function photoSwap(env, E) {   // every news story needs a verified photo:
   if (b.big && !b.big.img) slots.push({ it: b.big, pool: b._bigC || [], set: c => { b.big = Object.assign({}, c, { huge: false }); } });
   Object.keys(b.cats || {}).forEach(k => { const cur = (b.cats[k] || [])[0]; if (cur && !cur.img) slots.push({ it: cur, pool: ((b._alt && b._alt[k]) || []).concat(/^(business|tech|startups|stocks|crypto)$/.test(k) ? ["business", "tech", "startups", "stocks", "crypto"].filter(o => o !== k).reduce((acc, o) => acc.concat((b._alt && b._alt[o]) || []), []).filter(c => !SPORTS.test(c.h || "")) : []), set: c => { b.cats[k] = [c]; if (b._alt) b._alt[k] = (b._alt[k] || []).filter(a => a !== c); } }); });
   for (const sl of slots) {
-    const used = edItems(b).map(o => o.h), pool = sl.pool.filter(c => c.u && c.h && !used.some(h => simw(h, c.h) >= 0.6)).sort((a, c2) => hitRate(S, hostOf(c2.u)) - hitRate(S, hostOf(a.u))).slice(0, 4);
-    for (const c of pool) { if (tried >= 5) break; tried++; const hs = hostOf(c.u); hits[hs] = hits[hs] || [0, 0]; hits[hs][1]++;
+    const used = edItems(b).map(o => o.h), pool = sl.pool.filter(c => c.u && c.h && !c._pf && !used.some(h => simw(h, c.h) >= 0.6)).sort((a, c2) => hitRate(S, hostOf(c2.u)) - hitRate(S, hostOf(a.u))).slice(0, 4);
+    let per = 0; for (const c of pool) { if (tried >= 6 || per >= 3) break; tried++; per++; c._pf = 1; const hs = hostOf(c.u); hits[hs] = hits[hs] || [0, 0]; hits[hs][1]++;
       let o = null; try { o = await storyImg(c.u, c.h, false, null); } catch (e) {} const raw = o && o.img; if (!raw) continue;
       if (!(await imgOk(raw))) continue; const px = IMGX + encodeURIComponent(raw), k = raw.split("?")[0].toLowerCase(); if (have.has(px) || day.some(d => String(d) === k)) continue;
       hits[hs][0]++; have.add(px); c.img = px; c.imgv = 1; sl.set(c); acts.push("photo swap: " + sl.it.h.slice(0, 40) + " -> " + c.h.slice(0, 40)); break; } }
@@ -765,7 +765,7 @@ async function repairEd(env, E, q) {   // one repair round: swap in the next bes
   x.done = 0; E.st = "built"; return acts;
 }
 async function advance(env, idx) {   // one step per call (every cron tick, or every phone request while no cron has done it): build, finish, check, repair, publish or hold
-  const key = "ed9m:" + idx; let E = await env.LIMITS.get(key, "json").catch(() => null); if (E && E.pub !== undefined) return E;
+  const key = "ed9n:" + idx; let E = await env.LIMITS.get(key, "json").catch(() => null); if (E && E.pub !== undefined) return E;
   await loadHL(env);
   if (!E || !E.b) { const b = await buildEdition(env, idx); if (Object.keys(b.cats).length < 2) { await env.LIMITS.put("edh:" + idx, JSON.stringify({ at: Date.now(), level: "hard", reasons: ["could not build: too few stories"], pub: false }), { expirationTtl: 172800 }).catch(() => 0); return null; }
     E = { at: Date.now(), st: "built", b, x: {}, tries: 0 }; await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }); await saveHL(env).catch(() => 0); return E; }
@@ -776,12 +776,12 @@ async function advance(env, idx) {   // one step per call (every cron tick, or e
     await env.LIMITS.put("edh:" + idx, JSON.stringify({ at: Date.now(), level, reasons, pub, tries: E.tries || 0 }), { expirationTtl: 172800 });
     if (pub) { await env.LIMITS.put("edpub", JSON.stringify({ key, idx }), { expirationTtl: 1209600 }); const own = edItems(E.b).map(it => it.h); await env.LIMITS.put("dayo:" + idx, JSON.stringify(own), { expirationTtl: 172800 }); await env.LIMITS.put("dayh2:" + edDay(), JSON.stringify(dayH.concat(own).slice(-60)), { expirationTtl: 172800 }); } return E; };
   if (!q.hard.length) return done(true, q.soft.length ? "soft" : "ok", q.soft);
-  if ((E.tries || 0) >= 3) { if (q.hard.every(r => /repeats a story|without a photo/.test(r))) return done(true, "soft", ["still repeats or lacks photos on " + (q.rep || []).length + " earlier story(ies) after 3 swaps (feeds had nothing newer)"].concat(q.soft)); return done(false, "hard", q.hard); }   // a repeat alone never keeps hours-old news on screen   // still failing after 3 repair rounds: the last good edition stays
+  if ((E.tries || 0) >= ((q.hard.every(r => /without a photo/.test(r)) && (E.tries || 0) < 6) ? 6 : 3)) { if (q.hard.every(r => /repeats a story|without a photo/.test(r))) return done(true, "soft", ["still repeats or lacks photos on " + (q.rep || []).length + " earlier story(ies) after 3 swaps (feeds had nothing newer)"].concat(q.soft)); return done(false, "hard", q.hard); }   // a repeat alone never keeps hours-old news on screen   // still failing after 3 repair rounds: the last good edition stays
   E.tries = (E.tries || 0) + 1; E.log = (E.log || []).concat([{ t: Date.now(), fail: q.hard, did: await repairEd(env, E, q) }]).slice(-6);
   await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }); return E;
 }
 async function getEdition(env, force, dbg, ctx) {   // what a phone gets: this drop's edition once it has passed the check, otherwise the last good one (never a broken one)
-  const idx = dropIdx(Date.now()), key = "ed9m:" + idx, kv = env.LIMITS; let E = kv ? await kv.get(key, "json").catch(() => null) : null;
+  const idx = dropIdx(Date.now()), key = "ed9n:" + idx, kv = env.LIMITS; let E = kv ? await kv.get(key, "json").catch(() => null) : null;
   if (E && E.pub) { const o = finalize(E.b); o.fin = 1; if (dbg) { o._dbg = E.b._dbg; o._q = E.q; o._log = E.log; } return o; }
   let L = null; try { const pt = kv && await kv.get("edpub", "json"); if (pt) L = await kv.get(pt.key, "json"); } catch (e) { L = null; }
   if (!L && kv) { for (const k8 of ["ed8:" + idx, "ed8:" + (idx - 1)]) { const v = await kv.get(k8, "json").catch(() => null); if (v && v.b && v.st === "ready") { L = v; break; } } }   // first deploy: the previous generation's finished edition keeps showing while the new one is built
