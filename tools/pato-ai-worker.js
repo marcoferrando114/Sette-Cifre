@@ -703,13 +703,34 @@ async function imgOk(u) {   // a photo is only good if it loads, is a real image
     const d = imgDims(buf); if (!/^image\//i.test(ct) || !d || !d.w || !d.h || (tot && tot < 40000)) return false;
     return d.w >= 800 && d.h >= 450 && d.w / d.h <= 3.2 && d.w / d.h >= 0.6; } catch (e) { return false; } }
 const IMGX = "https://pato-ai.marcoferrando.workers.dev/img?u=";
-async function verifyImgs(b, env, idx) { let bad = 0, dup = 0; const norm = u => String(u).replace(IMGX, "").replace(/^https?%3A%2F%2F/i, "").split("?")[0].toLowerCase();
+// Source image score (Marco Nov 14: learn which outlets' photos really load and pass the checks, prefer them, swap a photo-less story for a similar one that has a photo). KV "imgsc" = { host: [passed, tried] }
+const hostOf = u => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch (e) { return ""; } };
+async function scoreLoad(env) { try { return (env && env.LIMITS && await env.LIMITS.get("imgsc", "json")) || {}; } catch (e) { return {}; } }
+async function scoreSave(env, S, hits) { try { Object.keys(hits).forEach(h => { const a = S[h] = S[h] || [0, 0]; a[0] += hits[h][0]; a[1] += hits[h][1]; if (a[1] > 60) { a[0] = Math.round(a[0] * 30 / a[1]); a[1] = 30; } }); if (env && env.LIMITS) await env.LIMITS.put("imgsc", JSON.stringify(S)); } catch (e) {} }
+const hitRate = (S, h) => { const a = S[h]; return a && a[1] >= 2 ? (a[0] + 1) / (a[1] + 2) : 0.5; };   // unknown outlets sit in the middle
+const photoSlots = b => [b.big].concat(Object.values(b.cats || {}).map(a => (a || [])[0])).filter(Boolean);
+async function photoSwap(env, E) {   // every news story needs a verified photo: swap a photo-less one for the best similar story (same category) from outlets that have proven photos
+  const b = E.b, S = await scoreLoad(env), hits = {}, acts = []; let tried = 0;
+  const day = (await env.LIMITS.get("dayimg:" + edDay(), "json").catch(() => null)) || [], have = new Set(edItems(b).map(it => it.img).filter(Boolean).map(u => String(u)));
+  const slots = [];
+  if (b.big && !b.big.img) slots.push({ it: b.big, pool: b._bigC || [], set: c => { b.big = Object.assign({}, c, { huge: false }); } });
+  Object.keys(b.cats || {}).forEach(k => { const cur = (b.cats[k] || [])[0]; if (cur && !cur.img) slots.push({ it: cur, pool: (b._alt && b._alt[k]) || [], set: c => { b.cats[k] = [c]; if (b._alt) b._alt[k] = (b._alt[k] || []).filter(a => a !== c); } }); });
+  for (const sl of slots) {
+    const used = edItems(b).map(o => o.h), pool = sl.pool.filter(c => c.u && c.h && !used.some(h => simw(h, c.h) >= 0.6)).sort((a, c2) => hitRate(S, hostOf(c2.u)) - hitRate(S, hostOf(a.u))).slice(0, 4);
+    for (const c of pool) { if (tried >= 4) break; tried++; const hs = hostOf(c.u); hits[hs] = hits[hs] || [0, 0]; hits[hs][1]++;
+      let o = null; try { o = await storyImg(c.u, c.h, false, null); } catch (e) {} const raw = o && o.img; if (!raw) continue;
+      if (!(await imgOk(raw))) continue; const px = IMGX + encodeURIComponent(raw), k = raw.split("?")[0].toLowerCase(); if (have.has(px) || day.some(d => String(d) === k)) continue;
+      hits[hs][0]++; have.add(px); c.img = px; c.imgv = 1; sl.set(c); acts.push("photo swap: " + sl.it.h.slice(0, 40) + " -> " + c.h.slice(0, 40)); break; } }
+  await scoreSave(env, S, hits); const x = E.x; if (acts.length) { x.means = 0; x.plain = 0; x.brief = 0; x.ver = 0; } return acts; }
+async function verifyImgs(b, env, idx) { let bad = 0, dup = 0; const SCH = {}; const norm = u => String(u).replace(IMGX, "").replace(/^https?%3A%2F%2F/i, "").split("?")[0].toLowerCase();
   let day = [], own = []; try { if (env && env.LIMITS) { day = (await env.LIMITS.get("dayimg:" + edDay(), "json")) || []; own = (await env.LIMITS.get("dayimo:" + idx, "json")) || []; } } catch (e) {}
   const used = new Set(day.filter(x => own.indexOf(x) < 0)), mine = [];
   for (const it of edItems(b)) { if (!it.img) continue; let raw = it.img.startsWith(IMGX) ? decodeURIComponent(it.img.slice(IMGX.length)) : it.img, k = norm(raw);
     if (used.has(k) || mine.indexOf(k) >= 0) { it.img = ""; it.imgv = 0; dup++; continue; }
     if (it.img.startsWith(IMGX) && it.imgv) { mine.push(k); continue; }
-    if (await imgOk(raw)) { it.img = IMGX + encodeURIComponent(raw); it.imgv = 1; mine.push(k); } else { it.img = ""; it.imgv = 0; bad++; } }
+    const okI = await imgOk(raw), hs = hostOf(it.u || ""); if (hs) { SCH[hs] = SCH[hs] || [0, 0]; SCH[hs][1]++; if (okI) SCH[hs][0]++; }
+    if (okI) { it.img = IMGX + encodeURIComponent(raw); it.imgv = 1; mine.push(k); } else { it.img = ""; it.imgv = 0; bad++; } }
+  { const hs = Object.keys(SCH); if (hs.length) { await scoreSave(env, await scoreLoad(env), SCH); } }
   try { if (env && env.LIMITS) { await env.LIMITS.put("dayimo:" + idx, JSON.stringify(mine), { expirationTtl: 172800 }); await env.LIMITS.put("dayimg:" + edDay(), JSON.stringify(Array.from(used).concat(mine).slice(-80)), { expirationTtl: 172800 }); } } catch (e) {}
   b._dbg = Object.assign({}, b._dbg, { imgBad: bad, imgDup: dup }); }   // a photo that does not pass is dropped: the app shows the company logo or a visual instead
 function qualityCheck(b, dayH) {
@@ -723,6 +744,7 @@ function qualityCheck(b, dayH) {
   { const lb = items.filter(it => [it.kf, it.wm, it.fy].some(t => t && String(t).length > 20 && langOf(t) && langOf(it.h) && langOf(t) !== langOf(it.h))); if (lb.length) hard.push("key points are in a different language than the story"); }
   if (Object.values(b.cats || {}).some(a => a && a[0] && SPORTS.test(a[0].h || ""))) hard.push("a sports story is filed under a non-sports tab");
   if (items.some(it => it.img && !it.imgv)) hard.push("a photo was not verified (size, sharpness, repeat)");
+  { const np = photoSlots(b).filter(it => !it.img); if (np.length) hard.push(np.length + " news story(ies) without a photo"); }
   const noImg = items.filter(it => !it.img).length; if (noImg > 3) soft.push(noImg + " stories use a fallback visual instead of a photo");
   const rep = []; [b.big].concat(tops.map(a => a[0])).forEach(it => { if (it && (dayH || []).some(h => simw(h, it.h) >= 0.6)) rep.push(it.h); }); if (rep.length) hard.push("repeats a story already shown today");
   return { hard, soft, rep };
@@ -733,6 +755,7 @@ async function repairEd(env, E, q) {   // one repair round: swap in the next bes
   const rep = (h, it) => (dayH || []).some(d => simw(d, h) >= 0.6) || edItems(b).some(o => o !== it && simw(o.h, h) >= 0.6);
   Object.keys(b.cats || {}).forEach(k => { const cur = (b.cats[k] || [])[0]; if (cur && dayH.some(h => simw(h, cur.h) >= 0.6)) { const alt = (b._alt && b._alt[k] || []).filter(a => !rep(a.h, cur)); if (alt.length) { b.cats[k] = [alt[0]]; b._alt[k] = alt.slice(1); acts.push("swapped " + k); x.img = 0; x.plain = 0; x.means = 0; x.ver = 0; } } });
   if (b.big && dayH.some(h => simw(h, b.big.h) >= 0.6 || !bigOk(b.big))) { const nb = (b._bigC || []).find(c => bigOk(c) && !rep(c.h, b.big)) || (!bigOk(b.big) ? null : (b._bigC || []).find(c => !rep(c.h, b.big))); if (nb) { b.big = Object.assign({}, nb, { huge: false }); acts.push("swapped Breaking"); x.img = 0; x.brief = 0; x.means = 0; x.ver = 0; } }
+  if (q.hard.some(r => /without a photo/.test(r))) { const a = await photoSwap(env, E).catch(() => []); a.forEach(s => acts.push(s)); }
   if (!Array.isArray(b.preds) || b.preds.length !== 3) { b.preds = await pickPreds3(env, await kvFresh(env, "mk2", 90, markets).catch(() => []), [], b.idx).catch(() => b.preds); acts.push("redid predictions"); }
   if (!b.cotd) { DBG = {}; b.cotd = await cotdPick(env, b._cand).catch(() => null); acts.push("retried company of the day"); if (b.cotd) { x.img = 0; x.ver = 0; } }
   if (!b.ceo) { b.ceo = await founderOf(env, Date.now()).catch(() => null); acts.push("reloaded founder story"); }
@@ -742,7 +765,7 @@ async function repairEd(env, E, q) {   // one repair round: swap in the next bes
   x.done = 0; E.st = "built"; return acts;
 }
 async function advance(env, idx) {   // one step per call (every cron tick, or every phone request while no cron has done it): build, finish, check, repair, publish or hold
-  const key = "ed9j:" + idx; let E = await env.LIMITS.get(key, "json").catch(() => null); if (E && E.pub !== undefined) return E;
+  const key = "ed9k:" + idx; let E = await env.LIMITS.get(key, "json").catch(() => null); if (E && E.pub !== undefined) return E;
   await loadHL(env);
   if (!E || !E.b) { const b = await buildEdition(env, idx); if (Object.keys(b.cats).length < 2) { await env.LIMITS.put("edh:" + idx, JSON.stringify({ at: Date.now(), level: "hard", reasons: ["could not build: too few stories"], pub: false }), { expirationTtl: 172800 }).catch(() => 0); return null; }
     E = { at: Date.now(), st: "built", b, x: {}, tries: 0 }; await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }); await saveHL(env).catch(() => 0); return E; }
@@ -753,12 +776,12 @@ async function advance(env, idx) {   // one step per call (every cron tick, or e
     await env.LIMITS.put("edh:" + idx, JSON.stringify({ at: Date.now(), level, reasons, pub, tries: E.tries || 0 }), { expirationTtl: 172800 });
     if (pub) { await env.LIMITS.put("edpub", JSON.stringify({ key, idx }), { expirationTtl: 1209600 }); const own = edItems(E.b).map(it => it.h); await env.LIMITS.put("dayo:" + idx, JSON.stringify(own), { expirationTtl: 172800 }); await env.LIMITS.put("dayh2:" + edDay(), JSON.stringify(dayH.concat(own).slice(-60)), { expirationTtl: 172800 }); } return E; };
   if (!q.hard.length) return done(true, q.soft.length ? "soft" : "ok", q.soft);
-  if ((E.tries || 0) >= 3) { if (q.hard.every(r => /repeats a story/.test(r))) return done(true, "soft", ["still repeats " + (q.rep || []).length + " earlier story(ies) after 3 swaps (feeds had nothing newer)"].concat(q.soft)); return done(false, "hard", q.hard); }   // a repeat alone never keeps hours-old news on screen   // still failing after 3 repair rounds: the last good edition stays
+  if ((E.tries || 0) >= 3) { if (q.hard.every(r => /repeats a story|without a photo/.test(r))) return done(true, "soft", ["still repeats or lacks photos on " + (q.rep || []).length + " earlier story(ies) after 3 swaps (feeds had nothing newer)"].concat(q.soft)); return done(false, "hard", q.hard); }   // a repeat alone never keeps hours-old news on screen   // still failing after 3 repair rounds: the last good edition stays
   E.tries = (E.tries || 0) + 1; E.log = (E.log || []).concat([{ t: Date.now(), fail: q.hard, did: await repairEd(env, E, q) }]).slice(-6);
   await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }); return E;
 }
 async function getEdition(env, force, dbg, ctx) {   // what a phone gets: this drop's edition once it has passed the check, otherwise the last good one (never a broken one)
-  const idx = dropIdx(Date.now()), key = "ed9j:" + idx, kv = env.LIMITS; let E = kv ? await kv.get(key, "json").catch(() => null) : null;
+  const idx = dropIdx(Date.now()), key = "ed9k:" + idx, kv = env.LIMITS; let E = kv ? await kv.get(key, "json").catch(() => null) : null;
   if (E && E.pub) { const o = finalize(E.b); o.fin = 1; if (dbg) { o._dbg = E.b._dbg; o._q = E.q; o._log = E.log; } return o; }
   let L = null; try { const pt = kv && await kv.get("edpub", "json"); if (pt) L = await kv.get(pt.key, "json"); } catch (e) { L = null; }
   if (!L && kv) { for (const k8 of ["ed8:" + idx, "ed8:" + (idx - 1)]) { const v = await kv.get(k8, "json").catch(() => null); if (v && v.b && v.st === "ready") { L = v; break; } } }   // first deploy: the previous generation's finished edition keeps showing while the new one is built
