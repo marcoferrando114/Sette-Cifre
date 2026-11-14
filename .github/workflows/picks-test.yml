@@ -1,0 +1,52 @@
+name: Picks source test (temp, do not merge)
+on:
+  push:
+    branches: [claude/project-thread-jdfhzt]
+    paths: [".github/workflows/picks-test.yml"]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch each source once
+        run: |
+          UA="PatoBot/1.0 (personal research, low volume)"
+          t(){
+            code=$(curl -sS -L -m 20 -A "$UA" -o out.tmp -w "%{http_code} %{size_download}B" "$2" 2>&1 | tail -1)
+            kind="page"; head -c 400 out.tmp | grep -qiE "<rss|<feed|<\?xml" && kind="FEED"
+            items=$(grep -ciE "<item>|<entry>" out.tmp)
+            echo "[$1] $code $kind items=$items :: $2"
+            sleep 2
+          }
+          t ufc https://mmabets.substack.com/feed
+          t ufc https://mmaandsportsbetting.substack.com/feed
+          t ufc https://www.vsin.com/category/mma/feed/
+          t ufc https://www.scoresandstats.com/picks/ufc/
+          t ufc https://www.sportsbookreview.com/ufc/
+          t ufc https://www.reddit.com/r/MMAbetting/new.rss
+          t soccer https://www.windrawwin.com/us/
+          t soccer https://www.goal.com/en-us/betting/tips/3
+          t soccer https://www.scoresandstats.com/previews/soccer/
+          t soccer https://www.soccernews.com/category/free-soccer-predictions/
+          t soccer https://www.reddit.com/r/soccerbetting/new.rss
+          t tennis https://drunkentennisgod.substack.com/feed
+          t tennis https://www.vsin.com/category/tennis/feed/
+          t tennis https://www.reddit.com/r/tennisbetting/new.rss
+          t nba https://www.sportsbettingdime.com/picks
+          t nba https://www.bettingpros.com/nba/picks/
+          t nba https://www.actionnetwork.com/nba/picks
+          t nba https://www.reddit.com/r/sportsbook/new.rss
+          t nfl https://www.vsin.com/category/nfl/feed/
+          t nfl https://www.thespread.com/
+          t mlb https://www.sportsbettingdime.com/mlb/picks
+          t boxing https://www.racingpost.com/sport/boxing-tips/
+          t boxing https://planetsport.com/boxing
+          t boxing https://www.bettingexpert.com/us/boxing
+          t boxing https://www.predictem.com/boxing-picks/
+          t any https://www.freeplays.com/
+          t any https://rss.feedspot.com/mma_betting_rss_feeds/
+          t any https://gamma-api.polymarket.com/markets?limit=1
+          echo "--- robots.txt (Disallow count / blocks all?) ---"
+          for h in www.reddit.com www.vsin.com www.scoresandstats.com www.sportsbookreview.com www.sportsbettingdime.com www.bettingpros.com www.actionnetwork.com www.windrawwin.com www.racingpost.com planetsport.com www.bettingexpert.com www.predictem.com www.thespread.com; do
+            curl -sS -m 15 -A "$UA" "https://$h/robots.txt" -o r.tmp -w "%{http_code} " 2>&1 | tail -1
+            echo "$h disallow-all=$(grep -A3 -i 'user-agent: \*' r.tmp | grep -ciE '^disallow: /$')"
+          done
