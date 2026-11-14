@@ -2047,6 +2047,9 @@ html:not(.mp-guest) #s-gst{display:none!important}
 <style id="stakd-lsw">
 #s-loans .shead h2::before,#s-debts .shead h2::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;vertical-align:middle;background:#4A7FD6}
 #s-debts .shead h2::before{background:#D9564C}
+#s-topay{margin-top:34px;padding-top:22px;border-top:3px solid #D9564C}
+#s-topay .shead h2::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;vertical-align:middle;background:#D9564C}
+#s-cobrar h2::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:8px;vertical-align:middle;background:#4A7FD6}
 #owedSplit a[href="#s-loans"] i{background:#4A7FD6!important}
 #owedSplit a[href="#s-debts"] i{background:#D9564C!important}
 </style>
@@ -7626,7 +7629,7 @@ TRACKER DATA:
   if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
 })();</script>
 <script id="stakd-lsw-js">(function(){
-  function start(){ var c = document.getElementById("s-cobrar"), t = document.getElementById("s-topay"); if(c && t && c.nextElementSibling !== t) c.parentNode.insertBefore(t, c.nextElementSibling); }
+  function start(){ var t = document.getElementById("s-topay"), p = document.getElementById("p-loans"); if(t && p && p.lastElementChild !== t) p.appendChild(t); }
   if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
 })();</script>
 <script id="stakd-crypto-js">(function(){
