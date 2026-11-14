@@ -9,8 +9,8 @@ const APP = "https://marcoferrando114.github.io/Sette-Cifre/";
 const ORIGINS = ["https://marcoferrando114.github.io"];
 const SCOPE = "https://www.googleapis.com/auth/gmail.readonly";
 const MODEL = "claude-haiku-5-5";
-const PAGE = 25;            // emails per call (Cloudflare allows 50 outside calls per request)
-const DAILY_CALLS = 80;     // sync calls per friend per day (protects the Anthropic credit)
+const PAGE = 10;            // emails per call: small, so real-size HTML emails stay inside the free plan CPU limit (10 ms) and 50-call limit
+const DAILY_CALLS = 200;    // sync calls per friend per day (2,000 emails; protects the Anthropic credit)
 // Bank senders in the Dominican Republic (Gmail matches these against the sender address and name)
 const BANKS = ["bhd", "popularenlinea", "bpd.com.do", "banreservas", "scotiabank", "qik", "apap", "banesco", "lafise", "bsc.com.do",
   "promerica", "bancocaribe", "vimenca", "bdi.com.do", "bellbank", "ademi", "acap", "alaver", "bancamerica", "asociacioncibao", "blh.com.do"];
