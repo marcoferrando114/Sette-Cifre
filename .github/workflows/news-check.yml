@@ -1,0 +1,21 @@
+name: news-check
+on:
+  push:
+    branches: [claude/project-thread-kymne3]
+jobs:
+  c:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          curl -s -m 100 -w "\nHTTP %{http_code} %{time_total}s\n" -H "Origin: https://marcoferrando114.github.io" "https://pato-ai.marcoferrando.workers.dev/edition" -o n.json | tail -2
+          node -e '
+          const d=JSON.parse(require("fs").readFileSync("n.json","utf8"));
+          console.log("keys", Object.keys(d).join(","), "idx", d.idx);
+          console.log("big", d.big&&d.big.h, "| n", d.big&&d.big.n, "| img", !!(d.big&&d.big.img));
+          Object.entries(d.cats||{}).forEach(([k,a])=>a.forEach(i=>console.log("cat "+k+" "+i.s+" | "+i.h+" | img "+!!i.img+" kf:"+(i.kf||"-").slice(0,60))));
+          console.log("cotd", JSON.stringify(d.cotd||null).slice(0,300));
+          console.log("last", d.last&&d.last.kind, d.last&&d.last.h, !!(d.last&&d.last.img));
+          console.log("preds", (d.preds||[]).length, (d.preds||[]).map(p=>p.q).join(" ## "));
+          console.log("games", (d.games||[]).map(g=>g.league+":"+g.name+":"+g.score).join(" ## "));
+          console.log("rising", (d.rising||[]).length, "deep", d.deep&&d.deep.h);
+          '
