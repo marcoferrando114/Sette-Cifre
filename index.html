@@ -2062,10 +2062,11 @@ html:not(.mp-guest) #s-gst{display:none!important}
 #stCrypto .cr-p small.up{color:var(--good,#7fd1a4)} #stCrypto .cr-p small.dn{color:var(--bad,#f09a8a)}
 .pd-s .pd-kf{margin-top:14px}.pd-s .pd-kf li{font-size:.95rem;line-height:1.35;margin-top:5px}.pd-s .pd-note{margin-top:14px;padding-top:10px}.pd-s .pd-note p{font-size:.92rem;line-height:1.35}.pd-s .pd-jg{margin-top:10px}.pd-s .pd-by{margin-top:12px}
 .pd-bk{position:absolute;inset:0;display:grid;place-items:center;background:radial-gradient(120% 140% at 20% 0%,rgba(227,188,106,.22),rgba(255,255,255,.05) 55%,rgba(0,0,0,.18))}.pd-img img{position:relative;z-index:1}.pd-img>span{z-index:2}
+.pd-s .pd-know>i,.pd-s .pd-note>i,.pd-s .pd-key>i,.pd-s .pd-pick>i,.pd-s .pd-inj>i{font-style:normal;font-family:inherit;font-size:.66rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261114190000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261114200000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -7173,7 +7174,7 @@ TRACKER DATA:
       add(it.kf); add(it.wm); if(it.brief && it.brief.facts) it.brief.facts.forEach(add); if(it.brief) add(it.brief.why);
       L2 = L2.slice(0, 3); if(!L2.length) return ""; var es = isEs(H) && isEs(L2.join(" "));
       return '<div class="pd-know pd-kf"><i>' + (es ? "LO CLAVE" : "KEY POINTS") + '</i><ul>' + L2.map(function(t){ return '<li>' + bold(t) + '</li>'; }).join("") + '</ul></div>'; };
-    var jgBox = function(it){ return it.jg && it.jg.length ? '<div class="pd-jg">' + it.jg.slice(0, 2).map(function(j){ return '<p>💡 <b>' + esc(j[0]) + '</b> ' + esc(j[1]) + '</p>'; }).join("") + '</div>' : ""; };
+    var jgBox = function(it){ var J = (it.jg || []).filter(function(j){ return !/\b(ai|a\.i\.|data cent(er|re)s?|artificial intelligence|app|bank|inflation|startup|stock|company|internet|cloud)\b/i.test(j[0]); }).slice(0, 1); return J.length ? '<div class="pd-jg">' + J.map(function(j){ return '<p>💡 <b>' + esc(j[0]) + '</b> ' + esc(j[1]) + '</p>'; }).join("") + '</div>' : ""; };
     var tk = (daily && daily.take) || fallback(), MV = null;
     // 1. Pato's take
     L.push({id: ed + ":take", cls: "take", t: "Pato's take", w: "Updated " + hh(DROPS[slot()]), body: ""}); var TK = L[L.length - 1];
@@ -7199,7 +7200,7 @@ TRACKER DATA:
     if(CD && CD.name){ var lg = CD.tk ? "https://assets.parqet.com/logos/symbol/" + encodeURIComponent(CD.tk) + "?format=png" : CD.dom ? "https://www.google.com/s2/favicons?domain=" + encodeURIComponent(CD.dom) + "&sz=128" : "", RIS = (E.rising || []).slice(0, 2);
       L.push({id: ed + ":cotd:" + CD.name, cls: "cotd", news: 1, t: "Company of the day", w: "today", nav: "⭐ Company of the day", fk: "cotd", u: CD.u, pic: CD.u, ph: CD.h, ps: CD.s, logo: lg, sh: {k: "Company of the day", h: CD.name + ": " + CD.does, s: CD.s || "Pato", u: CD.u || ""},
         body: '<div class="pd-k">⭐ COMPANY OF THE DAY</div><div class="pd-co">' + (lg ? '<span class="pd-colg"><img src="' + esc(lg) + '" alt="" onerror="this.parentNode.innerHTML=\'<b>' + esc(CD.name.slice(0, 2).toUpperCase()) + '</b>\'"></span>' : '') + '<div><div class="pd-h1" style="margin:0">' + esc(CD.name) + '</div><div class="pd-m" style="margin-top:4px">' + esc([CD.tk, CD.country, CD.kind === "private" ? "Private company" : "Public company"].filter(Boolean).join(" · ")) + '</div></div></div>' +
-          '<div class="pd-m" style="margin-top:12px;font-size:1rem;color:#fff">' + esc(CD.does) + '</div>' + (CD.num && CD.num.length ? '<div class="pd-key"><i>BY THE NUMBERS</i><ul>' + CD.num.map(function(t){ return '<li>' + bold(t) + '</li>'; }).join("") + '</ul></div>' : '') +
+          '<div class="pd-m" style="margin-top:12px;font-size:1rem;color:#fff">' + esc(CD.does) + '</div>' + (CD.num && CD.num.length ? '<div class="pd-know"><i>BY THE NUMBERS</i><ul>' + CD.num.map(function(t){ return '<li>' + bold(t) + '</li>'; }).join("") + '</ul></div>' : '') +
           '<div class="pd-know"><i>WHY BULLISH</i><ul>' + CD.bull.map(function(t){ return '<li>' + esc(t) + '</li>'; }).join("") + '</ul></div>' +
           '<div class="pd-know"><i>WHY PATO PICKED IT TODAY</i>' + kp(CD.why) + '</div><div class="pd-know"><i>NOT PRICED IN YET</i>' + kp(CD.unp) + '</div>' + (CD.risk ? '<div class="pd-know"><i>MAIN RISK</i>' + kp(CD.risk) + '</div>' : '') +
           (RIS.length ? '<div class="pd-h1" style="font-size:1.1rem;margin-top:22px">Also rising today</div>' + RIS.map(function(it){ return '<a class="pd-r2 pd-pm pd-lr" data-u="' + esc(it.u) + '"><div class="pd-pmq">' + esc(it.h) + '</div>' + ((it.pills || []).length ? '<div class="pd-chips">' + it.pills.map(function(p){ return '<span>' + esc(p) + '</span>'; }).join("") + '</div>' : '') + '<div class="pd-lrm">' + esc(it.s) + ' · ' + ago(it.t) + ' ago</div></a>'; }).join("") : '') +

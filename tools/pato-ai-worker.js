@@ -492,14 +492,14 @@ const MEANS = `You turn news into top-notch, simple content for young readers wi
 k = the key number or hard fact the story leads with (earnings, valuation, market share, money flows, size of a deal, an unusual move), max 16 words. Use ONLY numbers and facts present in HEADLINE or TEXT. If there is no hard number, state the single most important fact. Never invent or estimate.
 m = what it means, in plain words anyone understands, max 20 words.
 f = what it means for a young person's money, savings, investments, studies or career, honest, max 16 words; if the link is indirect say so plainly.
-j = up to 2 jargon terms used in k or m, each as ["term","plain definition, max 14 words"]. Use [] if there is no jargon.
+j = almost always []. Add a term ONLY if a young reader with no finance background truly would not know it (like "short squeeze", "yield curve", "market cap"); never define everyday or obvious words (data centre, AI, app, bank, inflation, startup). At most 1 term, as ["term","plain definition, max 14 words"].
 If the story is about a number (a rate, price, score, vote count), k MUST state that number as it appears in TEXT or HEADLINE.\nLANGUAGE: if a HEADLINE is in Spanish, write its k, m, f and j in Spanish (same language as the story); otherwise English. k and m must add something the headline does not already say; if k only repeats the headline, return "" for k. Keep m and f short.\nNever say buy or sell. No emojis. Plain words. Return ONLY JSON like {"0":{"k":"","m":"","f":"","j":[]}}.`;
 async function meansAll(env, b) {
   if (!env.ANTHROPIC_KEY || !env.LIMITS || !b) return;
   const items = [b.big].concat(Object.values(b.cats || {}).map(a => (a || [])[0]), [b.deep, b.ceo]).filter(it => it && it.h && !it.founder);
   if (!items.length) return;
   const hk = it => it.h.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 60), blob = it => [it.h, it.d2 || it.d || "", (it.also || []).join(" ")].join(" ").replace(/,(?=\d{3})/g, "");
-  let M = {}; try { M = JSON.parse((await env.LIMITS.get("mf3")) || "{}"); } catch (e) { M = {}; }
+  let M = {}; try { M = JSON.parse((await env.LIMITS.get("mf4")) || "{}"); } catch (e) { M = {}; }
   const miss = items.filter(it => !(hk(it) in M));
   DBG.miss = miss.length + "/" + items.length;
   if (miss.length) {
@@ -512,7 +512,7 @@ async function meansAll(env, b) {
         let k = S(v.k, 140); const nums = [...k.matchAll(/(\d[\d,]*(?:\.\d+)?)/g)].map(x => x[1].replace(/,/g, "")).filter(n => !/^(19|20)\d\d$/.test(n));
         if (nums.some(n => !src.includes(n))) k = "";   // a number that isn't in the story's own words never goes out
         M[hk(it)] = { k, m: S(v.m, 180), f: S(v.f, 140), j: (Array.isArray(v.j) ? v.j : []).filter(x => Array.isArray(x) && S(x[0], 30) && S(x[1], 110)).slice(0, 2).map(x => [S(x[0], 30), S(x[1], 110)]) }; });
-        const ks = Object.keys(M); if (ks.length > 200) ks.slice(0, ks.length - 200).forEach(k => delete M[k]); await env.LIMITS.put("mf3", JSON.stringify(M), { expirationTtl: 604800 }); }
+        const ks = Object.keys(M); if (ks.length > 200) ks.slice(0, ks.length - 200).forEach(k => delete M[k]); await env.LIMITS.put("mf4", JSON.stringify(M), { expirationTtl: 604800 }); }
     }
   }
   items.forEach(it => { const t = M[hk(it)]; if (t) { if (t.k) it.kf = t.k; if (t.m) it.wm = t.m; if (t.f) it.fy = t.f; if (t.j && t.j.length) it.jg = t.j; } });
@@ -682,7 +682,8 @@ const edItems = b => [b.big].concat(Object.values(b.cats || {}).map(a => (a || [
 async function imgOk(u) { try { const r = await cf(u, { headers: { range: "bytes=0-4095", "user-agent": "Mozilla/5.0 (compatible; PatoDaily/1.0)", accept: "image/*" }, redirect: "follow" });
   if (!(r.status === 200 || r.status === 206)) return false; const ct = r.headers.get("content-type") || "", cr = r.headers.get("content-range"), tot = cr ? Number((cr.match(/\/(\d+)$/) || [])[1]) : Number(r.headers.get("content-length") || 0);
   try { await r.body.cancel(); } catch (e) {} return /^image\//i.test(ct) && !(tot && tot < 10000); } catch (e) { return false; } }
-async function verifyImgs(b) { let bad = 0; for (const it of edItems(b)) { if (it.img && !(await imgOk(it.img))) { it.img = ""; bad++; } } b._dbg = Object.assign({}, b._dbg, { imgBad: bad }); }   // a photo that does not load is dropped: the app shows the company logo or a visual instead
+const IMGX = "https://pato-ai.marcoferrando.workers.dev/img?u=";
+async function verifyImgs(b) { let bad = 0; for (const it of edItems(b)) { if (it.img && it.img.startsWith(IMGX)) continue; if (it.img && !(await imgOk(it.img))) { it.img = ""; bad++; } else if (it.img) it.img = IMGX + encodeURIComponent(it.img); } b._dbg = Object.assign({}, b._dbg, { imgBad: bad }); }   // a photo that does not load is dropped: the app shows the company logo or a visual instead
 function qualityCheck(b, dayH) {
   const hard = [], soft = [], items = edItems(b), tops = Object.values(b.cats || {}).filter(a => a && a[0]);
   if (tops.length < 3) hard.push("fewer than 3 topic stories");
@@ -707,7 +708,7 @@ async function repairEd(env, E, q) {   // one repair round: swap in the next bes
   x.done = 0; E.st = "built"; return acts;
 }
 async function advance(env, idx) {   // one step per call (every cron tick, or every phone request while no cron has done it): build, finish, check, repair, publish or hold
-  const key = "ed9c:" + idx; let E = await env.LIMITS.get(key, "json").catch(() => null); if (E && E.pub !== undefined) return E;
+  const key = "ed9d:" + idx; let E = await env.LIMITS.get(key, "json").catch(() => null); if (E && E.pub !== undefined) return E;
   await loadHL(env);
   if (!E || !E.b) { const b = await buildEdition(env, idx); if (Object.keys(b.cats).length < 2) { await env.LIMITS.put("edh:" + idx, JSON.stringify({ at: Date.now(), level: "hard", reasons: ["could not build: too few stories"], pub: false }), { expirationTtl: 172800 }).catch(() => 0); return null; }
     E = { at: Date.now(), st: "built", b, x: {}, tries: 0 }; await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }); await saveHL(env).catch(() => 0); return E; }
@@ -723,7 +724,7 @@ async function advance(env, idx) {   // one step per call (every cron tick, or e
   await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }); return E;
 }
 async function getEdition(env, force, dbg, ctx) {   // what a phone gets: this drop's edition once it has passed the check, otherwise the last good one (never a broken one)
-  const idx = dropIdx(Date.now()), key = "ed9c:" + idx, kv = env.LIMITS; let E = kv ? await kv.get(key, "json").catch(() => null) : null;
+  const idx = dropIdx(Date.now()), key = "ed9d:" + idx, kv = env.LIMITS; let E = kv ? await kv.get(key, "json").catch(() => null) : null;
   if (E && E.pub) { const o = finalize(E.b); o.fin = 1; if (dbg) { o._dbg = E.b._dbg; o._q = E.q; o._log = E.log; } return o; }
   let L = null; try { const pt = kv && await kv.get("edpub", "json"); if (pt) L = await kv.get(pt.key, "json"); } catch (e) { L = null; }
   if (!L && kv) { for (const k8 of ["ed8:" + idx, "ed8:" + (idx - 1)]) { const v = await kv.get(k8, "json").catch(() => null); if (v && v.b && v.st === "ready") { L = v; break; } } }   // first deploy: the previous generation's finished edition keeps showing while the new one is built
@@ -857,6 +858,14 @@ export default {
     if (req.method === "GET" && url.pathname === "/news") {
       if (!ORIGINS.includes(origin)) return json({ error: { type: "forbidden" } }, 403, origin);
       try { await loadHL(env); const b = await bundle(url.searchParams, env); if (b.big) b.big.brief = await brief(env, b.big).catch(() => null); await plainAll(env, b).catch(() => null); b.pick = await patoPick(env, b.games).catch(() => null); return json(b, 200, origin); } catch (e) { return json({ error: { type: "news_failed" } }, 502, origin); }
+    }
+    if (req.method === "GET" && url.pathname === "/img") {   // story photos re-hosted through our own address (Marco Nov 14: outlets that block hotlinking must never leave a blank picture); cached at the edge
+      try { const u = new URL(url.searchParams.get("u") || ""); if (u.protocol !== "https:" || /^(localhost|\d+\.\d+\.\d+\.\d+|\[)/i.test(u.hostname) || !u.hostname.includes(".")) throw new Error("bad");
+        const c = caches.default, hit = await c.match(req); if (hit) return hit;
+        const r = await cf(u.href, { headers: { "user-agent": "Mozilla/5.0 (compatible; PatoDaily/1.0)", accept: "image/*", "accept-language": "en-US,en;q=0.9" }, redirect: "follow" }); const ct = r.headers.get("content-type") || "";
+        if (!r.ok || !/^image\//i.test(ct)) throw new Error("not image"); const buf = await r.arrayBuffer(); if (buf.byteLength < 10000 || buf.byteLength > 6000000) throw new Error("size");
+        const out = new Response(buf, { status: 200, headers: { "content-type": ct, "cache-control": "public, max-age=604800", "access-control-allow-origin": "*" } }); if (ctx) ctx.waitUntil(c.put(req, out.clone())); return out;
+      } catch (e) { return new Response("", { status: 404 }); }
     }
     if (req.method === "GET" && url.pathname === "/edition") {   // the prebuilt edition (demo account first): one fast read, same for everyone
       if (!ORIGINS.includes(origin)) return json({ error: { type: "forbidden" } }, 403, origin);
