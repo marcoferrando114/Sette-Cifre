@@ -1469,6 +1469,15 @@ main{padding-bottom:calc(128px + env(safe-area-inset-bottom,0px))!important}
 .pd-old{display:inline-block;margin-right:6px;padding:1px 7px;border-radius:999px;background:rgba(255,255,255,.12);color:#B8C7BE;font-size:.62rem;font-weight:700;vertical-align:2px}
 .pd-nav button.nw{color:#fff;background:rgba(255,255,255,.14);position:relative;padding-right:18px}.pd-nav button.nw::after{content:"";position:absolute;right:8px;top:50%;width:6px;height:6px;margin-top:-3px;border-radius:50%;background:#FF5A4A}
 .pd-nav button.sn{opacity:.45}
+.pd-vis{display:grid;place-items:center;aspect-ratio:2/1;background:radial-gradient(120% 140% at 20% 0%,rgba(227,188,106,.22),rgba(255,255,255,.05) 55%,rgba(0,0,0,.18))}
+.pd-vis .pd-vm{display:grid;place-items:center}
+.pd-vlg{width:88px;height:88px;border-radius:22px;background:#fff;display:grid;place-items:center;overflow:hidden;box-shadow:0 6px 24px rgba(0,0,0,.35)}
+.pd-vlg img{width:68%;height:68%;object-fit:contain}
+.pd-vem{font-size:3.6rem;line-height:1;filter:drop-shadow(0 4px 14px rgba(0,0,0,.4))}
+.pd-s.brk .pd-bd .pd-vis{aspect-ratio:1/1;margin-bottom:-44px}
+.pd-co{display:flex;gap:14px;align-items:center;margin:4px 0 2px}
+.pd-colg{flex:none;width:58px;height:58px;border-radius:15px;background:#fff;display:grid;place-items:center;overflow:hidden;color:#222;font-weight:800}
+.pd-colg img{width:70%;height:70%;object-fit:contain}
 .pd-s.preds .pd-pm{cursor:default;margin-top:9px;padding:9px 12px;border-radius:14px}.pd-s.preds .pd-pmq{font-size:.9rem}.pd-s.preds .pd-pmq small{font-size:.76rem}.pd-s.preds .pd-pmr{margin-top:6px}.pd-s.preds .pd-pmr b{font-size:1.25rem}.pd-s.preds .pd-pmr small{font-size:.72rem}.pd-go{color:#B9A8FF;font-weight:700;text-decoration:none;cursor:pointer;padding:2px 4px}
 .pd-more{position:sticky;bottom:0;margin:0 -24px -20px;padding:40px 0 20px;text-align:center;font-size:.78rem;font-weight:800;letter-spacing:.08em;color:#FFD9CF;background:linear-gradient(to top,#1E100D 50%,transparent);pointer-events:none;animation:pdbob 1.4s ease-in-out infinite;transition:opacity .2s}.pd-s.sc .pd-more{opacity:0;animation:none}@keyframes pdbob{50%{transform:translateY(-4px)}}
 .pd-ft{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 14px 14px}.pd-fmid{flex:1;text-align:center;line-height:1.35}.pd-fsp{width:36px;flex:none}.pd-ft .pd-fb{width:36px;height:36px;flex:none;font-size:.9rem;opacity:.75}.pd-ft .pd-fb.on{opacity:1}
@@ -2054,7 +2063,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261113003437";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261114120000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -6930,13 +6939,19 @@ TRACKER DATA:
   var open = function(u){ if(u) window.open(u, "_blank", "noopener"); };
   var usd = function(n){ return "US$" + Math.abs(n).toLocaleString("en-US", {maximumFractionDigits: Math.abs(n) < 10 ? 2 : 0}); };
   var bold = function(t){ return esc(t).replace(/((?:US|RD)\$[\d,.]+[kKmM]?|[+−-]?\d+(?:\.\d+)?%)/g, "<b>$1</b>"); };
-  var on = function(){ if(PICS() && !(prefs && prefs.picked)){ var mine = prefs && Array.isArray(prefs.on) ? prefs.on.filter(function(x){ return FIX.indexOf(x) < 0 && CATS.some(function(c){ return c[0] === x; }); }) : []; return mine.concat(["business","tech","crypto","game","fashion"].filter(function(x){ return mine.indexOf(x) < 0; })).slice(0, TOP); }   // demo: always a full busy day (5 topics)
+  var onOld = function(){ if(PICS() && !(prefs && prefs.picked)){ var mine = prefs && Array.isArray(prefs.on) ? prefs.on.filter(function(x){ return FIX.indexOf(x) < 0 && CATS.some(function(c){ return c[0] === x; }); }) : []; return mine.concat(["business","tech","crypto","game","fashion"].filter(function(x){ return mine.indexOf(x) < 0; })).slice(0, TOP); }   // demo: always a full busy day (5 topics)
     return prefs && Array.isArray(prefs.on) ? prefs.on.filter(function(x){ return FIX.indexOf(x) < 0 && CATS.some(function(c){ return c[0] === x; }); }).slice(0, TOP) : DEF; };
   // Pato learns you (Marco Nov 11): companies = your stocks + companies you read about; sports = what you bet on
   var CO = {IBKR: /\b(IBKR|Interactive Brokers)\b/, MU: /\bMicron\b/, AAPL: /\bApple\b/, TSLA: /\bTesla\b/, NVDA: /\bNvidia\b/i, AMZN: /\bAmazon\b/, GOOGL: /\b(Google|Alphabet)\b/, META: /\b(Meta|Facebook|Instagram)\b/, MSFT: /\bMicrosoft\b/, NFLX: /\bNetflix\b/, AVGO: /\bBroadcom\b/, AMD: /\bAMD\b/, TSM: /\b(TSMC|Taiwan Semiconductor)\b/, DIS: /\bDisney\b/, NKE: /\bNike\b/, KO: /\bCoca-Cola\b/, JPM: /\bJPMorgan\b/, V: /\bVisa\b/, MA: /\bMastercard\b/, UBER: /\bUber\b/, SPOT: /\bSpotify\b/, PLTR: /\bPalantir\b/, COIN: /\bCoinbase\b/, WMT: /\bWalmart\b/};
   function learn(text, w){ if(!text || !db) return; var co = Object.assign({}, (prefs && prefs.co) || {}), hit = 0;
     Object.keys(CO).forEach(function(t){ if(CO[t].test(text)){ co[t] = (co[t] || 0) + (w || 1); hit = 1; } }); if(!hit) return;
     prefs = Object.assign({}, prefs || {}, {co: co}); try{ db.doc("prefs/news").set({co: co}, {merge: true}); }catch(_){} }
+  function autoT(){ var a = []; if(pos.length) a.push(["stocks", "you own stocks"]); if(bets.length) a.push(["game", "you track sports bets"]); return a; }   // Pato adds topics from what you hold and bet, and says so
+  var onNew = function(){ var valid = function(x){ return FIX.indexOf(x) < 0 && CATS.some(function(c){ return c[0] === x; }); };
+    var o = prefs && Array.isArray(prefs.on) ? prefs.on.filter(valid) : DEF.slice();
+    if(!(prefs && prefs.v2)){ if(prefs && Array.isArray(prefs.on) && o.indexOf("rd") < 0) o.push("rd"); autoT().forEach(function(a){ if(o.indexOf(a[0]) < 0) o.push(a[0]); }); }
+    return o.slice(0, TOP); };
+  var on = function(){ return ND() ? onNew() : onOld(); };
   function tickers(){ var own = pos.map(function(p){ return p.t; }), co = (prefs && prefs.co) || {};
     var lr = Object.keys(co).filter(function(t){ return co[t] >= 2 && own.indexOf(t) < 0; }).sort(function(a, b){ return co[b] - co[a]; });
     return own.slice(0, lr.length ? 3 : 5).concat(lr).slice(0, 5); }
@@ -6947,8 +6962,9 @@ TRACKER DATA:
     return n; }
   var base = function(){ return (window.MP_AI_URL || "").replace(/\/$/, ""); };
   function WILD(){ var o = on(), c = CATS.map(function(x){ return x[0]; }).filter(function(k){ return FIX.indexOf(k) < 0 && k !== "game" && o.indexOf(k) < 0; }); return c.length ? c[Number(day().replace(/-/g, "")) % c.length] : ""; }
-  function q(){ var k = on().filter(function(x){ return x !== "big" && x !== "game"; }); if(k.indexOf("rd") < 0) k.unshift("rd"); if(WILD()) k.push(WILD());
+  function qOld(){ var k = on().filter(function(x){ return x !== "big" && x !== "game"; }); if(k.indexOf("rd") < 0) k.unshift("rd"); if(WILD()) k.push(WILD());
     return "k=" + k.join(",") + (tickers().length ? "&t=" + encodeURIComponent(tickers().join(",")) : "") + (on().indexOf("game") < 0 ? "&g=0" : "") + (PICS() ? "&busy=1" : ""); }
+  function q(){ return ND() ? "k=ed1" : qOld(); }   // the new edition is the same for everyone and prebuilt on the server; your topics are picked on the phone
   var sig = function(){ return q(); };
   // Marco Nov 12: "Pato's take needs to be able to provide more things": rotate the angle each day across his whole financial life
   function angleOf(){ var pf = window.__patoFacts || {}, A = [];
@@ -6974,7 +6990,7 @@ TRACKER DATA:
     if(!base() || (busy && Date.now() - busy < 9e4) || !window.mpIdToken) return;   // a request stuck while the phone slept never blocks the next one
     var st = ls("pd-daily7"); if(!force && st && st.day === day() && st.sig === sig() && st.data && ((st.data.take && Object.keys(st.data.cats || {}).length >= 2) || Date.now() - (st.at||0) < 15*6e4)){ daily = st.data; return render(); }
     busy = Date.now();
-    window.mpIdToken().then(function(tok){ return fetch(base() + "/daily?" + q() + lwq(), {method: "POST", headers: {"content-type": "application/json", authorization: "Bearer " + tok}, body: JSON.stringify(facts())}); })
+    window.mpIdToken().then(function(tok){ return fetch(base() + (ND() ? "/daily2" : "/daily?" + q() + lwq()), {method: "POST", headers: {"content-type": "application/json", authorization: "Bearer " + tok}, body: JSON.stringify(facts())}); })
       .then(function(r){ return r.ok ? r.json() : null; }).then(function(d){ busy = 0; if(!d) return render(); daily = d; tick = {at: d.at, ticker: d.ticker, big: d.big};
         ls("pd-daily7", {day: day(), sig: sig(), at: Date.now(), data: d}); render(); }).catch(function(){ busy = 0; render(); });
   }
@@ -6982,15 +6998,19 @@ TRACKER DATA:
   var FR = {}, drop = ls("pd-drop4");
   var DROPS = [7, 10, 13, 16, 19, 22];   // Marco Nov 11: every 3 hours, 7am to 10pm (DR)
   try{ if(drd().toISOString().slice(0, 10) === "2026-11-12") DROPS[5] = 21.25; }catch(e){}   // one time only (Marco Nov 12): tonight's last edition drops at 9:15pm instead of 10pm
-  function slot(){ if(DEMO) return 0; var dd = drd(), h = dd.getUTCHours() + dd.getUTCMinutes() / 60; if(h < 7) return 4; for(var i = DROPS.length - 1; i >= 0; i--) if(h >= DROPS[i]) return i; return 0; }
+  // Marco Nov 14: the redesign (3 drops, 8 stories, prebuilt edition) runs on the demo account only until he approves it; everyone else keeps today's Pato Daily
+  var CATS_OLD = CATS.slice(), FIX_OLD = FIX.slice(), DROPS_OLD = DROPS.slice(), NDm = null, CATS_NEW = [["big","Breaking","🚨"],["rd","DR","🇩🇴"],["stocks","Stocks","📈"],["crypto","Crypto","🪙"],["tech","AI & tech","🤖"],["business","Business & CEOs","💼"],["startups","Startups","🚀"],["game","Sports","🏆"]];
+  function setArr(a, b){ a.length = 0; b.forEach(function(x){ a.push(x); }); }
+  function ND(){ var m = window.MP_ME, n = !!(m && /^pato-?demo/i.test(m.email || "")) && !DEMO; if(n !== NDm){ NDm = n; setArr(CATS, n ? CATS_NEW : CATS_OLD); setArr(FIX, n ? ["big"] : FIX_OLD); setArr(DROPS, n ? [7, 13, 19] : DROPS_OLD); if(n) drop = ls("pd-drop5") || null; } return n; }
+  function slot(){ if(DEMO) return 0; ND(); var dd = drd(), h = dd.getUTCHours() + dd.getUTCMinutes() / 60; if(h < 7) return ND() ? DROPS.length - 1 : 4; for(var i = DROPS.length - 1; i >= 0; i--) if(h >= DROPS[i]) return i; return 0; }
   function hh(h){ var f = Math.floor(h), m = Math.round((h - f) * 60); return (f % 12 || 12) + ":" + (m < 10 ? "0" : "") + m + " " + (f < 12 ? "AM" : "PM"); }
   function clock(){ var sl = slot(); return "Updated " + hh(DROPS[sl]) + " · next " + hh(DROPS[(sl + 1) % DROPS.length]); }
   // Live between drops (Marco Nov 12): every 20 min check for things that can't wait: huge breaking news (3+ outlets), Pato's pick graded, more world stories. The rest waits for the next drop.
   // Marco Nov 12: the duck stays hidden until this drop's stories are in (max 25s wait, then it shows what it has)
-  var waitAt = Date.now(); setTimeout(function(){ render(); }, 25500);
-  function fresh(){ var sl = slot(); return !!((drop && drop.day === day() && drop.slot === sl && (drop.got || 0) >= waitAt - 18e5) || (!sl && daily && Object.keys(daily.cats || {}).length)); }
-  function ready(){ return DEMO || (fresh() && pend < 1) || Date.now() - waitAt > 25e3; }
-  function getDrop(){ if(DEMO) return; var sl = slot(), same = drop && drop.day === day() && drop.slot === sl && drop.sig === sig(); if(!base() || (getDrop.busy && Date.now() - getDrop.busy < 9e4) || (same && Date.now() - (drop.got || 0) < 20*6e4)) return; if(!sl && !same && !(drop && drop.day === day()) && daily && Object.keys(daily.cats || {}).length) return;   // 7am: the AI edition leads, unless it failed getDrop.busy = Date.now();
+  var waitAt = Date.now(); setTimeout(function(){ render(); }, ND() ? 6500 : 25500);
+  function freshOld(){ var sl = slot(); return !!((drop && drop.day === day() && drop.slot === sl && (drop.got || 0) >= waitAt - 18e5) || (!sl && daily && Object.keys(daily.cats || {}).length)); }
+  function readyOld(){ return DEMO || (fresh() && pend < 1) || Date.now() - waitAt > 25e3; }
+  function getDropOld(){ if(DEMO) return; var sl = slot(), same = drop && drop.day === day() && drop.slot === sl && drop.sig === sig(); if(!base() || (getDrop.busy && Date.now() - getDrop.busy < 9e4) || (same && Date.now() - (drop.got || 0) < 20*6e4)) return; if(!sl && !same && !(drop && drop.day === day()) && daily && Object.keys(daily.cats || {}).length) return;   // 7am: the AI edition leads, unless it failed getDrop.busy = Date.now();
     fetch(base() + "/news?" + q().replace("&busy=1", "") + "&busy=1" + lwq()).then(function(r){ return r.ok ? r.json() : null; })
       .then(function(d){ getDrop.busy = 0; if(!d || !d.cats || (!d.big && !Object.keys(d.cats).length)) return;   // never keep an empty drop
         if(same || !sl){ var o = drop.d, LA = ls("pd-live") || {}; if(LA.day !== day()) LA = {day: day(), n: 0, at: 0};
@@ -7000,6 +7020,14 @@ TRACKER DATA:
           if(Object.keys(d.cats).length > Object.keys(o.cats || {}).length || !o.big){ drop.d = Object.assign({}, d, {big: o.big || d.big, pick: o.pick}); } }   // Nov 12: a thin drop gets filled in on the next check   // the pick's record updates quietly (no alert)
         else drop = {day: day(), slot: sl, sig: sig(), d: d, got: Date.now()};
         ls("pd-drop4", drop); render(); }).catch(function(){ getDrop.busy = 0; }); }
+  var curIdx = function(){ return Math.floor((Date.now() - 11*3600e3) / (6*3600e3)); };   // same count the server uses: one edition per drop
+  function edOf(){ var c = [drop && drop.d, daily].filter(function(x){ return x && x.idx === curIdx(); })[0]; if(!c && Date.now() - waitAt > 8e3) c = (drop && drop.d) || daily || null; return c; }   // this drop's edition only; the last one only if the phone is offline
+  function fresh(){ return ND() ? [drop && drop.d, daily].some(function(x){ return x && x.idx === curIdx(); }) : freshOld(); }
+  function ready(){ return ND() ? ((fresh() && pend < 1) || Date.now() - waitAt > 6e3) : readyOld(); }   // stories show as soon as they're in; only the first photos are waited for (max 2.5s)
+  function getDrop(){ if(!ND()) return getDropOld(); var same = drop && drop.d && drop.d.idx === curIdx(); if(!base() || same || (getDrop.busy && Date.now() - getDrop.busy < 9e4)) return; getDrop.busy = Date.now();   // one request per drop: the server prebuilt it, photos included
+    fetch(base() + "/edition").then(function(r){ return r.ok ? r.json() : null; })
+      .then(function(d){ getDrop.busy = 0; if(!d || !d.cats || !(d.big || Object.keys(d.cats).length) || d.idx == null) return;   // never keep an empty drop
+        drop = {day: day(), slot: slot(), d: d, got: Date.now()}; ls("pd-drop5", drop); render(); }).catch(function(){ getDrop.busy = 0; }); }
   function about(t, it){ if(!it || !it.h) return null; var re = CO[t] || new RegExp("\\b" + t + "\\b"); return re.test(it.h) ? it : null; }   // a stock's news must name that company (Marco: no Costco story on IBKR)
   // Wall Street on your stocks (Marco Nov 12: analysts needs real output): buy/hold/sell counts from Finnhub (your own key), kept 6 hours
   var RC = ls("pd-recs") || {at: 0, d: {}};
@@ -7041,7 +7069,7 @@ TRACKER DATA:
   }
   // ---------- stories ----------
   var S = [], cur = 0, timer = null, ignore = 0;
-  function stories(){
+  function storiesOld(){
     var L = [], want = FIX.concat(on()), cats0 = (daily && daily.cats) || {}, dd = drop && drop.day === day() && drop.d ? drop.d : null, cats = {}, notes = {}, ed = day(); FR = {};
     Object.keys(cats0).concat(dd ? Object.keys(dd.cats || {}) : []).forEach(function(k){ if(cats[k]) return; var A = pickNew(k, [].concat(dd && dd.cats && dd.cats[k] || [], cats0[k] || []));
       cats[k] = A; if(A[0] && ![].concat(cats0[k] || []).some(function(x){ return x.h === A[0].h; })) FR[k] = 1; });   // FR = swapped in by a drop: no morning AI lines for it
@@ -7128,6 +7156,79 @@ TRACKER DATA:
     L = L.map(function(x, i){ return [x, i]; }).sort(function(a, b){ return rk(a[0]) - rk(b[0]) || a[1] - b[1]; }).map(function(a){ return a[0]; });   // Marco Nov 12: take, world, your money, your topics, discover, sports, duel last
     return L;
   }
+  function stories2(){
+    var L = [], E = edOf() || {}, ed = day(), cats = E.cats || {}, big = E.big || null, sameEd = !!(DEMO || (daily && E.idx != null && daily.idx === E.idx)), notes = (sameEd && daily && daily.take && daily.take.notes) || {};
+    FR = {}; if(!sameEd) ["big", "rd", "business", "tech", "crypto", "stocks", "startups", "game"].forEach(function(k){ FR[k] = 1; });   // the AI lines in Pato's take belong to the edition they were written for
+    var ix = function(k){ return CATS.map(function(c){ return c[0]; }).indexOf(k); }, fyBox = function(t){ t = String(t || "").trim(); return t ? '<div class="pd-note"><i>WHAT IT MEANS FOR YOU</i><p>' + bold(t) + '</p></div>' : ""; };
+    var ownT = function(it){ var t = pos.map(function(p){ return p.t; }).filter(function(t){ return CO[t] && CO[t].test(it.h); })[0]; return t ? "You own " + t + ". " : ""; };
+    var by = function(x){ return esc(x.by && x.by.length > 1 ? x.by.join(" · ") : x.s) + " · " + ago(x.t) + " ago"; };
+    // Marco Nov 14: the real headline and source stay exactly as published; the key number, the plain-language line and the "for you" line sit alongside in their own labelled boxes
+    var kp = function(t){ return '<p style="margin:6px 0 0;font-size:1rem;line-height:1.4;color:#fff">' + esc(t) + '</p>'; };
+    var kfBox = function(it){ return (it.kf ? '<div class="pd-key"><i>THE KEY FACT</i><p>' + bold(it.kf) + '</p></div>' : '') + (it.wm ? '<div class="pd-know"><i>WHAT IT MEANS</i>' + kp(it.wm) + '</div>' : ''); };
+    var jgBox = function(it){ return it.jg && it.jg.length ? '<div class="pd-jg">' + it.jg.slice(0, 2).map(function(j){ return '<p>💡 <b>' + esc(j[0]) + '</b> ' + esc(j[1]) + '</p>'; }).join("") + '</div>' : ""; };
+    var tk = (daily && daily.take) || fallback(), MV = null;
+    // 1. Pato's take
+    L.push({id: ed + ":take", cls: "take", t: "Pato's take", w: "Updated " + hh(DROPS[slot()]), body: ""}); var TK = L[L.length - 1];
+    var pv = pos.reduce(function(m, p){ return m + (p.precio > 0 ? p.sh*p.precio : 0); }, 0), worth = function(p){ return Math.abs(p.sh*(p.precio-p.prev)) >= Math.max(10, pv*.005); };   // Marco: +6.3% on US$21 is US$1.25, not worth a slide
+    var b = pos.filter(function(p){ return p.prev > 0 && p.precio > 0 && Math.abs(p.precio/p.prev-1) >= .04 && worth(p); }).sort(function(x, y){ return Math.abs(y.sh*(y.precio-y.prev)) - Math.abs(x.sh*(x.precio-x.prev)); })[0], said = tk.happened ? tk.happened.text : "";
+    if(b && !(said && new RegExp("\\b" + b.t + "\\b").test(said))) MV = {t: "Big move · " + b.t};
+    // 2. Breaking
+    if(big){ var BY = big.by && big.by.length ? big.by : [big.s].filter(Boolean);   // Breaking = the news of the day (Marco Nov 11), front-page look every day
+      L.push({id: "big:" + big.h, hot: big.huge !== false, cls: "big brk", news: 1, t: "Breaking", w: ago(big.t) + " ago", u: big.u, pic: big.u, ph: big.h, ps: big.s, fk: "big", sh: {k: "Breaking", h: big.h, s: big.s, u: big.u, kn: knowArr("big")},
+        body: '<div class="pd-brkrow"><span class="pd-brk"><span class="pd-dot"></span>BREAKING</span><span class="pd-ago">' + esc(ago(big.t)) + ' ago</span></div><div class="pd-bigh">' + esc(big.h) + '</div>' + kfBox(big) +
+          (BY.length ? '<div class="pd-by"><small>' + (Math.max(BY.length, big.n || 0) > 1 ? "Covered by " + Math.max(BY.length, big.n || 0) + " outlets" : "Source") + '</small>' + BY.slice(0, 4).map(function(o){ return '<span>' + esc(o) + '</span>'; }).join("") + '</div>' : '') + (big.brief && big.brief.facts && big.brief.facts.length ? '<div class="pd-know pd-kf"><i>KEY FACTS</i><ul>' + big.brief.facts.map(function(t){ return '<li>' + bold(t) + '</li>'; }).join("") + '</ul></div>' + (big.brief.why ? '<div class="pd-note"><i>WHY IT MATTERS</i><p>' + bold(big.brief.why) + '</p></div>' : '') : know("big")) + jgBox(big) + fyBox(notes.big || (ownT(big) + (big.fy || ""))) + '<div class="pd-more">⌄ Scroll for more</div>'}); }
+    // 3-4. Two of your topics, ONE story each (Marco Nov 14: quality over quantity); the pair rotates each drop so every topic gets its turn
+    var autoSet = (prefs && prefs.auto) || [], why = {stocks: "you own stocks", game: "you track sports bets"};
+    var T = on().filter(function(k){ return k !== "game" && cats[k] && cats[k][0]; }), pairs = [];
+    if(T.length){ var st = (curIdx() * 2) % T.length; pairs.push(T[st]); if(T.length > 1) pairs.push(T[(st + 1) % T.length]); }
+    pairs.forEach(function(k){ var c = CATS[ix(k)], it = cats[k][0], h = k === "rd" && !FR.rd && sameEd && daily.take && daily.take.rd ? daily.take.rd : it.h;
+      L.push({id: ed + ":" + k + ":" + it.h, cls: k === "rd" ? "rd" : "", news: 1, t: c[1], w: ago(it.t) + " ago", u: it.u, pic: it.u, ph: it.h, ps: it.s, fk: k, sh: {k: c[1], h: h, s: it.s, u: it.u, kn: knowArr(k)}, body: '<div class="pd-k">' + esc((k === "tech" && /\b(AI|artificial intelligence|OpenAI|ChatGPT|chatbots?)\b/.test(it.h) ? "AI news" : c[1]).toUpperCase()) + '</div>' + (function(){ var N = hnm(h); return '<div class="pd-h1' + ((it.n || 0) >= 4 ? ' pd-hx' : '') + '">' + esc(N ? N.t : h) + '</div>' + (N ? '<div class="pd-m">Comment by <b>' + esc(N.n) + '</b></div>' : ''); })() + (h !== it.h ? '<div class="pd-m" style="font-style:italic">' + esc(it.h) + '</div>' : '') + '<div class="pd-m">' + by(it) + '</div>' +
+        (autoSet.indexOf(k) >= 0 && why[k] ? '<div class="pd-m" style="font-style:italic">Added by Pato because ' + why[k] + '.</div>' : '') + kfBox(it) + (it.wm ? "" : plain(it)) + know(k) + jgBox(it) + fyBox(notes[k] || (ownT(it) + (it.fy || "")))}); });
+    TK.body = takeBody(tk, big, E.games || [], MV && MV.t.replace("Big move · ", ""), E.pick);
+    // 5. Company of the day (+ the startups rising today), anywhere in the world (Marco Nov 14)
+    var CD = E.cotd;
+    if(CD && CD.name){ var lg = CD.tk ? "https://assets.parqet.com/logos/symbol/" + encodeURIComponent(CD.tk) + "?format=png" : CD.dom ? "https://www.google.com/s2/favicons?domain=" + encodeURIComponent(CD.dom) + "&sz=128" : "", RIS = (E.rising || []).slice(0, 2);
+      L.push({id: ed + ":cotd:" + CD.name, cls: "cotd", news: 1, t: "Company of the day", w: "today", nav: "⭐ Company of the day", fk: "cotd", u: CD.u, pic: CD.u, ph: CD.h, ps: CD.s, logo: lg, sh: {k: "Company of the day", h: CD.name + ": " + CD.does, s: CD.s || "Pato", u: CD.u || ""},
+        body: '<div class="pd-k">⭐ COMPANY OF THE DAY</div><div class="pd-co">' + (lg ? '<span class="pd-colg"><img src="' + esc(lg) + '" alt="" onerror="this.parentNode.innerHTML=\'<b>' + esc(CD.name.slice(0, 2).toUpperCase()) + '</b>\'"></span>' : '') + '<div><div class="pd-h1" style="margin:0">' + esc(CD.name) + '</div><div class="pd-m" style="margin-top:4px">' + esc([CD.tk, CD.country, CD.kind === "private" ? "Private company" : "Public company"].filter(Boolean).join(" · ")) + '</div></div></div>' +
+          '<div class="pd-m" style="margin-top:12px;font-size:1rem;color:#fff">' + esc(CD.does) + '</div>' + (CD.num && CD.num.length ? '<div class="pd-key"><i>BY THE NUMBERS</i><ul>' + CD.num.map(function(t){ return '<li>' + bold(t) + '</li>'; }).join("") + '</ul></div>' : '') +
+          '<div class="pd-know"><i>WHY BULLISH</i><ul>' + CD.bull.map(function(t){ return '<li>' + esc(t) + '</li>'; }).join("") + '</ul></div>' +
+          '<div class="pd-know"><i>WHY PATO PICKED IT TODAY</i>' + kp(CD.why) + '</div><div class="pd-know"><i>NOT PRICED IN YET</i>' + kp(CD.unp) + '</div>' + (CD.risk ? '<div class="pd-know"><i>MAIN RISK</i>' + kp(CD.risk) + '</div>' : '') +
+          (RIS.length ? '<div class="pd-h1" style="font-size:1.1rem;margin-top:22px">Also rising today</div>' + RIS.map(function(it){ return '<a class="pd-r2 pd-pm pd-lr" data-u="' + esc(it.u) + '"><div class="pd-pmq">' + esc(it.h) + '</div>' + ((it.pills || []).length ? '<div class="pd-chips">' + it.pills.map(function(p){ return '<span>' + esc(p) + '</span>'; }).join("") + '</div>' : '') + '<div class="pd-lrm">' + esc(it.s) + ' · ' + ago(it.t) + ' ago</div></a>'; }).join("") : '') +
+          '<div class="pd-m" style="margin-top:14px">Pato\'s view, not financial advice.</div>'}); }
+    // 6. Predictions: ONE poll
+    var PTRIV = /\b(tweets?|posts? on X|how many (times|tweets|posts|followers|views)|will \w+( \w+)? say\b|mention(s|ed)?\b|followers|subscribers|views|streams|box office|gross|top (song|artist|spotify)|spotify|youtube|tiktok|# of|number of (tweets|posts)|what price will|(bitcoin|btc|ethereum|ether|solana|xrp|dogecoin)\b[^?]{0,40}\b(hit|reach|dip|above|below|price))\b/i;
+    var lead = function(m){ var q = String(m.q), a = q.match(/^([↑↓])\s*\$?([\d,.]+)/); if(a) return (a[1] === "↑" ? "Reaches US$" : "Falls to US$") + a[2]; if(/\bby\.{0,3}\??$/i.test(m.t) && /\d{4}|January|February|March|April|May|June|July|August|September|October|November|December/.test(q)) return "by " + q; return q; };
+    var PR = (E.preds || []).filter(function(m){ return !PTRIV.test(m.t + " " + m.q); }).slice(0, 1);
+    if(PR.length) L.push({id: ed + ":preds:" + PR[0].q.slice(0, 80), cls: "preds", t: "Predictions", w: "Polymarket · Kalshi", nav: "🔮 Predictions", fk: "preds",
+      body: '<div class="pd-k">🔮 WHAT THE MARKET THINKS</div><div class="pd-h1" style="font-size:1.3rem">Today\'s hottest prediction</div>' + PR.map(function(m){ var dl = m.end ? Math.round((Date.parse(m.end + "T12:00:00Z") - Date.now())/864e5) : null;
+        return '<div class="pd-pm"><div class="pd-pmq">' + esc(m.multi ? m.t : m.q) + (m.multi ? '<small>Most likely: ' + esc(lead(m)) + '</small>' : '') + '</div><div class="pd-pmr"><b>' + m.p + '%</b><i><u style="width:' + m.p + '%"></u></i>' +
+          '<small>' + (m.ch ? '<em class="' + (m.ch > 0 ? "up" : "dn") + '">' + (m.ch > 0 ? "▲ " : "▼ ") + Math.abs(m.ch) + ' today</em> · ' : '') + (dl != null && dl >= 0 ? (dl === 0 ? "Settles today" : "Settles " + dlabel(m.end) + (dl <= 60 ? " · " + dl + "d" : "")) : "") + ' · <a class="pd-r2 pd-go" data-u="' + esc(m.u) + '">Open ›</a></small></div></div>'; }).join("") +
+        '<div class="pd-m" style="margin-top:14px">% = what people betting real money think the chance is. Not advice.</div>'});
+    // 7. Sports (only if you follow it)
+    if(on().indexOf("game") >= 0){ var pg = pickGame(E.games), g = pg && scOf(pg.g), mine = pg && pg.mine;
+      if(g){ pg.more = (pg.more || []).map(scOf);
+        var TM = g.teams || [], vs = TM.length === 2 && TM[0].n && TM[1].n ? '<div class="pd-vs">' + TM.map(function(t){ return '<div class="pd-team">' + (t.logo ? '<img src="' + esc(t.logo) + '" alt="" onerror="this.outerHTML=\'<span class=pd-tl>' + esc(t.n.slice(0,3).toUpperCase()) + '</span>\'">' : '<span class="pd-tl">' + esc(t.n.slice(0,3).toUpperCase()) + '</span>') +
+          '<b>' + esc(t.n) + '</b>' + ((g.live || g.fin) && t.score !== "" ? '<em' + (g.fin && t.won ? ' class="w"' : '') + '>' + esc(t.score) + '</em>' : t.rec ? '<small>' + esc(t.rec) + '</small>' : '') + '</div>'; }).join('<div class="pd-at">' + (g.fin ? '<i class="fin">FINAL</i>' : g.live ? '<i>LIVE</i>' + (g.det ? '<small>' + esc(g.det) + '</small>' : '') : 'VS') + '</div>') + '</div>' : '<div class="pd-h1">' + esc(g.name.replace(" at ", " vs ")) + '</div>';
+        L.push({id: ed + ":game:" + g.name, cls: "game", t: "Sports", w: g.league, fk: "game", sh: {k: "Sports · " + g.league, h: g.name.replace(" at ", " vs ") + (g.t && !g.live ? " · " + hr(g.t) + " DR" : ""), s: (g.tv||[]).join(", "), u: ""}, body: pickCard(E.pick, E.games || []) + '<div class="pd-k">SPORTS · ' + esc(g.league.toUpperCase()) + '</div>' + vs + '<div class="pd-m pd-c">' + esc([g.live ? "LIVE now" : g.t ? hr(g.t) + " (DR time)" : "", (g.tv||[]).join(", "), g.note].filter(Boolean).join(" · ")) + '</div>' +
+          gameMore(g) + (g.inj && g.inj.length ? '<div class="pd-know pd-inj"><i>INJURY REPORT</i>' + g.inj.map(function(t){ return '<p><b>' + esc(t.team) + '</b> ' + esc(t.out.map(function(o){ return o.n + " (" + o.st + ")"; }).join(", ")) + '</p>'; }).join("") + '</div>' : '') +
+          (g.lineup && g.lineup.length ? '<div class="pd-know pd-inj"><i>STARTING LINEUPS</i>' + g.lineup.map(function(t){ return '<p><b>' + esc(t.team) + '</b> ' + esc(t.xi.join(", ")) + '</p>'; }).join("") + '</div>' : '') +
+          (pg.more.length ? '<div class="pd-know pd-also"><i>ALSO TODAY</i>' + pg.more.map(function(x){ return '<p><span>' + esc(x.league) + '</span><b>' + esc(x.name.replace(" at ", " vs ")) + '</b><small>' + esc([x.live ? "LIVE" : x.t ? hr(x.t) : "", x.odds && x.odds.line ? x.odds.line : ""].filter(Boolean).join(" · ")) + '</small></p>'; }).join("") + '</div>' : '') +
+          (mine ? '<div class="pd-note"><i>YOUR BET</i><p>' + bold("You have RD$" + (Number(mine.stake)||0).toLocaleString("en-US") + " on this game.") + '</p></div>' : "")}); } }
+    // 8. A CEO / founder story or a deep read, alternating (Marco Nov 14)
+    var LS = E.last; if(LS && LS.h){ var ceo = LS.kind === "ceo";
+      L.push({id: ed + ":last:" + LS.h, cls: "", news: 1, t: ceo ? "CEOs & founders" : "Deep read", w: ago(LS.t) + " ago", u: LS.u, pic: LS.u, ph: LS.h, ps: LS.s, fk: "last", nav: ceo ? "👤 CEOs" : "🧭 Deep read", sh: {k: ceo ? "CEOs & founders" : "Deep read", h: LS.h, s: LS.s, u: LS.u},
+        body: '<div class="pd-k">' + (ceo ? "👤 HOW LEADERS GET THERE" : "🧭 DEEP READ") + '</div><div class="pd-h1">' + esc(LS.h) + '</div><div class="pd-m">' + by(LS) + ' · <a class="pd-r2" data-u="' + esc(LS.u) + '">Read ›</a></div>' +
+          kfBox(LS) + (LS.pl ? '<div class="pd-know"><i>' + (ceo ? "WHAT THIS SHOWS" : "WHAT IT IS ABOUT") + '</i>' + kp(LS.pl) + '</div>' : '') + jgBox(LS) + fyBox(ownT(LS) + (LS.fy || ""))}); }
+    // the daily duel stays last, and disappears once answered
+    var cq = callQ(), cs = callSt(); if(cq && !(cs && cs.q === cq.id && $("pdV").hidden)) L.push({id: ed + ":call:" + cq.id, cls: "call", t: CALL, w: "today's money question", call: cq, body: ""});
+    L.forEach(function(x){ var src = x.fk === "big" ? big : x.fk && cats[x.fk] && cats[x.fk][0]; var mk = src && src.mk; if(!mk || !x.news) return;
+      x.body += '<a class="pd-r2 pd-mk" data-u="' + esc(mk.u) + '"><span>🔮 MARKET ODDS</span><b>' + mk.p + '%</b> ' + esc(mk.q) + (mk.end ? ' <small>· by ' + esc(dlabel(mk.end)) + '</small>' : '') + '</a>'; });
+    L.forEach(function(x){ var k = x.fk, c = k && CATS[ix(k)];
+      x.nav = x.nav ? x.nav : x.call ? "⚔️ Duel" : k === "game" ? "⚽ Sports" : k === "big" ? "🚨 Breaking" : k === "rd" ? "🇩🇴 DR" : c ? c[2] + " " + c[1] : "🦆 Pato"; });
+    return L;
+  }
+
+  function stories(){ return ND() ? stories2() : storiesOld(); }
   // ---------- This or that: one money question a day, then what % of Pato users got it right + why ----------
   var CALL = "Daily duel";   // story name (Marco picked Nov 11; was "This or that")
   function callQ(){ if(!QZ.length) return null;
@@ -7296,6 +7397,8 @@ TRACKER DATA:
   var seen = function(){ var s = ls("pd-seen2") || {}; return s.day === day() ? s : {day: day(), ids: {}}; };
   function unseen(){ var s = seen(); return S.filter(function(x){ return !x.pick && !s.ids[x.id]; }); }
   function render(){
+    if(ND()){ var E0 = edOf(); if(E0){ var all0 = [E0.big, E0.deep, E0.ceo, E0.last, E0.cotd].concat(Object.keys(E0.cats || {}).map(function(k){ return (E0.cats[k] || [])[0]; }));
+      all0.forEach(function(x){ if(x && x.img && x.u && !IM.m[x.u]) IM.m[x.u] = x.img; }); } }   // photos come with the edition, found on the server before the drop
     if(daily){ var all = [daily.big].concat(Object.keys(daily.cats || {}).reduce(function(m, k){ return m.concat(daily.cats[k]); }, []), Object.keys(daily.stocks || {}).map(function(k){ return daily.stocks[k]; }));
       all.forEach(function(x){ if(x && x.img && x.u && !IM.m[x.u]) IM.m[x.u] = x.img; }); }   // Bing stories come with their photo
     // ticker (Stocks tab)
@@ -7306,7 +7409,7 @@ TRACKER DATA:
       $("pnTrack").innerHTML = one + one; $("pnAt").textContent = " · Updated " + hr((tick && tick.at) || daily.at).replace(/:\d\d/, ""); $("pnTick").hidden = false;
       requestAnimationFrame(function(){ var w = $("pnTrack").scrollWidth / 2; $("pnTrack").style.setProperty("--pn-dur", Math.max(17, w / 51.75) + "s"); }); }
     if(!$("pdV").hidden) return;
-    S = stories(); if(PHOTOS()) S.forEach(function(x){ if(x.pic){ if(!(x.pic in IM.m)) pic(x.pic, null, x.ph); else pre(IM.m[x.pic]); } });
+    S = stories(); if(PHOTOS()) S.slice(0, ND() ? 3 : S.length).forEach(function(x){ if(x.pic){ if(!(x.pic in IM.m)) pic(x.pic, null, x.ph); else pre(IM.m[x.pic]); } });
      var u = unseen(), first = !(prefs && prefs.picked);
     $("pdFab").hidden = !S.length || !ready(); $("pdN").textContent = u.length || ""; $("pdN").hidden = !u.length;
     placePeek(); var pw = $("pdPeek"); if(pw) pw.scrollTop = 0; if(pw && !pw.classList.contains("out") && !pw.classList.contains("dive")) pw.className = u.length ? "" : "idle";
@@ -7321,9 +7424,14 @@ TRACKER DATA:
   var PRE = {}, pend = 0;   // Nov 13 Marco: photos must be 100% loaded before a story is opened, so the duck waits for them
   function pre(u){ if(!u || PRE[u]) return; PRE[u] = 1; pend++; var m = new Image(), d = function(ok){ if(!ok || m.naturalWidth < 640 || m.naturalHeight < 360) Object.keys(IM.m).forEach(function(k){ if(IM.m[k] === u) IM.m[k] = ""; }); pend--; render(); }; m.onload = function(){ d(1); }; m.onerror = function(){ d(0); }; m.src = u; }
   function pic(u, cb, h){ if(!u || !base() || !PHOTOS() || (u in IM.m)) return; IM.m[u] = null; pend++;
-    fetch(base() + "/img?u=" + encodeURIComponent(u) + (h ? "&h=" + encodeURIComponent(h) : "")).then(function(r){ return r.ok ? r.json() : {}; }).then(function(d){ IM.m[u] = (d && d.img) || ""; pre(IM.m[u]); pend--; if(IM.m[u]) ls("pd-img3", {day: IM.day, m: Object.keys(IM.m).reduce(function(o, k){ if(IM.m[k]) o[k] = IM.m[k]; return o; }, {})}); if(cb) cb(); }).catch(function(){ delete IM.m[u]; pend--; }); }
-  function picHtml(x){ var im = PHOTOS() && x.pic && IM.m[x.pic], ix0 = S.indexOf(x); if(im && S.some(function(y, j){ return j < ix0 && y.pic && IM.m[y.pic] === im; })) im = "";   // never the same photo twice
-    return im ? '<div class="pd-img"><img src="' + esc(im) + '" alt="" referrerpolicy="no-referrer" onerror="this.parentNode.remove()" onload="if(this.naturalWidth<640||this.naturalHeight<360)this.parentNode.remove()">' + (x.ps ? '<span>' + esc(x.ps) + '</span>' : '') + '</div>' : ''; }
+    fetch(base() + "/img?u=" + encodeURIComponent(u) + (h ? "&h=" + encodeURIComponent(h) : "")).then(function(r){ return r.ok ? r.json() : {}; }).then(function(d){ IM.m[u] = (d && d.img) || ""; pre(IM.m[u]); pend--; if(IM.m[u]) ls("pd-img3", {day: IM.day, m: Object.keys(IM.m).reduce(function(o, k){ if(IM.m[k]) o[k] = IM.m[k]; return o; }, {})}); if(cb) cb(); }).catch(function(){ if(ND()){ IM.m[u] = ""; pend--; if(cb) cb(); } else { delete IM.m[u]; pend--; } }); }
+  window.__pdSwap = function(img){ var p = img && img.parentNode; if(!p) return; if(p.getAttribute("data-vis")) p.outerHTML = p.getAttribute("data-vis"); else p.remove(); };
+  function logoOf(x){ if(x.logo) return x.logo; var t = Object.keys(CO).filter(function(t){ return t !== "VUAA" && CO[t].test(x.ph || ""); })[0]; return t ? "https://assets.parqet.com/logos/symbol/" + t + "?format=png" : ""; }
+  function visHtml(x){ var lg = logoOf(x), em = String(x.nav || "🦆").split(" ")[0];   // no photo? the company logo or a visual that adds to the story, never plain text (Marco Nov 14)
+    return '<div class="pd-img pd-vis"><div class="pd-vm">' + (lg ? '<span class="pd-vlg"><img src="' + esc(lg) + '" alt="" onerror="this.parentNode.outerHTML=\'<span class=pd-vem>' + esc(em) + '</span>\'"></span>' : '<span class="pd-vem">' + esc(em) + '</span>') + '</div>' + (x.ps ? '<span>' + esc(x.ps) + '</span>' : '') + '</div>'; }
+  function picHtml(x){ var raw = PHOTOS() && x.pic ? IM.m[x.pic] : "", im = raw, ix0 = S.indexOf(x), dup = false; if(im && S.some(function(y, j){ return j < ix0 && y.pic && IM.m[y.pic] === im; })){ dup = true; im = ""; }   // never the same photo twice
+    if(im) return '<div class="pd-img"' + (x.news ? ' data-vis="' + esc(visHtml(x)) + '"' : '') + '><img src="' + esc(im) + '" alt="" referrerpolicy="no-referrer" onerror="__pdSwap(this)" onload="if(this.naturalWidth<640||this.naturalHeight<360)__pdSwap(this)">' + (x.ps ? '<span>' + esc(x.ps) + '</span>' : '') + '</div>';
+    return x.news && (!x.pic || !PHOTOS() || raw === "" || dup) ? visHtml(x) : ''; }
   var lastBase = null, NEW = {};   // what was unread when you opened: those chips get a dot, the slide gets a NEW tag
   function show(i){
     clearTimeout(timer); cur = Math.max(0, Math.min(i, S.length - 1)); var x = S[cur], s = seen();
@@ -7350,7 +7458,7 @@ TRACKER DATA:
     var i = at >= 0 && at < S.length ? at : u.length ? S.indexOf(u[0]) : 0; if(!(prefs && prefs.picked) && !u.length) i = S.length - 1;
     $("pdV").hidden = false; document.documentElement.style.overflow = "hidden"; show(i); }
   function close(){ clearTimeout(timer); $("pdV").hidden = true; $("pdS").style.transform = ""; document.documentElement.style.overflow = "";
-    if(!(prefs && prefs.picked)) save(on()); render(); }
+    if(!(prefs && prefs.picked)) save(on(), ND() ? autoT().map(function(a){ return a[0]; }).filter(function(k){ return on().indexOf(k) >= 0; }) : undefined); render(); }
   // Topics live in Settings (Marco Nov 11: picking topics is a setting, not a daily slide)
   function topicsRow(){ var sh = $("palSheet"); if(!sh) return; var w = $("pdTopics");
     if(!w){ w = document.createElement("div"); w.id = "pdTopics"; var t = $("sgTabs"); if(t) sh.insertBefore(w, t); else sh.appendChild(w);
@@ -7359,8 +7467,8 @@ TRACKER DATA:
         if(c.checked && o.length >= TOP){ c.checked = false; $("pdTopM").textContent = "Max " + TOP + ". Turn one off first."; return; }
         if(c.checked && i < 0) o.push(k); if(!c.checked && i >= 0) o.splice(i, 1); save(o); ls("pd-daily7", null); $("pdTopM").textContent = "Saved. Your next stories use these."; }); }
     var o = on(), all = CATS.filter(function(c){ return FIX.indexOf(c[0]) < 0; }), nm = function(k){ return all.filter(function(c){ return c[0] === k; })[0]; };   // Marco Nov 12: you set the order of your topics
-    w.innerHTML = '<span>Pato Daily topics</span>' + o.map(function(k, i){ var c = nm(k); return c ? '<label class="tg"><span>' + c[2] + ' ' + c[1] + '</span><span class="pd-ord"><button type="button" aria-label="Move up" data-mv="' + k + ':-1"' + (i === 0 ? ' disabled' : '') + '>↑</button><button type="button" aria-label="Move down" data-mv="' + k + ':1"' + (i === o.length - 1 ? ' disabled' : '') + '>↓</button><input type="checkbox" data-k="' + k + '" checked></span></label>' : ''; }).join("") + all.filter(function(c){ return o.indexOf(c[0]) < 0; }).map(function(c){ return '<label class="tg"><span>' + c[2] + ' ' + c[1] + '</span><input type="checkbox" data-k="' + c[0] + '"></label>'; }).join("") + '<div class="pd-tm" id="pdTopM">Up to ' + TOP + '. Top story and DR come every day.</div>'; }
-  function save(o){ var fb = (prefs && prefs.fb) || {}, co = (prefs && prefs.co) || {}, lw = (prefs && prefs.lw) || {}; prefs = {on: o, picked: true, fb: fb, co: co, lw: lw}; try{ db.doc("prefs/news").set({on: o, picked: true, fb: fb, co: co, lw: lw, at: Date.now()}); }catch(_){} }
+    w.innerHTML = '<span>Pato Daily topics</span>' + o.map(function(k, i){ var c = nm(k); return c ? '<label class="tg"><span>' + c[2] + ' ' + c[1] + '</span><span class="pd-ord"><button type="button" aria-label="Move up" data-mv="' + k + ':-1"' + (i === 0 ? ' disabled' : '') + '>↑</button><button type="button" aria-label="Move down" data-mv="' + k + ':1"' + (i === o.length - 1 ? ' disabled' : '') + '>↓</button><input type="checkbox" data-k="' + k + '" checked></span></label>' : ''; }).join("") + all.filter(function(c){ return o.indexOf(c[0]) < 0; }).map(function(c){ return '<label class="tg"><span>' + c[2] + ' ' + c[1] + '</span><input type="checkbox" data-k="' + c[0] + '"></label>'; }).join("") + '<div class="pd-tm" id="pdTopM">' + (ND() ? 'Up to ' + TOP + ' topics. Each drop shows 2 of them, rotating. Breaking always comes.' : 'Up to ' + TOP + '. Top story and DR come every day.') + '</div>'; }
+  function save(o, au){ var fb = (prefs && prefs.fb) || {}, co = (prefs && prefs.co) || {}, lw = (prefs && prefs.lw) || {}, nv = ND(); au = au || ((prefs && prefs.auto) || []).filter(function(k){ return o.indexOf(k) >= 0; }); prefs = nv ? {on: o, picked: true, v2: true, auto: au, fb: fb, co: co, lw: lw} : {on: o, picked: true, fb: fb, co: co, lw: lw}; try{ db.doc("prefs/news").set(Object.assign({}, prefs, {at: Date.now()})); }catch(_){} }
   function lwq(){ var lw = (prefs && prefs.lw) || {}, ks = Object.keys(lw).filter(function(k){ return /^[a-z0-9]{3,20}$/.test(k); }), up = ks.filter(function(k){ return lw[k] > 0; }).sort(function(a, b){ return lw[b] - lw[a]; }).slice(0, 8), dn = ks.filter(function(k){ return lw[k] < 0; }).sort(function(a, b){ return lw[a] - lw[b]; }).slice(0, 6); return (up.length ? "&lk=" + up.join(",") : "") + (dn.length ? "&dk=" + dn.join(",") : ""); }   // what you liked or disliked, sent with the request (not part of the cache key)
   var peeked = 0, pk = 0, pc = 0, pt = null;
   function peekLines(){ var u = unseen(), tk = (daily && daily.take) || fallback(), L = [];
@@ -7378,8 +7486,8 @@ TRACKER DATA:
     b.innerHTML = "<b>" + esc(x.k) + "</b>" + esc(h); b.dataset.i = x.i; placePeek(); w.className = "out"; b.className = "on" + (x.big ? " big" : "");
     clearTimeout(pt); pt = setTimeout(hidePeek, 6000); }
   // Morning cover (Marco Nov 11): first open of each edition = a front page; "Read" opens the stories, "Later" lets the duck take over
-  function cover(){ if(ls("pd-cover") === day() || !daily || !$("pdV").hidden) return false; var big = (tick && tick.big) || daily.big; if(!big) return false;
-    ls("pd-cover", day()); var tk = daily.take || fallback(), line = (tk.pato && tk.pato.line) || (tk.you && tk.you.text) || "";
+  function cover(){ var nv = ND(), E1 = nv ? edOf() : daily; if(ls("pd-cover") === (nv ? curIdx() : day()) || !E1 || !$("pdV").hidden) return false; var big = nv ? E1.big : (tick && tick.big) || daily.big; if(!big) return false;
+    ls("pd-cover", nv ? curIdx() : day()); var tk = (daily && daily.take) || fallback(), line = (tk.pato && tk.pato.line) || (tk.you && tk.you.text) || "";
     var also = S.filter(function(x){ return x.nav && !/Pato|Breaking/.test(x.nav); }).map(function(x){ return x.nav; }).slice(0, 4).join(" · ");
     var im = PHOTOS() && (IM.m[big.u] || big.img), c = document.createElement("div"); c.id = "pdCover"; c.className = "pd-cover";
     c.innerHTML = '<div class="pc-ph"' + (im ? ' style="background-image:url(\'' + esc(im) + '\')"' : '') + '><div class="pc-top"><img src="icon-192.png?v=7" alt=""><div><b>Pato Daily</b><small>' + esc((DEMO ? new Date(day() + "T12:00:00Z") : drd()).toLocaleDateString("en-US", {timeZone: "UTC", weekday: "long", month: "long", day: "numeric"})) + ' · ' + esc(hh(DROPS[slot()]).replace(":00", "")) + ' edition</small></div></div>' + (im && big.s ? '<span class="pc-src">' + esc(big.s) + '</span>' : '') + '</div>' +
@@ -7416,7 +7524,7 @@ TRACKER DATA:
       if(long || was || Math.abs(dx) > 30 || Math.abs(dy) > 30) { if(was && S[cur] && !S[cur].pick){ show(cur); } return; }
       var r = S0.getBoundingClientRect(); if(e.clientX - r.left < r.width * .3) show(cur - 1); else next(); });
     document.addEventListener("keydown", function(e){ if(V.hidden) return; if(e.key === "Escape") close(); if(e.key === "ArrowRight") next(); if(e.key === "ArrowLeft") show(cur - 1); });
-    document.addEventListener("visibilitychange", function(){ if(!document.hidden){ if(!fresh()){ waitAt = Date.now(); setTimeout(function(){ render(); }, 25500); } getDaily(false); getTick(); getDrop(); liveScores(); setTimeout(peek, 900); } });
+    document.addEventListener("visibilitychange", function(){ if(!document.hidden){ if(!fresh()){ waitAt = Date.now(); setTimeout(function(){ render(); }, ND() ? 6500 : 25500); } getDaily(false); getTick(); getDrop(); liveScores(); setTimeout(peek, 900); } });
     setInterval(function(){ if(!document.hidden && !$("pdV").hidden && S[cur] && S[cur].fk === "game") liveScores(); }, 6e4);
     setInterval(function(){ if(!document.hidden){ getDaily(false); getTick(); getDrop(); } }, 15*6e4);
   }
