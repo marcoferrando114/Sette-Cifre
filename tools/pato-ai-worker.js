@@ -152,6 +152,8 @@ function bigExtra(path, e, note) { const t = String(e.name || "") + " " + String
   if (/derby|clasico|clásico|rivalry/i.test(t)) x += 3;
   if (STARS.test(JSON.stringify(e.competitions || []).slice(0, 4000))) x += 3;
   return x; }
+// Sports priority (Marco Nov 14), top first: UFC main event, soccer (important teams and games), tennis, NBA, NFL, boxing, MLB. Games he bet on rank first (in the app).
+const SPRIO = p => /^mma|ufc/i.test(p) ? 40 : /^soccer/i.test(p) ? 30 : /^tennis/i.test(p) ? 22 : /^basketball\/nba$/i.test(p) ? 16 : /^football\/nfl$/i.test(p) ? 12 : /^boxing/i.test(p) ? 8 : /^baseball\/mlb$/i.test(p) ? 4 : 0;
 async function games() {
   const d = drDay().replace(/-/g, ""), out = [];
   await Promise.all(LEAGUES.map(([path, name, w, only]) => cached("https://site.api.espn.com/apis/site/v2/sports/" + path + "/scoreboard?dates=" + d, 3600, "json").then(f => {
@@ -168,7 +170,7 @@ async function games() {
         return { n: t.shortDisplayName || t.displayName || a.shortName || a.displayName || "", ab: t.abbreviation || "", logo: t.logo || (a.flag && a.flag.href) || "", rec, score: st === "in" ? x.score || "" : "" }; });
       const o0 = (c.odds || [])[0];
       out.push({ path, id: e.id, ref: path + "|" + e.id, odds0: o0 ? { line: o0.details || "", ou: o0.overUnder || "", ml: [(o0.awayTeamOdds || {}).moneyLine, (o0.homeTeamOdds || {}).moneyLine], by: (o0.provider || {}).name || "" } : null, league: name, name: e.name || e.shortName, short: e.shortName, t: Date.parse(e.date) || 0, tv: tv.slice(0, 2), note, live: st === "in", teams,
-        score: w + (nat ? 2 : 0) + ranked + (/final|championship|playoff|semifinal|title|main event|derby|clasico|clásico/i.test(note + " " + e.name) ? 4 : 0) + bigExtra(path, e, note) });
+        score: w + SPRIO(path) + (nat ? 2 : 0) + ranked + (/final|championship|playoff|semifinal|title|main event|derby|clasico|clásico/i.test(note + " " + e.name) ? 4 : 0) + bigExtra(path, e, note) });
     });
   }).catch(() => null)));
   const srt = out.sort((a, b) => b.score - a.score), seenL = new Set(), one = [], more = [];   // best game of each league first, so the day mixes sports (Marco Nov 11)
