@@ -653,9 +653,18 @@ async function finishEdition(env, b, cap) {   // stage 2 (6:45, 12:45, 6:45pm DR
   if (b.big) { if (b.big.d2) b.big.d = b.big.d2; b.big.brief = await brief(env, b.big).catch(() => null); }
   await plainAll(env, b).catch(() => null); await meansAll(env, b).catch(() => null); return finalize(b);
 }
+const imgList = b => [b.big, b.cotd && b.cotd.u ? { u: b.cotd.u, h: b.cotd.h, _c: b.cotd } : null].concat(Object.values(b.cats || {}).map(a => (a || [])[0]), [b.deep, b.ceo]).filter(it => it && it.u && !(it._c || it).img && !(it._c || it)._tried && !it.founder);
 async function imagesFor(env, b, cap) {   // each story's own full-size photo and the outlet's own words, found once here so the phone never waits for them
-  const st = [b.big, b.cotd && b.cotd.u ? { u: b.cotd.u, h: b.cotd.h, _c: b.cotd } : null].concat(Object.values(b.cats || {}).map(a => (a || [])[0]), [b.deep, b.ceo]).filter(it => it && it.u && !it.img && !it.founder);
-  for (const it of st) { if (FN >= (cap || 36)) break; const col = {}; try { const o = await storyImg(it.u, it.h, false, col); const tgt = it._c || it; if (o && o.img) tgt.img = o.img; if (col.txt && !it._c) it.d2 = col.txt; } catch (e) {} }
+  for (const it of imgList(b)) { if (FN >= (cap || 36)) break; const col = {}; const tgt = it._c || it; tgt._tried = 1; try { const o = await storyImg(it.u, it.h, false, col); if (o && o.img) tgt.img = o.img; if (col.txt && !it._c) it.d2 = col.txt; } catch (e) {} }
+}
+// the finishing pass runs in small saved steps (the platform stops background work after ~30 s): photos, then the big story's brief, then plain lines, then key facts; each step is stored as soon as it is done
+async function finishSteps(env, E, key) {
+  const x = E.x || (E.x = {}), save = () => env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }).catch(() => 0);
+  if (!x.img) { FN = 0; await imagesFor(env, E.b, 12); x.img = imgList(E.b).length ? 0 : 1; await save(); if (!x.img) return; }
+  if (!x.brief) { if (E.b.big) { if (E.b.big.d2) E.b.big.d = E.b.big.d2; E.b.big.brief = await brief(env, E.b.big).catch(() => null); } x.brief = 1; await save(); }
+  if (!x.plain) { await plainAll(env, E.b).catch(() => null); x.plain = 1; await save(); }
+  if (!x.means) { DBG = {}; await meansAll(env, E.b).catch(() => null); E.b._dbg = Object.assign({}, E.b._dbg, { means: DBG.means || "cached", miss: DBG.miss }); x.means = 1; }
+  E.st = "ready"; E.at = Date.now(); await save();
 }
 function finalize(b0) { const b = Object.assign({}, b0); delete b._cand; delete b._dbg;   // slot 8 alternates: a CEO/founder story, then a deep read (Marco Nov 14)
   const first = "ceo", other = first === "ceo" ? "deep" : "ceo", pk = b[first] ? first : b[other] ? other : "";
@@ -664,18 +673,18 @@ function finalize(b0) { const b = Object.assign({}, b0); delete b._cand; delete 
 async function buildSave(env, idx, key) { await loadHL(env); const b = await buildEdition(env, idx);   // stage 1 only: the photos and AI lines are finished by the next request in a fresh invocation (the platform allows ~50 outside calls per invocation)
   if (env.LIMITS && Object.keys(b.cats).length >= 2) await env.LIMITS.put(key, JSON.stringify({ at: Date.now(), st: "built", b }), { expirationTtl: 172800 }).catch(() => 0); await saveHL(env).catch(() => 0); return b; }
 async function getEdition(env, force, dbg, ctx) {
-  const idx = dropIdx(Date.now()), key = "ed7:" + idx;
+  const idx = dropIdx(Date.now()), key = "ed8:" + idx;
   if (env.LIMITS && !force) { const E = await env.LIMITS.get(key, "json").catch(() => null);
     if (E && E.b && E.b.cats && Object.keys(E.b.cats).length >= 2) {
       if (!E.b.cotd && E.b._cand && E.b._cand.length && Date.now() - (E.rt || 0) > 6e5) {   // Company of the day is never left empty: retry it (at most every 10 minutes) when the first try failed
         DBG = {}; E.rt = Date.now(); E.b.cotd = await cotdPick(env, E.b._cand).catch(() => null); E.b._dbg = Object.assign({}, E.b._dbg, { retry: DBG.cotd || "ok" });
         if (E.b.cotd) { await imagesFor(env, { cotd: E.b.cotd, cats: {} }, 4).catch(() => 0); }
         await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }).catch(() => 0); }
-      if (E.st !== "ready" && ctx) { const lk = await env.LIMITS.get("edf:" + idx).catch(() => null); if (!lk) { await env.LIMITS.put("edf:" + idx, "1", { expirationTtl: 100 }).catch(() => 0);
-        ctx.waitUntil((async () => { await loadHL(env); await finishEdition(env, E.b, 36); E.st = "ready"; E.at = Date.now(); await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }); })().catch(() => 0)); } }
+      if (E.st !== "ready" && ctx) { const lk = await env.LIMITS.get("edf:" + idx).catch(() => null); if (!lk) { await env.LIMITS.put("edf:" + idx, "1", { expirationTtl: 60 }).catch(() => 0);
+        ctx.waitUntil((async () => { await loadHL(env); await finishSteps(env, E, key); })().catch(() => 0)); } }
       const o = finalize(E.b); o.fin = E.st === "ready" ? 1 : 0; if (dbg) o._dbg = E.b._dbg; return o; }
     // Nov 14 (Marco: "there was only 1 story"): never make a phone wait for a build. If this drop's edition isn't ready, send the last good one right now and build in the background (one build at a time).
-    if (ctx) { let prev = null; for (let d = 1; d <= 4 && !prev; d++) { const P = await env.LIMITS.get("ed7:" + (idx - d), "json").catch(() => null); if (P && P.b && P.b.cats && Object.keys(P.b.cats).length >= 2) prev = P; }
+    if (ctx) { let prev = null; for (let d = 1; d <= 4 && !prev; d++) { const P = await env.LIMITS.get("ed8:" + (idx - d), "json").catch(() => null); if (P && P.b && P.b.cats && Object.keys(P.b.cats).length >= 2) prev = P; }
       if (prev) { const lock = await env.LIMITS.get("edl:" + idx).catch(() => null); if (!lock) { await env.LIMITS.put("edl:" + idx, "1", { expirationTtl: 150 }).catch(() => 0); ctx.waitUntil(buildSave(env, idx, key).catch(() => 0)); }
         const o = finalize(prev.b); o.stale = 1; return o; } } }
   await loadHL(env); const b = await buildEdition(env, idx);
@@ -769,8 +778,8 @@ export default {
     if ([10, 16, 22].includes(h)) { const idx = dropIdx(d.getTime() + 3600e3);
       if (m < 30) { const L = SHARED(), half = Math.ceil(L.length / 2), part = m === 0 ? L.slice(0, half) : L.slice(half);
         ctx.waitUntil((async () => { if (m === 0) await deepAll(env, true).catch(() => 0); for (const u of part) await refreshFeed(env, u).catch(() => 0); await saveHL(env); })()); return; }
-      if (m === 30) { ctx.waitUntil((async () => { const b = await buildEdition(env, idx); if (Object.keys(b.cats).length >= 2) await kv.put("ed7:" + idx, JSON.stringify({ at: Date.now(), st: "built", b }), { expirationTtl: 172800 }); await saveHL(env); })().catch(() => 0)); return; }
-      ctx.waitUntil((async () => { const E = await kv.get("ed7:" + idx, "json"); if (!E || !E.b) return; await finishEdition(env, E.b, 36); E.st = "ready"; E.at = Date.now(); await kv.put("ed7:" + idx, JSON.stringify(E), { expirationTtl: 172800 }); })().catch(() => 0)); return;
+      if (m === 30) { ctx.waitUntil((async () => { const b = await buildEdition(env, idx); if (Object.keys(b.cats).length >= 2) await kv.put("ed8:" + idx, JSON.stringify({ at: Date.now(), st: "built", b }), { expirationTtl: 172800 }); await saveHL(env); })().catch(() => 0)); return; }
+      ctx.waitUntil((async () => { const E = await kv.get("ed8:" + idx, "json"); if (!E || !E.b) return; await finishEdition(env, E.b, 36); E.st = "ready"; E.at = Date.now(); await kv.put("ed8:" + idx, JSON.stringify(E), { expirationTtl: 172800 }); })().catch(() => 0)); return;
     }
     const pre = [13, 19, 1].includes(h) && m >= 30;   // the other drops of the current edition (10am, 4pm, 10pm DR)
     if (pre) { const L = SHARED(), half = Math.ceil(L.length / 2), part = m === 30 ? L.slice(0, half) : L.slice(half);
