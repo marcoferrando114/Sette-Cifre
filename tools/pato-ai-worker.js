@@ -254,18 +254,21 @@ const markets = async () => { const [a, b] = await Promise.all([polymarket().cat
 const PWORLD = /\b(AI|OpenAI|Nvidia|Apple|Google|Microsoft|Amazon|Meta|Tesla|Musk|Fed|rates?|inflation|recession|S&P|Bitcoin|BTC|Ethereum|crypto|Trump|election|Congress|Senate|Dominican|Haiti|Abinader|Venezuela|Iran|China|NBA|NFL|MLB|Champions League|Premier League|World Cup|Super Bowl|Real Madrid|Barcelona|Yankees|Lakers)\b/i;
 // Marco Nov 12: counting bets ("how many tweets will Elon post") tell you nothing; keep markets that explain what is happening
 const PTRIVIA = /\b(tweets?|posts? on X|how many (times|tweets|posts|followers|views)|will \w+( \w+)? say\b|mention(s|ed)?\b|followers|subscribers|views|streams|box office|gross|top (song|artist|spotify)|spotify|youtube|tiktok|# of|number of (tweets|posts)|what price will|(bitcoin|btc|ethereum|ether|solana|xrp|dogecoin)\b[^?]{0,40}\b(hit|reach|dip|above|below|price))\b/i;
-const okM = M => M.filter(m => !PTRIVIA.test(m.t + " " + m.q));
+const GAMING = /\b(esports?|e-sports?|League of Legends|LoL|Dota ?2?|CS ?2|CS:GO|Counter-Strike|Valorant|Overwatch|Fortnite|Call of Duty|Rocket League|StarCraft|Hearthstone|Mobile Legends|MLBB|Apex Legends|Rainbow Six|Twitch|Minecraft|Roblox|gamers?|LCK|LPL|LEC|BLAST|ESL|IEM|VCT)\b/i;   // Marco Nov 14: no gaming predictions, ever
+const okM = M => M.filter(m => !PTRIVIA.test(m.t + " " + m.q) && !GAMING.test(m.t + " " + m.q));
 // Nov 12 (Marco): never two polls of the same kind at once (two Fed-rate questions), and Kalshi polls too
 const MON = /\b(jan(uary)?|feb(ruary)?|mar(ch)?|apr(il)?|may|june?|july?|aug(ust)?|sep(t(ember)?)?|oct(ober)?|nov(ember)?|dec(ember)?)\b/gi;
 const themeOf = m => { const t = String(m.t + " " + m.q); return /\b(Fed|FOMC|interest rates?|rate (cut|hike)|bps)\b/i.test(t) ? "fed" : /\b(bitcoin|btc|ethereum|crypto|solana|xrp)\b/i.test(t) ? "crypto" : String(m.t).toLowerCase().replace(MON, " ").replace(/[0-9]+|[^a-z ]/g, " ").replace(/\b(by|in|on|the|will|be|of|a|to|before|after|for|and)\b/g, " ").split(/\s+/).filter(Boolean).slice(0, 3).join(" "); };
 // Nov 14 (Marco): Predictions always show 3, never 2 or 4, and a poll never comes back in the next drops or days.
-async function pickPreds3(env, M, tick, idx) {
+async function pickPreds3(env, M, tick, idx, heads) {   // Marco Nov 14: 2 predictions per slide: the top trending ones or ones that connect to the day's news
+  const hw = new Set((heads || []).flatMap(h => words(h)));
   const me = tick.length ? new RegExp("\\b(" + tick.map(t => t + (CO[t] ? "|" + CO[t] : "")).join("|") + ")\\b", "i") : null;
   let used = {}; try { used = (env.LIMITS && await env.LIMITS.get("pu1", "json")) || {}; } catch (e) { used = {}; }
-  const old = u => u in used && used[u] !== idx, sc = m => Math.log10((m.vol || 0) + 10) + (PWORLD.test(m.t + " " + m.q) ? 3 : 0) + (me && me.test(m.t + " " + m.q) ? 4 : 0) + Math.min(3, Math.abs(m.ch || 0) / 4);
+  const old = u => u in used && used[u] !== idx, sc = m => (hw.size && words(m.t + " " + m.q).filter(w => hw.has(w)).length >= 2 ? 3 : 0) + Math.log10((m.vol || 0) + 10) + (PWORLD.test(m.t + " " + m.q) ? 3 : 0) + (me && me.test(m.t + " " + m.q) ? 4 : 0) + Math.min(3, Math.abs(m.ch || 0) / 4);
   const all = okM(M).filter(m => m.u && m.u.length > 30).map(m => Object.assign({}, m, { _s: sc(m) })).sort((a, b) => b._s - a._s), out = [], th = new Set();
-  const take = (pred, themes) => all.forEach(m => { if (out.length >= 3 || out.some(o => o.u === m.u) || !pred(m)) return; const t = themeOf(m); if (themes && th.has(t)) return; th.add(t); out.push(m); });
-  take(m => !old(m.u) && m.p >= 4 && m.p <= 96, true); take(m => !old(m.u) && m.p >= 2 && m.p <= 98, false); take(m => !old(m.u), false); take(() => true, false);   // only if the whole pool is smaller than 3 does an old one return
+  { const k = all.find(m => m.src === "Kalshi" && !old(m.u) && m.p >= 4 && m.p <= 96); if (k) { out.push(k); th.add(themeOf(k)); } }   // one Kalshi market in the 2 (Marco Nov 14), the other the best Polymarket
+  const take = (pred, themes) => all.forEach(m => { if (out.length >= 2 || out.some(o => o.u === m.u) || !pred(m)) return; const t = themeOf(m); if (themes && th.has(t)) return; th.add(t); out.push(m); });
+  take(m => m.src !== "Kalshi" && !old(m.u) && m.p >= 4 && m.p <= 96, true); take(m => !old(m.u) && m.p >= 4 && m.p <= 96, true); take(m => !old(m.u) && m.p >= 2 && m.p <= 98, false); take(m => !old(m.u), false); take(() => true, false);   // only if the whole pool is smaller than 2 does an old one return
   out.forEach(m => { used[m.u] = idx; delete m._s; }); const ks = Object.keys(used); if (ks.length > 120) ks.slice(0, ks.length - 120).forEach(k => delete used[k]);
   if (env.LIMITS && out.length) await env.LIMITS.put("pu1", JSON.stringify(used), { expirationTtl: 1209600 }).catch(() => 0);
   return out;
@@ -653,7 +656,7 @@ const dropIdx = ms => Math.floor((ms - 11 * 3600e3) / (6 * 3600e3));   // a new 
 let FN = 0; const cf = (...a) => { FN++; return fetch(...a); };
 async function buildEdition(env, idx) {   // stage 1 (6:30, 12:30, 6:30pm DR): pick everything from the prepared feeds
   const b = await bundleEd(new URLSearchParams("k=rd,business,tech,crypto,stocks,startups,politics&busy=1"), env);
-  DBG = {}; b.cotd = await cotdPick(env, b._cand).catch(() => null); if (!b.cotd && !DBG.cotd) DBG.cotd = "none " + (b._cand || []).length; b._dbg = DBG; b.ceo = await founderOf(env, Date.now()).catch(() => b.ceo); b.preds = await pickPreds3(env, await kvFresh(env, "mk2", 90, markets).catch(() => []), (b.tickers || []), idx).catch(() => b.preds);   // the CEO slot is now one personal founder story a day
+  DBG = {}; b.cotd = await cotdPick(env, b._cand).catch(() => null); if (!b.cotd && !DBG.cotd) DBG.cotd = "none " + (b._cand || []).length; b._dbg = DBG; b.ceo = await founderOf(env, Date.now()).catch(() => b.ceo); b.preds = await pickPreds3(env, await kvFresh(env, "mk2", 90, markets).catch(() => []), (b.tickers || []), idx, edItems(b).map(i => i.h)).catch(() => b.preds);   // the CEO slot is now one personal founder story a day
   b.pick = await patoPick(env, b.games).catch(() => null); b.idx = idx; return b;
 }
 async function finishEdition(env, b, cap) {   // stage 2 (6:45, 12:45, 6:45pm DR): photos and the outlets' own words first, then the plain-language briefs written from them
@@ -738,7 +741,7 @@ function qualityCheck(b, dayH) {
   const hard = [], soft = [], items = edItems(b), tops = Object.values(b.cats || {}).filter(a => a && a[0]);
   if (tops.length < 3) hard.push("fewer than 3 topic stories");
   if (!b.big) hard.push("no Breaking story"); else if (!bigOk(b.big)) soft.push("Breaking is below the importance bar");
-  if (!Array.isArray(b.preds) || b.preds.length !== 3 || new Set(b.preds.map(p => p.u)).size !== 3) hard.push("predictions are not exactly 3");
+  if (!Array.isArray(b.preds) || b.preds.length !== 2 || new Set(b.preds.map(p => p.u)).size !== 2 || b.preds.some(p => GAMING.test((p.t || "") + " " + (p.q || "")))) hard.push("predictions are not exactly 2 (or include gaming)");
   if (!b.cotd) hard.push("no Company of the day"); if (!b.ceo) hard.push("no founder story");
   if (items.some(it => NONLATIN.test(it.h || ""))) hard.push("a headline is not in English or Spanish");
   const kf = items.filter(it => it.kf || it.wm || it.pl).length; if (kf < items.length * 0.5) hard.push("key facts missing on most stories"); else if (kf < items.length * 0.8) soft.push("key facts missing on some stories");
@@ -757,7 +760,7 @@ async function repairEd(env, E, q) {   // one repair round: swap in the next bes
   Object.keys(b.cats || {}).forEach(k => { const cur = (b.cats[k] || [])[0]; if (cur && dayH.some(h => simw(h, cur.h) >= 0.6)) { const alt = (b._alt && b._alt[k] || []).filter(a => !rep(a.h, cur)); if (alt.length) { b.cats[k] = [alt[0]]; b._alt[k] = alt.slice(1); acts.push("swapped " + k); x.img = 0; x.plain = 0; x.means = 0; x.ver = 0; } } });
   if (b.big && dayH.some(h => simw(h, b.big.h) >= 0.6 || !bigOk(b.big))) { const nb = (b._bigC || []).find(c => bigOk(c) && !rep(c.h, b.big)) || (!bigOk(b.big) ? null : (b._bigC || []).find(c => !rep(c.h, b.big))); if (nb) { b.big = Object.assign({}, nb, { huge: false }); acts.push("swapped Breaking"); x.img = 0; x.brief = 0; x.means = 0; x.ver = 0; } }
   if (q.hard.some(r => /without a photo/.test(r))) { const a = await photoSwap(env, E).catch(() => []); a.forEach(s => acts.push(s)); }
-  if (!Array.isArray(b.preds) || b.preds.length !== 3) { b.preds = await pickPreds3(env, await kvFresh(env, "mk2", 90, markets).catch(() => []), [], b.idx).catch(() => b.preds); acts.push("redid predictions"); }
+  if (!Array.isArray(b.preds) || b.preds.length !== 2 || b.preds.some(p => GAMING.test((p.t || "") + " " + (p.q || "")))) { b.preds = await pickPreds3(env, await kvFresh(env, "mk2", 90, markets).catch(() => []), [], b.idx, edItems(b).map(i => i.h)).catch(() => b.preds); acts.push("redid predictions"); }
   if (!b.cotd) { DBG = {}; b.cotd = await cotdPick(env, b._cand).catch(() => null); acts.push("retried company of the day"); if (b.cotd) { x.img = 0; x.ver = 0; } }
   if (!b.ceo) { b.ceo = await founderOf(env, Date.now()).catch(() => null); acts.push("reloaded founder story"); }
   if (q.hard.some(r => /key facts/.test(r))) { x.means = 0; x.plain = 0; acts.push("redid key facts"); }
