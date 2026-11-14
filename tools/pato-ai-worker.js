@@ -501,12 +501,14 @@ async function meansAll(env, b) {
   const hk = it => it.h.toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 60), blob = it => [it.h, it.d2 || it.d || "", (it.also || []).join(" ")].join(" ").replace(/,(?=\d{3})/g, "");
   let M = {}; try { M = JSON.parse((await env.LIMITS.get("mf2")) || "{}"); } catch (e) { M = {}; }
   const miss = items.filter(it => !(hk(it) in M));
+  DBG.miss = miss.length + "/" + items.length;
   if (miss.length) {
     const list = miss.slice(0, 12), r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "content-type": "application/json", "x-api-key": env.ANTHROPIC_KEY, "anthropic-version": "2023-06-01" },
       body: JSON.stringify({ model: "claude-haiku-5-5", max_tokens: 2800, messages: [{ role: "user", content: MEANS + "\n\nITEMS:\n" + list.map((it, i) => i + ". HEADLINE: " + it.h + " (" + (it.s || "") + ")" + ((it.d2 || it.d) ? "\nTEXT: " + String(it.d2 || it.d).replace(/<[^>]*>/g, " ").slice(0, 700) : "") + ((it.also || []).length ? "\nOTHER OUTLETS: " + it.also.slice(0, 3).join(" | ") : "")).join("\n\n") }] }) }).catch(() => null);
+    if (!r || !r.ok) DBG.means = r ? "http " + r.status + " " + (await r.text().catch(() => "")).slice(0, 140) : "fetch failed";
     if (r && r.ok) {
-      const j = await r.json(), txt = ((j.content || []).find(c => c.type === "text") || {}).text || "", m = txt.match(/\{[\s\S]*\}/); let o = null; try { o = JSON.parse(m[0]); } catch (e) { o = null; }
-      if (o) { list.forEach((it, i) => { const v = o[i]; if (!v || typeof v !== "object") return; const S = (x, n) => typeof x === "string" ? x.trim().slice(0, n) : "", src = blob(it);
+      const j = await r.json(), txt = ((j.content || []).find(c => c.type === "text") || {}).text || "", m = txt.match(/\{[\s\S]*\}/); let o = null; try { o = JSON.parse(m[0]); } catch (e) { o = null; DBG.means = "parse " + txt.slice(-100); }
+      if (o) { DBG.means = "ok " + Object.keys(o).length; list.forEach((it, i) => { const v = o[i]; if (!v || typeof v !== "object") return; const S = (x, n) => typeof x === "string" ? x.trim().slice(0, n) : "", src = blob(it);
         let k = S(v.k, 140); const nums = [...k.matchAll(/(\d[\d,]*(?:\.\d+)?)/g)].map(x => x[1].replace(/,/g, "")).filter(n => !/^(19|20)\d\d$/.test(n));
         if (nums.some(n => !src.includes(n))) k = "";   // a number that isn't in the story's own words never goes out
         M[hk(it)] = { k, m: S(v.m, 180), f: S(v.f, 140), j: (Array.isArray(v.j) ? v.j : []).filter(x => Array.isArray(x) && S(x[0], 30) && S(x[1], 110)).slice(0, 2).map(x => [S(x[0], 30), S(x[1], 110)]) }; });
@@ -660,7 +662,7 @@ function finalize(b0) { const b = Object.assign({}, b0); delete b._cand; delete 
   b.last = pk ? Object.assign({}, b[pk], { kind: pk }) : null; return b;
 }
 async function getEdition(env, force, dbg) {
-  const idx = dropIdx(Date.now()), key = "ed4:" + idx;
+  const idx = dropIdx(Date.now()), key = "ed5:" + idx;
   if (env.LIMITS && !force) { const E = await env.LIMITS.get(key, "json").catch(() => null);
     if (E && E.b && E.b.cats && Object.keys(E.b.cats).length >= 2) {
       if (!E.b.cotd && E.b._cand && E.b._cand.length && Date.now() - (E.rt || 0) > 6e5) {   // Company of the day is never left empty: retry it (at most every 10 minutes) when the first try failed
@@ -756,8 +758,8 @@ export default {
     if ([10, 16, 22].includes(h)) { const idx = dropIdx(d.getTime() + 3600e3);
       if (m < 30) { const L = SHARED(), half = Math.ceil(L.length / 2), part = m === 0 ? L.slice(0, half) : L.slice(half);
         ctx.waitUntil((async () => { if (m === 0) await deepAll(env, true).catch(() => 0); for (const u of part) await refreshFeed(env, u).catch(() => 0); await saveHL(env); })()); return; }
-      if (m === 30) { ctx.waitUntil((async () => { const b = await buildEdition(env, idx); if (Object.keys(b.cats).length >= 2) await kv.put("ed4:" + idx, JSON.stringify({ at: Date.now(), st: "built", b }), { expirationTtl: 172800 }); await saveHL(env); })().catch(() => 0)); return; }
-      ctx.waitUntil((async () => { const E = await kv.get("ed4:" + idx, "json"); if (!E || !E.b) return; await finishEdition(env, E.b, 36); E.st = "ready"; E.at = Date.now(); await kv.put("ed4:" + idx, JSON.stringify(E), { expirationTtl: 172800 }); })().catch(() => 0)); return;
+      if (m === 30) { ctx.waitUntil((async () => { const b = await buildEdition(env, idx); if (Object.keys(b.cats).length >= 2) await kv.put("ed5:" + idx, JSON.stringify({ at: Date.now(), st: "built", b }), { expirationTtl: 172800 }); await saveHL(env); })().catch(() => 0)); return; }
+      ctx.waitUntil((async () => { const E = await kv.get("ed5:" + idx, "json"); if (!E || !E.b) return; await finishEdition(env, E.b, 36); E.st = "ready"; E.at = Date.now(); await kv.put("ed5:" + idx, JSON.stringify(E), { expirationTtl: 172800 }); })().catch(() => 0)); return;
     }
     const pre = [13, 19, 1].includes(h) && m >= 30;   // the other drops of the current edition (10am, 4pm, 10pm DR)
     if (pre) { const L = SHARED(), half = Math.ceil(L.length / 2), part = m === 30 ? L.slice(0, half) : L.slice(half);
