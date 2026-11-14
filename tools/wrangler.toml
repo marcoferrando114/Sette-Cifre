@@ -10,4 +10,4 @@ binding = "LIMITS"
 id = "1b3dc8d572c64e46a714ec50c34d4abc"
 
 [triggers]
-crons = ["*/15 * * * *"]   # refresh games + predictions into KV (Nov 12)
+crons = ["*/5 * * * *"]   # every 5 minutes; the code decides: games + predictions every 15 minutes, edition steps in the hour around each drop

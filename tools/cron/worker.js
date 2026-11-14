@@ -196,10 +196,24 @@ async function push(env, title, body, url, tag) {
   return ok;
 }
 
-export { stocks, loans, dueOf, dueDates };
+// Pato Daily health (Marco Nov 14): 5 minutes after the drop is final (7:35am, 1:35pm, 7:35pm DR) the pato-ai worker has either published the edition or kept the last good one.
+// It leaves a note in KV ("edh:<drop>"); if the drop was not clean, push Marco's phone a one-line reason, once per drop.
+async function editionHealth(env) {
+  const idx = Math.floor((Date.now() - 11 * 3600e3) / (6 * 3600e3)), sent = "cron:edalert:" + idx;
+  if (await env.LIMITS.get(sent)) return "already alerted";
+  const h = await env.LIMITS.get("edh:" + idx, "json");
+  let body = "";
+  if (!h) body = "this drop was not built; the last edition is still showing";
+  else if (h.level === "hard") body = "drop failed the check, last good edition kept: " + (h.reasons || []).slice(0, 2).join("; ");
+  else if (h.level === "soft") body = "published with a note: " + (h.reasons || []).slice(0, 2).join("; ");
+  if (!body) return "edition ok";
+  await env.LIMITS.put(sent, "1", { expirationTtl: 2 * 86400 });
+  const n = await push(env, "Pato Daily", body, "./", "pato-daily-health"); return "alert sent to " + n + " device(s): " + body;
+}
+export { stocks, loans, dueOf, dueDates, editionHealth };
 export default {
   async scheduled(ev, env, ctx) {
-    const job = ev.cron === "42 12 * * *" ? loans : stocks;
+    const job = ev.cron === "42 12 * * *" ? loans : ev.cron === "35 11,17,23 * * *" ? editionHealth : stocks;
     ctx.waitUntil(job(env, false).then(m => console.log(m)).catch(e => console.log("ERROR", String(e))));
   },
   async fetch() { return new Response("pato-cron: runs on a schedule (stocks, loan reminders)", { status: 200 }); },

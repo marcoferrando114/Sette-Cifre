@@ -402,7 +402,7 @@ async function bundleEd(P, env) {
   const EVT = /\b(resign\w*|oust\w*|affair|scandal|spy|fired|steps? down|probe|indict\w*|arrest\w*|crash\w*|quake|earthquake|hurricane|collaps\w*|plunge\w*|drops?|falls?|tumbl\w*|sinks?|soar\w*|surg\w*|jumps?|ceasefire|attack\w*|explosion|shooting|out at)\b/i;
   const same = (a, b) => { if (!a || !b) return false; if (simw(a, b) >= 0.5) return true; const A = CAPS(a), B = CAPS(b), n = [...A].filter(w => B.has(w)).length; return n >= 2 || (n >= 1 && EVT.test(a) && EVT.test(b)); };   // same name + both about an event = same story
   // Nov 12 fix: skip stories already shown BEFORE ranking, so a category falls back to its next-best story instead of disappearing
-  const shown = W ? [W.h] : [], cats = {}; want.forEach((k, i) => { const it = top2((rest[i].items || []).filter(x => x && x.h && !shown.some(h => same(h, x.h)) && (k !== "crypto" || /\b(bitcoin|btc|ethereum|ether|crypto\w*|solana|xrp|stablecoins?|tokens?|blockchain|coinbase|binance|defi|dogecoin|altcoins?|digital assets?)\b/i.test(x.h))), tick, P.get("busy") === "1", lk).slice(0, 1); if (it.length) { cats[k] = it; it.forEach(x => shown.push(x.h)); } });
+  const shown = W ? [W.h] : [], cats = {}, ALT = {}; want.forEach((k, i) => { const ts0 = top2((rest[i].items || []).filter(x => x && x.h && !shown.some(h => same(h, x.h)) && (k !== "crypto" || /\b(bitcoin|btc|ethereum|ether|crypto\w*|solana|xrp|stablecoins?|tokens?|blockchain|coinbase|binance|defi|dogecoin|altcoins?|digital assets?)\b/i.test(x.h))), tick, P.get("busy") === "1", lk), it = ts0.slice(0, 1); ALT[k] = ts0.slice(1, 4); if (it.length) { cats[k] = it; it.forEach(x => shown.push(x.h)); } });
   MORE = MORE.filter(it => !shown.some(h => same(h, it.h)));
   let DEEP = null, CEO = null;
   { const dsc = i => (/Economist|Foreign Affairs|MIT Technology/.test(i.s) ? 10 : 0) + (/\b(AI|econom\w*|market\w*|China|debt|bond|invest\w*|money|tech\w*|chips?|bank\w*|trade|tariffs?|inflation|rates?|startups?|oil|war|Trump|billionaires?|wealth)\b/i.test(i.h) ? 8 : 0) + (TASTE.test(i.h) ? 12 : 0) + lk(i.h);   // what Marco likes first, hard reads from the best outlets
@@ -417,7 +417,7 @@ async function bundleEd(P, env) {
     cand.forEach(it => { if (kept >= 2 || used.has(it.mk.u)) delete it.mk; else { kept++; used.add(it.mk.u); } }); }
   const RIS = rising(RF.items || []), AN = pick(rest[want.length + tick.length].items || []).filter(i => CALLS.test(i.h)).slice(0, 4), mini = (a, k) => a.map(i => ({ h: i.h, s: i.s, u: i.u, d: i.d || "", t: i.t, k, val: i.val, raised: i.raised, pills: i.pills }));
   const cand = mini(RIS, "rising").concat(mini(AN, "analyst"), mini(cats.stocks || [], "stocks"), mini(cats.startups || [], "startups"), mini(cats.business || [], "business"));
-  return { at: top.at || Date.now(), day: edDay(), big: W, preds: pickMarkets(MK, tick), rising: RIS, deep: DEEP, ceo: CEO, cats, games: rest[rest.length - 1] || [], _cand: cand,
+  return { at: top.at || Date.now(), day: edDay(), big: W, preds: pickMarkets(MK, tick), rising: RIS, deep: DEEP, ceo: CEO, cats, games: rest[rest.length - 1] || [], _cand: cand, _alt: ALT, _bigC: PB.slice(0, 8),
     _n: [N1, N2, MK.length, (GM || []).length], ticker: T.filter(i => MOVERS.test(i.h)).concat(T).filter((v, i, a) => a.indexOf(v) === i).slice(0, 5) };
 }
 const TAKE = `You are Pato, the money buddy inside a finance app for young Dominicans. Write today's "Pato's take" for ONE user from the facts below.
@@ -661,38 +661,73 @@ async function imagesFor(env, b, cap) {   // each story's own full-size photo an
 async function finishSteps(env, E, key) {
   const x = E.x || (E.x = {}), save = () => env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }).catch(() => 0);
   if (!x.img) { FN = 0; await imagesFor(env, E.b, 12); x.img = imgList(E.b).length ? 0 : 1; await save(); if (!x.img) return; }
+  if (!x.ver) { FN = 0; await verifyImgs(E.b); x.ver = 1; await save(); }
   if (!x.brief) { if (E.b.big) { if (E.b.big.d2) E.b.big.d = E.b.big.d2; E.b.big.brief = await brief(env, E.b.big).catch(() => null); } x.brief = 1; await save(); }
   if (!x.plain) { await plainAll(env, E.b).catch(() => null); x.plain = 1; await save(); }
   if (!x.means) { DBG = {}; await meansAll(env, E.b).catch(() => null); E.b._dbg = Object.assign({}, E.b._dbg, { means: DBG.means || "cached", miss: DBG.miss }); x.means = 1; }
-  E.st = "ready"; E.at = Date.now(); await save();
+  x.done = 1; E.st = "ready"; E.at = Date.now(); await save();
 }
-function finalize(b0) { const b = Object.assign({}, b0); delete b._cand; delete b._dbg;   // slot 8 alternates: a CEO/founder story, then a deep read (Marco Nov 14)
+function finalize(b0) { const b = Object.assign({}, b0); delete b._cand; delete b._dbg; delete b._alt; delete b._bigC;   // slot 8 alternates: a CEO/founder story, then a deep read (Marco Nov 14)
   const first = "ceo", other = first === "ceo" ? "deep" : "ceo", pk = b[first] ? first : b[other] ? other : "";
   b.last = pk ? Object.assign({}, b[pk], { kind: pk }) : null; return b;
 }
-async function buildSave(env, idx, key) { await loadHL(env); const b = await buildEdition(env, idx);   // stage 1 only: the photos and AI lines are finished by the next request in a fresh invocation (the platform allows ~50 outside calls per invocation)
-  if (env.LIMITS && Object.keys(b.cats).length >= 2) await env.LIMITS.put(key, JSON.stringify({ at: Date.now(), st: "built", b }), { expirationTtl: 172800 }).catch(() => 0); await saveHL(env).catch(() => 0); return b; }
-async function getEdition(env, force, dbg, ctx) {
-  const idx = dropIdx(Date.now()), key = "ed8:" + idx;
-  if (env.LIMITS && !force) { const E = await env.LIMITS.get(key, "json").catch(() => null);
-    if (E && E.b && E.b.cats && Object.keys(E.b.cats).length >= 2) {
-      if (!E.b.cotd && E.b._cand && E.b._cand.length && Date.now() - (E.rt || 0) > 6e5) {   // Company of the day is never left empty: retry it (at most every 10 minutes) when the first try failed
-        DBG = {}; E.rt = Date.now(); E.b.cotd = await cotdPick(env, E.b._cand).catch(() => null); E.b._dbg = Object.assign({}, E.b._dbg, { retry: DBG.cotd || "ok" });
-        if (E.b.cotd) { await imagesFor(env, { cotd: E.b.cotd, cats: {} }, 4).catch(() => 0); }
-        await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }).catch(() => 0); }
-      if (E.st !== "ready" && ctx) { const lk = await env.LIMITS.get("edf:" + idx).catch(() => null); if (!lk) { await env.LIMITS.put("edf:" + idx, "1", { expirationTtl: 60 }).catch(() => 0);
-        ctx.waitUntil((async () => { await loadHL(env); await finishSteps(env, E, key); })().catch(() => 0)); } }
-      const o = finalize(E.b); o.fin = E.st === "ready" ? 1 : 0; if (dbg) o._dbg = E.b._dbg; return o; }
-    // Nov 14 (Marco: "there was only 1 story"): never make a phone wait for a build. If this drop's edition isn't ready, send the last good one right now and build in the background (one build at a time).
-    if (ctx) { let prev = null; for (let d = 1; d <= 4 && !prev; d++) { const P = await env.LIMITS.get("ed8:" + (idx - d), "json").catch(() => null); if (P && P.b && P.b.cats && Object.keys(P.b.cats).length >= 2) prev = P; }
-      if (prev) { const lock = await env.LIMITS.get("edl:" + idx).catch(() => null); if (!lock) { await env.LIMITS.put("edl:" + idx, "1", { expirationTtl: 150 }).catch(() => 0); ctx.waitUntil(buildSave(env, idx, key).catch(() => 0)); }
-        const o = finalize(prev.b); o.stale = 1; return o; } } }
-  await loadHL(env); const b = await buildEdition(env, idx);
-  if (ctx) { if (env.LIMITS && Object.keys(b.cats).length >= 2) await env.LIMITS.put(key, JSON.stringify({ at: Date.now(), st: "built", b }), { expirationTtl: 172800 }).catch(() => 0); await saveHL(env).catch(() => 0);
-    const o = finalize(b); o.fin = 0; if (dbg) o._dbg = b._dbg; return o; }   // photos and AI lines follow in the next request (fresh outside-call budget)
-  await finishEdition(env, b, 6);
-  if (env.LIMITS && Object.keys(b.cats).length >= 2) await env.LIMITS.put(key, JSON.stringify({ at: Date.now(), st: "ready", b }), { expirationTtl: 172800 }).catch(() => 0);
-  const o = finalize(b); if (dbg) o._dbg = b._dbg; return o;
+// ---------- Launch standard (Marco Nov 14): build 30 to 60 minutes before the drop, check, repair, publish the last good edition if it still fails, alert Marco ----------
+const bigOk = i => i && ((i.n || 1) >= 4 || HUGE.test(i.h || ""));
+const NONLATIN = /[Ѐ-ӿ֐-ࣿऀ-෿฀-໿ᄀ-ᇿ぀-힯]/;
+const edItems = b => [b.big].concat(Object.values(b.cats || {}).map(a => (a || [])[0]), [b.cotd, b.ceo]).filter(Boolean);
+async function imgOk(u) { try { const r = await cf(u, { headers: { range: "bytes=0-4095", "user-agent": "Mozilla/5.0 (compatible; PatoDaily/1.0)", accept: "image/*" }, redirect: "follow" });
+  if (!(r.status === 200 || r.status === 206)) return false; const ct = r.headers.get("content-type") || "", cr = r.headers.get("content-range"), tot = cr ? Number((cr.match(/\/(\d+)$/) || [])[1]) : Number(r.headers.get("content-length") || 0);
+  try { await r.body.cancel(); } catch (e) {} return /^image\//i.test(ct) && !(tot && tot < 10000); } catch (e) { return false; } }
+async function verifyImgs(b) { let bad = 0; for (const it of edItems(b)) { if (it.img && !(await imgOk(it.img))) { it.img = ""; bad++; } } b._dbg = Object.assign({}, b._dbg, { imgBad: bad }); }   // a photo that does not load is dropped: the app shows the company logo or a visual instead
+function qualityCheck(b, dayH) {
+  const hard = [], soft = [], items = edItems(b), tops = Object.values(b.cats || {}).filter(a => a && a[0]);
+  if (tops.length < 3) hard.push("fewer than 3 topic stories");
+  if (!b.big) hard.push("no Breaking story"); else if (!bigOk(b.big)) soft.push("Breaking is below the importance bar");
+  if (!Array.isArray(b.preds) || b.preds.length !== 3 || new Set(b.preds.map(p => p.u)).size !== 3) hard.push("predictions are not exactly 3");
+  if (!b.cotd) hard.push("no Company of the day"); if (!b.ceo) hard.push("no founder story");
+  if (items.some(it => NONLATIN.test(it.h || ""))) hard.push("a headline is not in English or Spanish");
+  const kf = items.filter(it => it.kf || it.wm || it.pl).length; if (kf < items.length * 0.5) hard.push("key facts missing on most stories"); else if (kf < items.length * 0.8) soft.push("key facts missing on some stories");
+  const noImg = items.filter(it => !it.img).length; if (noImg > 3) soft.push(noImg + " stories use a fallback visual instead of a photo");
+  const rep = []; [b.big].concat(tops.map(a => a[0])).forEach(it => { if (it && (dayH || []).some(h => simw(h, it.h) >= 0.6)) rep.push(it.h); }); if (rep.length) hard.push("repeats a story already shown today");
+  return { hard, soft, rep };
+}
+async function repairEd(env, E, q) {   // one repair round: swap in the next best story, redo what is missing
+  const b = E.b, x = E.x = E.x || {}, dayH = (await env.LIMITS.get("dayh:" + edDay(), "json").catch(() => null)) || [], acts = [];
+  const rep = (h, it) => (dayH || []).some(d => simw(d, h) >= 0.6) || edItems(b).some(o => o !== it && simw(o.h, h) >= 0.6);
+  Object.keys(b.cats || {}).forEach(k => { const cur = (b.cats[k] || [])[0]; if (cur && dayH.some(h => simw(h, cur.h) >= 0.6)) { const alt = (b._alt && b._alt[k] || []).filter(a => !rep(a.h, cur)); if (alt.length) { b.cats[k] = [alt[0]]; b._alt[k] = alt.slice(1); acts.push("swapped " + k); x.img = 0; x.plain = 0; x.means = 0; x.ver = 0; } } });
+  if (b.big && dayH.some(h => simw(h, b.big.h) >= 0.6 || !bigOk(b.big))) { const nb = (b._bigC || []).find(c => bigOk(c) && !rep(c.h, b.big)) || (!bigOk(b.big) ? null : (b._bigC || []).find(c => !rep(c.h, b.big))); if (nb) { b.big = Object.assign({}, nb, { huge: false }); acts.push("swapped Breaking"); x.img = 0; x.brief = 0; x.means = 0; x.ver = 0; } }
+  if (!Array.isArray(b.preds) || b.preds.length !== 3) { b.preds = await pickPreds3(env, await kvFresh(env, "mk2", 90, markets).catch(() => []), [], b.idx).catch(() => b.preds); acts.push("redid predictions"); }
+  if (!b.cotd) { DBG = {}; b.cotd = await cotdPick(env, b._cand).catch(() => null); acts.push("retried company of the day"); if (b.cotd) { x.img = 0; x.ver = 0; } }
+  if (!b.ceo) { b.ceo = await founderOf(env, Date.now()).catch(() => null); acts.push("reloaded founder story"); }
+  if (q.hard.some(r => /key facts/.test(r))) { x.means = 0; x.plain = 0; acts.push("redid key facts"); }
+  x.done = 0; E.st = "built"; return acts;
+}
+async function advance(env, idx) {   // one step per call (every cron tick, or every phone request while no cron has done it): build, finish, check, repair, publish or hold
+  const key = "ed9:" + idx; let E = await env.LIMITS.get(key, "json").catch(() => null); if (E && E.pub !== undefined) return E;
+  await loadHL(env);
+  if (!E || !E.b) { const b = await buildEdition(env, idx); if (Object.keys(b.cats).length < 2) { await env.LIMITS.put("edh:" + idx, JSON.stringify({ at: Date.now(), level: "hard", reasons: ["could not build: too few stories"], pub: false }), { expirationTtl: 172800 }).catch(() => 0); return null; }
+    E = { at: Date.now(), st: "built", b, x: {}, tries: 0 }; await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }); await saveHL(env).catch(() => 0); return E; }
+  E.x = E.x || {};
+  if (!E.x.done) { await finishSteps(env, E, key); return E; }
+  const dayH = (await env.LIMITS.get("dayh:" + edDay(), "json").catch(() => null)) || [], q = qualityCheck(E.b, dayH);
+  const done = async (pub, level, reasons) => { E.pub = pub; E.q = { hard: q.hard, soft: q.soft }; await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 });
+    await env.LIMITS.put("edh:" + idx, JSON.stringify({ at: Date.now(), level, reasons, pub, tries: E.tries || 0 }), { expirationTtl: 172800 });
+    if (pub) { await env.LIMITS.put("edpub", JSON.stringify({ key, idx }), { expirationTtl: 1209600 }); await env.LIMITS.put("dayh:" + edDay(), JSON.stringify(dayH.concat(edItems(E.b).map(it => it.h)).slice(-60)), { expirationTtl: 172800 }); } return E; };
+  if (!q.hard.length) return done(true, q.soft.length ? "soft" : "ok", q.soft);
+  if ((E.tries || 0) >= 3) return done(false, "hard", q.hard);   // still failing after 3 repair rounds: the last good edition stays
+  E.tries = (E.tries || 0) + 1; E.log = (E.log || []).concat([{ t: Date.now(), fail: q.hard, did: await repairEd(env, E, q) }]).slice(-6);
+  await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }); return E;
+}
+async function getEdition(env, force, dbg, ctx) {   // what a phone gets: this drop's edition once it has passed the check, otherwise the last good one (never a broken one)
+  const idx = dropIdx(Date.now()), key = "ed9:" + idx, kv = env.LIMITS; let E = kv ? await kv.get(key, "json").catch(() => null) : null;
+  if (E && E.pub) { const o = finalize(E.b); o.fin = 1; if (dbg) { o._dbg = E.b._dbg; o._q = E.q; o._log = E.log; } return o; }
+  let L = null; try { const pt = kv && await kv.get("edpub", "json"); if (pt) L = await kv.get(pt.key, "json"); } catch (e) { L = null; }
+  const failed = E && E.pub === false;
+  if (ctx && kv && !failed) { const lk = await kv.get("edl:" + idx).catch(() => null); if (!lk) { await kv.put("edl:" + idx, "1", { expirationTtl: 40 }).catch(() => 0); ctx.waitUntil(advance(env, idx).catch(() => 0)); } }
+  if (L && L.b) { const o = finalize(L.b); o.stale = 1; o.fin = failed ? 1 : 0; if (dbg) { o._dbg = L.b._dbg; o._why = failed ? E.q : "building"; } return o; }
+  if (E && E.b) { const o = finalize(E.b); o.fin = failed ? 1 : 0; if (dbg) { o._dbg = E.b._dbg; o._q = E.q; } return o; }
+  const E2 = await advance(env, idx).catch(() => null); if (E2 && E2.b) { const o = finalize(E2.b); o.fin = 0; return o; }
+  throw new Error("no edition");
 }
 // Breaking key facts (Marco Nov 11: "give the most important data, not only a headline"). One AI call per story, shared by all users (KV), grounded only in the feed text.
 const BRIEF = `You explain one news story to a busy young reader in a money app. From ONLY the text below, return JSON {"facts":["",""," "],"why":""}.
@@ -774,13 +809,14 @@ export default {
   // every 15 min (tools/wrangler.toml crons): refresh games and predictions in their own run, so /news only reads them
   // Every 15 min. At :30 and :45 before each drop (7, 10, 1, 4, 7, 10 DR = 11, 14, 17, 20, 23, 2 UTC) it prepares the drop's news; other runs refresh games, predictions and world news.
   async scheduled(ev, env, ctx) { SUBN = 0; FN = 0; await loadHL(env); const d = new Date(ev.scheduledTime || Date.now()), h = d.getUTCHours(), m = Math.floor(d.getUTCMinutes() / 15) * 15, kv = env.LIMITS;
-    // Nov 14 redesign (demo account first): the hour before 7am, 1pm and 7pm DR (10, 16, 22 UTC): :00 and :15 prefetch the feeds, :30 picks the new edition, :45 finds photos and writes the briefs
-    if ([10, 16, 22].includes(h)) { const idx = dropIdx(d.getTime() + 3600e3);
-      if (m < 30) { const L = SHARED(), half = Math.ceil(L.length / 2), part = m === 0 ? L.slice(0, half) : L.slice(half);
-        ctx.waitUntil((async () => { if (m === 0) await deepAll(env, true).catch(() => 0); for (const u of part) await refreshFeed(env, u).catch(() => 0); await saveHL(env); })()); return; }
-      if (m === 30) { ctx.waitUntil((async () => { const b = await buildEdition(env, idx); if (Object.keys(b.cats).length >= 2) await kv.put("ed8:" + idx, JSON.stringify({ at: Date.now(), st: "built", b }), { expirationTtl: 172800 }); await saveHL(env); })().catch(() => 0)); return; }
-      ctx.waitUntil((async () => { const E = await kv.get("ed8:" + idx, "json"); if (!E || !E.b) return; await finishEdition(env, E.b, 36); E.st = "ready"; E.at = Date.now(); await kv.put("ed8:" + idx, JSON.stringify(E), { expirationTtl: 172800 }); })().catch(() => 0)); return;
+    // Launch standard (Marco Nov 14): the hour before each drop (10, 16, 22 UTC = 6am, 12pm, 6pm DR) feeds are prepared at :00 and :05, then every 5 minutes one step: build, photos, briefs, check, repair, publish; until :30 after the drop for repairs
+    const mm = d.getUTCMinutes();
+    if ([10, 16, 22].includes(h) || ([11, 17, 23].includes(h) && mm <= 30)) { const idx = [10, 16, 22].includes(h) ? dropIdx(d.getTime() + 3600e3) : dropIdx(d.getTime());
+      if ([10, 16, 22].includes(h) && mm < 10) { const L = SHARED(), half = Math.ceil(L.length / 2), part = mm < 5 ? L.slice(0, half) : L.slice(half);
+        ctx.waitUntil((async () => { if (mm < 5) await deepAll(env, true).catch(() => 0); for (const u of part) await refreshFeed(env, u).catch(() => 0); await saveHL(env); })()); return; }
+      ctx.waitUntil(advance(env, idx).catch(() => 0)); return;
     }
+    if (mm % 15 !== 0) return;   // the rest of the day keeps the old every-15-minutes rhythm
     const pre = [13, 19, 1].includes(h) && m >= 30;   // the other drops of the current edition (10am, 4pm, 10pm DR)
     if (pre) { const L = SHARED(), half = Math.ceil(L.length / 2), part = m === 30 ? L.slice(0, half) : L.slice(half);
       ctx.waitUntil((async () => { if (m === 30) await deepAll(env, true).catch(() => 0); for (const u of part) await refreshFeed(env, u).catch(() => 0); await saveHL(env); })()); return; }
