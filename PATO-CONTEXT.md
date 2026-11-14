@@ -54,7 +54,7 @@ Loans show one line per loan; one Remind and one Paid round icon per person; Pai
 - Propose ideas and wait for his pick; one numbered list with defaults. He tries ideas one at a time: **back up before each change**.
 - Minimal text in the UI. Native `confirm()`/`alert()` fail on his phone: use `sure()`/`warnMsg()`.
 - **Errands is private**: never log anything to Errands unless Marco says so.
-- **Never write the reason for Joshua's hold** anywhere (UI says only "On hold").
+- **Never write the reason for any loan "On hold"** anywhere (UI says only "On hold"). Details are in the private handoff.
 - Combine rule: same-day same-kind entries = ONE row; never merge different motivo.
 - Receipts: when he uploads a receipt or writes "sync", log it and run the sync.
 - Record owed money only when paid. Dad loan is savings held by Dad, not a withdrawal. IBKR wires are never withdrawals.
@@ -68,7 +68,7 @@ Loans show one line per loan; one Remind and one Paid round icon per person; Pai
 Poker results by game, borrower history, income by source, net worth chart, what-if slider, phone shortcuts, collections board, all CFP ideas (weekly pace, emergency fund, windfall split, category limits, safe-to-spend), USD/inflation view, BHD reconciliation, tax pack, loan discount/caps, IOU, stress number, bankroll, date as range, odd-charge alerts, "days of saving", weekly savings chart, 25k badges, in-app "Add to today's entry?", "Pato vs the crowd", "Log something" subtitle.
 
 ## Open items
-Gmail one-tap for friends needs real `GOOGLE_ID`/`GOOGLE_SECRET` in pato-mail, then a test with the demo account. Poker and Sports tab polish later. Camera test photo not confirmed. Daily name still open (Pato News / Stories / Daily).
+Gmail one-tap for friends needs real `GOOGLE_ID`/`GOOGLE_SECRET` in pato-mail, then a test with a test account (details in the private handoff). Poker and Sports tab polish later. Camera test photo not confirmed. Daily name still open (Pato News / Stories / Daily).
 
 ## How to deploy and work (for a new Claude account)
 1. Clone the repo, create a branch, make changes (edit via the kit steps or directly), keep a backup of `index.html` first.
