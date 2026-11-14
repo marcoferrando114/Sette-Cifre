@@ -753,6 +753,8 @@ function qualityCheck(b, dayH) {
   if (items.some(it => it.img && !it.imgv)) hard.push("a photo was not verified (size, sharpness, repeat)");
   { const np = photoSlots(b).filter(it => !it.img); if (np.length) hard.push(np.length + " news story(ies) without a photo"); }
   const noImg = items.filter(it => !it.img).length; if (noImg > 3) soft.push(noImg + " stories use a fallback visual instead of a photo");
+  { const now = Date.now(), old = Object.keys(b.cats || {}).filter(k => { const c = (b.cats[k] || [])[0]; return c && c.t && now - c.t > 12 * 36e5; }); if (old.length) hard.push(old.length + " topic story(ies) older than 12 hours");
+    if (b.big && b.big.t && now - b.big.t > 6 * 36e5 && !(HUGE.test(b.big.h || "") || (b.big.n || 1) >= 6)) hard.push("Breaking is older than 6 hours"); }   // Marco Nov 14: always up to date; only a major ongoing event may be older
   const rep = []; [b.big].concat(tops.map(a => a[0])).forEach(it => { if (it && (dayH || []).some(h => simw(h, it.h) >= 0.6)) rep.push(it.h); }); if (rep.length) hard.push("repeats a story already shown today");
   return { hard, soft, rep };
 }
@@ -761,6 +763,8 @@ async function repairEd(env, E, q) {   // one repair round: swap in the next bes
   const b = E.b, x = E.x = E.x || {}, dayH = await dayList(env, b.idx != null ? b.idx : dropIdx(Date.now())), acts = [];
   const rep = (h, it) => (dayH || []).some(d => simw(d, h) >= 0.6) || edItems(b).some(o => o !== it && simw(o.h, h) >= 0.6);
   Object.keys(b.cats || {}).forEach(k => { const cur = (b.cats[k] || [])[0]; if (cur && dayH.some(h => simw(h, cur.h) >= 0.6)) { const alt = (b._alt && b._alt[k] || []).filter(a => !rep(a.h, cur)); if (alt.length) { b.cats[k] = [alt[0]]; b._alt[k] = alt.slice(1); acts.push("swapped " + k); x.img = 0; x.plain = 0; x.means = 0; x.ver = 0; } } });
+  { const now = Date.now(); Object.keys(b.cats || {}).forEach(k => { const cur = (b.cats[k] || [])[0]; if (cur && cur.t && now - cur.t > 12 * 36e5) { const alt = (b._alt && b._alt[k] || []).filter(a => (!a.t || now - a.t <= 12 * 36e5) && !rep(a.h, cur)); if (alt.length) { b.cats[k] = [alt[0]]; b._alt[k] = alt.slice(1); acts.push("swapped old " + k); x.img = 0; x.plain = 0; x.means = 0; x.ver = 0; } else if (Object.values(b.cats).filter(v => v && v[0]).length > 3) { delete b.cats[k]; acts.push("dropped old " + k); } } });
+    if (b.big && b.big.t && now - b.big.t > 6 * 36e5 && !(HUGE.test(b.big.h || "") || (b.big.n || 1) >= 6)) { const nb = (b._bigC || []).find(c => c.t && now - c.t <= 6 * 36e5 && !rep(c.h, b.big)); if (nb) { b.big = Object.assign({}, nb, { huge: false }); acts.push("swapped old Breaking"); x.img = 0; x.brief = 0; x.means = 0; x.ver = 0; } } }
   if (b.big && dayH.some(h => simw(h, b.big.h) >= 0.6 || !bigOk(b.big))) { const nb = (b._bigC || []).find(c => bigOk(c) && !rep(c.h, b.big)) || (!bigOk(b.big) ? null : (b._bigC || []).find(c => !rep(c.h, b.big))); if (nb) { b.big = Object.assign({}, nb, { huge: false }); acts.push("swapped Breaking"); x.img = 0; x.brief = 0; x.means = 0; x.ver = 0; } }
   if (q.hard.some(r => /without a photo/.test(r))) { const a = await photoSwap(env, E).catch(() => []); a.forEach(s => acts.push(s)); }
   if (!Array.isArray(b.preds) || b.preds.length !== 2 || b.preds.some(p => GAMING.test((p.t || "") + " " + (p.q || "")))) { b.preds = await pickPreds3(env, await kvFresh(env, "mk2", 90, markets).catch(() => []), [], b.idx, edItems(b).map(i => i.h)).catch(() => b.preds); acts.push("redid predictions"); }
@@ -775,16 +779,21 @@ async function advance(env, idx) {   // one step per call (every cron tick, or e
   const key = "ed9n:" + idx; let E = await env.LIMITS.get(key, "json").catch(() => null); if (E && E.pub !== undefined) return E;
   await loadHL(env);
   if (!E || !E.b) { const b = await buildEdition(env, idx); if (Object.keys(b.cats).length < 2) { await env.LIMITS.put("edh:" + idx, JSON.stringify({ at: Date.now(), level: "hard", reasons: ["could not build: too few stories"], pub: false }), { expirationTtl: 172800 }).catch(() => 0); return null; }
-    E = { at: Date.now(), st: "built", b, x: {}, tries: 0 }; await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }); await saveHL(env).catch(() => 0); return E; }
+    E = { at: Date.now(), bat: Date.now(), st: "built", b, x: {}, tries: 0 }; await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }); await saveHL(env).catch(() => 0); return E; }
   E.x = E.x || {};
+  const pre = [10, 16, 22].includes(new Date().getUTCHours()), lf = Number(await env.LIMITS.get("lf:" + idx).catch(() => 0)) || 0;   // lf = time of the final feed refresh before this drop
+  if (lf && !E.rb && (E.bat || E.at || 0) < lf) { const b2 = await buildEdition(env, idx).catch(() => null);   // the final feeds are newer than this build: pick again from them (photos, briefs and key facts are cached, so it is quick)
+    if (b2 && Object.keys(b2.cats || {}).length >= 2) { E.b = b2; E.x = {}; E.tries = 0; E.rb = 1; E.bat = Date.now(); E.st = "built"; E.log = (E.log || []).concat([{ t: Date.now(), did: ["rebuilt from the final feed refresh"] }]).slice(-6); await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }); return E; }
+    E.rb = 1; }
   if (!E.x.done) { await finishSteps(env, E, key); return E; }
   const dayH = await dayList(env, idx), q = qualityCheck(E.b, dayH);
   const done = async (pub, level, reasons) => { E.pub = pub; E.q = { hard: q.hard, soft: q.soft, rep: q.rep }; await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 });
     await env.LIMITS.put("edh:" + idx, JSON.stringify({ at: Date.now(), level, reasons, pub, tries: E.tries || 0 }), { expirationTtl: 172800 });
     if (pub) { await env.LIMITS.put("edpub", JSON.stringify({ key, idx }), { expirationTtl: 1209600 }); const own = edItems(E.b).map(it => it.h); await env.LIMITS.put("dayo:" + idx, JSON.stringify(own), { expirationTtl: 172800 }); await env.LIMITS.put("dayh2:" + edDay(), JSON.stringify(dayH.concat(own).slice(-60)), { expirationTtl: 172800 }); } return E; };
+  if (pre && !lf && new Date().getUTCMinutes() < 50) return E;   // wait for the final feed refresh (:40) before publishing
   if (!q.hard.length) return done(true, q.soft.length ? "soft" : "ok", q.soft);
   if ((E.tries || 0) >= ((q.hard.every(r => /without a photo/.test(r)) && (E.tries || 0) < 6) ? 6 : 3)) { if (q.hard.some(r => /without a photo/.test(r))) { const b = E.b; Object.keys(b.cats || {}).forEach(k => { const cur = (b.cats[k] || [])[0]; if (cur && !cur.img && Object.values(b.cats).filter(v => v && v[0]).length > 3) delete b.cats[k]; }); q.hard = q.hard.filter(r => !/without a photo/.test(r)); const q2 = qualityCheck(b, dayH); q.hard = q2.hard; q.rep = q2.rep; if (!q.hard.length) return done(true, "soft", ["dropped photo-less stories instead of showing a visual card"].concat(q2.soft)); }   // Marco Nov 14: never an emoji card for a news story
-  if (q.hard.every(r => /repeats a story|without a photo/.test(r))) return done(true, "soft", ["still repeats or lacks photos on " + (q.rep || []).length + " earlier story(ies) after 3 swaps (feeds had nothing newer)"].concat(q.soft)); return done(false, "hard", q.hard); }   // a repeat alone never keeps hours-old news on screen   // still failing after 3 repair rounds: the last good edition stays
+  if (q.hard.every(r => /repeats a story|without a photo|older than/.test(r))) return done(true, "soft", ["still repeats, lacks photos or has older stories on " + (q.rep || []).length + " earlier story(ies) after 3 swaps (feeds had nothing newer)"].concat(q.soft)); return done(false, "hard", q.hard); }   // a repeat alone never keeps hours-old news on screen   // still failing after 3 repair rounds: the last good edition stays
   E.tries = (E.tries || 0) + 1; E.log = (E.log || []).concat([{ t: Date.now(), fail: q.hard, did: await repairEd(env, E, q) }]).slice(-6);
   await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }); return E;
 }
@@ -887,6 +896,9 @@ export default {
     if ([10, 16, 22].includes(h) || ([11, 17, 23].includes(h) && mm <= 30)) { const idx = [10, 16, 22].includes(h) ? dropIdx(d.getTime() + 3600e3) : dropIdx(d.getTime());
       if ([10, 16, 22].includes(h) && mm < 10) { const L = SHARED(), half = Math.ceil(L.length / 2), part = mm < 5 ? L.slice(0, half) : L.slice(half);
         ctx.waitUntil((async () => { if (mm < 5) await deepAll(env, true).catch(() => 0); for (const u of part) await refreshFeed(env, u).catch(() => 0); await saveHL(env); })()); return; }
+      if ([10, 16, 22].includes(h) && mm >= 35 && mm < 45) {   // Marco Nov 14: always up to date. Final feed refresh at :35 and :40 (about 20 minutes before the drop); the build then starts over on these feeds
+        const L = SHARED(), half = Math.ceil(L.length / 2), part = mm < 40 ? L.slice(0, half) : L.slice(half);
+        ctx.waitUntil((async () => { for (const u of part) await refreshFeed(env, u).catch(() => 0); if (mm >= 40) await env.LIMITS.put("lf:" + idx, String(Date.now()), { expirationTtl: 10800 }).catch(() => 0); await saveHL(env); })()); return; }
       ctx.waitUntil(advance(env, idx).catch(() => 0)); return;
     }
     if (mm % 15 !== 0) return;   // the rest of the day keeps the old every-15-minutes rhythm
