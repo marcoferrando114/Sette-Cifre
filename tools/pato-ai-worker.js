@@ -811,6 +811,7 @@ export default {
   async scheduled(ev, env, ctx) { SUBN = 0; FN = 0; await loadHL(env); const d = new Date(ev.scheduledTime || Date.now()), h = d.getUTCHours(), m = Math.floor(d.getUTCMinutes() / 15) * 15, kv = env.LIMITS;
     // Launch standard (Marco Nov 14): the hour before each drop (10, 16, 22 UTC = 6am, 12pm, 6pm DR) feeds are prepared at :00 and :05, then every 5 minutes one step: build, photos, briefs, check, repair, publish; until :30 after the drop for repairs
     const mm = d.getUTCMinutes();
+    if ([11, 17, 23].includes(h) && mm >= 35 && mm < 40 && env.CRON) { ctx.waitUntil(env.CRON.fetch("https://pato-cron/health", { headers: { "x-edition-check": "1" } }).catch(() => 0)); return; }   // 35 minutes after the drop: tell Marco if it was not clean
     if ([10, 16, 22].includes(h) || ([11, 17, 23].includes(h) && mm <= 30)) { const idx = [10, 16, 22].includes(h) ? dropIdx(d.getTime() + 3600e3) : dropIdx(d.getTime());
       if ([10, 16, 22].includes(h) && mm < 10) { const L = SHARED(), half = Math.ceil(L.length / 2), part = mm < 5 ? L.slice(0, half) : L.slice(half);
         ctx.waitUntil((async () => { if (mm < 5) await deepAll(env, true).catch(() => 0); for (const u of part) await refreshFeed(env, u).catch(() => 0); await saveHL(env); })()); return; }

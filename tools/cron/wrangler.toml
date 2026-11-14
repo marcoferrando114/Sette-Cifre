@@ -15,6 +15,5 @@ crons = [
   "*/30 14-21 * * 1-5",   # stocks every 30 min while the market is open (10:00am to 5:30pm DR)
   "5 13,21,23 * * 1-5",   # pre-market 9:05am, after-hours 5:05pm and 7:05pm DR
   "5 1 * * 2-6",          # after-hours 9:05pm DR (Mon to Fri evening)
-  "42 12 * * *",          # loan reminders 8:42am DR every day
-  "35 11,17,23 * * *"     # Pato Daily health check 35 minutes after each drop (7:35am, 1:35pm, 7:35pm DR)
+  "42 12 * * *"           # loan reminders 8:42am DR every day
 ]
