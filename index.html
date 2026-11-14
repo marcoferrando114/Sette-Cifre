@@ -1829,6 +1829,12 @@ html.has-ak #s-sptr,html.has-ak #s-spcash>h3,html.has-ak #s-spcash>.grid,html.ha
 .nw-gh b{font-size:.9rem;letter-spacing:0;text-transform:none;color:var(--ink)}
 .nw-r{display:grid;grid-template-columns:10px minmax(0,1fr) auto 3.2em;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid color-mix(in srgb,var(--ink) 5%,transparent)}
 .nw-r:last-child{border-bottom:0}
+.nw-g+.nw-g{margin-top:26px}
+.nw-gh{padding-bottom:8px}
+.nw-r{grid-template-columns:10px minmax(0,1fr) 8.6em 3.4em}
+.nw-r b{text-align:right}
+.nw-r>small{color:color-mix(in srgb,var(--ink) 62%,transparent);font-weight:600}
+.nw-one .nw-r{display:none}
 .nw-r i{width:9px;height:9px;border-radius:50%}
 .nw-r span{color:var(--ink);font-size:.95rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.nw-r span small{color:var(--muted);font-size:.78rem}
 .nw-r b{font-weight:700;color:var(--ink)}.nw-r>small{color:var(--muted);font-size:.8rem;text-align:right}
@@ -5358,7 +5364,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
       const owed = parts.filter(([n,v])=>n==="Owed to you" && v>0).map(([n,v])=>[n,v,"--c-owe",""]);
       const sum = L => L.reduce((t,x)=>t+x[1],0), pc = v => all>0 ? Math.round(v/all*100) : 0;
       $("netBar").innerHTML = all>0 ? [...mine, ...owed].map(([,v,c])=>v>0?`<i style="width:${v/all*100}%;background:var(${c})"></i>`:"").join("") : "";
-      const grp = (t, L) => L.length ? `<div class="nw-g"><div class="nw-gh"><span>${t}</span><b>${fmt(sum(L))}</b></div>${L.map(([n,v,c,x])=>`<div class="nw-r"><i style="background:var(${c})"></i><span>${spEsc(n)}${x?` <small>· ${x}</small>`:""}</span><b>${fmt(v)}</b><small>${pc(v)}%</small></div>`).join("")}</div>` : "";
+      const grp = (t, L) => L.length ? `<div class="nw-g${L.length===1&&L[0][0]===t?" nw-one":""}"><div class="nw-gh"><span>${t}</span><b>${fmt(sum(L))}</b></div>${L.map(([n,v,c,x])=>`<div class="nw-r"><i style="background:var(${c})"></i><span>${spEsc(n)}${x?` <small>· ${x}</small>`:""}</span><b>${fmt(v)}</b><small>${pc(v)}%</small></div>`).join("")}</div>` : "";
       $("netSplit").className = "nw-split num"; $("netSplit").innerHTML = grp("Your money", mine) + grp("Owed to you", owed); }
     { const nl = n => n.startsWith("Lent: ") ? "Held by " + n.slice(6) : n, note = n => n==="Checking"&&!ccE.last ? "not logged" : n==="Cash"&&spWallet()===null ? "not logged" : "";
       const COL = ["--c-sav","--c-al","--c-cc","--c-pk","--c-nl"];
@@ -5366,7 +5372,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
       const owed = parts.filter(([n,v])=>n==="Owed to you" && v>0).map(([n,v])=>[n,v,"--c-owe",""]);
       const sum = L => L.reduce((t,x)=>t+x[1],0), pc = v => all>0 ? Math.round(v/all*100) : 0;
       $("netBar").innerHTML = all>0 ? [...mine, ...owed].map(([,v,c])=>v>0?`<i style="width:${v/all*100}%;background:var(${c})"></i>`:"").join("") : "";
-      const grp = (t, L) => L.length ? `<div class="nw-g"><div class="nw-gh"><span>${t}</span><b>${fmt(sum(L))}</b></div>${L.map(([n,v,c,x])=>`<div class="nw-r"><i style="background:var(${c})"></i><span>${spEsc(n)}${x?` <small>· ${x}</small>`:""}</span><b>${fmt(v)}</b><small>${pc(v)}%</small></div>`).join("")}</div>` : "";
+      const grp = (t, L) => L.length ? `<div class="nw-g${L.length===1&&L[0][0]===t?" nw-one":""}"><div class="nw-gh"><span>${t}</span><b>${fmt(sum(L))}</b></div>${L.map(([n,v,c,x])=>`<div class="nw-r"><i style="background:var(${c})"></i><span>${spEsc(n)}${x?` <small>· ${x}</small>`:""}</span><b>${fmt(v)}</b><small>${pc(v)}%</small></div>`).join("")}</div>` : "";
       $("netSplit").className = "nw-split num"; $("netSplit").innerHTML = grp("Your money", mine) + grp("Owed to you", owed); }
     { const nl = n => n.startsWith("Lent: ") ? "Held by " + n.slice(6) : n, note = n => n==="Checking"&&!ccE.last ? "not logged" : n==="Cash"&&spWallet()===null ? "not logged" : "";
       const COL = ["--c-sav","--c-al","--c-cc","--c-pk","--c-nl"];
@@ -5374,7 +5380,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
       const owed = parts.filter(([n,v])=>n==="Owed to you" && v>0).map(([n,v])=>[n,v,"--c-owe",""]);
       const sum = L => L.reduce((t,x)=>t+x[1],0), pc = v => all>0 ? Math.round(v/all*100) : 0;
       $("netBar").innerHTML = all>0 ? [...mine, ...owed].map(([,v,c])=>v>0?`<i style="width:${v/all*100}%;background:var(${c})"></i>`:"").join("") : "";
-      const grp = (t, L) => L.length ? `<div class="nw-g"><div class="nw-gh"><span>${t}</span><b>${fmt(sum(L))}</b></div>${L.map(([n,v,c,x])=>`<div class="nw-r"><i style="background:var(${c})"></i><span>${spEsc(n)}${x?` <small>· ${x}</small>`:""}</span><b>${fmt(v)}</b><small>${pc(v)}%</small></div>`).join("")}</div>` : "";
+      const grp = (t, L) => L.length ? `<div class="nw-g${L.length===1&&L[0][0]===t?" nw-one":""}"><div class="nw-gh"><span>${t}</span><b>${fmt(sum(L))}</b></div>${L.map(([n,v,c,x])=>`<div class="nw-r"><i style="background:var(${c})"></i><span>${spEsc(n)}${x?` <small>· ${x}</small>`:""}</span><b>${fmt(v)}</b><small>${pc(v)}%</small></div>`).join("")}</div>` : "";
       $("netSplit").className = "nw-split num"; $("netSplit").innerHTML = grp("Your money", mine) + grp("Owed to you", owed); }
     { const nl = n => n.startsWith("Lent: ") ? "Held by " + n.slice(6) : n, note = n => n==="Checking"&&!ccE.last ? "not logged" : n==="Cash"&&spWallet()===null ? "not logged" : "";
       const COL = ["--c-sav","--c-al","--c-cc","--c-pk","--c-nl"];
@@ -5382,7 +5388,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
       const owed = parts.filter(([n,v])=>n==="Owed to you" && v>0).map(([n,v])=>[n,v,"--c-owe",""]);
       const sum = L => L.reduce((t,x)=>t+x[1],0), pc = v => all>0 ? Math.round(v/all*100) : 0;
       $("netBar").innerHTML = all>0 ? [...mine, ...owed].map(([,v,c])=>v>0?`<i style="width:${v/all*100}%;background:var(${c})"></i>`:"").join("") : "";
-      const grp = (t, L) => L.length ? `<div class="nw-g"><div class="nw-gh"><span>${t}</span><b>${fmt(sum(L))}</b></div>${L.map(([n,v,c,x])=>`<div class="nw-r"><i style="background:var(${c})"></i><span>${spEsc(n)}${x?` <small>· ${x}</small>`:""}</span><b>${fmt(v)}</b><small>${pc(v)}%</small></div>`).join("")}</div>` : "";
+      const grp = (t, L) => L.length ? `<div class="nw-g${L.length===1&&L[0][0]===t?" nw-one":""}"><div class="nw-gh"><span>${t}</span><b>${fmt(sum(L))}</b></div>${L.map(([n,v,c,x])=>`<div class="nw-r"><i style="background:var(${c})"></i><span>${spEsc(n)}${x?` <small>· ${x}</small>`:""}</span><b>${fmt(v)}</b><small>${pc(v)}%</small></div>`).join("")}</div>` : "";
       $("netSplit").className = "nw-split num"; $("netSplit").innerHTML = grp("Your money", mine) + grp("Owed to you", owed); }
     { const nl = n => n.startsWith("Lent: ") ? "Held by " + n.slice(6) : n, note = n => n==="Checking"&&!ccE.last ? "not logged" : n==="Cash"&&spWallet()===null ? "not logged" : "";
       const COL = ["--c-sav","--c-al","--c-cc","--c-pk","--c-nl"];
@@ -5390,7 +5396,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
       const owed = parts.filter(([n,v])=>n==="Owed to you" && v>0).map(([n,v])=>[n,v,"--c-owe",""]);
       const sum = L => L.reduce((t,x)=>t+x[1],0), pc = v => all>0 ? Math.round(v/all*100) : 0;
       $("netBar").innerHTML = all>0 ? [...mine, ...owed].map(([,v,c])=>v>0?`<i style="width:${v/all*100}%;background:var(${c})"></i>`:"").join("") : "";
-      const grp = (t, L) => L.length ? `<div class="nw-g"><div class="nw-gh"><span>${t}</span><b>${fmt(sum(L))}</b></div>${L.map(([n,v,c,x])=>`<div class="nw-r"><i style="background:var(${c})"></i><span>${spEsc(n)}${x?` <small>· ${x}</small>`:""}</span><b>${fmt(v)}</b><small>${pc(v)}%</small></div>`).join("")}</div>` : "";
+      const grp = (t, L) => L.length ? `<div class="nw-g${L.length===1&&L[0][0]===t?" nw-one":""}"><div class="nw-gh"><span>${t}</span><b>${fmt(sum(L))}</b></div>${L.map(([n,v,c,x])=>`<div class="nw-r"><i style="background:var(${c})"></i><span>${spEsc(n)}${x?` <small>· ${x}</small>`:""}</span><b>${fmt(v)}</b><small>${pc(v)}%</small></div>`).join("")}</div>` : "";
       $("netSplit").className = "nw-split num"; $("netSplit").innerHTML = grp("Your money", mine) + grp("Owed to you", owed); }
   }
   // league rakeback per Monday: average of the weeks so far (first week left out), counting weeks earned but not paid yet
