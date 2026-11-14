@@ -2063,7 +2063,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261114140000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261114143000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -7219,8 +7219,8 @@ TRACKER DATA:
       L.push({id: ed + ":last:" + LS.h, cls: "", news: 1, t: ceo ? "CEOs & founders" : "Deep read", w: ago(LS.t) + " ago", u: LS.u, pic: LS.u, ph: LS.h, ps: LS.s, fk: "last", nav: ceo ? "👤 CEOs" : "🧭 Deep read", sh: {k: ceo ? "CEOs & founders" : "Deep read", h: LS.h, s: LS.s, u: LS.u},
         body: '<div class="pd-k">' + (ceo ? (LS.founder ? "👤 FOUNDER STORY" : "👤 HOW LEADERS GET THERE") : "🧭 DEEP READ") + '</div><div class="pd-h1">' + esc(LS.h) + '</div><div class="pd-m">' + by(LS) + ' · <a class="pd-r2" data-u="' + esc(LS.u) + '">Read ›</a></div>' +
           kfBox(LS) + (LS.sec ? (LS.pl ? kp(LS.pl) : "") + LS.sec.map(function(x){ return '<div class="pd-know"><i>' + esc(x[0]) + '</i>' + kp(x[1]) + '</div>'; }).join("") : (LS.pl ? '<div class="pd-know"><i>' + (ceo ? "WHAT THIS SHOWS" : "WHAT IT IS ABOUT") + '</i>' + kp(LS.pl) + '</div>' : '')) + jgBox(LS) + fyBox(ownT(LS) + (LS.fy || ""))}); }
-    // the daily duel stays last, and disappears once answered
-    var cq = callQ(), cs = callSt(); if(cq && !(cs && cs.q === cq.id && $("pdV").hidden)) L.push({id: ed + ":call:" + cq.id, cls: "call", t: CALL, w: "today's money question", call: cq, body: ""});
+    // no Daily Duel (Marco Nov 14)
+    var cq = null, cs = callSt(); if(cq && !(cs && cs.q === cq.id && $("pdV").hidden)) L.push({id: ed + ":call:" + cq.id, cls: "call", t: CALL, w: "today's money question", call: cq, body: ""});
     L.forEach(function(x){ var src = x.fk === "big" ? big : x.fk && cats[x.fk] && cats[x.fk][0]; var mk = src && src.mk; if(!mk || !x.news) return;
       x.body += '<a class="pd-r2 pd-mk" data-u="' + esc(mk.u) + '"><span>🔮 MARKET ODDS</span><b>' + mk.p + '%</b> ' + esc(mk.q) + (mk.end ? ' <small>· by ' + esc(dlabel(mk.end)) + '</small>' : '') + '</a>'; });
     L.forEach(function(x){ var k = x.fk, c = k && CATS[ix(k)];
