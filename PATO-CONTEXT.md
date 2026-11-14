@@ -1,6 +1,6 @@
 # PATO-CONTEXT.md
 
-Read this first. It explains how Pato (the app, formerly "Stakd" / "Sette Cifre") is built, where things live, and how Marco likes to work. No secrets are in this file, only where they live.
+Read this first. To switch Claude accounts, follow SWITCH-ACCOUNTS.md. It explains how Pato (the app, formerly "Stakd" / "Sette Cifre") is built, where things live, and how Marco likes to work. No secrets are in this file, only where they live.
 
 ## What Pato is
 A personal-finance app for Marco (Dominican Republic, times are DR = UTC-4 all year) that is also a beta for friends. It tracks savings toward a RD$1,000,000 goal, spending, loans Marco gave, stocks (IBKR), crypto, sports bets, poker, and shows "Pato Daily" news stories. "Pato AI" is the assistant inside (camera to log a purchase, Pato's take). Vision: a financial AI tracker for the younger generation. Marco uses it as an iPhone home-screen app.
