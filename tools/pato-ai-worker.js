@@ -373,6 +373,8 @@ async function bundle(P, env) {
   return { at: top.at || Date.now(), day: edDay(), big: W, calls: CL, more: MORE, preds: pickMarkets(MK, tick), launch: launches(LF.items || [], tick), rising: rising(RF.items || []), cats, stocks, games: rest[rest.length - 1] || [],
     _n: [N1, N2, MK.length, (GM || []).length], ticker: T.filter(i => MOVERS.test(i.h)).concat(T).filter((v, i, a) => a.indexOf(v) === i).slice(0, 5) };
 }
+const SPORTS = /\b(UFC|MMA|NFL|NBA|WNBA|MLB|NHL|MLS|FIFA|UEFA|Champions League|Europa League|Premier League|La Liga|Serie A|Bundesliga|World Cup|Super Bowl|Grand Slam|Wimbledon|ATP Tour|WTA|Formula 1|F1 Grand Prix|NASCAR|boxing|boxer|knockout|touchdown|quarterback|ring announcer|playoffs?|transfer window|soccer|college football|basketball|baseball|hockey|tennis|golf|PGA Tour|Olympic\w*|heavyweight|title fight|Heisman|cricket|rugby)\b/i;   // sports news belongs in the Sports tab, never in AI, business or crypto (Marco Nov 14)
+const langOf = t => { t = String(t || ""); const es = (t.match(/\b(el|la|los|las|del|en|que|por|para|con|una|se|su|sus|al|m\u00e1s|como|pero|entre|desde|hoy|sobre)\b/gi) || []).length + 2 * (t.match(/[\u00e1\u00e9\u00ed\u00f3\u00fa\u00f1\u00bf\u00a1]/g) || []).length, en = (t.match(/\b(the|of|and|to|in|for|on|is|are|with|that|this|from|as|by|its|was|has|have|will|be|could|after|over)\b/gi) || []).length; return es === en ? "" : es > en ? "es" : "en"; };
 async function bundleEd(P, env) {
   const tick = (P.get("t") || "").toUpperCase().split(",").filter(x => /^[A-Z.]{1,6}$/.test(x)).slice(0, 5);
   const wl = k => (P.get(k) || "").split(",").map(v => v.trim().toLowerCase()).filter(v => /^[a-z0-9]{3,20}$/.test(v)).slice(0, 8), LK = wl("lk"), DK = wl("dk");   // Nov 12: words you 👍/👎 (sent by the app, nothing stored here)
@@ -402,8 +404,9 @@ async function bundleEd(P, env) {
   const EVT = /\b(resign\w*|oust\w*|affair|scandal|spy|fired|steps? down|probe|indict\w*|arrest\w*|crash\w*|quake|earthquake|hurricane|collaps\w*|plunge\w*|drops?|falls?|tumbl\w*|sinks?|soar\w*|surg\w*|jumps?|ceasefire|attack\w*|explosion|shooting|out at)\b/i;
   const same = (a, b) => { if (!a || !b) return false; if (simw(a, b) >= 0.5) return true; const A = CAPS(a), B = CAPS(b), n = [...A].filter(w => B.has(w)).length; return n >= 2 || (n >= 1 && EVT.test(a) && EVT.test(b)); };   // same name + both about an event = same story
   // Nov 12 fix: skip stories already shown BEFORE ranking, so a category falls back to its next-best story instead of disappearing
-  const shown = W ? [W.h] : [], cats = {}, ALT = {}; want.forEach((k, i) => { const ts0 = top2((rest[i].items || []).filter(x => x && x.h && !shown.some(h => same(h, x.h)) && (k !== "crypto" || /\b(bitcoin|btc|ethereum|ether|crypto\w*|solana|xrp|stablecoins?|tokens?|blockchain|coinbase|binance|defi|dogecoin|altcoins?|digital assets?)\b/i.test(x.h))), tick, P.get("busy") === "1", lk), it = ts0.slice(0, 1); ALT[k] = ts0.slice(1, 4); if (it.length) { cats[k] = it; it.forEach(x => shown.push(x.h)); } });
+  const shown = W ? [W.h] : [], cats = {}, ALT = {}; want.forEach((k, i) => { const ts0 = top2((rest[i].items || []).filter(x => x && x.h && !shown.some(h => same(h, x.h)) && !SPORTS.test(x.h) && (k !== "crypto" || /\b(bitcoin|btc|ethereum|ether|crypto\w*|solana|xrp|stablecoins?|tokens?|blockchain|coinbase|binance|defi|dogecoin|altcoins?|digital assets?)\b/i.test(x.h))), tick, P.get("busy") === "1", lk), it = ts0.slice(0, 1); ALT[k] = ts0.slice(1, 4); if (it.length) { cats[k] = it; it.forEach(x => shown.push(x.h)); } });
   MORE = MORE.filter(it => !shown.some(h => same(h, it.h)));
+  const SN = [].concat(...rest.slice(0, want.length).map(r => (r && r.items) || []), world.items || [], top.items || []).filter(x => x && x.h && SPORTS.test(x.h) && !NONLATIN.test(x.h) && !shown.some(h => same(h, x.h))).sort((x, y) => ((y.n || 1) - (x.n || 1)) || (y.t - x.t)).filter((v, i, a) => a.findIndex(o => same(o.h, v.h)) === i).slice(0, 3).map(i => ({ h: i.h, s: i.s, u: i.u, t: i.t, n: i.n || 1 }));
   let DEEP = null, CEO = null;
   { const dsc = i => (/Economist|Foreign Affairs|MIT Technology/.test(i.s) ? 10 : 0) + (/\b(AI|econom\w*|market\w*|China|debt|bond|invest\w*|money|tech\w*|chips?|bank\w*|trade|tariffs?|inflation|rates?|startups?|oil|war|Trump|billionaires?|wealth)\b/i.test(i.h) ? 8 : 0) + (TASTE.test(i.h) ? 12 : 0) + lk(i.h);   // what Marco likes first, hard reads from the best outlets
     const cs = clean(DFI || [], 96).filter(i => DEEPSRC.test(i.s || "") && DEEPH.test(i.h) && !/^(The Download|Today|Daily|Morning|Evening|Newsletter|Weekend|Week ahead)\b|\b(newsletter|podcast|live blog|crossword|quiz)\b/i.test(i.h) && !/\b(stocks?|shares|earnings|futures|Dow|Nasdaq|S&P)\b.{0,30}\b(rise|fall|jump|slide|drop|gain|close)/i.test(i.h) && !shown.some(h => same(h, i.h))).sort((x, y) => dsc(y) - dsc(x) || y.t - x.t).slice(0, 6);
@@ -417,7 +420,7 @@ async function bundleEd(P, env) {
     cand.forEach(it => { if (kept >= 2 || used.has(it.mk.u)) delete it.mk; else { kept++; used.add(it.mk.u); } }); }
   const RIS = rising(RF.items || []), AN = pick(rest[want.length + tick.length].items || []).filter(i => CALLS.test(i.h)).slice(0, 4), mini = (a, k) => a.map(i => ({ h: i.h, s: i.s, u: i.u, d: i.d || "", t: i.t, k, val: i.val, raised: i.raised, pills: i.pills }));
   const cand = mini(RIS, "rising").concat(mini(AN, "analyst"), mini(cats.stocks || [], "stocks"), mini(cats.startups || [], "startups"), mini(cats.business || [], "business"));
-  return { at: top.at || Date.now(), day: edDay(), big: W, preds: pickMarkets(MK, tick), rising: RIS, deep: DEEP, ceo: CEO, cats, games: rest[rest.length - 1] || [], _cand: cand, _alt: ALT, _bigC: PB.slice(0, 8),
+  return { at: top.at || Date.now(), day: edDay(), big: W, preds: pickMarkets(MK, tick), rising: RIS, deep: DEEP, ceo: CEO, cats, games: rest[rest.length - 1] || [], _cand: cand, _alt: ALT, _bigC: PB.slice(0, 8), sportsNews: SN,
     _n: [N1, N2, MK.length, (GM || []).length], ticker: T.filter(i => MOVERS.test(i.h)).concat(T).filter((v, i, a) => a.indexOf(v) === i).slice(0, 5) };
 }
 const TAKE = `You are Pato, the money buddy inside a finance app for young Dominicans. Write today's "Pato's take" for ONE user from the facts below.
@@ -717,6 +720,8 @@ function qualityCheck(b, dayH) {
   if (!b.cotd) hard.push("no Company of the day"); if (!b.ceo) hard.push("no founder story");
   if (items.some(it => NONLATIN.test(it.h || ""))) hard.push("a headline is not in English or Spanish");
   const kf = items.filter(it => it.kf || it.wm || it.pl).length; if (kf < items.length * 0.5) hard.push("key facts missing on most stories"); else if (kf < items.length * 0.8) soft.push("key facts missing on some stories");
+  { const lb = items.filter(it => [it.kf, it.wm, it.fy].some(t => t && String(t).length > 20 && langOf(t) && langOf(it.h) && langOf(t) !== langOf(it.h))); if (lb.length) hard.push("key points are in a different language than the story"); }
+  if (Object.values(b.cats || {}).some(a => a && a[0] && SPORTS.test(a[0].h || ""))) hard.push("a sports story is filed under a non-sports tab");
   if (items.some(it => it.img && !it.imgv)) hard.push("a photo was not verified (size, sharpness, repeat)");
   const noImg = items.filter(it => !it.img).length; if (noImg > 3) soft.push(noImg + " stories use a fallback visual instead of a photo");
   const rep = []; [b.big].concat(tops.map(a => a[0])).forEach(it => { if (it && (dayH || []).some(h => simw(h, it.h) >= 0.6)) rep.push(it.h); }); if (rep.length) hard.push("repeats a story already shown today");
@@ -732,10 +737,12 @@ async function repairEd(env, E, q) {   // one repair round: swap in the next bes
   if (!b.cotd) { DBG = {}; b.cotd = await cotdPick(env, b._cand).catch(() => null); acts.push("retried company of the day"); if (b.cotd) { x.img = 0; x.ver = 0; } }
   if (!b.ceo) { b.ceo = await founderOf(env, Date.now()).catch(() => null); acts.push("reloaded founder story"); }
   if (q.hard.some(r => /key facts/.test(r))) { x.means = 0; x.plain = 0; acts.push("redid key facts"); }
+  if (q.hard.some(r => /different language/.test(r))) { edItems(b).forEach(it => { ["kf", "wm", "fy"].forEach(f => { if (it[f] && String(it[f]).length > 20 && langOf(it[f]) && langOf(it.h) && langOf(it[f]) !== langOf(it.h)) { it[f] = ""; if (f === "wm") it.jg = []; } }); }); acts.push("removed wrong-language key points"); }
+  if (q.hard.some(r => /sports story/.test(r))) { Object.keys(b.cats || {}).forEach(k => { const cur = (b.cats[k] || [])[0]; if (cur && SPORTS.test(cur.h || "")) { const alt = (b._alt && b._alt[k] || []).filter(a => !SPORTS.test(a.h || "") && !rep(a.h, cur)); if (alt.length) { b.cats[k] = [alt[0]]; b._alt[k] = alt.slice(1); acts.push("moved a sports story out of " + k); x.img = 0; x.plain = 0; x.means = 0; x.ver = 0; } else { delete b.cats[k]; acts.push("dropped sports story from " + k); } } }); }
   x.done = 0; E.st = "built"; return acts;
 }
 async function advance(env, idx) {   // one step per call (every cron tick, or every phone request while no cron has done it): build, finish, check, repair, publish or hold
-  const key = "ed9i:" + idx; let E = await env.LIMITS.get(key, "json").catch(() => null); if (E && E.pub !== undefined) return E;
+  const key = "ed9j:" + idx; let E = await env.LIMITS.get(key, "json").catch(() => null); if (E && E.pub !== undefined) return E;
   await loadHL(env);
   if (!E || !E.b) { const b = await buildEdition(env, idx); if (Object.keys(b.cats).length < 2) { await env.LIMITS.put("edh:" + idx, JSON.stringify({ at: Date.now(), level: "hard", reasons: ["could not build: too few stories"], pub: false }), { expirationTtl: 172800 }).catch(() => 0); return null; }
     E = { at: Date.now(), st: "built", b, x: {}, tries: 0 }; await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }); await saveHL(env).catch(() => 0); return E; }
@@ -751,7 +758,7 @@ async function advance(env, idx) {   // one step per call (every cron tick, or e
   await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }); return E;
 }
 async function getEdition(env, force, dbg, ctx) {   // what a phone gets: this drop's edition once it has passed the check, otherwise the last good one (never a broken one)
-  const idx = dropIdx(Date.now()), key = "ed9i:" + idx, kv = env.LIMITS; let E = kv ? await kv.get(key, "json").catch(() => null) : null;
+  const idx = dropIdx(Date.now()), key = "ed9j:" + idx, kv = env.LIMITS; let E = kv ? await kv.get(key, "json").catch(() => null) : null;
   if (E && E.pub) { const o = finalize(E.b); o.fin = 1; if (dbg) { o._dbg = E.b._dbg; o._q = E.q; o._log = E.log; } return o; }
   let L = null; try { const pt = kv && await kv.get("edpub", "json"); if (pt) L = await kv.get(pt.key, "json"); } catch (e) { L = null; }
   if (!L && kv) { for (const k8 of ["ed8:" + idx, "ed8:" + (idx - 1)]) { const v = await kv.get(k8, "json").catch(() => null); if (v && v.b && v.st === "ready") { L = v; break; } } }   // first deploy: the previous generation's finished edition keeps showing while the new one is built
@@ -806,7 +813,7 @@ async function ogImg(src, log) {
   const html = (await r.text()).slice(0, 400000);
   const meta = n => { const a = html.match(new RegExp('<meta[^>]+(?:property|name)=["\']' + n + '["\'][^>]*content=["\']([^"\']+)', "i")) || html.match(new RegExp('<meta[^>]+content=["\']([^"\']+)["\'][^>]*(?:property|name)=["\']' + n + '["\']', "i")); return a ? dec(a[1]) : ""; };
   if (CUR && !CUR.txt) { const paras = [...html.matchAll(/<p[^>]*>([\s\S]*?)<\/p>/g)].map(x => dec(x[1].replace(/<[^>]*>/g, " ")).replace(/\s+/g, " ").trim()).filter(t => t.length > 60).slice(0, 4).join(" "); CUR.txt = ((meta("og:description") || meta("description") || "") + " " + paras).trim().slice(0, 900); }   // the outlet's own words: what the brief is allowed to use
-  let img = meta("og:image:secure_url") || meta("og:image") || meta("twitter:image") || meta("twitter:image:src");
+  let img = meta("og:image:secure_url") || meta("og:image") || meta("twitter:image") || meta("twitter:image:src") || ((html.match(/<link[^>]+rel=["\']image_src["\'][^>]+href=["\']([^"\']+)/i) || [])[1] || "") || ((html.match(/"image"\s*:\s*(?:\[\s*)?(?:\{[^}]*"url"\s*:\s*)?"(https?:[^"]+)"/i) || [])[1] || "");
   if (img) img = new URL(img, r.url || src).href.replace(/^http:/, "https:");
   log.push("article 200 img:" + (img ? img.slice(0, 60) : "none"));
   return img && !BADIMG.test(img) ? img : "";
@@ -832,7 +839,8 @@ async function storyImg(u, h, debug, col) {
   CUR = col || null;
   if (hit) return hit.json();
   const log = []; let img = "", src = "";
-  if (h) { try { img = await bingImg(h, log); } catch (e) { log.push("bing err " + e.message); } }
+  try { if (u && !/news\.google\.com|bing\.com/.test(u)) img = await ogImg(u, log); } catch (e) { log.push("own err " + e.message); }   // the story's own page first: its photo is the full-size one
+  if (!img && h) { try { img = await bingImg(h, log); } catch (e) { log.push("bing err " + e.message); } }
   const out = { img };
   await caches.default.put(key, new Response(JSON.stringify(out), { headers: { "content-type": "application/json", "cache-control": "public, max-age=" + (img ? 86400 : 900) } }));
   return debug ? { img, src, log } : out;
