@@ -656,7 +656,7 @@ async function imagesFor(env, b, cap) {   // each story's own full-size photo an
   for (const it of st) { if (FN >= (cap || 36)) break; const col = {}; try { const o = await storyImg(it.u, it.h, false, col); const tgt = it._c || it; if (o && o.img) tgt.img = o.img; if (col.txt && !it._c) it.d2 = col.txt; } catch (e) {} }
 }
 function finalize(b0) { const b = Object.assign({}, b0); delete b._cand; delete b._dbg;   // slot 8 alternates: a CEO/founder story, then a deep read (Marco Nov 14)
-  const first = ((b.idx % 4) + 4) % 4 === 0 ? "ceo" : "deep", other = first === "ceo" ? "deep" : "ceo", pk = b[first] ? first : b[other] ? other : "";
+  const first = "ceo", other = first === "ceo" ? "deep" : "ceo", pk = b[first] ? first : b[other] ? other : "";
   b.last = pk ? Object.assign({}, b[pk], { kind: pk }) : null; return b;
 }
 async function getEdition(env, force, dbg) {
