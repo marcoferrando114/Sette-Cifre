@@ -93,6 +93,7 @@ async function stocks(env, dry) {
   else if (latest >= h[h.length - 1].t) h[h.length - 1] = { t: latest, v };
   const out = { posiciones: pos, bench: b, at, hist: h.slice(-400) };
   if (!dry) await patchDoc(env, "invest", "ibkr", out);
+  if (!dry) await stockAlerts(env, pos).catch(e => console.log("stock alerts", String(e)));
   return `stocks ok ${at} value US$${v}` + (dry ? " (dry run, nothing written)" : "");
 }
 
@@ -150,6 +151,63 @@ async function loans(env, dry) {
   return `loans ok, push sent to ${n} phone(s): ${lines.length} item(s)`;
 }
 
+
+// ---------- Alert options (Settings > Alerts; every one is on unless Marco switched it off) ----------
+async function pref(env, key) { const p = (await getDoc(env, "prefs", "alerts")) || {}; return p[key] !== false; }
+const normS = x => String(x || "").trim().toLowerCase();
+
+// "A stock hits a new high or drops 10% from your buy price": checked on every price update, once per event.
+async function stockAlerts(env, pos) {
+  if (!(await pref(env, "hl"))) return "hl off";
+  const kv = env.LIMITS, day = iso(new Date(Date.now() - 4 * 3600e3)); let sent = 0;
+  for (const p of pos) {
+    const sym = p.t, px = Number(p.precio), cost = Number(p.costo);
+    if (!sym || !(px > 0) || p.regalo) continue;
+    // drop: price is 10% or more below your average buy price; one alert per fall, re-armed once it climbs back above -5%
+    if (cost > 0) {
+      const dk = "cron:dn:" + sym, armed = await kv.get(dk);
+      if (px <= cost * 0.9 && !armed) { await push(env, `${sym} is down 10%`, `US$${px.toFixed(2)} vs your US$${cost.toFixed(2)} average buy (${((px / cost - 1) * 100).toFixed(1)}%)`, APP + "#stocks", "dn-" + sym); await kv.put(dk, "1"); sent++; }
+      else if (px > cost * 0.95 && armed) await kv.delete(dk);
+    }
+    // new high: price beats the highest price this worker has seen since you bought (starts from your buy price, first run only records it); at most one per stock per day
+    const hk = "cron:hi:" + sym, prev = Number(await kv.get(hk));
+    if (!(prev > 0)) { await kv.put(hk, String(Math.max(px, cost || 0))); continue; }
+    if (px > prev) {
+      await kv.put(hk, String(px));
+      if (!(await kv.get("cron:hisent:" + sym + ":" + day))) { await push(env, `${sym} hits a new high`, `US$${px.toFixed(2)}, your highest since you bought`, APP + "#stocks", "hi-" + sym); await kv.put("cron:hisent:" + sym + ":" + day, "1", { expirationTtl: 2 * 86400 }); sent++; }
+    }
+  }
+  return "stock alerts sent: " + sent;
+}
+
+// "Expected income is late": an expected date (config fijos) passed with no matching payment logged. Once per date, checked every morning with the loan reminders.
+async function lateIncome(env, dry) {
+  if (!(await pref(env, "late"))) return "late off";
+  const today = iso(new Date(Date.now() - 4 * 3600e3)), cfg = (await getDoc(env, "config", "main")) || {};
+  const entries = (await listCol(env, "entries")).filter(e => e.type !== "out" && !e.extra);
+  const lines = [], keys = [];
+  for (const f of cfg.fijos || []) {
+    if (!Array.isArray(f.dias) || f.pausado || f.semanal) continue;
+    for (let back = 1; back <= 10; back++) {
+      const d = addDays(today, -back), dt = new Date(d + "T12:00:00Z"), day = dt.getUTCDate();
+      const hit = f.dias.some(x => x === "fin" ? day === lastDay(dt.getUTCFullYear(), dt.getUTCMonth()) : Number(x) === day);
+      if (!hit || (f.hasta && d > f.hasta) || (f.omitir || []).includes(d)) continue;
+      const k = "cron:late:" + normS(f.fuente) + ":" + d;
+      if (await env.LIMITS.get(k)) continue;
+      const got = entries.some(e => normS(e.source) === normS(f.fuente) && e.date && Math.abs(daysBetween(d, e.date)) <= 7);
+      if (got) continue;
+      const amt = (f.montos && f.montos[d]) || f.monto;
+      lines.push(`${f.fuente}${amt ? " · " + (f.aprox ? "~" : "") + rd(amt) : ""} · expected ${d.slice(5)}`); keys.push(k);
+    }
+  }
+  if (!lines.length) return "no late income";
+  if (dry) return "WOULD SEND: " + lines.join(" | ");
+  const n = await push(env, "Expected income is late", lines.join("\n"), APP + "#savings", "late-income");
+  for (const k of keys) await env.LIMITS.put(k, "1", { expirationTtl: 20 * 86400 });
+  return `late income push to ${n} phone(s): ${lines.length}`;
+}
+async function daily(env, dry) { const a = await loans(env, dry).catch(e => "loans ERROR " + String(e)); const b = await lateIncome(env, dry).catch(e => "late ERROR " + String(e)); return a + " | " + b; }
+
 // ---------- Web Push (RFC 8291 aes128gcm + VAPID) ----------
 const b64u = u8 => btoa(String.fromCharCode(...u8)).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
 const unb64 = s => Uint8Array.from(atob(s.replace(/-/g, "+").replace(/_/g, "/") + "===".slice((s.length + 3) % 4)), c => c.charCodeAt(0));
@@ -206,14 +264,17 @@ async function editionHealth(env) {
   if (!h) body = "this drop was not built; the last edition is still showing";
   else if (h.level === "hard") body = "drop failed the check, last good edition kept: " + (h.reasons || []).slice(0, 2).join("; ");
   else if (h.level === "soft") body = "published with a note: " + (h.reasons || []).slice(0, 2).join("; ");
+  if (h && h.pub) { const dk = "cron:dropsent:" + idx; if (!(await env.LIMITS.get(dk)) && await pref(env, "drop")) {
+    const E = await env.LIMITS.get("ed9n:" + idx, "json").catch(() => null), top = E && E.b && E.b.big && (E.b.big.h || E.b.big.title);
+    if (top) { await env.LIMITS.put(dk, "1", { expirationTtl: 2 * 86400 }); await push(env, "New Pato drop", String(top).slice(0, 140), "./", "pato-drop"); } } }
   if (!body) return "edition ok";
   await env.LIMITS.put(sent, "1", { expirationTtl: 2 * 86400 });
   const n = await push(env, "Pato Daily", body, "./", "pato-daily-health"); return "alert sent to " + n + " device(s): " + body;
 }
-export { stocks, loans, dueOf, dueDates, editionHealth };
+export { stocks, loans, daily, lateIncome, stockAlerts, dueOf, dueDates, editionHealth };
 export default {
   async scheduled(ev, env, ctx) {
-    const job = ev.cron === "42 12 * * *" ? loans : stocks;
+    const job = ev.cron === "42 12 * * *" ? daily : stocks;
     ctx.waitUntil(job(env, false).then(m => console.log(m)).catch(e => console.log("ERROR", String(e))));
   },
   async fetch(req, env) {
