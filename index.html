@@ -14,6 +14,28 @@
 <link rel="apple-touch-icon" href="icon-180.png?v=7">
 <link rel="icon" type="image/png" href="icon-192.png?v=7">
 <script>(function(){var p="goyards";try{p=localStorage.getItem("mp-palette")||"goyards";}catch(e){}if(["goyards","goyardt","goyardl"].indexOf(p)<0)p="goyards";document.documentElement.setAttribute("data-palette",p);document.documentElement.setAttribute("data-theme",p==="goyardl"?"light":"dark");var t=document.querySelector('meta[name="theme-color"]');if(t)t.setAttribute("content",p==="goyardt"?"#24170E":p==="goyardl"?"#E8D7B8":"#0F241B");})();</script>
+<script id="pato-currency-js">(function(){
+  // Currency view: amounts are stored in RD$; US$ is display only, using one daily rate (cached, with fallbacks)
+  var C = {cur:"DOP", rate:0, src:"", at:""}, K = "pato-cur", R = "pato-fx";
+  try{ if(localStorage.getItem(K) === "USD") C.cur = "USD"; }catch(e){}
+  var cached = null; try{ cached = JSON.parse(localStorage.getItem(R) || "null"); }catch(e){}
+  if(cached && cached.rate > 0){ C.rate = cached.rate; C.src = "saved"; C.at = cached.day || ""; }
+  if(!(C.rate > 0)){ C.rate = 60; C.src = "estimate"; }
+  var day = new Date().toISOString().slice(0,10);
+  C.usd = function(){ return C.cur === "USD" && C.rate > 0; };
+  C.set = function(c){ try{ localStorage.setItem(K, c); }catch(e){} location.reload(); };
+  C.money = function(n){ n = Number(n) || 0; if(!C.usd()) return "RD$" + Math.round(n).toLocaleString("en-US"); var v = n / C.rate; return "US$" + (Math.abs(v) < 100 ? Math.round(v*100)/100 : Math.round(v)).toLocaleString("en-US", {maximumFractionDigits: Math.abs(v) < 100 ? 2 : 0}); };
+  C.short = function(n){ n = Number(n) || 0; if(C.usd()) n = n / C.rate; return n>=1e6 ? (n/1e6).toLocaleString("en-US",{maximumFractionDigits:2})+"M" : n>=1000 ? (n/1000).toLocaleString("en-US",{maximumFractionDigits:1})+"k" : String(Math.round(n*100)/100); };
+  window.PCUR = C;
+  if(!cached || cached.day !== day){
+    try{ fetch("https://open.er-api.com/v6/latest/USD").then(function(r){ return r.json(); }).then(function(d){
+      var r = d && d.rates && Number(d.rates.DOP); if(!(r > 20 && r < 200)) return;
+      try{ localStorage.setItem(R, JSON.stringify({rate:r, day:day})); }catch(e){}
+      var was = C.rate; C.rate = r; C.src = "today"; C.at = day;
+      if(C.cur === "USD" && Math.abs(was - r) > 0.005){ try{ document.dispatchEvent(new Event("pato-fx")); }catch(e){} }
+    }).catch(function(){}); }catch(e){}
+  }
+})();</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
@@ -2049,6 +2071,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 #palSheet.full[data-sec] > .sp-list{display:none!important}
 #palSheet.full[data-sec="look"] > [data-sk="look"],#palSheet.full[data-sec="faceid"] > [data-sk="faceid"],#palSheet.full[data-sec="alerts"] > [data-sk="alerts"],
 #palSheet.full[data-sec="camera"] > [data-sk="camera"],#palSheet.full[data-sec="daily"] > [data-sk="daily"],#palSheet.full[data-sec="tabs"] > [data-sk="tabs"],
+#palSheet.full[data-sec="currency"] > [data-sk="currency"]{display:revert!important}
 #palSheet.full[data-sec="more"] > [data-sk="more"]{display:revert!important}
 #palSheet.full[data-sec="look"] > span[data-sk="look"]{display:none!important}
 #palSheet .sp-hd{display:flex!important;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin:0 0 18px;min-height:36px}
@@ -2723,7 +2746,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
   <div class="toast" id="toast" role="status" aria-live="polite"><span class="tk" aria-hidden="true">✓</span><div><b id="toastT"></b><small id="toastS"></small></div><button type="button" class="tundo" id="toastUndo" hidden>Undo</button></div>
 
   <button type="button" class="palbtn" id="palBtn" aria-label="Settings" aria-expanded="false"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
-  <div class="palette palsheet" id="palSheet" hidden><span>Look</span><div class="seg" role="group" aria-label="Colors"><button type="button" data-pal="goyards" aria-pressed="false">Green</button><button type="button" data-pal="goyardt" aria-pressed="false">Brown</button><button type="button" data-pal="goyardl" aria-pressed="false">Cream</button></div><button type="button" class="mini" id="sfToggle" hidden>Face ID lock: Off</button></div>
+  <div class="palette palsheet" id="palSheet" hidden><span>Look</span><div class="seg" role="group" aria-label="Colors"><button type="button" data-pal="goyards" aria-pressed="false">Green</button><button type="button" data-pal="goyardt" aria-pressed="false">Brown</button><button type="button" data-pal="goyardl" aria-pressed="false">Cream</button></div><button type="button" class="mini" id="sfToggle" hidden>Face ID lock: Off</button><div id="curRow"><span>Show amounts in</span><div class="seg" role="group" aria-label="Currency"><button type="button" data-cur="DOP" aria-pressed="false">RD$</button><button type="button" data-cur="USD" aria-pressed="false">US$</button></div><div class="hint" id="curNote"></div></div></div>
 
   <div class="notice" id="notice">This view can’t save data. Open the tracker from your Claude account to log transactions.</div>
 </main>
@@ -2740,8 +2763,8 @@ html:not(.mp-guest) #s-gst{display:none!important}
     window.__mpSetPal = p => { if(!p || p===document.documentElement.getAttribute("data-palette") || !document.querySelector('[data-pal="'+p+'"]')) return; set(p); try{ renderChart(); renderBars(); }catch(e){} try{ render(); }catch(e){} };
     document.querySelectorAll("[data-pal]").forEach(b => b.onclick = () => { set(b.dataset.pal); try{ renderChart(); renderBars(); }catch(e){} try{ render(); }catch(e){} try{ if(db) db.doc("prefs/ui").set({pal:b.dataset.pal, at:Date.now()}); }catch(e){} });
   })();
-  const fmt = n => "RD$" + Math.round(n).toLocaleString("en-US");
-  const kfmt = n => n>=1e6 ? (n/1e6).toLocaleString("en-US",{maximumFractionDigits:2})+"M" : n>=1000 ? (n/1000).toLocaleString("en-US",{maximumFractionDigits:1})+"k" : String(n);
+  const fmt = n => PCUR.money(n);
+  const kfmt = n => PCUR.short(n);
   const $ = id => document.getElementById(id);
   const LABELS = {"Apuestas":"Sports bets","Premio casino":"Arcade","Saldo inicial":"Starting balance","Rakeback de la liga":"League rakeback","Póker jugando":"League Action","Mensualidad":"Monthly allowance","Préstamo":"Loan","Otro":"Other","Rakeback como jugador":"Player rakeback","Póker casino":"Outside Tables","Póker con amigos":"Home games","Retiro":"Withdrawal","Reposición":"Replacement"};
   const WHY = [["gasto","Expense"],["emergencia","Emergency"],["corriente","Moved to checking account"],["negocio","Business or investment"],["poker","League poker loss or buy-in"],["poker_casino","Outside Tables loss"],["poker_amigos","Home game loss"],["apuesta","Sports bet"],["arcade","Arcade"],["favor","Favor"],["efectivo","Cash"],["otro","Other"]];
@@ -6368,13 +6391,13 @@ TRACKER DATA:
 // Goyard refinement: shrink the "RD$" mark inside big amounts so the number reads first (text content stays the same)
 (function(){
   const SEL = ".pct,.home-top>b,.home-nw b,.pk-hero b,.srate-top b,.sp-big,.cel-card .big,.hito b,.home-tiles b,.stat b,.totals,.owsplit b,#pkAll,.hrow b,.home-nwline b,.owed b";
-  const RX = /RD\$/;
+  const RX = /RD\$|US\$/;
   function wrap(el){
     const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT), hits = [];
     let n; while((n = w.nextNode())){ if(RX.test(n.nodeValue) && !(n.parentNode.classList && n.parentNode.classList.contains("cur"))) hits.push(n); }
     hits.forEach(t => {
-      const parts = t.nodeValue.split(/(RD\$)/), frag = document.createDocumentFragment();
-      parts.forEach(p => { if(!p) return; if(p==="RD$"){ const s=document.createElement("span"); s.className="cur"; s.textContent=p; frag.appendChild(s); } else frag.appendChild(document.createTextNode(p)); });
+      const parts = t.nodeValue.split(/(RD\$|US\$)/), frag = document.createDocumentFragment();
+      parts.forEach(p => { if(!p) return; if(p==="RD$"||p==="US$"){ const s=document.createElement("span"); s.className="cur"; s.textContent=p; frag.appendChild(s); } else frag.appendChild(document.createTextNode(p)); });
       t.parentNode.replaceChild(frag, t);
     });
   }
@@ -7808,18 +7831,19 @@ TRACKER DATA:
 })();
 </script>
 <script id="stakd-setpage-js">(function(){
-  var NAMES = {look:["🎨","Look"], faceid:["🔒","Face ID"], alerts:["🔔","Alerts"], daily:["🦆","Pato Daily"], camera:["📷","Camera"], tabs:["🗂️","Tabs & account"], more:["⋯","More"]};
-  var ORDER = ["look","faceid","alerts","daily","camera","tabs","more"];
+  var NAMES = {look:["🎨","Look"], faceid:["🔒","Face ID"], alerts:["🔔","Alerts"], daily:["🦆","Pato Daily"], camera:["📷","Camera"], tabs:["🗂️","Tabs & account"], currency:["💱","Currency"], more:["⋯","More"]};
+  var ORDER = ["look","faceid","alerts","daily","camera","tabs","currency","more"];
   var $ = function(id){ return document.getElementById(id); };
   function key(c){
     if(c.classList.contains("sp-hd") || c.classList.contains("sp-list")) return null;
     if(c.id === "sfToggle") return "faceid"; if(c.id === "alWrap") return "alerts"; if(c.id === "snapKeyRow") return "camera";
-    if(c.id === "pdTopics") return "daily"; if(c.id === "sgTabs") return "tabs";
+    if(c.id === "curRow") return "currency"; if(c.id === "pdTopics") return "daily"; if(c.id === "sgTabs") return "tabs";
     if(c.classList.contains("seg") || (c.tagName === "SPAN" && /look/i.test(c.textContent))) return "look";
     return "more";
   }
   function val(k, sh){
     if(k === "look"){ var b = sh.querySelector('[data-pal][aria-pressed="true"]'); return b ? b.textContent.trim() : ""; }
+    if(k === "currency"){ return window.PCUR && PCUR.usd() ? "US$" : "RD$"; }
     if(k === "faceid"){ var t = ($("sfToggle")||{}).textContent || ""; return /on/i.test(t.split(":").pop()) ? "On" : "Off"; }
     return "";
   }
@@ -7844,6 +7868,11 @@ TRACKER DATA:
     var sh = $("palSheet"); if(!sh) return; sh.classList.add("full");
     new MutationObserver(function(){ if(!sh.hidden){ if(!sh.hasAttribute("data-sec")) build(); } else sh.removeAttribute("data-sec"); }).observe(sh, {attributes:true, attributeFilter:["hidden"]});
     new MutationObserver(function(){ if(!sh.hidden && !sh.hasAttribute("data-sec")) build(); }).observe(sh, {childList:true});
+    var cr = $("curRow"); if(cr && window.PCUR){
+      var on = PCUR.usd() ? "USD" : "DOP";
+      cr.querySelectorAll("[data-cur]").forEach(function(x){ x.setAttribute("aria-pressed", String(x.dataset.cur === on)); x.onclick = function(e){ e.stopPropagation(); if(x.dataset.cur !== on) PCUR.set(x.dataset.cur); }; });
+      var nt = $("curNote"); if(nt) nt.textContent = "1 US$ = RD$" + PCUR.rate.toFixed(2) + (PCUR.src === "today" ? " · today" : PCUR.src === "saved" ? " · " + PCUR.at : " · estimate");
+    }
     build();
   }
   if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
