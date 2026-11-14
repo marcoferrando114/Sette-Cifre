@@ -144,6 +144,14 @@ function top2(items, tick, busy, like) {
   return a.slice(0, 1).concat(a.slice(1).filter(i => !dup(i) && (busy || i.n >= 5 || i.mine)).slice(0, 1));
 }
 const drDay = () => new Date(Date.now() - 4 * 3600e3).toISOString().slice(0, 10), edDay = () => new Date(Date.now() - 11 * 3600e3).toISOString().slice(0, 10); // edition starts 7am DR
+// Nov 14 (Marco): "UFC main event today is clearly bigger than college football": a simple importance ranking on top of the league weight (numbered UFC cards, finals, derbies, big names)
+const STARS = /\b(Messi|Ronaldo|LeBron|James|Curry|Mbapp[eé]|Haaland|Djokovic|Alcaraz|Sinner|McGregor|Topuria|Jon Jones|Pereira|Makhachev|Verstappen|Hamilton|Mahomes|Wembanyama|Doncic|Dončić|Jokic|Jokić|Yamal|Bellingham|Vinicius|Vin[ií]cius|Swiatek|Gauff|Sabalenka)\b/i;
+function bigExtra(path, e, note) { const t = String(e.name || "") + " " + String(note || ""); let x = 0;
+  if (/mma/.test(path) && /\bUFC \d{3}\b/i.test(t)) x += 10; else if (/mma/.test(path) && /title|championship/i.test(t)) x += 6;
+  if (/\b(final|finals|super bowl|world series|grand final)\b/i.test(t) && !/semi|quarter/i.test(t)) x += 5;
+  if (/derby|clasico|clásico|rivalry/i.test(t)) x += 3;
+  if (STARS.test(JSON.stringify(e.competitions || []).slice(0, 4000))) x += 3;
+  return x; }
 async function games() {
   const d = drDay().replace(/-/g, ""), out = [];
   await Promise.all(LEAGUES.map(([path, name, w, only]) => cached("https://site.api.espn.com/apis/site/v2/sports/" + path + "/scoreboard?dates=" + d, 3600, "json").then(f => {
@@ -160,7 +168,7 @@ async function games() {
         return { n: t.shortDisplayName || t.displayName || a.shortName || a.displayName || "", ab: t.abbreviation || "", logo: t.logo || (a.flag && a.flag.href) || "", rec, score: st === "in" ? x.score || "" : "" }; });
       const o0 = (c.odds || [])[0];
       out.push({ path, id: e.id, ref: path + "|" + e.id, odds0: o0 ? { line: o0.details || "", ou: o0.overUnder || "", ml: [(o0.awayTeamOdds || {}).moneyLine, (o0.homeTeamOdds || {}).moneyLine], by: (o0.provider || {}).name || "" } : null, league: name, name: e.name || e.shortName, short: e.shortName, t: Date.parse(e.date) || 0, tv: tv.slice(0, 2), note, live: st === "in", teams,
-        score: w + (nat ? 2 : 0) + ranked + (/final|championship|playoff|semifinal|title|main event|derby|clasico|clásico/i.test(note + " " + e.name) ? 4 : 0) });
+        score: w + (nat ? 2 : 0) + ranked + (/final|championship|playoff|semifinal|title|main event|derby|clasico|clásico/i.test(note + " " + e.name) ? 4 : 0) + bigExtra(path, e, note) });
     });
   }).catch(() => null)));
   const srt = out.sort((a, b) => b.score - a.score), seenL = new Set(), one = [], more = [];   // best game of each league first, so the day mixes sports (Marco Nov 11)
@@ -250,6 +258,18 @@ const okM = M => M.filter(m => !PTRIVIA.test(m.t + " " + m.q));
 // Nov 12 (Marco): never two polls of the same kind at once (two Fed-rate questions), and Kalshi polls too
 const MON = /\b(jan(uary)?|feb(ruary)?|mar(ch)?|apr(il)?|may|june?|july?|aug(ust)?|sep(t(ember)?)?|oct(ober)?|nov(ember)?|dec(ember)?)\b/gi;
 const themeOf = m => { const t = String(m.t + " " + m.q); return /\b(Fed|FOMC|interest rates?|rate (cut|hike)|bps)\b/i.test(t) ? "fed" : /\b(bitcoin|btc|ethereum|crypto|solana|xrp)\b/i.test(t) ? "crypto" : String(m.t).toLowerCase().replace(MON, " ").replace(/[0-9]+|[^a-z ]/g, " ").replace(/\b(by|in|on|the|will|be|of|a|to|before|after|for|and)\b/g, " ").split(/\s+/).filter(Boolean).slice(0, 3).join(" "); };
+// Nov 14 (Marco): Predictions always show 3, never 2 or 4, and a poll never comes back in the next drops or days.
+async function pickPreds3(env, M, tick, idx) {
+  const me = tick.length ? new RegExp("\\b(" + tick.map(t => t + (CO[t] ? "|" + CO[t] : "")).join("|") + ")\\b", "i") : null;
+  let used = {}; try { used = (env.LIMITS && await env.LIMITS.get("pu1", "json")) || {}; } catch (e) { used = {}; }
+  const old = u => u in used && used[u] !== idx, sc = m => Math.log10((m.vol || 0) + 10) + (PWORLD.test(m.t + " " + m.q) ? 3 : 0) + (me && me.test(m.t + " " + m.q) ? 4 : 0) + Math.min(3, Math.abs(m.ch || 0) / 4);
+  const all = okM(M).filter(m => m.u && m.u.length > 30).map(m => Object.assign({}, m, { _s: sc(m) })).sort((a, b) => b._s - a._s), out = [], th = new Set();
+  const take = (pred, themes) => all.forEach(m => { if (out.length >= 3 || out.some(o => o.u === m.u) || !pred(m)) return; const t = themeOf(m); if (themes && th.has(t)) return; th.add(t); out.push(m); });
+  take(m => !old(m.u) && m.p >= 4 && m.p <= 96, true); take(m => !old(m.u) && m.p >= 2 && m.p <= 98, false); take(m => !old(m.u), false); take(() => true, false);   // only if the whole pool is smaller than 3 does an old one return
+  out.forEach(m => { used[m.u] = idx; delete m._s; }); const ks = Object.keys(used); if (ks.length > 120) ks.slice(0, ks.length - 120).forEach(k => delete used[k]);
+  if (env.LIMITS && out.length) await env.LIMITS.put("pu1", JSON.stringify(used), { expirationTtl: 1209600 }).catch(() => 0);
+  return out;
+}
 function pickMarkets(M, tick) { M = okM(M); const me = tick.length ? new RegExp("\\b(" + tick.map(t => t + (CO[t] ? "|" + CO[t] : "")).join("|") + ")\\b", "i") : null;
   return M.filter(m => m.p >= 4 && m.p <= 96 && m.u.length > 30).map(m => Object.assign({}, m, { sc: Math.log10(m.vol + 10) + (PWORLD.test(m.t + " " + m.q) ? 3 : 0) + (me && me.test(m.t + " " + m.q) ? 4 : 0) + Math.min(3, Math.abs(m.ch) / 4) }))
     .sort((a, b) => b.sc - a.sc).filter((m, i, a) => a.findIndex(o => themeOf(o) === themeOf(m)) === i).reduce((acc, m, i, all) => { if (acc.length < 4) acc.push(m); else if (acc.length === 4 && !acc.some(x => x.src === "Kalshi")) { const k = all.find(x => x.src === "Kalshi"); if (k) acc[3] = k; acc.push(null); } return acc; }, []).filter(Boolean).slice(0, 4).map(m => { delete m.sc; return m; }); }
@@ -622,7 +642,7 @@ const dropIdx = ms => Math.floor((ms - 11 * 3600e3) / (6 * 3600e3));   // a new 
 let FN = 0; const cf = (...a) => { FN++; return fetch(...a); };
 async function buildEdition(env, idx) {   // stage 1 (6:30, 12:30, 6:30pm DR): pick everything from the prepared feeds
   const b = await bundleEd(new URLSearchParams("k=rd,business,tech,crypto,stocks,startups&busy=1"), env);
-  b.cotd = await cotdPick(env, b._cand).catch(() => null); delete b._cand; b.ceo = await founderOf(env, Date.now()).catch(() => b.ceo);   // the CEO slot is now one personal founder story a day
+  b.cotd = await cotdPick(env, b._cand).catch(() => null); delete b._cand; b.ceo = await founderOf(env, Date.now()).catch(() => b.ceo); b.preds = await pickPreds3(env, await kvFresh(env, "mk2", 90, markets).catch(() => []), (b.tickers || []), idx).catch(() => b.preds);   // the CEO slot is now one personal founder story a day
   b.pick = await patoPick(env, b.games).catch(() => null); b.idx = idx; return b;
 }
 async function finishEdition(env, b, cap) {   // stage 2 (6:45, 12:45, 6:45pm DR): photos and the outlets' own words first, then the plain-language briefs written from them

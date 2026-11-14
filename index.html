@@ -2063,7 +2063,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261114133000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261114140000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -7198,9 +7198,9 @@ TRACKER DATA:
     // 6. Predictions: ONE poll
     var PTRIV = /\b(tweets?|posts? on X|how many (times|tweets|posts|followers|views)|will \w+( \w+)? say\b|mention(s|ed)?\b|followers|subscribers|views|streams|box office|gross|top (song|artist|spotify)|spotify|youtube|tiktok|# of|number of (tweets|posts)|what price will|(bitcoin|btc|ethereum|ether|solana|xrp|dogecoin)\b[^?]{0,40}\b(hit|reach|dip|above|below|price))\b/i;
     var lead = function(m){ var q = String(m.q), a = q.match(/^([↑↓])\s*\$?([\d,.]+)/); if(a) return (a[1] === "↑" ? "Reaches US$" : "Falls to US$") + a[2]; if(/\bby\.{0,3}\??$/i.test(m.t) && /\d{4}|January|February|March|April|May|June|July|August|September|October|November|December/.test(q)) return "by " + q; return q; };
-    var PR = (E.preds || []).filter(function(m){ return !PTRIV.test(m.t + " " + m.q); }).slice(0, 1);
+    var PR = (E.preds || []).filter(function(m){ return !PTRIV.test(m.t + " " + m.q); }).slice(0, 3);
     if(PR.length) L.push({id: ed + ":preds:" + PR[0].q.slice(0, 80), cls: "preds", t: "Predictions", w: "Polymarket · Kalshi", nav: "🔮 Predictions", fk: "preds",
-      body: '<div class="pd-k">🔮 WHAT THE MARKET THINKS</div><div class="pd-h1" style="font-size:1.3rem">Today\'s hottest prediction</div>' + PR.map(function(m){ var dl = m.end ? Math.round((Date.parse(m.end + "T12:00:00Z") - Date.now())/864e5) : null;
+      body: '<div class="pd-k">🔮 WHAT THE MARKET THINKS</div><div class="pd-h1" style="font-size:1.3rem">' + (PR.length > 1 ? "Today\'s top " + PR.length + " predictions" : "Today\'s hottest prediction") + '</div>' + PR.map(function(m){ var dl = m.end ? Math.round((Date.parse(m.end + "T12:00:00Z") - Date.now())/864e5) : null;
         return '<div class="pd-pm"><div class="pd-pmq">' + esc(m.multi ? m.t : m.q) + (m.multi ? '<small>Most likely: ' + esc(lead(m)) + '</small>' : '') + '</div><div class="pd-pmr"><b>' + m.p + '%</b><i><u style="width:' + m.p + '%"></u></i>' +
           '<small>' + (m.ch ? '<em class="' + (m.ch > 0 ? "up" : "dn") + '">' + (m.ch > 0 ? "▲ " : "▼ ") + Math.abs(m.ch) + ' today</em> · ' : '') + (dl != null && dl >= 0 ? (dl === 0 ? "Settles today" : "Settles " + dlabel(m.end) + (dl <= 60 ? " · " + dl + "d" : "")) : "") + ' · <a class="pd-r2 pd-go" data-u="' + esc(m.u) + '">Open ›</a></small></div></div>'; }).join("") +
         '<div class="pd-m" style="margin-top:14px">% = what people betting real money think the chance is. Not advice.</div>'});
@@ -7263,7 +7263,9 @@ TRACKER DATA:
     if(!refs.length) return; scAt = Date.now();
     fetch(base() + "/scores?r=" + encodeURIComponent(refs.join(","))).then(function(r){ return r.ok ? r.json() : null; }).then(function(d){ if(!d) return; Object.keys(d).forEach(function(k){ SC[k] = d[k]; });
       if(S.length){ var ns = stories(); S.forEach(function(x){ if(x.fk !== "game") return; var y = ns.filter(function(z){ return z.id === x.id; })[0]; if(y) x.body = y.body; }); if(!$("pdV").hidden && S[cur] && S[cur].fk === "game") show(cur); } }).catch(function(){}); }
-  function pickGame(G){ G = rot(G); if(!G.length) return null; var sl = slot(), st = ls("pd-games"); if(!st || st.day !== day()) st = {day: day(), by: {}};
+  function pickGame(G){ if(ND()){ var GS = G.slice().sort(function(a, b){ return (b.score || 0) - (a.score || 0); }), top0 = GS[0];   // the day's biggest event (title fight, final, derby, big names) beats a routine game
+      if(top0 && (top0.score || 0) >= 17 && (!GS[1] || (GS[1].score || 0) <= top0.score - 2)) return {g: top0, mine: betOn(top0), more: GS.slice(1, 4)}; G = GS; }
+    G = rot(G); if(!G.length) return null; var sl = slot(), st = ls("pd-games"); if(!st || st.day !== day()) st = {day: day(), by: {}};
     var nm = st.by[sl], g = nm && G.filter(function(x){ return x.name === nm; })[0];
     if(!g){ var used = Object.keys(st.by).filter(function(k){ return Number(k) !== sl; }).map(function(k){ return st.by[k]; }), last = st.by[Object.keys(st.by).filter(function(k){ return Number(k) !== sl; }).sort().pop()];
       var lastLg = (G.filter(function(x){ return x.name === last; })[0] || {}).league, fresh = G.filter(function(x){ return used.indexOf(x.name) < 0; });
