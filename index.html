@@ -6699,7 +6699,9 @@ TRACKER DATA:
     if(me.owner) return; // Marco: nothing changes
     addSettings();
     db.doc("prefs/ui").onSnapshot(function(s){ var x = s.exists ? s.data() : {}; apply(Array.isArray(x.tabs) ? x.tabs : ["spending","loans","trends"]); applyTrack(Array.isArray(x.track) ? x.track : ["bets","poker"]); syncSettings(); }, function(){});
-    var cfgOk = null, setDone = null, chk = function(){ if(cfgOk === null || setDone === null) return; var rs = ""; try{ rs = localStorage.getItem("pato-setup-step") || ""; }catch(_){} if(!setDone && (!cfgOk || rs)) showSetup(false, rs); };
+    var cfgOk = null, setDone = null, chk = function(){ if(cfgOk === null || setDone === null) return; var rs = ""; try{ rs = localStorage.getItem("pato-setup-step") || ""; }catch(_){} if(setDone) return; var fk = "pato-setup-signout-1", seen = ""; try{ seen = localStorage.getItem(fk) || ""; }catch(_){ seen = "x"; }
+      if(cfgOk && !seen && !rs && window.mpSignOut){ lsSet(fk, "1"); window.mpSignOut(); return; }   /* one-time sign-out for accounts made before setup existed; data untouched */
+      lsSet(fk, "1"); showSetup(false, rs); };
     db.doc("config/main").onSnapshot(function(s){ cfgOk = s.exists; chk(); }, function(){});
     db.doc("prefs/setup").onSnapshot(function(s){ setDone = !!(s.exists && s.data().done); if(setDone && !isOpen) todoSync(s.data().skipped); else if(!isOpen) todoCard([]); chk(); }, function(){ setDone = false; chk(); });
   });
