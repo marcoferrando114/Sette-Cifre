@@ -4,7 +4,7 @@ Do this when the first account runs out of usage. No passwords or keys go in thi
 
 ## Checklist
 1. **New project.** In the second account, create a project and add the repo `marcoferrando114/sette-cifre` (connect GitHub when asked: https://claude.ai/connect-github, and make sure the Claude GitHub App is installed on the repo).
-2. **First message to Claude:** "Read PATO-CONTEXT.md in the repo first, then continue helping Marco with Pato." Marco's rules (answer directly, back up before each change, Errands private, never write the Joshua reason) are in that file.
+2. **First message to Claude:** "Read PATO-CONTEXT.md in the repo first, then continue helping Marco with Pato." Marco's rules (answer directly, back up before each change, Errands private, never write the reason for any loan on hold) are in that file.
 3. **Gmail connector.** Settings > Connectors > connect Gmail with the account that gets the BHD bank emails (needed only for Marco's own bank sync).
 4. **Cloud environment.** Create one at claude.ai/code with the repo attached.
    - Network access: `firestore.googleapis.com`, `identitytoolkit.googleapis.com`, `marcoferrando114.github.io`, `query1.finance.yahoo.com`.
