@@ -51,7 +51,7 @@ const CATS2 = {   // Nov 14 redesign (demo account first): the new topics; rd, b
   ceo: srch("(CEO OR founder OR \"chief executive\") (profile OR interview OR succession OR \"named CEO\" OR \"steps down\" OR \"family business\" OR \"CEO of the Year\" OR \"last of\")").replace("when%3A1d", "when%3A3d"),
 };
 const LEAGUES = [["football/nfl", "NFL", 9], ["soccer/uefa.champions", "Champions League", 9], ["basketball/nba", "NBA", 8], ["mma/ufc", "UFC", 8], ["soccer/fifa.world", "World Cup", 10],
-  ["soccer/esp.1", "LaLiga", 7], ["soccer/eng.1", "Premier League", 7], ["soccer/ita.1", "Serie A", 6], ["soccer/ger.1", "Bundesliga", 6], ["soccer/uefa.europa", "Europa League", 6], ["baseball/mlb", "MLB", 6], ["tennis/atp", "Tennis", 6], ["tennis/wta", "Tennis", 5], ["soccer/usa.1", "MLS", 5, /Inter Miami/i], ["soccer/fra.1", "Ligue 1", 7, /Paris Saint-Germain|\bPSG\b/i], ["baseball/dominican-winter-league", "LIDOM", 9], ["football/college-football", "College football", 5], ["racing/f1", "F1", 6]];
+  ["soccer/esp.1", "LaLiga", 7], ["soccer/eng.1", "Premier League", 7], ["soccer/ita.1", "Serie A", 6], ["soccer/ger.1", "Bundesliga", 6], ["soccer/uefa.europa", "Europa League", 6], ["baseball/mlb", "MLB", 6], ["tennis/atp", "Tennis", 6], ["tennis/wta", "Tennis", 5], ["soccer/usa.1", "MLS", 5, /Inter Miami/i], ["soccer/fra.1", "Ligue 1", 7, /Paris Saint-Germain|\bPSG\b/i], ["baseball/dominican-winter-league", "LIDOM", 9], ["racing/f1", "F1", 6]];
 const dec = t => t.replace(/<!\[CDATA\[|\]\]>/g, "").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&nbsp;/g, " ").replace(/&#(\d+);/g, (m, n) => String.fromCharCode(+n)).replace(/&#x([0-9a-f]+);/gi, (m, n) => String.fromCharCode(parseInt(n, 16))).trim();
 function parse(xml) {
   return [...String(xml).matchAll(/<item>([\s\S]*?)<\/item>/g)].map(m => {
@@ -647,12 +647,16 @@ const FOUNDERS = [
         ["THE TURNING POINT", "In 2024 she left OpenAI and in 2025 founded Thinking Machines Lab, which raised a record-sized seed round of about $2 billion."]],
     fy: "She moved from cars to AI by following where the hardest engineering was." },
 ];
-async function founderOf(env, now) {   // one per day, rotating through the roster so none repeats for weeks; photo from Wikipedia, a designed card if it isn't big and sharp enough
-  const day = Math.floor((now - 11 * 3600e3) / 864e5), f = FOUNDERS[day % FOUNDERS.length], it = { h: f.h, s: "Pato · Wikipedia", u: "https://en.wikipedia.org/wiki/" + f.w, t: now - 36e5, ceo: 1, founder: 1, pl: f.pl, sec: f.s, fy: f.fy, nav: "👤 CEOs & founders", name: f.n };
-  try { const r = await cf("https://en.wikipedia.org/api/rest_v1/page/summary/" + f.w, { headers: { "user-agent": "PatoNews/1.0 (+https://marcoferrando114.github.io/Sette-Cifre/)" } });
-    if (r.ok) { const j = await r.json(), o = j.originalimage || {}, th = j.thumbnail || {};
-      if (o.source && o.width >= 700 && o.height >= 700 && !/\.svg$/i.test(o.source)) it.img = o.width > 1400 && th.source ? th.source.replace(/\/\d+px-/, "/1000px-") : o.source; } } catch (e) {}
-  return it;
+async function founderOf(env, now) {   // one per day, rotating through the roster so none repeats for weeks; the real Wikipedia photo is required: a founder without a big sharp photo is skipped for the next one (Marco Nov 15)
+  const day = Math.floor((now - 11 * 3600e3) / 864e5); let first = null;
+  for (let k = 0; k < FOUNDERS.length; k++) {
+    const f = FOUNDERS[(day + k) % FOUNDERS.length], it = { h: f.h, s: "Pato · Wikipedia", u: "https://en.wikipedia.org/wiki/" + f.w, t: now - 36e5, ceo: 1, founder: 1, pl: f.pl, sec: f.s, fy: f.fy, nav: "👤 CEOs & founders", name: f.n }; first = first || it;
+    try { const r = await cf("https://en.wikipedia.org/api/rest_v1/page/summary/" + f.w, { headers: { "user-agent": "PatoNews/1.0 (+https://marcoferrando114.github.io/Sette-Cifre/)" } });
+      if (r.ok) { const j = await r.json(), o = j.originalimage || {}, th = j.thumbnail || {};
+        if (o.source && o.width >= 600 && o.height >= 600 && !/\.svg$/i.test(o.source)) it.img = o.width > 1400 && th.source ? th.source.replace(/\/\d+px-/, "/1000px-") : o.source; } } catch (e) {}
+    if (it.img) return it;
+  }
+  return first;
 }
 // The prebuilt edition (Marco Nov 14: "ready when the user opens the app"): built and image-resolved in the hour before each drop (7am, 1pm, 7pm DR), then served from KV in one fast call.
 const dropIdx = ms => Math.floor((ms - 11 * 3600e3) / (6 * 3600e3));   // a new edition every 6 hours, at 11, 17, 23 UTC
