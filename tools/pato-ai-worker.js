@@ -780,7 +780,7 @@ async function repairEd(env, E, q) {   // one repair round: swap in the next bes
   x.done = 0; E.st = "built"; return acts;
 }
 async function advance(env, idx) {   // one step per call (every cron tick, or every phone request while no cron has done it): build, finish, check, repair, publish or hold
-  const key = "ed9n:" + idx; let E = await env.LIMITS.get(key, "json").catch(() => null); if (E && E.pub !== undefined) return E;
+  const key = "ed9o:" + idx; let E = await env.LIMITS.get(key, "json").catch(() => null); if (E && E.pub !== undefined) return E;
   await loadHL(env);
   if (!E || !E.b) { const b = await buildEdition(env, idx); if (Object.keys(b.cats).length < 2) { await env.LIMITS.put("edh:" + idx, JSON.stringify({ at: Date.now(), level: "hard", reasons: ["could not build: too few stories"], pub: false }), { expirationTtl: 172800 }).catch(() => 0); return null; }
     E = { at: Date.now(), bat: Date.now(), st: "built", b, x: {}, tries: 0 }; await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }); await saveHL(env).catch(() => 0); return E; }
@@ -802,7 +802,7 @@ async function advance(env, idx) {   // one step per call (every cron tick, or e
   await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }); return E;
 }
 async function getEdition(env, force, dbg, ctx) {   // what a phone gets: this drop's edition once it has passed the check, otherwise the last good one (never a broken one)
-  const idx = dropIdx(Date.now()), key = "ed9n:" + idx, kv = env.LIMITS; let E = kv ? await kv.get(key, "json").catch(() => null) : null;
+  const idx = dropIdx(Date.now()), key = "ed9o:" + idx, kv = env.LIMITS; let E = kv ? await kv.get(key, "json").catch(() => null) : null;
   if (E && E.pub) { const o = finalize(E.b); o.fin = 1; if (dbg) { o._dbg = E.b._dbg; o._q = E.q; o._log = E.log; } return o; }
   let L = null; try { const pt = kv && await kv.get("edpub", "json"); if (pt) L = await kv.get(pt.key, "json"); } catch (e) { L = null; }
   if (!L && kv) { for (const k8 of ["ed8:" + idx, "ed8:" + (idx - 1)]) { const v = await kv.get(k8, "json").catch(() => null); if (v && v.b && v.st === "ready") { L = v; break; } } }   // first deploy: the previous generation's finished edition keeps showing while the new one is built
