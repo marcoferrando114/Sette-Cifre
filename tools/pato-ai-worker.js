@@ -618,7 +618,7 @@ const FOUNDERS = [
         ["THE HARD PART", "Then he went to MIT, dropped out and, with John, started Stripe in 2010. Taking card payments online was painful for developers, and big companies were not obviously interested in a tiny rival."],
         ["THE TURNING POINT", "Stripe's few lines of code made online payments easy. It grew into one of the most valuable private tech companies, valued at nearly $100 billion."]],
     fy: "Pick a hated, boring problem and make it radically simple." },
-  { n: "Asha Sharma", w: "Asha_Sharma", h: "Asha Sharma: from Instacart and Meta to running Xbox", pl: "She worked her way through Microsoft, Porch, Meta and Instacart, then in 2026 was named CEO of Microsoft Gaming.",
+  { n: "Asha Sharma", by: "marco", w: "Asha_Sharma", h: "Asha Sharma: from Instacart and Meta to running Xbox", pl: "She worked her way through Microsoft, Porch, Meta and Instacart, then in 2026 was named CEO of Microsoft Gaming.",
     s: [["WHERE SHE STARTED", "She started in marketing at Microsoft from 2011 to 2013. After that she moved through product and operating roles at Porch Group and Meta, where she led product across Messenger and Instagram Direct."],
         ["THE HARD PART", "At Instacart she was chief operating officer, running the day-to-day business of a fast-growing delivery company. In 2024 she returned to Microsoft to work on its AI platform."],
         ["THE TURNING POINT", "She became president of Microsoft's CoreAI product group in 2025. In February 2026 Microsoft named her CEO of Microsoft Gaming, taking over from Phil Spencer, even though she had no videogame background."]],
@@ -656,8 +656,11 @@ const FOUNDERS = [
 ];
 async function founderOf(env, now) {   // one per day, rotating through the roster so none repeats for weeks; the real Wikipedia photo is required: a founder without a big sharp photo is skipped for the next one (Marco Nov 15)
   const day = Math.floor((now - 11 * 3600e3) / 864e5); let first = null;
-  for (let k = 0; k < FOUNDERS.length; k++) {
-    const f = FOUNDERS[(day + k) % FOUNDERS.length], it = { h: f.h, s: "Pato · Wikipedia", u: "https://en.wikipedia.org/wiki/" + f.w, t: now - 36e5, ceo: 1, founder: 1, pl: f.pl, sec: f.s, fy: f.fy, nav: "👤 CEOs & founders", name: f.n }; first = first || it;
+  // Marco Nov 15: about 70% of founders are people he has not mentioned (my picks), about 30% are names he suggested (by: "marco"). His names take 3 days in 10, each name at most once per 10 of his slots, so the roster never repeats; his slot falls back to my picks when his list has run out. Add his names to FOUNDERS with by: "marco".
+  const MINE = FOUNDERS.filter(f => f.by !== "marco"), HIS = FOUNDERS.filter(f => f.by === "marco"), sl = [2, 5, 8].indexOf(day % 10), use = sl >= 0 ? (Math.floor(day / 10) * 3 + sl) % 10 : -1;
+  const order = (use >= 0 && use < HIS.length ? [HIS[use]] : []).concat(MINE.map((_, i) => MINE[(day + i) % MINE.length]));
+  for (let k = 0; k < order.length; k++) {
+    const f = order[k], it = { h: f.h, s: "Pato · Wikipedia", u: "https://en.wikipedia.org/wiki/" + f.w, t: now - 36e5, ceo: 1, founder: 1, pl: f.pl, sec: f.s, fy: f.fy, nav: "👤 CEOs & founders", name: f.n }; first = first || it;
     try { const r = await cf("https://en.wikipedia.org/api/rest_v1/page/summary/" + f.w, { headers: { "user-agent": "PatoNews/1.0 (+https://marcoferrando114.github.io/Sette-Cifre/)" } });
       if (r.ok) { const j = await r.json(), o = j.originalimage || {}, th = j.thumbnail || {};
         if (o.source && o.width >= 600 && o.height >= 600 && !/\.svg$/i.test(o.source)) it.img = o.width > 1400 && th.source ? th.source.replace(/\/\d+px-/, "/1000px-") : o.source; } } catch (e) {}
