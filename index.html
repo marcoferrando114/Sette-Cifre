@@ -3298,11 +3298,11 @@ html:not(.mp-guest) #s-gst{display:none!important}
     const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT), nodes = []; let n;
     while((n = w.nextNode())) if(/\d/.test(n.nodeValue)) nodes.push([n, n.nodeValue]);
     if(!nodes.length) return;
-    const t0 = performance.now(), dur = 800;
+    const t0 = performance.now(), dur = 1000;
     const fmtLike = (m, k) => { const dec = (m.split(".")[1]||"").length, v = parseFloat(m.replace(/,/g,""))*k;
       return m.includes(",") ? v.toLocaleString("en-US",{minimumFractionDigits:dec,maximumFractionDigits:dec}) : v.toFixed(dec); };
     (function step(now){
-      const k = Math.min(1,(now-t0)/dur), e = 1-Math.pow(1-k,3);
+      const k = Math.min(1,(now-t0)/dur), e = 1-Math.pow(1-k,4);
       for(const [node, orig] of nodes){ if(!node.isConnected) continue; node.nodeValue = k>=1 ? orig : orig.replace(/\d[\d,]*(\.\d+)?/g, m => fmtLike(m, e)); }
       if(k<1) requestAnimationFrame(step);
     })(t0);
@@ -7959,5 +7959,213 @@ TRACKER DATA:
   }
   if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
 })();</script>
+<style id="pk-motion-css">
+/* Pato motion + new duck (Nov 17). Everything is off for "reduce motion". */
+.pduck{overflow:visible}
+.pduck .pk-all,.pduck .pk-head,.pduck .pk-lo,.pduck .pk-ey,.pduck .pk-brow,.pduck .pk-eye{transform-box:fill-box}
+.pduck .pk-all{transform-origin:50% 100%}
+.pduck .pk-head{transform-origin:60% 95%;transition:transform .45s cubic-bezier(.3,1.5,.5,1)}
+.pduck .pk-lo{transform-origin:100% 10%}
+.pduck .pk-ey,.pduck .pk-brow{transform-origin:center;transition:transform .25s ease}
+.pduck .pk-eye{transform:translate(var(--lx,0px),var(--ly,0px));transition:transform .35s cubic-bezier(.3,1.4,.5,1)}
+.pduck .pk-joy,.pduck .pk-brow{display:none}
+.pduck .pk-bgl{display:none}
+html[data-palette="goyardl"] .pduck .pk-bgd{display:none}
+html[data-palette="goyardl"] .pduck .pk-bgl{display:inline}
+.pduck.blink .pk-ey{animation:pkBlink .2s ease-in-out}
+@keyframes pkBlink{50%{transform:scaleY(.08)}}
+.pduck.joy .pk-ey{display:none}
+.pduck.joy .pk-joy{display:inline}
+.pduck.worry .pk-brow,.pduck.sad .pk-brow{display:inline;transform:rotate(16deg) translate(1px,1px)}
+.pduck.worry .pk-ey,.pduck.sad .pk-ey{transform:scaleY(.82) translateY(1.5px)}
+.pduck.sad .pk-head{transform:rotate(-7deg) translateY(2px)}
+.pduck.quack .pk-lo{animation:pkQuack .55s ease}
+@keyframes pkQuack{25%,65%{transform:rotate(-16deg)}45%{transform:rotate(-6deg)}}
+.pduck.hop .pk-all{animation:pkHop .7s cubic-bezier(.3,1.3,.5,1)}
+@keyframes pkHop{0%{transform:none}25%{transform:translateY(-12%) scale(1.03,.98)}50%{transform:translateY(0) scale(1.07,.9)}72%{transform:scale(.97,1.04)}100%{transform:none}}
+.pduck.nod .pk-head{animation:pkNod .6s ease}
+@keyframes pkNod{30%{transform:rotate(-9deg)}65%{transform:rotate(4deg)}}
+.pduck.flinch .pk-all{animation:pkFlinch .5s ease}
+@keyframes pkFlinch{20%{transform:translateX(3%) rotate(3deg)}45%{transform:translateX(-2%) rotate(-2deg)}70%{transform:translateX(1%)}}
+.pk-av{display:inline-block;flex:none;line-height:0}
+.pk-av svg{width:100%;height:100%;display:block}
+.pato-pill .pk-av{width:26px;height:26px;border-radius:8px;overflow:hidden}
+.toast .tk.pk-tk{width:40px;height:40px;background:none;border-radius:50%;overflow:hidden;font-size:0}
+.toast.on .tk.pk-tk{animation:pkTkIn .6s .08s cubic-bezier(.3,1.6,.5,1) both}
+@keyframes pkTkIn{from{transform:scale(.3) translateY(8px);opacity:0}to{transform:none;opacity:1}}
+.toast{transition:transform .5s cubic-bezier(.22,1.25,.36,1),opacity .3s}
+
+/* screens: slide in from the side you are going, cards rise one after another */
+html.pk-m .tabp:not([hidden]){animation:none}
+html.pk-m .tabp.pk-enter{animation:pkTabF .46s cubic-bezier(.22,1,.36,1) backwards}
+html.pk-m[data-pkdir="b"] .tabp.pk-enter{animation-name:pkTabB}
+@keyframes pkTabF{from{opacity:0;transform:translateX(28px)}}
+@keyframes pkTabB{from{opacity:0;transform:translateX(-28px)}}
+html.pk-m .tabp.pk-enter>*{animation:pkRise .5s cubic-bezier(.22,1,.36,1) backwards}
+html.pk-m .tabp.pk-enter>:nth-child(2){animation-delay:.04s}
+html.pk-m .tabp.pk-enter>:nth-child(3){animation-delay:.08s}
+html.pk-m .tabp.pk-enter>:nth-child(4){animation-delay:.12s}
+html.pk-m .tabp.pk-enter>:nth-child(5){animation-delay:.16s}
+html.pk-m .tabp.pk-enter>:nth-child(6){animation-delay:.2s}
+html.pk-m .tabp.pk-enter>:nth-child(n+7){animation-delay:.24s}
+@keyframes pkRise{from{opacity:0;transform:translateY(14px) scale(.985)}}
+
+/* tab bar: the highlight glides to the tab you tap, the icon pops */
+.tabs .pk-gl{position:absolute;left:0;top:0;width:0;height:0;z-index:0;pointer-events:none;opacity:0;will-change:transform}
+.tabs.pk-gl-on .pk-gl{opacity:1}
+.tabs.pk-gl-run .pk-gl{transition:transform .5s cubic-bezier(.3,1.25,.45,1),width .5s cubic-bezier(.3,1.25,.45,1),height .3s}
+.tabs.pk-gl-on>button:not(#snapBtn){position:relative;z-index:1}
+.tabs.pk-gl-on>button[aria-selected="true"],.tabs.pk-gl-on>button.on{background:transparent!important;box-shadow:none!important}
+html.pk-m .tabs button[aria-selected="true"] svg{animation:pkIco .5s cubic-bezier(.3,1.7,.5,1)}
+@keyframes pkIco{0%{transform:scale(.7) translateY(2px)}60%{transform:scale(1.15) translateY(-1px)}100%{transform:none}}
+
+/* taps: press in, spring back */
+html.pk-m .pk-pr{transform:scale(var(--pk-s,.95))!important;transition:transform .12s ease-out!important}
+html.pk-m .pk-rl{animation:pkRel .45s cubic-bezier(.3,1.6,.5,1)}
+@keyframes pkRel{from{transform:scale(var(--pk-s,.95))}to{transform:none}}
+
+/* numbers that change: a soft glow, green up, red down */
+.pk-up{animation:pkUp 1.2s ease-out}
+.pk-dn{animation:pkDn 1.2s ease-out}
+@keyframes pkUp{0%,30%{text-shadow:0 0 18px rgba(95,200,140,.75)}100%{text-shadow:none}}
+@keyframes pkDn{0%,30%{text-shadow:0 0 18px rgba(230,90,80,.7)}100%{text-shadow:none}}
+
+@media (prefers-reduced-motion: reduce){.pduck *{animation:none!important;transition:none!important}.toast.on .tk.pk-tk{animation:none}.tabs.pk-gl-run .pk-gl{transition:none}}
+</style>
+<script id="pk-motion-js">
+(function(){
+  // ---------- the new Pato duck (Nov 17): one sharp vector drawing, alive (blinks, looks at your taps, reacts to saves) ----------
+  var RM = function(){ try{ return matchMedia("(prefers-reduced-motion: reduce)").matches; }catch(e){ return false; } };
+  var N = 0;
+  var DEFS = '<radialGradient id="H#" cx=".4" cy=".28" r=".85"><stop offset="0" stop-color="#5CC292"/><stop offset=".4" stop-color="#249062"/><stop offset="1" stop-color="#0C4A31"/></radialGradient>' +
+    '<linearGradient id="N#" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#146243"/><stop offset="1" stop-color="#0E4C33"/></linearGradient>' +
+    '<radialGradient id="C#" cx=".35" cy=".2" r=".9"><stop offset="0" stop-color="#C98B5C"/><stop offset=".6" stop-color="#9A5C35"/><stop offset="1" stop-color="#6B3A20"/></radialGradient>' +
+    '<linearGradient id="W#" x1="0" y1="0" x2=".6" y2="1"><stop offset="0" stop-color="#F4F5F0"/><stop offset="1" stop-color="#AEB4AA"/></linearGradient>' +
+    '<linearGradient id="B#" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFDA75"/><stop offset="1" stop-color="#F29A2C"/></linearGradient>' +
+    '<linearGradient id="L#" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E9922B"/><stop offset="1" stop-color="#C66F17"/></linearGradient>' +
+    '<linearGradient id="G#" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3B7258"/><stop offset="1" stop-color="#122E20"/></linearGradient>' +
+    '<linearGradient id="P#" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FBF8F0"/><stop offset="1" stop-color="#E9E2D2"/></linearGradient>';
+  var BODY = '<g class="pk-all">' +
+    '<path d="M30 140 C26 112 40 94 62 90 L88 90 C110 94 122 114 119 140 Z" fill="url(#C#)"/>' +
+    '<path d="M78 106 C94 98 114 106 118 124 C119.5 131 119 136 118 140 L84 140 C77 129 74 116 78 106 Z" fill="url(#W#)"/>' +
+    '<path d="M87 113 C97 110 107 114 112 121 M85 123 C95 120 105 124 110 132" stroke="#8F968B" stroke-width="1.6" fill="none" stroke-linecap="round" opacity=".55"/>' +
+    '<path d="M48 64 C45 78 47 88 52 94 L94 94 C98 84 98 72 93 60 Z" fill="url(#N#)"/>' +
+    '<path d="M50 89 Q72 96 95 89 L95 95 Q72 102 51 95 Z" fill="#F8F5EC"/>' +
+    '<g class="pk-head">' +
+      '<path class="pk-lo" d="M50 58 C40 62 26 64 16 63 C15 66 19 69 27 69.5 C38 70 47 67 52 63 Z" fill="url(#L#)"/>' +
+      '<path d="M50 45 C40 45 26 48 17 52 C10 55 9 59 13 61 C24 64 40 63 52 60 Z" fill="url(#B#)"/>' +
+      '<path d="M14 60.5 C25 63 39 62 50 59.5" stroke="#C9741D" stroke-width="1.2" fill="none" opacity=".8"/>' +
+      '<ellipse cx="25" cy="52.6" rx="2.3" ry="1.1" fill="#B9661B" transform="rotate(-10 25 52.6)"/>' +
+      '<circle cx="71" cy="49" r="30" fill="url(#H#)"/>' +
+      '<ellipse cx="64" cy="31" rx="11" ry="5.5" fill="#fff" opacity=".14" transform="rotate(-22 64 31)"/>' +
+      '<g class="pk-eye"><g class="pk-ey"><circle cx="58" cy="41" r="6.4" fill="#0B0D0C"/><circle cx="56" cy="38.8" r="2.2" fill="#fff"/><circle cx="60" cy="43.4" r="1" fill="#fff" opacity=".65"/></g>' +
+      '<path class="pk-joy" d="M51.5 43 Q58 34.5 64.5 43" stroke="#0B0D0C" stroke-width="2.8" fill="none" stroke-linecap="round"/>' +
+      '<path class="pk-brow" d="M50 33 Q57 29.5 64 31" stroke="#0A3A26" stroke-width="2.6" fill="none" stroke-linecap="round"/></g>' +
+    '</g></g>';
+  // o.bust = head-and-chest square (avatars), o.flip = face right like the app icon, o.bg = tile behind it, o.img = standalone file for an <img> (blinks by itself)
+  function svg(o){ o = o || {}; var u = "pk" + (++N) + "_", vb = o.bust ? "4 6 100 100" : "0 0 120 140";
+    var bg = o.bg ? '<rect class="pk-bgd" x="4" y="6" width="100" height="100" fill="url(#G#)"/><rect class="pk-bgl" x="4" y="6" width="100" height="100" fill="url(#P#)"/>' : "";
+    var body = o.flip ? '<g transform="translate(108 0) scale(-1 1)">' + BODY + '</g>' : BODY;
+    var st = o.img ? '<style>.pk-joy,.pk-brow' + (o.bg === "dark" ? ",.pk-bgl" : o.bg === "light" ? ",.pk-bgd" : "") + '{display:none}.pk-ey{transform-box:fill-box;transform-origin:center;animation:b 6s infinite}@keyframes b{0%,57%,61%,100%{transform:none}59%{transform:scaleY(.08)}}</style>' : "";
+    return ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="' + vb + '" class="pduck' + (o.cls ? " " + o.cls : "") + '" aria-hidden="true">' + st + '<defs>' + DEFS + '</defs>' + bg + body + '</svg>').replace(/#(["\)])/g, u + "$1");   // unique gradient ids per duck
+  }
+  var IMG = {};
+  function imgURL(tone){ return IMG[tone] || (IMG[tone] = "data:image/svg+xml," + encodeURIComponent(svg({bust: true, flip: true, bg: tone, img: true}))); }
+
+  function play(s, cls, ms){ if(!s || RM()) return; s.classList.remove(cls); s.getBoundingClientRect(); s.classList.add(cls); clearTimeout(s["_" + cls]); s["_" + cls] = setTimeout(function(){ s.classList.remove(cls); }, ms || 700); }
+  function seen(el){ return el && el.isConnected && el.getClientRects().length > 0; }
+  var LIVE = [];
+  function live(s){ if(s._pk) return s; s._pk = 1; LIVE.push(s);
+    (function loop(){ setTimeout(function(){ if(!s.isConnected){ LIVE.splice(LIVE.indexOf(s), 1); return; } if(!document.hidden && seen(s)) play(s, "blink", 220); loop(); }, 2600 + Math.random() * 4200); })();
+    return s; }
+  function make(o){ var t = document.createElement("span"); t.innerHTML = svg(o); return live(t.firstChild); }
+  window.PatoDuck = {svg: svg, make: make, play: play, img: imgURL};
+
+  // the duck looks toward where you tap
+  document.addEventListener("pointerdown", function(e){ if(RM()) return; LIVE.forEach(function(s){ if(!seen(s)) return; var r = s.getBoundingClientRect(), dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2), d = Math.hypot(dx, dy) || 1, f = s.closest(".pk-flip") ? -1 : 1;
+    s.style.setProperty("--lx", (f * dx / d * 2.2).toFixed(2) + "px"); s.style.setProperty("--ly", (dy / d * 1.6).toFixed(2) + "px"); clearTimeout(s._lk); s._lk = setTimeout(function(){ s.style.removeProperty("--lx"); s.style.removeProperty("--ly"); }, 1400); }); }, {passive: true, capture: true});
+
+  // every other duck picture in the app (sign-in, Pato Daily header, Pato's take, cover) becomes the sharp one
+  function swapImgs(root){ (root || document).querySelectorAll('img[src^="icon-192.png"],img[src^="icon-light-192.png"]').forEach(function(im){ im.src = imgURL(/light/.test(im.getAttribute("src")) ? "light" : "dark"); }); }
+
+  // score pill: the duck's face follows your Pato score (Sinking worried ... Flying happy)
+  var MOOD = {z1: "sad", z2: "worry", z5: "joy"};
+  function pills(){ document.querySelectorAll(".pato-pill").forEach(function(b){ var im = b.querySelector("img"), sp = b.querySelector("span"), av = b.querySelector(".pk-av");
+    if(im){ av = document.createElement("span"); av.className = "pk-av pk-flip"; av.appendChild(make({bust: true, flip: true, bg: "dark"})); im.replaceWith(av); }
+    if(!av) return; var s = av.firstChild, z = sp && (sp.className.match(/z\d/) || [])[0], m = MOOD[z] || "";
+    if(s._mood !== m){ ["sad", "worry", "joy"].forEach(function(c){ s.classList.toggle(c, c === m); }); if(s._mood !== undefined && seen(s)) play(s, m === "joy" ? "hop" : m ? "flinch" : "nod", 700); s._mood = m; } }); }
+  var P0 = window.__patoPill;
+  if(P0){ window.__patoPill = function(){ var r = P0.apply(this, arguments); pills(); return r; }; pills(); }
+
+  // saves: the toast shows the duck, happy hop for good news, a wince for warnings
+  var T = document.getElementById("toast"), tk = T && T.querySelector(".tk"), td = null;
+  if(tk){ tk.classList.add("pk-tk"); tk.textContent = ""; td = make({bust: true, flip: true, bg: "dark", cls: "pk-flip"}); tk.appendChild(td);
+    var react = function(){ var on = T.classList.contains("on"), w = T.classList.contains("warn"), key = on ? (w ? "w" : "o") + T.textContent : "";
+      if(on && key !== T._k){ td.classList.toggle("joy", !w); td.classList.toggle("sad", w); setTimeout(function(){ if(T._k !== key) return; play(td, w ? "flinch" : "hop", 700); if(!w) setTimeout(function(){ if(T._k === key) play(td, "quack", 600); }, 380); }, 260); }
+      T._k = key; };
+    new MutationObserver(react).observe(T, {attributes: true, attributeFilter: ["class"], childList: true, subtree: true, characterData: true}); }
+
+  // Pato Daily peeking duck: same new duck, quacks when it pops out with a headline or when you tap it
+  function fab(){ var f = document.getElementById("pdFab"); if(!f) return; var old = f.querySelector("svg:not(.pduck)"); if(!old) return; var s = make({}); old.replaceWith(s);
+    f.addEventListener("pointerdown", function(){ play(s, "quack", 600); play(s, "nod", 600); });
+    var pw = document.getElementById("pdPeek"); if(pw) new MutationObserver(function(){ if(pw.className === "out"){ setTimeout(function(){ play(s, "quack", 600); }, 350); } }).observe(pw, {attributes: true, attributeFilter: ["class"]}); }
+
+  if(RM()) { swapImgs(); new MutationObserver(function(){ swapImgs(); fab(); pills(); }).observe(document.body, {childList: true, subtree: true}); return; }
+  document.documentElement.classList.add("pk-m");
+
+  // ---------- screens ----------
+  var nav = document.querySelector("nav.tabs");
+  function order(){ return nav ? [].slice.call(nav.querySelectorAll("[data-tab]")).map(function(b){ return b.dataset.tab; }) : []; }
+  function cur(){ var s = nav && nav.querySelector('[data-tab][aria-selected="true"]'); return s ? s.dataset.tab : null; }
+  if(nav) nav.addEventListener("click", function(e){ var b = e.target.closest && e.target.closest("[data-tab]"); if(!b) return; var o = order(), a = o.indexOf(cur()), z = o.indexOf(b.dataset.tab); document.documentElement.setAttribute("data-pkdir", z < a ? "b" : "f"); }, true);
+  var BARS = '.bar>i,.hbar>i,.sbar>i,.minibar>i,.wbar>i,.rpt-bar>i,.rpt-gbar>i,.sl-bar>i,.pk-sbar>i,.barx>i,.sg-bar>i,.psc-bars i';
+  function enter(p){ if(!p) return; p.classList.remove("pk-enter"); p.getBoundingClientRect(); p.classList.add("pk-enter"); clearTimeout(p._en); p._en = setTimeout(function(){ p.classList.remove("pk-enter"); }, 900);
+    // bars fill up from zero
+    var k = 0; p.querySelectorAll(BARS).forEach(function(i){ var r = i.getBoundingClientRect(); if(r.width < 2 || r.height > 40 || !i.animate) return; i.style.transformOrigin = "left center";
+      i.animate([{transform: "scaleX(0)"}, {transform: "scaleX(1)"}], {duration: 1000, delay: 120 + Math.min(k++, 10) * 45, easing: "cubic-bezier(.22,1,.36,1)", fill: "backwards"}); }); }
+  var lastTab = null;
+  new MutationObserver(function(){ var t = cur(); if(t && t !== lastTab){ lastTab = t; enter(document.getElementById("p-" + t)); glide(); } }).observe(nav || document.body, {attributes: true, subtree: true, attributeFilter: ["aria-selected"]});
+
+  // tab bar highlight glides
+  function glide(){ if(!nav) return; var sel = nav.querySelector('[data-tab][aria-selected="true"]'), g = nav.querySelector(".pk-gl");
+    if(!g){ g = document.createElement("i"); g.className = "pk-gl"; g.setAttribute("aria-hidden", "true"); nav.insertBefore(g, nav.firstChild); if(getComputedStyle(nav).position === "static") nav.style.position = "relative"; }
+    if(!sel){ nav.classList.remove("pk-gl-on"); return; }
+    nav.classList.remove("pk-gl-on"); var cs = getComputedStyle(sel), bg = cs.backgroundImage !== "none" ? cs.backgroundImage : cs.backgroundColor;
+    g.style.background = bg; g.style.borderRadius = cs.borderRadius; g.style.boxShadow = cs.boxShadow;
+    var nr = nav.getBoundingClientRect(), r = sel.getBoundingClientRect();
+    g.style.width = r.width + "px"; g.style.height = r.height + "px"; g.style.transform = "translate(" + (r.left - nr.left - nav.clientLeft) + "px," + (r.top - nr.top - nav.clientTop) + "px)";
+    nav.classList.add("pk-gl-on"); if(!nav._run){ nav._run = 1; requestAnimationFrame(function(){ requestAnimationFrame(function(){ nav.classList.add("pk-gl-run"); }); }); } }
+  window.addEventListener("resize", function(){ nav && nav.classList.remove("pk-gl-run"); nav && (nav._run = 0); glide(); });
+  new MutationObserver(function(){ nav && nav.classList.remove("pk-gl-run"); nav && (nav._run = 0); glide(); }).observe(document.documentElement, {attributes: true, attributeFilter: ["data-palette"]});
+
+  // ---------- taps: press in, spring back ----------
+  var pr = null, pt = 0;
+  function up(){ if(!pr) return; var b = pr; pr = null; var wait = Math.max(0, 90 - (Date.now() - pt)); setTimeout(function(){ b.classList.remove("pk-pr"); b.classList.remove("pk-rl"); b.getBoundingClientRect(); b.classList.add("pk-rl"); setTimeout(function(){ b.classList.remove("pk-rl"); }, 460); }, wait); }
+  document.addEventListener("pointerdown", function(e){ var b = e.target.closest && e.target.closest('button,[role="button"],.tg,a.btn'); if(!b || b.disabled || b.closest("#pdV,#pdPeek,.toast,.pk-gl")) return;
+    if(getComputedStyle(b).transform !== "none") return; var w = b.offsetWidth; b.style.setProperty("--pk-s", w > 260 ? ".985" : w > 120 ? ".97" : ".93"); pr = b; pt = Date.now(); b.classList.add("pk-pr"); }, {passive: true});
+  document.addEventListener("pointerup", up, {passive: true}); document.addEventListener("pointercancel", up, {passive: true});
+  window.addEventListener("scroll", function(){ if(pr){ pr.classList.remove("pk-pr"); pr = null; } }, {passive: true});
+
+  // ---------- big numbers: when a save changes them, they roll to the new value and glow ----------
+  var NUMS = ["pctBase", "pctFill", "saved", "left", "spTotal", "stVal", "pkAll", "pscNum"];
+  function numOf(s){ var m = String(s).match(/-?\d[\d,]*(\.\d+)?/); return m ? parseFloat(m[0].replace(/,/g, "")) : null; }
+  function roll(el, from, to, text){ var node = el.firstChild; if(!node || node.nodeType !== 3 || el.childNodes.length !== 1) return;
+    var m = text.match(/-?\d[\d,]*(\.\d+)?/), dec = (m[0].split(".")[1] || "").length, comma = m[0].indexOf(",") >= 0, t0 = performance.now(), dur = 900;
+    (function step(now){ if(node.nodeValue !== el._pkLast) return; var k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 4), v = from + (to - from) * e;
+      var s = comma ? v.toLocaleString("en-US", {minimumFractionDigits: dec, maximumFractionDigits: dec}) : v.toFixed(dec);
+      node.nodeValue = el._pkLast = k >= 1 ? text : text.replace(m[0], s); if(k < 1) requestAnimationFrame(step); })(t0); }
+  NUMS.forEach(function(id){ var el = document.getElementById(id); if(!el) return; var prev = el.textContent;
+    new MutationObserver(function(){ var now = el.textContent; var a = numOf(prev), b = numOf(now); prev = now;
+      if(a == null || b == null || a === b || !seen(el)) return;
+      if(id !== "pctFill" && id !== "left"){ var c = b > a ? "pk-up" : "pk-dn"; if(id === "spTotal") c = b > a ? "pk-dn" : "pk-up"; el.classList.remove("pk-up", "pk-dn"); el.getBoundingClientRect(); el.classList.add(c); setTimeout(function(){ el.classList.remove(c); }, 1300); }
+      el._pkLast = el.firstChild && el.firstChild.nodeValue; roll(el, a, b, now); }).observe(el, {childList: true}); });
+
+  // swap duck pictures as they appear
+  var q = 0; new MutationObserver(function(){ if(q) return; q = requestAnimationFrame(function(){ q = 0; swapImgs(); fab(); pills(); }); }).observe(document.body, {childList: true, subtree: true});
+  swapImgs(); fab(); pills();
+  function boot(){ lastTab = cur(); glide(); enter(lastTab && document.getElementById("p-" + lastTab)); }
+  if(document.readyState === "complete") boot(); else window.addEventListener("load", boot);
+})();
+</script>
 </body>
 </html>
