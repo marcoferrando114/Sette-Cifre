@@ -14,6 +14,26 @@
 <link rel="apple-touch-icon" href="icon-180.png?v=7">
 <link rel="icon" type="image/png" href="icon-192.png?v=7">
 <script>(function(){var p="goyards";try{p=localStorage.getItem("mp-palette")||"goyards";}catch(e){}if(["goyards","goyardt","goyardl"].indexOf(p)<0)p="goyards";document.documentElement.setAttribute("data-palette",p);document.documentElement.setAttribute("data-theme",p==="goyardl"?"light":"dark");var t=document.querySelector('meta[name="theme-color"]');if(t)t.setAttribute("content",p==="goyardt"?"#24170E":p==="goyardl"?"#E8D7B8":"#0F241B");})();</script>
+<script id="pato-lag-fix">(function(){
+  // Number.toLocaleString and Date.toLocaleDateString build a new Intl formatter on every call; amounts are formatted thousands of times per redraw.
+  // Same results (same locale + options, same date defaults), one formatter each. Falls back to the browser's own on anything unusual.
+  try{
+    var nOrig = Number.prototype.toLocaleString, dOrig = Date.prototype.toLocaleDateString, nC = {}, dC = {};
+    var key = function(l, o){ return String(l) + "|" + (o ? JSON.stringify(o) : ""); };
+    Number.prototype.toLocaleString = function(l, o){
+      try{ if(typeof l === "string" && (o === undefined || (o && typeof o === "object"))){ var k = key(l, o), f = nC[k] || (nC[k] = new Intl.NumberFormat(l, o)); return f.format(Number(this)); } }catch(e){}
+      return nOrig.apply(this, arguments);
+    };
+    Date.prototype.toLocaleDateString = function(l, o){
+      try{ if(typeof l === "string" && (o === undefined || (o && typeof o === "object")) && !(o && (o.timeStyle || o.dateStyle || o.hour || o.minute || o.second || o.dayPeriod || o.fractionalSecondDigits || o.timeZoneName))){
+        var k = key(l, o), f = dC[k];
+        if(!f){ var x = Object.assign({}, o || {}); if(!x.weekday && !x.year && !x.month && !x.day){ x.year = "numeric"; x.month = "numeric"; x.day = "numeric"; } f = dC[k] = new Intl.DateTimeFormat(l, x); }
+        return isNaN(this.getTime()) ? "Invalid Date" : f.format(this);
+      } }catch(e){}
+      return dOrig.apply(this, arguments);
+    };
+  }catch(e){}
+})();</script>
 <script id="pato-currency-js">(function(){
   // Currency view: amounts are stored in RD$; US$ is display only, using one daily rate (cached, with fallbacks)
   var C = {cur:"DOP", rate:0, src:"", at:""}, K = "pato-cur", R = "pato-fx";
@@ -2124,6 +2144,13 @@ html:not(.mp-guest) #s-gst{display:none!important}
 .pd-s .pd-know:not(.pd-inj):not(.pd-also) p,.pd-s .pd-know li,.pd-s .pd-note p{font-size:.94rem!important;font-weight:400!important;line-height:1.38!important}   /* ONE body style on every slide, the bullet look Marco likes (Nov 14); labels and headlines unchanged */
 .pd-s .pd-know:not(.pd-inj):not(.pd-also) p{color:#E4ECE7!important}.pd-s .pd-know li{margin-top:5px}
 </style>
+<style id="pato-lag-css">
+#pdFab.shine svg{animation:none;filter:drop-shadow(0 0 7px rgba(243,211,143,.75))}
+#pdFab.shine::after{content:"";position:absolute;left:50%;top:44%;width:104px;height:104px;margin:-52px 0 0 -52px;border-radius:50%;background:radial-gradient(circle,rgba(243,211,143,.8) 0%,rgba(243,211,143,.35) 38%,rgba(243,211,143,0) 68%);pointer-events:none;z-index:-1;animation:pdHalo 1.8s ease-in-out infinite;will-change:opacity,transform}
+@keyframes pdHalo{0%,100%{opacity:.25;transform:scale(.88)}50%{opacity:1;transform:scale(1.06)}}
+#pdPeek.dive #pdFab.shine::after,#pdPeek.dive #pdFab.shine::before,#pdFab[hidden]::after{animation-play-state:paused}
+@media (prefers-reduced-motion:reduce){#pdFab.shine::after{animation:none;opacity:.6}}
+</style>
 </head>
 <body>
 <script id="stakd-ver">window.STAKD_V="20261117190000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
@@ -3288,12 +3315,13 @@ html:not(.mp-guest) #s-gst{display:none!important}
   const reduceMotion = () => { try{ return matchMedia("(prefers-reduced-motion: reduce)").matches; }catch(e){ return false; } };
   let shownTotal = null;
   function animateTotal(to){
+    try{ if(!loaded.entries) return; }catch(_){}   /* pato-lag-fix2: wait for real data, keep what is shown */
     const from = shownTotal; shownTotal = to;
     const el = $("saved");
     if(from===null || from===to || reduceMotion()){ el.textContent = fmt(to); return; }
     const t0 = performance.now(), dur = 900;
     (function step(now){
-      const k = Math.min(1, (now-t0)/dur), e = 1-Math.pow(1-k,3);
+      const k = Math.max(0, Math.min(1, (now-t0)/dur)), e = 1-Math.pow(1-k,3);
       el.textContent = fmt(from + (to-from)*e);
       if(k<1) requestAnimationFrame(step);
     })(t0);
@@ -6400,7 +6428,23 @@ TRACKER DATA:
     syncSave(); syncLoan(); syncDebt();
     // data arrives from ~12 listeners at once when the app opens: draw the screen once for the burst, not once per listener (Nov 16)
     let rT = 0, sT = 0;
-    const renderSoon = () => { if(rT) return; rT = setTimeout(() => { rT = 0; try{ render(); }catch(e){ console.error(e); } }, 40); };
+    const renderSoon = () => { if(rT) return; rT = setTimeout(() => { rT = 0; try{ render(); }catch(e){ console.error(e); } try{ heroKeep(); }catch(_){} }, 40); };
+    // last-known hero (size + numbers) for this account, shown only until the live numbers are drawn (Nov 17, no jump on open)
+    const HK = "pato-hero", heroIds = ["savSplit","proj","hitos"], meUid = (window.MP_ME||{}).uid || "";
+    let heroLive = false;
+    (() => { try{ const h = JSON.parse(localStorage.getItem(HK) || "null"); if(!h || h.u !== meUid || h.cur !== (PCUR.usd() ? "USD" : "DOP")) return;
+      heroIds.forEach(id => { const el = $(id), v = h.h && h.h[id]; if(!el || !(v > 0)) return; el.style.minHeight = v + "px"; if(id === "savSplit") el.hidden = false; });
+      if(loaded.entries) return;
+      if(h.saved) $("saved").textContent = h.saved;
+      if(h.pct){ $("pctBase").textContent = h.pct; $("pctFill").textContent = h.pct; $("pct").style.setProperty("--p", h.p + "%"); $("barFill").style.width = h.p + "%"; }
+    }catch(_){} })();
+    function heroKeep(){
+      if(!(loaded.entries && loaded.config)) return;
+      if(!heroLive){ heroLive = true; heroIds.forEach(id => { const el = $(id); if(el) el.style.minHeight = ""; }); }
+      requestAnimationFrame(() => { window.__patoLive = true; try{ const h = {}; heroIds.forEach(id => { const el = $(id); h[id] = el && !el.hidden ? el.offsetHeight : 0; });
+        const f = window.__patoFacts || {}, p = parseFloat($("pct").style.getPropertyValue("--p")) || 0;
+        localStorage.setItem(HK, JSON.stringify({u: meUid, cur: PCUR.usd() ? "USD" : "DOP", h, saved: typeof f.saved === "number" ? fmt(f.saved) : "", pct: $("pctBase").textContent, p})); }catch(_){} });
+    }
     const renderSpendSoon = () => { if(sT) return; sT = setTimeout(() => { sT = 0; try{ renderSpend(); }catch(e){ console.error(e); } }, 40); };
     db.doc("prefs/ui").onSnapshot(s => { try{ if(s.exists && s.data().pal) window.__mpSetPal(s.data().pal); }catch(e){} }, ()=>{});
     db.doc("config/main").onSnapshot(s => {
@@ -6470,9 +6514,13 @@ TRACKER DATA:
       t.parentNode.replaceChild(frag, t);
     });
   }
-  let queued = false;
-  const run = () => { queued = false; if(document.documentElement.classList.contains("sg-on")) return; document.querySelectorAll(SEL).forEach(wrap); };
-  const q = () => { if(!queued){ queued = true; requestAnimationFrame(run); } };
+  let queued = false, full = true; const pend = new Set();
+  // only the parts of the page that changed are checked (a rolling number changes one element per frame); a full pass when asked or after a skip
+  const run = () => { queued = false; if(document.documentElement.classList.contains("sg-on")){ full = true; pend.clear(); return; }
+    if(full){ full = false; pend.clear(); document.querySelectorAll(SEL).forEach(wrap); return; }
+    const hit = new Set(); pend.forEach(n => { if(!n.isConnected) return; const c = n.closest(SEL); if(c) hit.add(c); n.querySelectorAll(SEL).forEach(x => hit.add(x)); }); pend.clear(); hit.forEach(wrap); };
+  const q = recs => { if(Array.isArray(recs) && !full){ recs.forEach(r => { const t = r.target.nodeType === 1 ? r.target : r.target.parentElement; if(t) pend.add(t); r.addedNodes.forEach(a => { if(a.nodeType === 1) pend.add(a); }); }); } else full = true;
+    if(!queued){ queued = true; requestAnimationFrame(run); } };
   try{ new MutationObserver(q).observe(document.body, {childList:true, subtree:true, characterData:true}); }catch(e){}
   q(); window.__rdWrap = q;
 })();
@@ -8198,12 +8246,12 @@ html.pk-m .pk-rl{animation:pkRel .45s cubic-bezier(.3,1.6,.5,1)}
   function numOf(s){ var m = String(s).match(/-?\d[\d,]*(\.\d+)?/); return m ? parseFloat(m[0].replace(/,/g, "")) : null; }
   function roll(el, from, to, text){ var node = el.firstChild; if(!node || node.nodeType !== 3 || el.childNodes.length !== 1) return;
     var m = text.match(/-?\d[\d,]*(\.\d+)?/), dec = (m[0].split(".")[1] || "").length, comma = m[0].indexOf(",") >= 0, t0 = performance.now(), dur = 900;
-    (function step(now){ if(node.nodeValue !== el._pkLast) return; var k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 4), v = from + (to - from) * e;
+    (function step(now){ if(node.nodeValue !== el._pkLast) return; var k = Math.max(0, Math.min(1, (now - t0) / dur)), e = 1 - Math.pow(1 - k, 4), v = from + (to - from) * e;
       var s = comma ? v.toLocaleString("en-US", {minimumFractionDigits: dec, maximumFractionDigits: dec}) : v.toFixed(dec);
       node.nodeValue = el._pkLast = k >= 1 ? text : text.replace(m[0], s); if(k < 1) requestAnimationFrame(step); })(t0); }
   NUMS.forEach(function(id){ var el = document.getElementById(id); if(!el) return; var prev = el.textContent;
     new MutationObserver(function(){ var now = el.textContent; var a = numOf(prev), b = numOf(now); prev = now;
-      if(a == null || b == null || a === b || !seen(el)) return;
+      if(a == null || b == null || a === b || !seen(el) || !window.__patoLive) return;
       if(id !== "pctFill" && id !== "left"){ var c = b > a ? "pk-up" : "pk-dn"; if(id === "spTotal") c = b > a ? "pk-dn" : "pk-up"; el.classList.remove("pk-up", "pk-dn"); el.getBoundingClientRect(); el.classList.add(c); setTimeout(function(){ el.classList.remove(c); }, 1300); }
       el._pkLast = el.firstChild && el.firstChild.nodeValue; roll(el, a, b, now); }).observe(el, {childList: true}); });
 
