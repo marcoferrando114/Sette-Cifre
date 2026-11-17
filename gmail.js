@@ -4,7 +4,7 @@
   var URL_ = "https://pato-mail.marcoferrando.workers.dev";
   var $ = function(id){ return document.getElementById(id); };
   var anchor = $("saGmRow"); if (!anchor) return;
-  var db = null, st = null, busy = false, have = null, months = 3, lastTry = 0, prog = "";
+  var db = null, st = null, busy = false, have = null, months = 3, lastTry = 0, prog = "", OWNER = false;   // OWNER (Marco): Gmail only feeds instant bank alerts (server side); his own sync stays as it is
 
   var row = document.createElement("div");
   row.className = "sa-gm"; row.id = "gmRow"; row.hidden = true;
@@ -38,15 +38,17 @@
     if (!st) { t.textContent = "…"; b.hidden = true; return; }
     b.hidden = false; b.disabled = busy;
     if (st.off) { t.textContent = "Not available yet"; b.hidden = true; return; }
+    if (OWNER) { if (!st.connected) { t.textContent = st.reconnect ? "Needs a new tap" : "Not connected"; b.textContent = st.reconnect ? "Reconnect" : "Connect"; }
+      else { b.hidden = true; b.style.display = "none"; t.textContent = "On"; } return; }
     if (!st.connected) { t.textContent = st.reconnect ? "Gmail needs a new tap" : "Connect Gmail"; b.textContent = st.reconnect ? "Reconnect" : "Connect"; return; }
     b.textContent = busy ? "Updating…" : "Refresh";
     t.textContent = busy ? (prog || "Reading bank emails…") : st.lastRunAt ? "Updated " + tm(st.lastRunAt) : "Gmail connected";
   }
   function open(){
     var on = st && st.connected;
-    $("gmH").textContent = on ? "Gmail connected" : "Connect Gmail";
-    $("gmP").textContent = on ? (st.email || "") : "Pato reads only your bank emails. How far back?";
-    $("gmMo").hidden = on; $("gmMo").style.display = on ? "none" : "flex";
+    $("gmH").textContent = on ? "Instant bank alerts on" : OWNER ? "Instant bank alerts" : "Connect Gmail";
+    $("gmP").textContent = on ? (st.email || "") : OWNER ? "Pato reads only your BHD and Popular alert emails and tells you within minutes." : "Pato reads only your bank emails. How far back?";
+    $("gmMo").hidden = on || OWNER; $("gmMo").style.display = on || OWNER ? "none" : "flex";
     $("gmMo").innerHTML = [1, 3, 6].map(function(m){ return '<button type="button" data-m="' + m + '" class="' + (m === months ? "on" : "") + '">' + m + (m === 1 ? " month" : " months") + "</button>"; }).join("");
     $("gmGo").textContent = on ? "Disconnect" : "Continue with Google"; $("gmGo").dataset.arm = "";
     $("gmGo").style.background = on ? "var(--red)" : ""; $("gmGo").style.color = on ? "#fff" : "";
@@ -68,7 +70,7 @@
       b.disabled = false; paint(); return;
     }
     b.disabled = true; b.textContent = "Opening Google…";
-    try { var r = await call("/start", { months: months }); location.href = r.url; }
+    try { var r = await call("/start", { months: OWNER ? 1 : months }); location.href = r.url; }
     catch (e) { b.disabled = false; b.textContent = "Continue with Google"; toast("Couldn’t open Google", "Try again in a minute", true); }
   };
   $("gmInfo").onclick = function(){ if (st && st.connected && !busy) open(); };
@@ -106,7 +108,7 @@
     try { st = await call("/status"); }
     catch (e) { if (String(e.message) === "not_set_up") st = { off: true }; else if (!st) st = { connected: false }; }
     paint();
-    if (st && st.connected && Date.now() - lastTry > 10 * 60e3) run(false);
+    if (st && st.connected && !OWNER && Date.now() - lastTry > 10 * 60e3) run(false);
   }
   window.__patoGm = {   // used by the first-run setup
     status: async function(){ try { return await call("/status"); } catch (e) { return String(e.message) === "not_set_up" ? { off: true } : { connected: false }; } },
@@ -116,7 +118,8 @@
   (async function(){
     if (!window.claude) return;
     db = await window.claude.use("db"); if (!db) return;
-    var me = window.MP_ME || {}; if (me.owner) return;   // Marco keeps his own sync
+    var me = window.MP_ME || {};
+    if (me.owner) { OWNER = true; $("gmInfo").firstChild.textContent = "Instant bank alerts"; $("gmT").textContent = "…"; row.hidden = false; paint(); status(); return; }   // Marco keeps his own sync; this row only connects Gmail for the alerts
     row.hidden = false; paint();
     db.collection("spend").onSnapshot(function(s){ var first = !have; have = new Set(s.docs.map(function(d){ return d.id; })); if (first) status(); }, function(){});
   })();

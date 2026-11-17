@@ -60,7 +60,7 @@ async function accessToken(env, rt) {
 // ---- email text ----
 const unb = s => { try { return dec.decode(b64u(s)); } catch (e) { return ""; } };
 const strip = h => h.replace(/<(style|script)[\s\S]*?<\/\1>/gi, " ").replace(/<br\s*\/?>|<\/(p|div|tr|td|li|h\d)>/gi, "\n").replace(/<[^>]+>/g, " ")
-  .replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&#(\d+);/g, (m, n) => String.fromCharCode(+n)).replace(/&[a-z]+;/gi, " ");
+  .replace(/&nbsp;/g, " ").replace(/&([aeiou])acute;/gi, (m, v) => ({ a: "á", e: "é", i: "í", o: "ó", u: "ú" })[v.toLowerCase()]).replace(/&ntilde;/gi, "ñ").replace(/&amp;/g, "&").replace(/&#(\d+);/g, (m, n) => String.fromCharCode(+n)).replace(/&[a-z]+;/gi, " ");
 function bodyText(p) {
   let plain = "", html = "";
   (function walk(x) { if (!x) return; const d = x.body && x.body.data;
@@ -122,6 +122,83 @@ async function sync(env, uid, body) {
   return { connected: true, email: t.email, items, read: list.length, next: l.nextPageToken || "END", first: !t.since, lastRunAt: t.lastRunAt || 0 };
 }
 
+
+// ---- Instant bank alerts for Marco (Nov 17): pato-ai's 5-minute timer calls /watch; new bank emails become a push within minutes ----
+// Reads only the alert emails from BHD and Popular, with plain text rules (no AI, no cost). The push itself is sent by pato-cron (service binding CRON).
+const OWNER_UID = "e16AkFccPaRJjc5uosBXY5AGXyx1";
+const WATCH_Q = "from:(Alertas@bhd.com.do OR notificaciones@bhd.com.do OR notificaciones@popularenlinea.com)";
+const nice = s => String(s || "").toLowerCase().replace(/(^|[\s,.'-])([a-zà-ÿ])/g, (m, a, b) => a + b.toUpperCase()).trim();
+const money = (cur, n) => (cur === "USD" ? "US$" : "RD$") + n.toLocaleString("en-US", { minimumFractionDigits: Math.round(n * 100) % 100 ? 2 : 0, maximumFractionDigits: 2 });
+const num = a => Number(String(a).replace(/,/g, ""));
+const curOf = c => /^US/i.test(c) ? "USD" : "DOP";
+// One bank alert email -> {bank, kind: card|transfer|deposit|cash|in, amount, cur, detail, status, date} or null (ads, codes, anything else)
+function parseAlert(from, subject, text) {
+  const bank = /bhd\.com\.do/i.test(from) ? "BHD" : /popularenlinea/i.test(from) ? "Popular" : null; if (!bank) return null;
+  const T = String(text || "").replace(/[­ ]/g, " ").replace(/\s+/g, " "), S = String(subject || ""); let x;
+  if (/C[oó]digo Cash/i.test(S + " " + T) && (x = T.match(/RD\s*\$?\s*([\d,]+\.\d\d)\s+(\d\d\/\d\d\/\d{4})\s+(Aprobada|Declinada|Rechazada)/i)))
+    return { bank, kind: "cash", amount: num(x[1]), cur: "DOP", detail: "", status: x[3], date: x[2] };
+  if (/Dep[oó]sito/i.test(S) && (x = T.match(/RD\s*\$?\s*([\d,]+\.\d\d)\s+(\d{8})\s+(.+?)\s+En caso/i)))
+    return { bank, kind: "deposit", amount: num(x[1]), cur: "DOP", detail: /ATM/i.test(S) ? "ATM" : nice(x[3].replace(/_/g, " ")), status: "Aprobada", date: x[2] };
+  if (bank === "BHD" && /Beneficiario/i.test(T) && (x = T.match(/Monto:?\s*(RD|US)\s*\$?\s*([\d,]+\.\d\d)/i))) {
+    const b = (T.match(/Beneficiario:?\s*(.+?)\s+N.{1,3}mero de confirmaci/i) || [])[1] || "";
+    return { bank, kind: "transfer", amount: num(x[2]), cur: curOf(x[1]), detail: /MARCO/i.test(b) && /FERRANDO/i.test(b) ? "to yourself" : "to " + nice(b), status: "Aprobada", date: "" };
+  }
+  if (bank === "BHD" && (x = T.match(/(\d\d\/\d\d\/\d{4})\s+\d{1,2}:\d\d\s*[ap]m\s+(RD|US)\s*\$?\s*([\d,]+\.\d\d)\s+(.+?)\s+(Aprobada|Declinada|Rechazada|Reversada)\b/i)))
+    return { bank, kind: "card", amount: num(x[3]), cur: curOf(x[2]), detail: nice(x[4]), status: x[5], date: x[1] };
+  if (bank === "Popular" && (x = T.match(/(RD|US)\$\s*([\d,]+\.\d\d)\s+(?:Peso dominicano|D[oó]lar[a-z ]*|Euro)\s+(\d\d\/\d\d\/\d{4})\s+(.+?)\s+(Aprobada|Declinada|Rechazada|Reversada)/i)))
+    return { bank, kind: "card", amount: num(x[2]), cur: curOf(x[1]), detail: nice(x[4]), status: x[5], date: x[3] };
+  if (/dep[oó]sito|cr[eé]dito|acredit|recibi|transferencia recibida/i.test(S) && !/publicidad|plazo/i.test(S) && (x = T.match(/(RD|US)\s*\$?\s*([\d,]+\.\d\d)/i)))   // money in: any wording the bank may use
+    return { bank, kind: "in", amount: num(x[2]), cur: curOf(x[1]), detail: "", status: "Aprobada", date: "" };
+  return null;
+}
+function alertText(a) {
+  const m = money(a.cur, a.amount), bad = /Declinada|Rechazada/i.test(a.status), rev = /Reversada/i.test(a.status);
+  if (a.kind === "card") return [a.bank + (bad ? " card declined" : rev ? " card reversed" : " card"), m + " · " + a.detail];
+  if (a.kind === "transfer") return [a.bank + " transfer out", m + " · " + a.detail];
+  if (a.kind === "deposit") return [a.bank + " deposit", m + (a.detail ? " · " + a.detail : "")];
+  if (a.kind === "cash") return [a.bank + (bad ? " cash withdrawal declined" : " cash withdrawal"), m];
+  return [a.bank + " money in", m];
+}
+async function notifyKey(env) { let k = await env.LIMITS.get("gm:notifykey"); if (!k) { k = b64(crypto.getRandomValues(new Uint8Array(24))).replace(/[+/=]/g, ""); await env.LIMITS.put("gm:notifykey", k); } return k; }
+async function notify(env, title, body, tag) {
+  if (!env.CRON) throw new Error("no CRON binding");
+  const r = await env.CRON.fetch("https://pato-cron/notify", { method: "POST", headers: { "content-type": "application/json", "x-notify-key": await notifyKey(env) }, body: JSON.stringify({ title, body, tag }) });
+  if (!r.ok) throw new Error("notify " + r.status + " " + (await r.text()).slice(0, 80));
+}
+async function watch(env) {
+  const uid = OWNER_UID, t = await getTok(env, uid); if (!t) return "gmail not connected";
+  const last = Number(await env.LIMITS.get("gm:watch:last")) || 0; if (Date.now() - last < 90e3) return "too soon";
+  await env.LIMITS.put("gm:watch:last", String(Date.now()), { expirationTtl: 600 });
+  const wk = "gm:watch:" + uid; let st = JSON.parse((await env.LIMITS.get(wk)) || "null");
+  const now = Math.floor(Date.now() / 1000);
+  if (!st) { await env.LIMITS.put(wk, JSON.stringify({ since: now, seen: [] })); return "started: only emails from now on"; }   // first run after connecting: no backlog
+  let at = await env.LIMITS.get("gm:at:" + uid);
+  if (!at) {
+    try { at = await accessToken(env, t.rt); } catch (e) {
+      if (e.reconnect) { await env.LIMITS.delete("gm:tok:" + uid); try { await notify(env, "Pato lost Gmail", "Open Pato > Spend and tap Connect for instant bank alerts", "bank-reconnect"); } catch (x) {} return "reconnect needed"; }
+      throw e; }
+    await env.LIMITS.put("gm:at:" + uid, at, { expirationTtl: 3000 });
+  }
+  const G = "https://gmail.googleapis.com/gmail/v1/users/me/messages";
+  let l; try { l = await google(G + "?maxResults=15&q=" + encodeURIComponent(WATCH_Q + " after:" + Math.max(st.since, now - 3 * 3600)), at); }
+  catch (e) { if (e.status === 401) await env.LIMITS.delete("gm:at:" + uid); throw e; }
+  const fresh = (l.messages || []).map(m => m.id).filter(id => !st.seen.includes(id)).slice(0, 4);   // a few per run keeps each run light; the rest comes next run
+  if (!fresh.length) return "nothing new";
+  const log = JSON.parse((await env.LIMITS.get("gm:alerts:" + uid)) || "[]"); let sent = 0;
+  for (const id of fresh.reverse()) {   // oldest first
+    const m = await google(G + "/" + id + "?format=full", at).catch(() => null); if (!m) continue;
+    const a = parseAlert(head(m, "from"), head(m, "subject"), bodyText(m.payload));
+    if (a) { const [title, body] = alertText(a);
+      try { await notify(env, title, body, "bank-" + id); } catch (e) { console.log("notify failed", String(e)); break; }   // not marked seen: tried again on the next run (for 3 hours)
+      log.push({ id, ts: Number(m.internalDate) || Date.now(), ...a }); sent++; }
+    st.seen.push(id);
+  }
+  st.seen = st.seen.slice(-200);
+  await env.LIMITS.put(wk, JSON.stringify(st));
+  if (sent) await env.LIMITS.put("gm:alerts:" + uid, JSON.stringify(log.slice(-60)));
+  return sent + " alert(s) sent";
+}
+
 const page = (title, line, ok) => new Response(`<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Pato</title>
 <style>body{margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;background:#f6f1e7;color:#1d2a22;font:16px -apple-system,system-ui,sans-serif;text-align:center;padding:24px}
 @media (prefers-color-scheme:dark){body{background:#13201a;color:#f1ead9}}h1{font:600 1.6rem Georgia,serif;margin:12px 0 6px}p{opacity:.75;margin:0 0 22px}
@@ -147,6 +224,8 @@ export default {
       await env.LIMITS.delete("gm:run:" + s.uid);
       return page("Gmail connected", "Pato is reading your bank emails now.", true);
     }
+    if (req.method === "POST" && url.pathname === "/watch" && req.headers.get("x-watch") === "1" && env.GOOGLE_ID && env.GOOGLE_SECRET && env.LIMITS)   // called by pato-ai's 5-minute timer (service binding)
+      return new Response(await watch(env).catch(e => "error " + String(e.message || e).slice(0, 100)), { status: 200 });
     if (req.method !== "POST" || !ORIGINS.includes(origin)) return json({ error: "forbidden" }, 403, origin);
     if (!env.GOOGLE_ID || !env.GOOGLE_SECRET || !env.LIMITS) return json({ error: "not_set_up" }, 503, origin);
     const uid = await verify((req.headers.get("authorization") || "").replace(/^Bearer /, "")).catch(() => null);
