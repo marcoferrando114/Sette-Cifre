@@ -51,7 +51,7 @@ const CATS2 = {   // Nov 14 redesign (demo account first): the new topics; rd, b
   ceo: srch("(CEO OR founder OR \"chief executive\") (profile OR interview OR succession OR \"named CEO\" OR \"steps down\" OR \"family business\" OR \"CEO of the Year\" OR \"last of\")").replace("when%3A1d", "when%3A3d"),
 };
 const LEAGUES = [["football/nfl", "NFL", 9], ["soccer/uefa.champions", "Champions League", 9], ["basketball/nba", "NBA", 8], ["mma/ufc", "UFC", 8], ["soccer/fifa.world", "World Cup", 10],
-  ["soccer/esp.1", "LaLiga", 7], ["soccer/eng.1", "Premier League", 7], ["soccer/ita.1", "Serie A", 6], ["soccer/ger.1", "Bundesliga", 6], ["soccer/uefa.europa", "Europa League", 6], ["baseball/mlb", "MLB", 6], ["tennis/atp", "Tennis", 6], ["tennis/wta", "Tennis", 5], ["soccer/usa.1", "MLS", 5, /Inter Miami/i], ["soccer/fra.1", "Ligue 1", 7, /Paris Saint-Germain|\bPSG\b/i], ["baseball/dominican-winter-league", "LIDOM", 9], ["football/college-football", "College football", 5], ["racing/f1", "F1", 6]];
+  ["soccer/esp.1", "LaLiga", 7], ["soccer/eng.1", "Premier League", 7], ["soccer/ita.1", "Serie A", 6], ["soccer/ger.1", "Bundesliga", 6], ["soccer/uefa.europa", "Europa League", 6], ["baseball/mlb", "MLB", 6], ["tennis/atp", "Tennis", 6], ["tennis/wta", "Tennis", 5], ["soccer/usa.1", "MLS", 5, /Inter Miami/i], ["soccer/fra.1", "Ligue 1", 7, /Paris Saint-Germain|\bPSG\b/i], ["baseball/dominican-winter-league", "LIDOM", 9], ["racing/f1", "F1", 6]];
 const dec = t => t.replace(/<!\[CDATA\[|\]\]>/g, "").replace(/&amp;/g, "&").replace(/&quot;/g, '"').replace(/&#39;|&apos;/g, "'").replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&nbsp;/g, " ").replace(/&#(\d+);/g, (m, n) => String.fromCharCode(+n)).replace(/&#x([0-9a-f]+);/gi, (m, n) => String.fromCharCode(parseInt(n, 16))).trim();
 function parse(xml) {
   return [...String(xml).matchAll(/<item>([\s\S]*?)<\/item>/g)].map(m => {
@@ -366,7 +366,7 @@ async function bundle(P, env) {
   const EVT = /\b(resign\w*|oust\w*|affair|scandal|spy|fired|steps? down|probe|indict\w*|arrest\w*|crash\w*|quake|earthquake|hurricane|collaps\w*|plunge\w*|drops?|falls?|tumbl\w*|sinks?|soar\w*|surg\w*|jumps?|ceasefire|attack\w*|explosion|shooting|out at)\b/i;
   const same = (a, b) => { if (!a || !b) return false; if (simw(a, b) >= 0.5) return true; const A = CAPS(a), B = CAPS(b), n = [...A].filter(w => B.has(w)).length; return n >= 2 || (n >= 1 && EVT.test(a) && EVT.test(b)); };   // same name + both about an event = same story
   // Nov 12 fix: skip stories already shown BEFORE ranking, so a category falls back to its next-best story instead of disappearing
-  const shown = W ? [W.h] : [], cats = {}; want.forEach((k, i) => { const it = top2((rest[i].items || []).filter(x => x && x.h && !shown.some(h => same(h, x.h))), tick, P.get("busy") === "1", lk); if (it.length) { cats[k] = it; it.forEach(x => shown.push(x.h)); } });
+  const shown = W ? [W.h] : [], cats = {}; want.forEach((k, i) => { const it = top2((rest[i].items || []).filter(x => x && x.h && catOk(k, x.h) && !shown.some(h => same(h, x.h))), tick, P.get("busy") === "1", lk); if (it.length) { cats[k] = it; it.forEach(x => shown.push(x.h)); } });
   MORE = MORE.filter(it => !shown.some(h => same(h, it.h)));
   { const dsc = i => (/Economist|Foreign Affairs|MIT Technology/.test(i.s) ? 10 : 0) + (/\b(AI|econom\w*|market\w*|China|debt|bond|invest\w*|money|tech\w*|chips?|bank\w*|trade|tariffs?|inflation|rates?|startups?|oil|war|Trump|billionaires?|wealth)\b/i.test(i.h) ? 8 : 0) + (TASTE.test(i.h) ? 12 : 0) + lk(i.h);   // what Marco likes first, hard reads from the best outlets
     const cs = clean(DFI || [], 96).filter(i => DEEPSRC.test(i.s || "") && DEEPH.test(i.h) && !/^(The Download|Today|Daily|Morning|Evening|Newsletter|Weekend|Week ahead)\b|\b(newsletter|podcast|live blog|crossword|quiz)\b/i.test(i.h) && !/\b(stocks?|shares|earnings|futures|Dow|Nasdaq|S&P)\b.{0,30}\b(rise|fall|jump|slide|drop|gain|close)/i.test(i.h) && !shown.some(h => same(h, i.h))).sort((x, y) => dsc(y) - dsc(x) || y.t - x.t).slice(0, 6);
@@ -379,6 +379,8 @@ async function bundle(P, env) {
   return { at: top.at || Date.now(), day: edDay(), big: W, calls: CL, more: MORE, preds: pickMarkets(MK, tick), launch: launches(LF.items || [], tick), rising: rising(RF.items || []), cats, stocks, games: rest[rest.length - 1] || [],
     _n: [N1, N2, MK.length, (GM || []).length], ticker: T.filter(i => MOVERS.test(i.h)).concat(T).filter((v, i, a) => a.indexOf(v) === i).slice(0, 5) };
 }
+const POLI = /\b(politic\w*|Congress\w*|Senate|senators?|House (Republicans|Democrats|Speaker)|White House|Trump|Biden|Harris|Vance|election\w*|vot(e|ers?|ing)|ballot|governors?|president\w*|lawmakers?|legislat\w*|Democrats?|Republicans?|GOP|Supreme Court|justices?|minister|parliament|Pentagon|Kremlin|NATO|Zelensk\w+|Putin|Netanyahu|Hamas|Israel|Ukraine|Iran|China-US|sanctions?|impeach\w*|campaign|mayor|attorney general|DOJ|FBI|ICE|immigration|border|shutdown|veto|bill signed|tariffs?|diplomat\w*|embassy|treaty|summit)\b/i, TECHG = /\b(PlayStation|Xbox|Nintendo|Switch 2|gaming|gamers?|video games?|controllers?|console|iPhone|Android|Pixel|Galaxy|laptop|GPU|graphics card|smartwatch|earbuds|headphones|streaming service|Netflix|Spotify|app store|patent)\b/i;
+const catOk = (k, h) => k !== "politics" || (POLI.test(h) && !TECHG.test(h));   // Marco Nov 15: a PlayStation controller story was filed under Politics
 const SPORTS = /\b(UFC|MMA|NFL|NBA|WNBA|MLB|NHL|MLS|FIFA|UEFA|Champions League|Europa League|Premier League|La Liga|Serie A|Bundesliga|World Cup|Super Bowl|Grand Slam|Wimbledon|ATP Tour|WTA|Formula 1|F1 Grand Prix|NASCAR|boxing|boxer|knockout|touchdown|quarterback|ring announcer|playoffs?|transfer window|soccer|college football|basketball|baseball|hockey|tennis|golf|PGA Tour|Olympic\w*|heavyweight|title fight|Heisman|cricket|rugby)\b/i;   // sports news belongs in the Sports tab, never in AI, business or crypto (Marco Nov 14)
 const langOf = t => { t = String(t || ""); const es = (t.match(/\b(el|la|los|las|del|en|que|por|para|con|una|se|su|sus|al|m\u00e1s|como|pero|entre|desde|hoy|sobre)\b/gi) || []).length + 2 * (t.match(/[\u00e1\u00e9\u00ed\u00f3\u00fa\u00f1\u00bf\u00a1]/g) || []).length, en = (t.match(/\b(the|of|and|to|in|for|on|is|are|with|that|this|from|as|by|its|was|has|have|will|be|could|after|over)\b/gi) || []).length; return es === en ? "" : es > en ? "es" : "en"; };
 async function bundleEd(P, env) {
@@ -410,7 +412,7 @@ async function bundleEd(P, env) {
   const EVT = /\b(resign\w*|oust\w*|affair|scandal|spy|fired|steps? down|probe|indict\w*|arrest\w*|crash\w*|quake|earthquake|hurricane|collaps\w*|plunge\w*|drops?|falls?|tumbl\w*|sinks?|soar\w*|surg\w*|jumps?|ceasefire|attack\w*|explosion|shooting|out at)\b/i;
   const same = (a, b) => { if (!a || !b) return false; if (simw(a, b) >= 0.5) return true; const A = CAPS(a), B = CAPS(b), n = [...A].filter(w => B.has(w)).length; return n >= 2 || (n >= 1 && EVT.test(a) && EVT.test(b)); };   // same name + both about an event = same story
   // Nov 12 fix: skip stories already shown BEFORE ranking, so a category falls back to its next-best story instead of disappearing
-  const shown = W ? [W.h] : [], cats = {}, ALT = {}; want.forEach((k, i) => { const ts0 = top2((rest[i].items || []).filter(x => x && x.h && !shown.some(h => same(h, x.h)) && !SPORTS.test(x.h) && (k !== "crypto" || /\b(bitcoin|btc|ethereum|ether|crypto\w*|solana|xrp|stablecoins?|tokens?|blockchain|coinbase|binance|defi|dogecoin|altcoins?|digital assets?)\b/i.test(x.h))), tick, P.get("busy") === "1", lk), it = ts0.slice(0, 1); ALT[k] = ts0.slice(1, 4); if (it.length) { cats[k] = it; it.forEach(x => shown.push(x.h)); } });
+  const shown = W ? [W.h] : [], cats = {}, ALT = {}; want.forEach((k, i) => { const ts0 = top2((rest[i].items || []).filter(x => x && x.h && catOk(k, x.h) && !shown.some(h => same(h, x.h)) && !SPORTS.test(x.h) && (k !== "crypto" || /\b(bitcoin|btc|ethereum|ether|crypto\w*|solana|xrp|stablecoins?|tokens?|blockchain|coinbase|binance|defi|dogecoin|altcoins?|digital assets?)\b/i.test(x.h))), tick, P.get("busy") === "1", lk), it = ts0.slice(0, 1); ALT[k] = ts0.slice(1, 4); if (it.length) { cats[k] = it; it.forEach(x => shown.push(x.h)); } });
   MORE = MORE.filter(it => !shown.some(h => same(h, it.h)));
   const SN = [].concat(...rest.slice(0, want.length).map(r => (r && r.items) || []), world.items || [], top.items || []).filter(x => x && x.h && SPORTS.test(x.h) && !NONLATIN.test(x.h) && !shown.some(h => same(h, x.h))).sort((x, y) => ((y.n || 1) - (x.n || 1)) || (y.t - x.t)).filter((v, i, a) => a.findIndex(o => same(o.h, v.h)) === i).slice(0, 3).map(i => ({ h: i.h, s: i.s, u: i.u, t: i.t, n: i.n || 1 }));
   let DEEP = null, CEO = null;
@@ -616,6 +618,11 @@ const FOUNDERS = [
         ["THE HARD PART", "Then he went to MIT, dropped out and, with John, started Stripe in 2010. Taking card payments online was painful for developers, and big companies were not obviously interested in a tiny rival."],
         ["THE TURNING POINT", "Stripe's few lines of code made online payments easy. It grew into one of the most valuable private tech companies, valued at nearly $100 billion."]],
     fy: "Pick a hated, boring problem and make it radically simple." },
+  { n: "Asha Sharma", by: "marco", w: "Asha_Sharma", h: "Asha Sharma: from Instacart and Meta to running Xbox", pl: "She worked her way through Microsoft, Porch, Meta and Instacart, then in 2026 was named CEO of Microsoft Gaming.",
+    s: [["WHERE SHE STARTED", "She started in marketing at Microsoft from 2011 to 2013. After that she moved through product and operating roles at Porch Group and Meta, where she led product across Messenger and Instagram Direct."],
+        ["THE HARD PART", "At Instacart she was chief operating officer, running the day-to-day business of a fast-growing delivery company. In 2024 she returned to Microsoft to work on its AI platform."],
+        ["THE TURNING POINT", "She became president of Microsoft's CoreAI product group in 2025. In February 2026 Microsoft named her CEO of Microsoft Gaming, taking over from Phil Spencer, even though she had no videogame background."]],
+    fy: "A builder who learns each new platform can end up leading a very different one." },
   { n: "Whitney Wolfe Herd", w: "Whitney_Wolfe_Herd", h: "Whitney Wolfe Herd: she left Tinder and built a rival that went public", pl: "After leaving Tinder she started Bumble, where women make the first move, and took it public at 31.",
     s: [["WHERE SHE STARTED", "Born in Utah, she studied at Southern Methodist University and started a small charity business. In 2012 she joined the team that built Tinder, as an early employee and co-founder."],
         ["THE HARD PART", "She left Tinder in 2014 and filed a harassment and discrimination lawsuit that was later settled. She then felt unsure about starting again."],
@@ -647,12 +654,30 @@ const FOUNDERS = [
         ["THE TURNING POINT", "In 2024 she left OpenAI and in 2025 founded Thinking Machines Lab, which raised a record-sized seed round of about $2 billion."]],
     fy: "She moved from cars to AI by following where the hardest engineering was." },
 ];
-async function founderOf(env, now) {   // one per day, rotating through the roster so none repeats for weeks; photo from Wikipedia, a designed card if it isn't big and sharp enough
-  const day = Math.floor((now - 11 * 3600e3) / 864e5), f = FOUNDERS[day % FOUNDERS.length], it = { h: f.h, s: "Pato · Wikipedia", u: "https://en.wikipedia.org/wiki/" + f.w, t: now - 36e5, ceo: 1, founder: 1, pl: f.pl, sec: f.s, fy: f.fy, nav: "👤 CEOs & founders", name: f.n };
-  try { const r = await cf("https://en.wikipedia.org/api/rest_v1/page/summary/" + f.w, { headers: { "user-agent": "PatoNews/1.0 (+https://marcoferrando114.github.io/Sette-Cifre/)" } });
-    if (r.ok) { const j = await r.json(), o = j.originalimage || {}, th = j.thumbnail || {};
-      if (o.source && o.width >= 700 && o.height >= 700 && !/\.svg$/i.test(o.source)) it.img = o.width > 1400 && th.source ? th.source.replace(/\/\d+px-/, "/1000px-") : o.source; } } catch (e) {}
-  return it;
+// A real photo for a person or company from Wikipedia and Wikimedia Commons (Marco Nov 17: "a picture of Peter Thiel should be easy to find"): the page's lead photo, then the search's best page, then Commons files; remembered for 30 days
+async function wikiImg(env, title) {
+  const kvk = "wimg:" + String(title).toLowerCase().replace(/[^a-z0-9]+/g, "_"), kv = env && env.LIMITS;
+  try { const hit = kv && await kv.get(kvk); if (hit) return hit; } catch (e) {}
+  const H = { headers: { "user-agent": WUA, accept: "application/json" } }, good = o => o && o.source && /\.(jpe?g|png|webp)(\?|$)/i.test(o.source) && o.width >= 480 && o.height >= 320, tries = [];
+  const lead = async t => { try { const r = await cf("https://en.wikipedia.org/w/api.php?action=query&format=json&redirects=1&prop=pageimages&piprop=original&titles=" + encodeURIComponent(t), H); if (!r.ok) return null; const j = await r.json(), pg = Object.values((j.query || {}).pages || {})[0] || {}, o = pg.original; return good(o) ? o.source : null; } catch (e) { return null; } };
+  const sum = async t => { try { const r = await cf("https://en.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(t.replace(/ /g, "_")), H); if (!r.ok) return null; const j = await r.json(); return good(j.originalimage) ? j.originalimage.source : null; } catch (e) { return null; } };
+  let img = await lead(title) || await sum(title);
+  if (!img) { try { const r = await cf("https://en.wikipedia.org/w/api.php?action=query&format=json&list=search&srlimit=2&srsearch=" + encodeURIComponent(title), H), j = await r.json(); for (const x of ((j.query || {}).search || [])) { img = await lead(x.title); if (img) break; } } catch (e) {} }
+  if (!img) { try { const r = await cf("https://commons.wikimedia.org/w/api.php?action=query&format=json&generator=search&gsrnamespace=6&gsrlimit=6&gsrsearch=" + encodeURIComponent(title) + "&prop=imageinfo&iiprop=url|size|mime", H), j = await r.json(); for (const pg of Object.values((j.query || {}).pages || {})) { const ii = (pg.imageinfo || [])[0]; if (ii && /^image\/(jpeg|png|webp)$/.test(ii.mime || "") && ii.width >= 480 && ii.height >= 320) { img = ii.url; break; } } } catch (e) {} }
+  if (img && kv) await kv.put(kvk, img, { expirationTtl: 2592000 }).catch(() => 0);
+  return img || "";
+}
+async function founderOf(env, now) {   // one per day, rotating through the roster so none repeats for weeks; the real Wikipedia photo is required: a founder without a big sharp photo is skipped for the next one (Marco Nov 15)
+  const day = Math.floor((now - 11 * 3600e3) / 864e5); let first = null;
+  // Marco Nov 15: about 70% of founders are people he has not mentioned (my picks), about 30% are names he suggested (by: "marco"). His names take 3 days in 10, each name at most once per 10 of his slots, so the roster never repeats; his slot falls back to my picks when his list has run out. Add his names to FOUNDERS with by: "marco".
+  const MINE = FOUNDERS.filter(f => f.by !== "marco"), HIS = FOUNDERS.filter(f => f.by === "marco"), sl = [2, 5, 8].indexOf(day % 10), use = sl >= 0 ? (Math.floor(day / 10) * 3 + sl) % 10 : -1;
+  const order = (use >= 0 && use < HIS.length ? [HIS[use]] : []).concat(MINE.map((_, i) => MINE[(day + i) % MINE.length]));
+  for (let k = 0; k < order.length; k++) {
+    const f = order[k], it = { h: f.h, s: "Pato · Wikipedia", u: "https://en.wikipedia.org/wiki/" + f.w, t: now - 36e5, ceo: 1, founder: 1, pl: f.pl, sec: f.s, fy: f.fy, nav: "👤 CEOs & founders", name: f.n }; first = first || it;
+    it.img = await wikiImg(env, f.w.replace(/_/g, " ")).catch(() => "");
+    if (it.img) return it;
+  }
+  return first;
 }
 // The prebuilt edition (Marco Nov 14: "ready when the user opens the app"): built and image-resolved in the hour before each drop (7am, 1pm, 7pm DR), then served from KV in one fast call.
 const dropIdx = ms => Math.floor((ms - 11 * 3600e3) / (6 * 3600e3));   // a new edition every 6 hours, at 11, 17, 23 UTC
@@ -675,6 +700,7 @@ async function imagesFor(env, b, cap) {   // each story's own full-size photo an
 async function finishSteps(env, E, key) {
   const x = E.x || (E.x = {}), save = () => env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }).catch(() => 0);
   if (!x.img) { FN = 0; await imagesFor(env, E.b, 12); x.img = imgList(E.b).length ? 0 : 1; await save(); if (!x.img) return; }
+  if (!x.wk) { for (const it of [E.b.cotd, E.b.ceo]) { if (it && !it.img) { const w = await wikiImg(env, it.name || "").catch(() => ""); if (w) it.img = w; } } x.wk = 1; await save(); }   // Company of the day and the founder always get a real photo from Wikipedia/Commons (Marco Nov 17)
   if (!x.ver) { FN = 0; await verifyImgs(E.b, env, E.b.idx); x.ver = 1; await save(); }
   if (!x.brief) { if (E.b.big) { if (E.b.big.d2) E.b.big.d = E.b.big.d2; E.b.big.brief = await brief(env, E.b.big).catch(() => null); } x.brief = 1; await save(); }
   if (!x.plain) { await plainAll(env, E.b).catch(() => null); x.plain = 1; await save(); }
@@ -702,20 +728,21 @@ function imgDims(b) {   // width/height from the file's own header (jpeg, png, w
     if (b[0] === 0x47 && b[1] === 0x49) return { w: b[6] | (b[7] << 8), h: b[8] | (b[9] << 8) };
   } catch (e) {} return null;
 }
-async function imgOk(u) {   // a photo is only good if it loads, is a real image, at least 800x450, a sane shape and not a tiny file (Marco Nov 14: never blurred)
-  try { const r = await cf(u, { headers: { range: "bytes=0-131071", "user-agent": "Mozilla/5.0 (compatible; PatoDaily/1.0)", accept: "image/*" }, redirect: "follow" });
+const WUA = "PatoNews/1.0 (+https://marcoferrando114.github.io/Sette-Cifre/)", uaFor = u => /wikimedia\.org|wikipedia\.org/i.test(u) ? WUA : "Mozilla/5.0 (compatible; PatoDaily/1.0)";
+async function imgOk(u, lenient) {   // a photo is only good if it loads, is a real image, at least 800x450, a sane shape and not a tiny file (Marco Nov 14: never blurred)
+  try { const r = await cf(u, { headers: { range: "bytes=0-131071", "user-agent": uaFor(u), accept: "image/*" }, redirect: "follow" });
     if (!(r.status === 200 || r.status === 206)) return false; const ct = r.headers.get("content-type") || "", cr = r.headers.get("content-range"), tot = cr ? Number((cr.match(/\/(\d+)$/) || [])[1]) : Number(r.headers.get("content-length") || 0);
     const rd = r.body.getReader(), chunks = []; let n = 0; while (n < 131072) { const { done, value } = await rd.read(); if (done) break; chunks.push(value); n += value.length; } try { await rd.cancel(); } catch (e) {}
     const buf = new Uint8Array(Math.min(n, 131072)); let o = 0; for (const c of chunks) { buf.set(c.subarray(0, Math.max(0, buf.length - o)), o); o += c.length; if (o >= buf.length) break; }
-    const d = imgDims(buf); if (!/^image\//i.test(ct) || !d || !d.w || !d.h || (tot && tot < 40000)) return false;
-    return d.w >= 800 && d.h >= 450 && d.w / d.h <= 3.2 && d.w / d.h >= 0.6; } catch (e) { return false; } }
+    const d = imgDims(buf); if (!/^image\//i.test(ct) || !d || !d.w || !d.h || (tot && tot < (lenient ? 8000 : 40000))) return false;
+    return lenient ? d.w >= 480 && d.h >= 270 && d.w / d.h <= 3.6 && d.w / d.h >= 0.5 : d.w >= 800 && d.h >= 450 && d.w / d.h <= 3.2 && d.w / d.h >= 0.6; } catch (e) { return false; } }   // Marco Nov 17: a real photo, always. The sharp bar is tried first, the lenient one is the fallback, never an icon, never an icon } catch (e) { return false; } }
 const IMGX = "https://pato-ai.marcoferrando.workers.dev/img?u=";
 // Source image score (Marco Nov 14: learn which outlets' photos really load and pass the checks, prefer them, swap a photo-less story for a similar one that has a photo). KV "imgsc" = { host: [passed, tried] }
 const hostOf = u => { try { return new URL(u).hostname.replace(/^www\./, ""); } catch (e) { return ""; } };
 async function scoreLoad(env) { try { return (env && env.LIMITS && await env.LIMITS.get("imgsc", "json")) || {}; } catch (e) { return {}; } }
 async function scoreSave(env, S, hits) { try { Object.keys(hits).forEach(h => { const a = S[h] = S[h] || [0, 0]; a[0] += hits[h][0]; a[1] += hits[h][1]; if (a[1] > 60) { a[0] = Math.round(a[0] * 30 / a[1]); a[1] = 30; } }); if (env && env.LIMITS) await env.LIMITS.put("imgsc", JSON.stringify(S)); } catch (e) {} }
 const hitRate = (S, h) => { const a = S[h]; return a && a[1] >= 2 ? (a[0] + 1) / (a[1] + 2) : 0.5; };   // unknown outlets sit in the middle
-const photoSlots = b => [b.big].concat(Object.values(b.cats || {}).map(a => (a || [])[0])).filter(Boolean);
+const photoSlots = b => [b.big].concat(Object.values(b.cats || {}).map(a => (a || [])[0]), [b.cotd, b.ceo]).filter(Boolean);
 async function photoSwap(env, E) {   // every news story needs a verified photo: swap a photo-less one for the best similar story (same category) from outlets that have proven photos
   const b = E.b, S = await scoreLoad(env), hits = {}, acts = []; let tried = 0;
   const day = (await env.LIMITS.get("dayimg:" + edDay(), "json").catch(() => null)) || [], have = new Set(edItems(b).map(it => it.img).filter(Boolean).map(u => String(u)));
@@ -735,7 +762,7 @@ async function verifyImgs(b, env, idx) { let bad = 0, dup = 0; const SCH = {}; c
   for (const it of edItems(b)) { if (!it.img) continue; let raw = it.img.startsWith(IMGX) ? decodeURIComponent(it.img.slice(IMGX.length)) : it.img, k = norm(raw);
     if (used.has(k) || mine.indexOf(k) >= 0) { it.img = ""; it.imgv = 0; dup++; continue; }
     if (it.img.startsWith(IMGX) && it.imgv) { mine.push(k); continue; }
-    const okI = await imgOk(raw), hs = hostOf(it.u || ""); if (hs) { SCH[hs] = SCH[hs] || [0, 0]; SCH[hs][1]++; if (okI) SCH[hs][0]++; }
+    const okI = (await imgOk(raw)) || (await imgOk(raw, true)), hs = hostOf(it.u || ""); if (hs) { SCH[hs] = SCH[hs] || [0, 0]; SCH[hs][1]++; if (okI) SCH[hs][0]++; }
     if (okI) { it.img = IMGX + encodeURIComponent(raw); it.imgv = 1; mine.push(k); } else { it.img = ""; it.imgv = 0; bad++; } }
   { const hs = Object.keys(SCH); if (hs.length) { await scoreSave(env, await scoreLoad(env), SCH); } }
   try { if (env && env.LIMITS) { await env.LIMITS.put("dayimo:" + idx, JSON.stringify(mine), { expirationTtl: 172800 }); await env.LIMITS.put("dayimg:" + edDay(), JSON.stringify(Array.from(used).concat(mine).slice(-80)), { expirationTtl: 172800 }); } } catch (e) {}
@@ -767,6 +794,8 @@ async function repairEd(env, E, q) {   // one repair round: swap in the next bes
     if (b.big && b.big.t && now - b.big.t > 6 * 36e5 && !(HUGE.test(b.big.h || "") || (b.big.n || 1) >= 6)) { const nb = (b._bigC || []).find(c => c.t && now - c.t <= 6 * 36e5 && !rep(c.h, b.big)); if (nb) { b.big = Object.assign({}, nb, { huge: false }); acts.push("swapped old Breaking"); x.img = 0; x.brief = 0; x.means = 0; x.ver = 0; } } }
   if (b.big && dayH.some(h => simw(h, b.big.h) >= 0.6 || !bigOk(b.big))) { const nb = (b._bigC || []).find(c => bigOk(c) && !rep(c.h, b.big)) || (!bigOk(b.big) ? null : (b._bigC || []).find(c => !rep(c.h, b.big))); if (nb) { b.big = Object.assign({}, nb, { huge: false }); acts.push("swapped Breaking"); x.img = 0; x.brief = 0; x.means = 0; x.ver = 0; } }
   if (q.hard.some(r => /without a photo/.test(r))) { const a = await photoSwap(env, E).catch(() => []); a.forEach(s => acts.push(s)); }
+  if (b.ceo && !b.ceo.img) { const c2 = await founderOf(env, Date.now() + 864e5 * ((E.tries || 0) + 1)).catch(() => null); if (c2 && c2.img) { b.ceo = c2; acts.push("another founder with a photo"); x.ver = 0; } }
+  if (b.cotd && !b.cotd.img) { try { const dead = b.cotd; await env.LIMITS.delete("cotd2:" + edDay()).catch(() => 0); DBG = {}; const c3 = await cotdPick(env, (b._cand || []).filter(c => c.u !== dead.u && c.h !== dead.h)); if (c3) { b.cotd = c3; x.img = 0; x.wk = 0; x.ver = 0; acts.push("another company of the day (no photo)"); } else { await env.LIMITS.put("cotd2:" + edDay(), JSON.stringify(dead), { expirationTtl: 172800 }).catch(() => 0); } } catch (e) {} }
   if (!Array.isArray(b.preds) || b.preds.length !== 2 || b.preds.some(p => GAMING.test((p.t || "") + " " + (p.q || "")))) { b.preds = await pickPreds3(env, await kvFresh(env, "mk2", 90, markets).catch(() => []), [], b.idx, edItems(b).map(i => i.h)).catch(() => b.preds); acts.push("redid predictions"); }
   if (!b.cotd) { DBG = {}; b.cotd = await cotdPick(env, b._cand).catch(() => null); acts.push("retried company of the day"); if (b.cotd) { x.img = 0; x.ver = 0; } }
   if (!b.ceo) { b.ceo = await founderOf(env, Date.now()).catch(() => null); acts.push("reloaded founder story"); }
@@ -776,7 +805,7 @@ async function repairEd(env, E, q) {   // one repair round: swap in the next bes
   x.done = 0; E.st = "built"; return acts;
 }
 async function advance(env, idx) {   // one step per call (every cron tick, or every phone request while no cron has done it): build, finish, check, repair, publish or hold
-  const key = "ed9n:" + idx; let E = await env.LIMITS.get(key, "json").catch(() => null); if (E && E.pub !== undefined) return E;
+  const key = "ed9q:" + idx; let E = await env.LIMITS.get(key, "json").catch(() => null); if (E && E.pub !== undefined) return E;
   await loadHL(env);
   if (!E || !E.b) { const b = await buildEdition(env, idx); if (Object.keys(b.cats).length < 2) { await env.LIMITS.put("edh:" + idx, JSON.stringify({ at: Date.now(), level: "hard", reasons: ["could not build: too few stories"], pub: false }), { expirationTtl: 172800 }).catch(() => 0); return null; }
     E = { at: Date.now(), bat: Date.now(), st: "built", b, x: {}, tries: 0 }; await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }); await saveHL(env).catch(() => 0); return E; }
@@ -792,13 +821,14 @@ async function advance(env, idx) {   // one step per call (every cron tick, or e
     if (pub) { await env.LIMITS.put("edpub", JSON.stringify({ key, idx }), { expirationTtl: 1209600 }); const own = edItems(E.b).map(it => it.h); await env.LIMITS.put("dayo:" + idx, JSON.stringify(own), { expirationTtl: 172800 }); await env.LIMITS.put("dayh2:" + edDay(), JSON.stringify(dayH.concat(own).slice(-60)), { expirationTtl: 172800 }); } return E; };
   if (pre && !lf && new Date().getUTCMinutes() < 50) return E;   // wait for the final feed refresh (:40) before publishing
   if (!q.hard.length) return done(true, q.soft.length ? "soft" : "ok", q.soft);
-  if ((E.tries || 0) >= ((q.hard.every(r => /without a photo/.test(r)) && (E.tries || 0) < 6) ? 6 : 3)) { if (q.hard.some(r => /without a photo/.test(r))) { const b = E.b; Object.keys(b.cats || {}).forEach(k => { const cur = (b.cats[k] || [])[0]; if (cur && !cur.img && Object.values(b.cats).filter(v => v && v[0]).length > 3) delete b.cats[k]; }); q.hard = q.hard.filter(r => !/without a photo/.test(r)); const q2 = qualityCheck(b, dayH); q.hard = q2.hard; q.rep = q2.rep; if (!q.hard.length) return done(true, "soft", ["dropped photo-less stories instead of showing a visual card"].concat(q2.soft)); }   // Marco Nov 14: never an emoji card for a news story
+  if ((E.tries || 0) >= ((q.hard.every(r => /without a photo/.test(r)) && (E.tries || 0) < 6) ? 6 : 3)) { if (q.hard.some(r => /without a photo/.test(r))) { const b = E.b; Object.keys(b.cats || {}).forEach(k => { const cur = (b.cats[k] || [])[0]; if (cur && !cur.img && Object.values(b.cats).filter(v => v && v[0]).length > 3) delete b.cats[k]; }); if (b.big && !b.big.img) { const ks = Object.keys(b.cats || {}).filter(k => b.cats[k] && b.cats[k][0] && b.cats[k][0].img).sort((x, y) => (b.cats[y][0].n || 1) - (b.cats[x][0].n || 1)); if (ks.length) { const k = ks[0]; b.big = Object.assign({}, b.cats[k][0], { huge: false }); if (Object.values(b.cats).filter(v => v && v[0]).length > 3) delete b.cats[k]; } }   // Breaking never shows without a real photo: the best story that has one takes its place (Marco Nov 15)
+      q.hard = q.hard.filter(r => !/without a photo/.test(r)); const q2 = qualityCheck(b, dayH); q.hard = q2.hard; q.rep = q2.rep; if (!q.hard.length) return done(true, "soft", ["dropped photo-less stories instead of showing a visual card"].concat(q2.soft)); }   // Marco Nov 14: never an emoji card for a news story
   if (q.hard.every(r => /repeats a story|without a photo|older than/.test(r))) return done(true, "soft", ["still repeats, lacks photos or has older stories on " + (q.rep || []).length + " earlier story(ies) after 3 swaps (feeds had nothing newer)"].concat(q.soft)); return done(false, "hard", q.hard); }   // a repeat alone never keeps hours-old news on screen   // still failing after 3 repair rounds: the last good edition stays
   E.tries = (E.tries || 0) + 1; E.log = (E.log || []).concat([{ t: Date.now(), fail: q.hard, did: await repairEd(env, E, q) }]).slice(-6);
   await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }); return E;
 }
 async function getEdition(env, force, dbg, ctx) {   // what a phone gets: this drop's edition once it has passed the check, otherwise the last good one (never a broken one)
-  const idx = dropIdx(Date.now()), key = "ed9n:" + idx, kv = env.LIMITS; let E = kv ? await kv.get(key, "json").catch(() => null) : null;
+  const idx = dropIdx(Date.now()), key = "ed9q:" + idx, kv = env.LIMITS; let E = kv ? await kv.get(key, "json").catch(() => null) : null;
   if (E && E.pub) { const o = finalize(E.b); o.fin = 1; if (dbg) { o._dbg = E.b._dbg; o._q = E.q; o._log = E.log; } return o; }
   let L = null; try { const pt = kv && await kv.get("edpub", "json"); if (pt) L = await kv.get(pt.key, "json"); } catch (e) { L = null; }
   if (!L && kv) { for (const k8 of ["ed8:" + idx, "ed8:" + (idx - 1)]) { const v = await kv.get(k8, "json").catch(() => null); if (v && v.b && v.st === "ready") { L = v; break; } } }   // first deploy: the previous generation's finished edition keeps showing while the new one is built
@@ -940,8 +970,8 @@ export default {
     if (req.method === "GET" && url.pathname === "/img") {   // story photos re-hosted through our own address (Marco Nov 14: outlets that block hotlinking must never leave a blank picture); cached at the edge
       try { const u = new URL(url.searchParams.get("u") || ""); if (u.protocol !== "https:" || /^(localhost|\d+\.\d+\.\d+\.\d+|\[)/i.test(u.hostname) || !u.hostname.includes(".")) throw new Error("bad");
         const c = caches.default, hit = await c.match(req); if (hit) return hit;
-        const r = await cf(u.href, { headers: { "user-agent": "Mozilla/5.0 (compatible; PatoDaily/1.0)", accept: "image/*", "accept-language": "en-US,en;q=0.9" }, redirect: "follow" }); const ct = r.headers.get("content-type") || "";
-        if (!r.ok || !/^image\//i.test(ct)) throw new Error("not image"); const buf = await r.arrayBuffer(); if (buf.byteLength < 40000 || buf.byteLength > 6000000) throw new Error("size");
+        const r = await cf(u.href, { headers: { "user-agent": uaFor(u.href), accept: "image/*", "accept-language": "en-US,en;q=0.9" }, redirect: "follow" }); const ct = r.headers.get("content-type") || "";
+        if (!r.ok || !/^image\//i.test(ct)) throw new Error("not image"); const buf = await r.arrayBuffer(); if (buf.byteLength < 8000 || buf.byteLength > 6000000) throw new Error("size");
         const out = new Response(buf, { status: 200, headers: { "content-type": ct, "cache-control": "public, max-age=604800", "access-control-allow-origin": "*" } }); if (ctx) ctx.waitUntil(c.put(req, out.clone())); return out;
       } catch (e) { return new Response("", { status: 404 }); }
     }

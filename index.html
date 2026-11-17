@@ -14,6 +14,28 @@
 <link rel="apple-touch-icon" href="icon-180.png?v=7">
 <link rel="icon" type="image/png" href="icon-192.png?v=7">
 <script>(function(){var p="goyards";try{p=localStorage.getItem("mp-palette")||"goyards";}catch(e){}if(["goyards","goyardt","goyardl"].indexOf(p)<0)p="goyards";document.documentElement.setAttribute("data-palette",p);document.documentElement.setAttribute("data-theme",p==="goyardl"?"light":"dark");var t=document.querySelector('meta[name="theme-color"]');if(t)t.setAttribute("content",p==="goyardt"?"#24170E":p==="goyardl"?"#E8D7B8":"#0F241B");})();</script>
+<script id="pato-currency-js">(function(){
+  // Currency view: amounts are stored in RD$; US$ is display only, using one daily rate (cached, with fallbacks)
+  var C = {cur:"DOP", rate:0, src:"", at:""}, K = "pato-cur", R = "pato-fx";
+  try{ if(localStorage.getItem(K) === "USD") C.cur = "USD"; }catch(e){}
+  var cached = null; try{ cached = JSON.parse(localStorage.getItem(R) || "null"); }catch(e){}
+  if(cached && cached.rate > 0){ C.rate = cached.rate; C.src = "saved"; C.at = cached.day || ""; }
+  if(!(C.rate > 0)){ C.rate = 60; C.src = "estimate"; }
+  var day = new Date().toISOString().slice(0,10);
+  C.usd = function(){ return C.cur === "USD" && C.rate > 0; };
+  C.set = function(c){ try{ localStorage.setItem(K, c); }catch(e){} location.reload(); };
+  C.money = function(n){ n = Number(n) || 0; if(!C.usd()) return "RD$" + Math.round(n).toLocaleString("en-US"); var v = n / C.rate; return "US$" + (Math.abs(v) < 100 ? Math.round(v*100)/100 : Math.round(v)).toLocaleString("en-US", {maximumFractionDigits: Math.abs(v) < 100 ? 2 : 0}); };
+  C.short = function(n){ n = Number(n) || 0; if(C.usd()) n = n / C.rate; return n>=1e6 ? (n/1e6).toLocaleString("en-US",{maximumFractionDigits:2})+"M" : n>=1000 ? (n/1000).toLocaleString("en-US",{maximumFractionDigits:1})+"k" : String(Math.round(n*100)/100); };
+  window.PCUR = C;
+  if(!cached || cached.day !== day){
+    try{ fetch("https://open.er-api.com/v6/latest/USD").then(function(r){ return r.json(); }).then(function(d){
+      var r = d && d.rates && Number(d.rates.DOP); if(!(r > 20 && r < 200)) return;
+      try{ localStorage.setItem(R, JSON.stringify({rate:r, day:day})); }catch(e){}
+      var was = C.rate; C.rate = r; C.src = "today"; C.at = day;
+      if(C.cur === "USD" && Math.abs(was - r) > 0.005){ try{ document.dispatchEvent(new Event("pato-fx")); }catch(e){} }
+    }).catch(function(){}); }catch(e){}
+  }
+})();</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet"></noscript>
@@ -735,6 +757,10 @@ html[data-palette^="goyard"] .sp-lim{font-family:var(--sans)}
 .sp-ledger .meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:2px}
 .sp-ledger select{width:auto;padding:3px 8px;font-size:.8rem;border-radius:999px}
 .sp-ledger .tag{font-size:.75rem;color:var(--muted)}
+.bk{display:inline-block;font-size:.62rem;font-weight:800;letter-spacing:.03em;padding:1px 6px;border-radius:999px;margin-left:6px;vertical-align:1px;line-height:1.4}
+.sp-ledger .meta .bk{margin-left:0}
+.bk-bhd{background:#E3F3E6;color:#1E7A37}.bk-pop{background:#E2EBFA;color:#1F4FA3}
+@media (prefers-color-scheme:dark){.bk-bhd{background:#1F3A27;color:#7FD393}.bk-pop{background:#1B2B4A;color:#8FB4F5}}
 .sp-ledger .a{font-weight:800;text-align:right}
 .sp-ledger .a small{display:block;font-weight:400;font-size:.75rem;color:var(--muted)}
 .sp-ledger li.off .m,.sp-ledger li.off .a{opacity:.45;text-decoration:line-through}
@@ -2050,6 +2076,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 #palSheet.full[data-sec] > .sp-list{display:none!important}
 #palSheet.full[data-sec="look"] > [data-sk="look"],#palSheet.full[data-sec="faceid"] > [data-sk="faceid"],#palSheet.full[data-sec="alerts"] > [data-sk="alerts"],
 #palSheet.full[data-sec="camera"] > [data-sk="camera"],#palSheet.full[data-sec="daily"] > [data-sk="daily"],#palSheet.full[data-sec="tabs"] > [data-sk="tabs"],
+#palSheet.full[data-sec="currency"] > [data-sk="currency"]{display:revert!important}
 #palSheet.full[data-sec="more"] > [data-sk="more"]{display:revert!important}
 #palSheet.full[data-sec="look"] > span[data-sk="look"]{display:none!important}
 #palSheet .sp-hd{display:flex!important;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin:0 0 18px;min-height:36px}
@@ -2093,13 +2120,13 @@ html:not(.mp-guest) #s-gst{display:none!important}
 .pd-vm span{position:static}.pd-vis .pd-vem{font-size:4.2rem}
 #pdBd.tk1 .pd-say .pd-one{font-size:1.3rem}#pdBd.tk1 .pd-tip,#pdBd.tk1 .pd-know{margin-top:12px}#pdBd.tk1 .pd-tip{padding:10px 14px}#pdBd.tk1 .pd-know p{font-size:.88rem!important;line-height:1.3!important}#pdBd.tk2 .pd-know p{font-size:.82rem!important;line-height:1.25!important}#pdBd.tk2 .pd-say{margin-top:0}#pdBd.tk2 .pd-say .pd-one{font-size:1.15rem}#pdBd.tk3 .pd-say .pd-one{font-size:1.02rem}#pdBd.tk3 .pd-tip{margin-top:8px;padding:8px 12px}#pdBd.tk3 .pd-know{margin-top:8px}
 #pdBd.tk4 .pd-say img{display:none}#pdBd.tk4 .pd-say .pd-one{font-size:.92rem;line-height:1.25}#pdBd.tk4 .pd-know p{font-size:.76rem!important;line-height:1.2!important;margin-top:4px!important}#pdBd.tk4 .pd-tip p{font-size:.85rem}.pd-s.take .pd-bd.tk4{padding-bottom:20px}
-.pd-s.pd-slf{animation:pdSlF .28s ease backwards}.pd-s.pd-slb{animation:pdSlB .28s ease backwards}.pd-s.pd-slc{animation:pdSlC .5s cubic-bezier(.2,.8,.2,1) backwards}@keyframes pdSlC{0%{opacity:0;transform:scale(.88) translateY(26px);filter:brightness(2.2) saturate(1.8)}55%{opacity:1;filter:brightness(1.25) saturate(1.3)}}@keyframes pdSlF{from{opacity:.15;transform:translateX(34px)}}@keyframes pdSlB{from{opacity:.15;transform:translateX(-34px)}}
+.pd-s.pd-slf{animation:pdSlF .28s ease backwards}.pd-s.pd-slb{animation:pdSlB .28s ease backwards}.pd-s.pd-slc{animation:pdSlC .85s cubic-bezier(.22,.7,.2,1) backwards}.pd-s.pd-slc::after{content:"";position:absolute;inset:0;z-index:9;pointer-events:none;border-radius:inherit;background:linear-gradient(105deg,transparent 25%,rgba(255,255,255,.34) 50%,transparent 75%);animation:pdWash .85s ease-out forwards}@keyframes pdWash{from{transform:translateX(-100%);opacity:1}to{transform:translateX(100%);opacity:0}}@keyframes pdSlC{0%{opacity:0;transform:translateY(60px) scale(.84);filter:brightness(2.4) saturate(2) blur(6px)}60%{opacity:1;filter:brightness(1.3) saturate(1.4) blur(0)}}@keyframes pdSlF{from{opacity:.15;transform:translateX(34px)}}@keyframes pdSlB{from{opacity:.15;transform:translateX(-34px)}}
 .pd-s .pd-know:not(.pd-inj):not(.pd-also) p,.pd-s .pd-know li,.pd-s .pd-note p{font-size:.94rem!important;font-weight:400!important;line-height:1.38!important}   /* ONE body style on every slide, the bullet look Marco likes (Nov 14); labels and headlines unchanged */
 .pd-s .pd-know:not(.pd-inj):not(.pd-also) p{color:#E4ECE7!important}.pd-s .pd-know li{margin-top:5px}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261115210000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261117160000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -2339,6 +2366,18 @@ html:not(.mp-guest) #s-gst{display:none!important}
     <div class="row" style="margin-top:12px">
       <input id="ccIn" inputmode="decimal" placeholder="Today’s balance (RD$)" autocomplete="off" aria-label="Current checking account balance">
       <button class="mini" type="button" id="ccSave" disabled>Update balance</button>
+    </div>
+    <button class="mini" type="button" id="mvOpen" style="margin-top:10px">Move money between accounts</button>
+    <div id="mvBox" hidden style="margin-top:10px">
+      <div class="row">
+        <select id="mvDir" aria-label="Direction"><option value="pb">Popular → BHD</option><option value="bp">BHD → Popular</option></select>
+        <input id="mvAmt" inputmode="decimal" placeholder="Amount (RD$)" autocomplete="off" aria-label="Amount to move">
+      </div>
+      <div class="row" style="margin-top:8px">
+        <input id="mvDate" type="date" aria-label="Date of the move">
+        <button class="mini" type="button" id="mvSave" disabled>Save move</button>
+      </div>
+      <div class="hint" style="margin-top:6px">Not spending, not income. Only the two balances change.</div>
     </div>
     <ul class="hist" id="ccHist" style="margin-top:8px" hidden></ul>
     <script>document.getElementById("ccBox").addEventListener("click",()=>{const h=document.getElementById("ccHist");h.hidden=!h.hidden;});</script>
@@ -2724,7 +2763,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
   <div class="toast" id="toast" role="status" aria-live="polite"><span class="tk" aria-hidden="true">✓</span><div><b id="toastT"></b><small id="toastS"></small></div><button type="button" class="tundo" id="toastUndo" hidden>Undo</button></div>
 
   <button type="button" class="palbtn" id="palBtn" aria-label="Settings" aria-expanded="false"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg></button>
-  <div class="palette palsheet" id="palSheet" hidden><span>Look</span><div class="seg" role="group" aria-label="Colors"><button type="button" data-pal="goyards" aria-pressed="false">Green</button><button type="button" data-pal="goyardt" aria-pressed="false">Brown</button><button type="button" data-pal="goyardl" aria-pressed="false">Cream</button></div><button type="button" class="mini" id="sfToggle" hidden>Face ID lock: Off</button></div>
+  <div class="palette palsheet" id="palSheet" hidden><span>Look</span><div class="seg" role="group" aria-label="Colors"><button type="button" data-pal="goyards" aria-pressed="false">Green</button><button type="button" data-pal="goyardt" aria-pressed="false">Brown</button><button type="button" data-pal="goyardl" aria-pressed="false">Cream</button></div><button type="button" class="mini" id="sfToggle" hidden>Face ID lock: Off</button><div id="curRow"><span>Show amounts in</span><div class="seg" role="group" aria-label="Currency"><button type="button" data-cur="DOP" aria-pressed="false">RD$</button><button type="button" data-cur="USD" aria-pressed="false">US$</button></div><div class="hint" id="curNote"></div></div></div>
 
   <div class="notice" id="notice">This view can’t save data. Open the tracker from your Claude account to log transactions.</div>
 </main>
@@ -2741,8 +2780,8 @@ html:not(.mp-guest) #s-gst{display:none!important}
     window.__mpSetPal = p => { if(!p || p===document.documentElement.getAttribute("data-palette") || !document.querySelector('[data-pal="'+p+'"]')) return; set(p); try{ renderChart(); renderBars(); }catch(e){} try{ render(); }catch(e){} };
     document.querySelectorAll("[data-pal]").forEach(b => b.onclick = () => { set(b.dataset.pal); try{ renderChart(); renderBars(); }catch(e){} try{ render(); }catch(e){} try{ if(db) db.doc("prefs/ui").set({pal:b.dataset.pal, at:Date.now()}); }catch(e){} });
   })();
-  const fmt = n => "RD$" + Math.round(n).toLocaleString("en-US");
-  const kfmt = n => n>=1e6 ? (n/1e6).toLocaleString("en-US",{maximumFractionDigits:2})+"M" : n>=1000 ? (n/1000).toLocaleString("en-US",{maximumFractionDigits:1})+"k" : String(n);
+  const fmt = n => PCUR.money(n);
+  const kfmt = n => PCUR.short(n);
   const $ = id => document.getElementById(id);
   const LABELS = {"Apuestas":"Sports bets","Premio casino":"Arcade","Saldo inicial":"Starting balance","Rakeback de la liga":"League rakeback","Póker jugando":"League Action","Mensualidad":"Monthly allowance","Préstamo":"Loan","Otro":"Other","Rakeback como jugador":"Player rakeback","Póker casino":"Outside Tables","Póker con amigos":"Home games","Retiro":"Withdrawal","Reposición":"Replacement"};
   const WHY = [["gasto","Expense"],["emergencia","Emergency"],["corriente","Moved to checking account"],["negocio","Business or investment"],["poker","League poker loss or buy-in"],["poker_casino","Outside Tables loss"],["poker_amigos","Home game loss"],["apuesta","Sports bet"],["arcade","Arcade"],["favor","Favor"],["efectivo","Cash"],["otro","Other"]];
@@ -3283,11 +3322,11 @@ html:not(.mp-guest) #s-gst{display:none!important}
     const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT), nodes = []; let n;
     while((n = w.nextNode())) if(/\d/.test(n.nodeValue)) nodes.push([n, n.nodeValue]);
     if(!nodes.length) return;
-    const t0 = performance.now(), dur = 800;
+    const t0 = performance.now(), dur = 1000;
     const fmtLike = (m, k) => { const dec = (m.split(".")[1]||"").length, v = parseFloat(m.replace(/,/g,""))*k;
       return m.includes(",") ? v.toLocaleString("en-US",{minimumFractionDigits:dec,maximumFractionDigits:dec}) : v.toFixed(dec); };
     (function step(now){
-      const k = Math.min(1,(now-t0)/dur), e = 1-Math.pow(1-k,3);
+      const k = Math.min(1,(now-t0)/dur), e = 1-Math.pow(1-k,4);
       for(const [node, orig] of nodes){ if(!node.isConnected) continue; node.nodeValue = k>=1 ? orig : orig.replace(/\d[\d,]*(\.\d+)?/g, m => fmtLike(m, e)); }
       if(k<1) requestAnimationFrame(step);
     })(t0);
@@ -4025,6 +4064,17 @@ html:not(.mp-guest) #s-gst{display:none!important}
     showTab("loans"); render();
     setTimeout(()=>{ const inp=document.querySelector('#debtPeople .editbox input[data-k="monto"]'); if(inp){ inp.scrollIntoView({behavior:"smooth", block:"center"}); inp.focus({preventScroll:true}); } }, 50);
   }
+
+  // camera / typed note says someone paid: open their payment box right away, amount filled in (Marco Nov 16: no "within the hour" queue)
+  window.__patoPay = (who, amt, date, toSav) => {
+    const sq = x => norm(x).replace(/[^a-z0-9]/g,""), k = sq(who);
+    const hit = n => { const x = sq(n); return k.length>=3 && x.length>=3 && (k.includes(x) || x.includes(k) || norm(who).split(/\s+/)[0]===norm(n).split(/\s+/)[0]); };
+    const ls = loans.filter(l=>!l.pagado && l.monto>0 && hit(l.nombre)).sort((a,b)=>String(a.fecha||"9").localeCompare(String(b.fecha||"9")));
+    if(ls.length){ showTab("loans"); collectLoan(ls[0]); if(amt>0) $("colAmt").value = Math.round(Math.min(amt, loanRemaining(ls[0]))).toLocaleString("en-US"); return true; }
+    const d = (config.deudas||[]).find(x=>hit(x.nombre) && x.total-paidTo(x.nombre)>0.5);
+    if(d){ openDebtPay(d.nombre, date, amt, !!toSav); return true; }
+    return false;
+  };
 
   // ---------- trust score ----------
   const norm = x => String(x||"").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
@@ -4772,7 +4822,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
         const NOTREG = new Set([...NOPOKER, "Saldo inicial", "Préstamo", "Reposición", "Retiro"]);
         const inK = k => d => (d||"").slice(0,7)===k;
         const gm = k => entries.filter(e=>NOPOKER.has(e.source) && inK(k)(e.date)).reduce((s,e)=>s+(e.type==="out"?-e.amount:e.amount),0);   // only what moved through savings
-        const regIn = k => entries.filter(e=>e.type!=="out" && !NOTREG.has(e.source) && inK(k)(e.date)).reduce((s,e)=>s+e.amount,0) + interestBy(inK(k), "ahorro");
+        const regIn = k => entries.filter(e=>e.type!=="out" && !e.traslado && !NOTREG.has(e.source) && inK(k)(e.date)).reduce((s,e)=>s+e.amount,0) + interestBy(inK(k), "ahorro");
         const fk = [1,2,3].map(i => { const d = new Date(+mk.slice(0,4), +mk.slice(5,7)-1-i, 1); return d.getFullYear()+"-"+pad(d.getMonth()+1); })
                     .filter(k => entries.some(e=>inK(k)(e.date) && e.source!=="Saldo inicial"))   // finished months with data
                     .filter((k,i,a) => !spend.length || spend.some(t=>!t.excluded && (t.date||"").slice(0,7)===k) || !a.some(x=>spend.some(t=>!t.excluded && (t.date||"").slice(0,7)===x)));   // with spending tracked, only months it covers
@@ -5251,6 +5301,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
       const rp = isSpend(e) ? repuestoDe(e.id) : 0, rw = e.source===REP && e.repone ? entries.find(x=>x.id===e.repone) : null;
       // row shows only the label, the short date and the amount; the details open on tap
       li.querySelector(".meta").textContent = fmtDate(e.date,false);
+      if(!(window.MP_ME && !window.MP_ME.owner)){ const bk = document.createElement("span"); bk.className = "bk bk-bhd"; bk.textContent = "BHD"; li.querySelector(".meta").appendChild(bk); }
       const extra = [useNote ? why : "", useNote && sn===e.note ? "" : (e.note || ""), rw ? `Puts back the ${fmtDate(rw.date,false)} ${rw.motivo ? whyLbl(rw.motivo).toLowerCase() : "withdrawal"}` : "",
         e.cubierto ? "Covered" : rp>0 ? (rp>=e.amount-0.5 ? "Put back in full" : `${fmt(rp)} put back`) : ""].filter(Boolean).join(" · ");
       if(extra){ const dx=document.createElement("div"); dx.className="hdet"; dx.hidden=true; dx.textContent=extra; li.firstElementChild.appendChild(dx);
@@ -5282,6 +5333,31 @@ html:not(.mp-guest) #s-gst{display:none!important}
     $("ccSave").disabled = true;
     try{ await db.collection("corriente").add({saldo:v, date:today(), createdAt:Date.now()}); $("ccIn").value=""; toast("Balance updated", `Checking account: ${fmt(v)}`); }
     catch(e){ warnMsg("Couldn’t save the balance."); $("ccSave").disabled=false; }
+  };
+
+  // ---------- move money between own accounts (Popular checking <-> BHD savings), Marco Nov 16 ----------
+  // One savings entry with traslado:true (never income or spending) + a new checking balance = last balance -/+ amount.
+  // The bank sync matches these by amount and date (entries without a bhd/popular id), so nothing is counted twice.
+  $("mvOpen").onclick = () => { const b = $("mvBox"); b.hidden = !b.hidden; if(!b.hidden){ $("mvDate").value = today(); $("mvAmt").focus(); } };
+  $("mvAmt").addEventListener("input", ()=>{ $("mvSave").disabled = !db || !(parseAmt($("mvAmt").value) > 0); });
+  $("mvSave").onclick = async () => {
+    if(!db) return;
+    const amt = parseAmt($("mvAmt").value), toBhd = $("mvDir").value==="pb", date = $("mvDate").value || today();
+    if(!(amt>0)) return;
+    const last = [...corriente].sort((a,b)=>(b.date||"").localeCompare(a.date||"") || (b.createdAt||0)-(a.createdAt||0))[0];
+    const cc0 = last ? last.saldo : 0;
+    if(toBhd && amt > cc0 + 0.5 && !await sure(`Checking only shows ${fmt(cc0)}. Move ${fmt(amt)} anyway?`)) return;
+    $("mvSave").disabled = true;
+    try{
+      const now = Date.now(), batch = db.batch(), eRef = db.collection("entries").doc(), cRef = db.collection("corriente").doc();
+      batch.set(eRef, toBhd
+        ? {type:"in", source:"Otro", amount:amt, date, createdAt:now, note:"Moved from Popular checking", traslado:true, ccRef:cRef.id}
+        : {type:"out", source:"Retiro", motivo:"corriente", amount:amt, date, createdAt:now, note:"Moved to Popular checking", traslado:true, ccRef:cRef.id});
+      batch.set(cRef, {saldo: Math.max(0, cc0 + (toBhd ? -amt : amt)), date: date > (last&&last.date||"") ? date : today(), createdAt: now, move: (toBhd?-amt:amt), entryRef: eRef.id});
+      await batch.commit();
+      $("mvAmt").value = ""; $("mvBox").hidden = true;
+      toast("Money moved", `${fmt(amt)} · ${toBhd ? "Popular → BHD" : "BHD → Popular"}`, false, async () => { const u = db.batch(); u.delete(eRef); u.delete(cRef); await u.commit(); });
+    }catch(e){ warnMsg("Couldn’t save the move."); $("mvSave").disabled = false; }
   };
 
   // ---------- spending (checking account card + cash) ----------
@@ -5638,15 +5714,16 @@ html:not(.mp-guest) #s-gst{display:none!important}
     { let m = $("spMore"); if(!m){ m = document.createElement("div"); m.id = "spMore"; m.className = "hist-more"; $("spLedger").after(m); }
       m.innerHTML = ""; if(spAll > spN){ const b = document.createElement("button"); b.type = "button"; b.textContent = `View more (${spAll-spN})`; b.onclick = () => { window.__spShow = spN + 8; renderSpend(); }; m.appendChild(b); }
       if(spN > 8){ const b = document.createElement("button"); b.type = "button"; b.textContent = "Show less"; b.onclick = () => { window.__spShow = 8; renderSpend(); $("s-spledger").scrollIntoView({block:"start"}); }; m.appendChild(b); } }
+    const bankChip = t => { if(window.MP_ME && !window.MP_ME.owner) return ""; const b = t.fromSav || t.source==="bhd" ? "bhd" : (t.kind==="manual" && !t.fromSav) || t.kind==="cashin" || t.kind==="deposito" ? "" : "pop"; return b ? `<span class="bk bk-${b}">${b==="bhd"?"BHD":"Popular"}</span>` : ""; };
     $("spLedger").innerHTML = list.length ? list.map(t=>{
       const wallet = spIsCashOut(t)||spIsCashIn(t), inc = spIsIn(t), off = !spLive(t);
-      const tag = t.status!=="Aprobada" ? t.status : t.excluded ? "Not counted" : t.dupe ? "Possible double" : spIsManual(t) ? (t.fromSav ? "Paid from savings" : "Paid in cash") : spIsCashOut(t) ? (t.kept ? "ATM · you kept it" : "ATM · not counted as spent") : spIsCashIn(t) ? "Cash count" : spIsDep(t) ? "Cash deposited · not spending" : spIsTransfer(t) ? (t.own ? "To your own account" : "Transfer from checking") : inc ? "Money in" : "";
+      const tag = t.status!=="Aprobada" ? t.status : t.excluded ? "Not counted" : t.dupe ? "Possible double" : t.pend ? "Charge pending" : spIsManual(t) ? (t.fromSav ? "Paid from savings" : "Paid in cash") : spIsCashOut(t) ? (t.kept ? "ATM · you kept it" : "ATM · not counted as spent") : spIsCashIn(t) ? "Cash count" : spIsDep(t) ? "Cash deposited · not spending" : spIsTransfer(t) ? (t.own ? "To your own account" : "Transfer from checking") : inc ? "Money in" : "";
       const sel = (spIsCard(t)||spIsManual(t)||spIsTransfer(t)) ? `<span class="tag sp-cattag">${spEsc(spCat(t.cat))}</span>` : "";
       const fx = t.currency && t.currency!=="DOP" ? `<small>${t.currency} ${Number(t.amount).toFixed(2)} · approx.</small>` : "";
       const act = canEdit && t.status==="Aprobada" ? (spIsManual(t)||spIsCashIn(t)||spIsDep(t) ? `<button type="button" class="x" data-spdel="${spEsc(t.id)}">Delete</button>` : "") : "";
       const swL = canEdit && t.status==="Aprobada" ? (spIsManual(t)||spIsCashIn(t)||spIsDep(t) ? "Delete" : t.excluded ? "Count again" : "Remove") : "";
       const swR = canEdit && t.status==="Aprobada" && (spIsManual(t)||spIsCard(t)||spIsTransfer(t)) ? "Edit" : "";
-      return `<li class="${off?"off":""}${wallet?" wallet":""}" data-sw="${spEsc(t.id)}" data-swl="${swL}" data-swr="${swR}"><div class="sw-bg" aria-hidden="true"><span class="sw-e">${swR}</span><span class="sw-d">${swL}</span></div><div class="sw-in"><span class="d">${spDay(t.date)}</span><div style="min-width:0"><div class="m">${spEsc(t.merchant)}</div><div class="meta">${sel}${tag?`<span class="tag${/^Paid (from savings|in cash)$/.test(tag)?" soft":""}">${spEsc(tag)}</span>`:""}${act}</div></div><span class="a"${inc?' style="color:var(--green)"':""}>${wallet?"":inc?"+":"−"}${fmt(spAmt(t))}${fx}</span></div></li>`;
+      return `<li class="${off?"off":""}${wallet?" wallet":""}" data-sw="${spEsc(t.id)}" data-swl="${swL}" data-swr="${swR}"><div class="sw-bg" aria-hidden="true"><span class="sw-e">${swR}</span><span class="sw-d">${swL}</span></div><div class="sw-in"><span class="d">${spDay(t.date)}</span><div style="min-width:0"><div class="m">${spEsc(t.merchant)}</div><div class="meta">${bankChip(t)}${sel}${tag?`<span class="tag${/^Paid (from savings|in cash)$/.test(tag)?" soft":""}">${spEsc(tag)}</span>`:""}${act}</div></div><span class="a"${inc?' style="color:var(--green)"':""}>${wallet?"":inc?"+":"−"}${fmt(spAmt(t))}${fx}</span></div></li>`;
     }).join("") : `<li class="empty">${spend.length ? "No transactions here." : db ? "No purchases loaded yet." : "No connection to data."}</li>`;
     $("spLedger").querySelectorAll("[data-spcat]").forEach(s=>s.onchange=()=>spSetCat(s.dataset.spcat, s.value));
     $("spLedger").querySelectorAll("[data-spex]").forEach(b=>b.onclick=()=>{ const t=spend.find(x=>x.id===b.dataset.spex); if(t) spWrite(t.id,{excluded:!t.excluded}, t.excluded?"Counted again":"Removed from the totals", t.merchant); });
@@ -6311,6 +6388,10 @@ TRACKER DATA:
       return;
     }
     syncSave(); syncLoan(); syncDebt();
+    // data arrives from ~12 listeners at once when the app opens: draw the screen once for the burst, not once per listener (Nov 16)
+    let rT = 0, sT = 0;
+    const renderSoon = () => { if(rT) return; rT = setTimeout(() => { rT = 0; try{ render(); }catch(e){ console.error(e); } }, 40); };
+    const renderSpendSoon = () => { if(sT) return; sT = setTimeout(() => { sT = 0; try{ renderSpend(); }catch(e){ console.error(e); } }, 40); };
     db.doc("prefs/ui").onSnapshot(s => { try{ if(s.exists && s.data().pal) window.__mpSetPal(s.data().pal); }catch(e){} }, ()=>{});
     db.doc("config/main").onSnapshot(s => {
       if(s.exists){ const d=s.data(); config = {
@@ -6318,49 +6399,49 @@ TRACKER DATA:
         hitos:Array.isArray(d.hitos)&&d.hitos.length?d.hitos:[500000,650000,800000,1000000], fijos:Array.isArray(d.fijos)?d.fijos:[], inversiones:Array.isArray(d.inversiones)?d.inversiones:[], extraMensual:Number(d.extraMensual)||0, creada:d.creada||"", gastosMensuales:Number(d.gastosMensuales)||0, limiteMensual:Number(d.limiteMensual)||0, plazo:d.plazo||"", celebrados:Array.isArray(d.celebrados)?d.celebrados:[], insignias:Array.isArray(d.insignias)?d.insignias:null, recordarDias: d.recordarDias===undefined || d.recordarDias===null ? 2 : Number(d.recordarDias) }; }
       loaded.config = true; deriveEntries();
       buildSources();
-      render();
-      try{ renderSpend(); }catch(e){}
+      renderSoon();
+      renderSpendSoon();
     }, ()=>{});
     db.collection("entries").onSnapshot(snap => {
       entriesRaw = snap.docs.map(d => ({id:d.id, ...d.data(), amount:Number(d.data().amount)||0})); deriveEntries();
       loaded.entries = true;
-      render();
+      renderSoon();
     }, () => { $("hist").innerHTML = '<li class="empty">Couldn’t load transactions.</li>'; });
     db.collection("pokerOtra").onSnapshot(snap => {
       pokerOtra = snap.docs.map(d => ({id:d.id, ...d.data(), monto:Number(d.data().monto)||0}));
-      render();
+      renderSoon();
     }, ()=>{});
-    db.collection("bets").onSnapshot(snap => { bets = snap.docs.map(d => ({id:d.id, ...d.data()})); render(); }, ()=>{});
+    db.collection("bets").onSnapshot(snap => { bets = snap.docs.map(d => ({id:d.id, ...d.data()})); renderSoon(); }, ()=>{});
     db.collection("pagos").onSnapshot(snap => {
       pagos = snap.docs.map(d => ({id:d.id, ...d.data(), monto:Number(d.data().monto)||0}));
-      render();
+      renderSoon();
     }, ()=>{});
     db.collection("checkins").onSnapshot(snap => {
       checkins = {}; snap.docs.forEach(d => checkins[d.id] = d.data());
-      render();
+      renderSoon();
     }, ()=>{});
     db.collection("corriente").onSnapshot(snap => {
       corriente = snap.docs.map(d => ({id:d.id, ...d.data(), saldo:Number(d.data().saldo)||0}));
-      render();
+      renderSoon();
     }, ()=>{});
     db.collection("spend").onSnapshot(snap => {
       spend = snap.docs.map(d => ({id:d.id, ...d.data()})).filter(t => t.date);
-      try{ renderSpend(); }catch(e){ console.error(e); }
+      renderSpendSoon();
     }, () => { $("spLedger").innerHTML = '<li class="empty">Couldn’t load your spending.</li>'; });
     db.collection("receipts").onSnapshot(snap => { receipts = snap.docs.map(d => ({id:d.id, ...d.data()})); try{ renderReceipts(); }catch(e){} }, ()=>{});
-    db.doc("spendMeta/sync").onSnapshot(s => { spMeta = s.exists ? s.data() : null; try{ renderSpend(); }catch(e){} }, ()=>{});
-    db.doc("spendMeta/wallet").onSnapshot(s => { spWalletDoc = s.exists ? s.data() : null; try{ renderSpend(); }catch(e){} }, ()=>{});
-    db.doc("invest/ibkr").onSnapshot(s => { ibkr = s.exists ? s.data() : null; try{ render(); }catch(e){ console.error(e); } }, ()=>{});
+    db.doc("spendMeta/sync").onSnapshot(s => { spMeta = s.exists ? s.data() : null; renderSpendSoon(); }, ()=>{});
+    db.doc("spendMeta/wallet").onSnapshot(s => { spWalletDoc = s.exists ? s.data() : null; renderSpendSoon(); }, ()=>{});
+    db.doc("invest/ibkr").onSnapshot(s => { ibkr = s.exists ? s.data() : null; renderSoon(); }, ()=>{});
     db.collection("contactos").onSnapshot(snap => {
       contactos = {}; snap.docs.forEach(d => contactos[d.id] = d.data());
-      render();
+      renderSoon();
     }, ()=>{});
     db.collection("prestamos").onSnapshot(snap => {
       loans = snap.docs.map(d => { const x = d.data(); return {id:d.id, ...x, monto:Number(x.monto)||0, interes:Number(x.interes)||0,
         destino: x.destino || (x.cobradoA==="otro" ? "otra" : x.cobradoA==="ahorro" ? "ahorro" : undefined)}; });
       try{ const op = loans.filter(l => !l.pagado && l.monto > 0), td = new Date(Date.now()-4*3600e3).toISOString().slice(0,10), nx = op.filter(l => l.vence).map(l => l.vence).sort()[0];
         window.__patoFacts = Object.assign(window.__patoFacts||{}, {lentOut: Math.round(op.reduce((a,l) => a + l.monto, 0)), backOwed: Math.round(op.reduce((a,l) => a + l.monto*(1+(l.interes||0)/100), 0)), loansOpen: op.length, lateLoans: op.filter(l => l.vence && l.vence < td).length, nextDueDays: nx ? Math.round((Date.parse(nx)-Date.parse(td))/864e5) : null}); }catch(_){}   // Pato's take reads these (amounts only, never names)
-      render();
+      renderSoon();
     }, ()=>{});
   })();
 })();
@@ -6369,13 +6450,13 @@ TRACKER DATA:
 // Goyard refinement: shrink the "RD$" mark inside big amounts so the number reads first (text content stays the same)
 (function(){
   const SEL = ".pct,.home-top>b,.home-nw b,.pk-hero b,.srate-top b,.sp-big,.cel-card .big,.hito b,.home-tiles b,.stat b,.totals,.owsplit b,#pkAll,.hrow b,.home-nwline b,.owed b";
-  const RX = /RD\$/;
+  const RX = /RD\$|US\$/;
   function wrap(el){
     const w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT), hits = [];
     let n; while((n = w.nextNode())){ if(RX.test(n.nodeValue) && !(n.parentNode.classList && n.parentNode.classList.contains("cur"))) hits.push(n); }
     hits.forEach(t => {
-      const parts = t.nodeValue.split(/(RD\$)/), frag = document.createDocumentFragment();
-      parts.forEach(p => { if(!p) return; if(p==="RD$"){ const s=document.createElement("span"); s.className="cur"; s.textContent=p; frag.appendChild(s); } else frag.appendChild(document.createTextNode(p)); });
+      const parts = t.nodeValue.split(/(RD\$|US\$)/), frag = document.createDocumentFragment();
+      parts.forEach(p => { if(!p) return; if(p==="RD$"||p==="US$"){ const s=document.createElement("span"); s.className="cur"; s.textContent=p; frag.appendChild(s); } else frag.appendChild(document.createTextNode(p)); });
       t.parentNode.replaceChild(frag, t);
     });
   }
@@ -6833,6 +6914,27 @@ TRACKER DATA:
     try{ show(d || {}, tab); }catch(e){ console.error(e); toast(typed ? "Couldn’t understand that" : "Couldn’t read the photo", "Try again", true); }
   }
 
+  // a receipt saved before its bank charge (pend) joins the charge when the sync brings it in: same amount (1%), or up to 25% more
+  // (tip) at a place with a matching name, within 3 days. The charge keeps the receipt; the pending row is deleted.
+  var joining = {};
+  function joinPend(){
+    if(!db || !(window.MP_ME && window.MP_ME.owner)) return;
+    var wd = function(t){ return String(t||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").split(/[^a-z0-9]+/).filter(function(w){ return w.length >= 4; }); };
+    spend.filter(function(p){ return p.pend && p.kind === "consumo" && !p.excluded && !joining[p.id]; }).forEach(function(p){
+      var pa = Number(p.rd)||0, pw = wd(p.merchant); if(!(pa > 0)) return;
+      var m = spend.filter(function(x){
+        if(x.id === p.id || x.pend || x.kind !== "consumo" || x.excluded || x.receipt || x.status !== "Aprobada" || !x.date || joining["c" + x.id]) return false;
+        var a = Number(x.rd)||0; if(!(a > 0) || days(x.date, p.date) > 3) return false;
+        if(Math.abs(a - pa) <= Math.max(1, pa*0.01)) return true;
+        var xw = wd(x.merchant); return a > pa && a <= pa*1.25 && pw.some(function(w){ return xw.indexOf(w) >= 0; });
+      }).sort(function(x, y){ return Math.abs((Number(x.rd)||0) - pa) - Math.abs((Number(y.rd)||0) - pa) || days(x.date, p.date) - days(y.date, p.date); })[0];
+      if(!m) return;
+      joining[p.id] = 1; joining["c" + m.id] = 1;
+      var patch = {receipt:{merchant:String(p.merchant||"").slice(0,80), amount:pa, date:p.date}, note:"Receipt: " + String(p.merchant||"").slice(0,60)};
+      if(!m.userCat && p.cat && p.cat !== "other" && m.cat !== "errands") patch.cat = p.cat;
+      db.collection("spend").doc(m.id).update(patch).then(function(){ return db.collection("spend").doc(p.id).delete(); }).catch(function(e){ console.error(e); delete joining[p.id]; delete joining["c" + m.id]; });
+    });
+  }
   async function queue(d, note){ await db.collection("snaps").add({status:"pending", kind:d.kind, data:d, tab:curTab(), at:today(), ts:Date.now(), note:note||""}); }
 
   function show(d, tab){
@@ -6845,7 +6947,7 @@ TRACKER DATA:
       if(m) acts.push(["Save", async function(){ var patch = {receipt:{merchant:String(d.merchant||"").slice(0,80), amount:amt, date:dt}, note:"Receipt: " + String(d.merchant||"").slice(0,60)}; if(!m.userCat && cat !== "other" && m.cat !== "errands") patch.cat = cat; await db.collection("spend").doc(m.id).update(patch); toast("Receipt added", "Matched with your bank charge"); }]);
       else {
         var cash = async function(){ await db.collection("spend").add({date:dt, merchant:String(d.merchant||CATS[cat]).slice(0,80), amount:amt, currency:"DOP", rd:amt, kind:"manual", status:"Aprobada", cat:cat, source:"manual", excluded:false, ts:Date.now(), receipt:true}); toast(rd(amt) + " cash expense logged", CATS[cat]); };
-        var card = (window.MP_ME&&!window.MP_ME.owner) ? async function(){ await db.collection("spend").add({date:dt, merchant:String(d.merchant||CATS[cat]).slice(0,80), amount:amt, currency:"DOP", rd:amt, kind:"manual", status:"Aprobada", cat:cat, source:"manual", excluded:false, ts:Date.now(), receipt:true, card:true}); toast(rd(amt) + " expense logged", CATS[cat]); } : async function(){ await queue(d, "card charge not synced yet: attach to it, don’t add a new expense"); toast("Saved", "It joins the card charge when it comes in"); };
+        var card = (window.MP_ME&&!window.MP_ME.owner) ? async function(){ await db.collection("spend").add({date:dt, merchant:String(d.merchant||CATS[cat]).slice(0,80), amount:amt, currency:"DOP", rd:amt, kind:"manual", status:"Aprobada", cat:cat, source:"manual", excluded:false, ts:Date.now(), receipt:true, card:true}); toast(rd(amt) + " expense logged", CATS[cat]); } : async function(){ await db.collection("spend").add({date:dt, merchant:String(d.merchant||CATS[cat]).slice(0,80), amount:amt, currency:"DOP", rd:amt, kind:"consumo", status:"Aprobada", cat:cat, source:"manual", excluded:false, ts:Date.now(), receipt:true, pend:true, note:"Receipt logged before the bank charge came in"}); toast(rd(amt) + " logged", "Joins the card charge when it comes in"); };
         if(d.paid === "cash") acts.push(["Paid cash, save", cash], ["I paid by card", card]); else acts.push(["Paid by card, save", card], ["I paid cash", cash]);
       }
       open(html + buttons(acts)); wire(acts); return;
@@ -6880,7 +6982,9 @@ TRACKER DATA:
         toast(rd(own ? 0 : a) + " transfer logged", to); }; };
       if(out && tab !== "tab-loans"){ if(d.own) acts4.push(["To my own account, save", saveTr(true)], ["It was spending", saveTr(false)]); else acts4.push(["Save as spending", saveTr(false)], ["It went to my own account", saveTr(true)]); }
       if(false) acts4.push(["Fill the transfer form", async function(){ $("spTrAmt").value = a.toLocaleString("en-US"); $("spTrTo").value = String(d.person||"").slice(0,80); $("spTrDate").value = dt2; ["spTrAmt","spTrTo","spTrDate"].forEach(function(x){ $(x).dispatchEvent(new Event("input")); }); setTimeout(function(){ $("s-sptr").scrollIntoView({behavior:"smooth", block:"start"}); }, 50); toast("Check it and tap Log transfer", ""); }]);
-      acts4.push([tab === "tab-loans" ? (out ? "Save as a loan" : "Save as a payment") : out ? "It’s a loan" : "Save", async function(){ if((window.MP_ME&&!window.MP_ME.owner) && window.__gstTr){ window.__gstTr(d, tab, out); return; } await queue(d, tab === "tab-loans" ? (out ? "loan given" : "loan payment received") : ""); toast("Saved", "It’s added within the hour"); }]);
+      acts4.push([tab === "tab-loans" ? (out ? "Save as a loan" : "Save as a payment") : out ? "It’s a loan" : "Save", async function(){ if((window.MP_ME&&!window.MP_ME.owner) && window.__gstTr){ window.__gstTr(d, tab, out); return; }
+        if(window.__gstTr){ if(!out && window.__patoPay && window.__patoPay(d.person, a, dt2, /bhd/i.test(d.bank||""))) return; window.__gstTr(d, out ? tab : "tab-savings", out); return; }
+        await queue(d, tab === "tab-loans" ? (out ? "loan given" : "loan payment received") : ""); toast("Saved", "It’s added within the hour"); }]);
       open(html4 + buttons(acts4)); wire(acts4); return;
     }
     open('<h3>Couldn’t tell what this is</h3><p class="sub">' + esc(d.summary || "Try a clearer photo or screenshot.") + '</p><div class="bt"><button type="button" class="secondary" id="snapOk">OK</button></div>'); $("snapOk").onclick = close;
@@ -6889,7 +6993,7 @@ TRACKER DATA:
   if(!window.claude) return;
   window.claude.use("db").then(function(d){
     db = d; addKeyRow();
-    db.collection("spend").onSnapshot(function(s){ spend = s.docs.map(function(x){ var o = x.data(); o.id = x.id; return o; }); }, function(){});
+    db.collection("spend").onSnapshot(function(s){ spend = s.docs.map(function(x){ var o = x.data(); o.id = x.id; return o; }); try{ joinPend(); }catch(e){ console.error(e); } }, function(){});
     db.collection("bets").onSnapshot(function(s){ bets = s.docs.map(function(x){ return {id:x.id}; }); }, function(){});
   });
 })();
@@ -7421,7 +7525,7 @@ TRACKER DATA:
     CATS.forEach(function(c){ if(T.length < NT && c[0] !== "big" && c[0] !== "game" && T.indexOf(c[0]) < 0 && hasK(c[0])) T.push(c[0]); });   // always three topic stories (Marco Nov 14): if you picked fewer, Pato fills in
     if(MG()){ if(T.length > 4){ [[0, 1, 2, 3], [0, 1, 2, 4], [0, 1, 3, 4]][slot() % 3].forEach(function(ix2){ pairs.push(T[ix2]); }); } else T.slice(0, 4).forEach(function(k4){ pairs.push(k4); }); }   // up to 5 picks, 4 shown per drop: fixed pattern, top two every drop, every pick at least once a day
     else if(T.length){ if(T.length > 3){ var PAT = T.length >= 5 ? [[0, 1, 2], [0, 3, 1], [0, 2, 4]] : [[0, 1, 2], [0, 1, 3], [0, 2, 3]]; PAT[slot() % 3].forEach(function(ix2){ pairs.push(T[ix2]); }); } else T.slice(0, 3).forEach(function(k3){ pairs.push(k3); }); }   // pick up to 5 topics, each drop shows 3 of them: a fixed pattern by drop (7am/1pm/7pm), the top of your list shows most, every topic at least once a day (Marco Nov 14)
-    var ordOf = function(pi){ return MG() ? [3, 4, 8, 8.5][pi] : (pi === 2 ? 8 : 3 + pi); };
+    var ordOf = function(pi){ return MG() ? [3, 4, 5, 6][pi] : 3 + pi; };
     pairs.forEach(function(k, pi){ if(k === "startups" && MG()) return; var c = CATS[ix(k)], it = cats[k][0], h = k === "rd" && !FR.rd && sameEd && daily.take && daily.take.rd ? daily.take.rd : it.h;
       L.push({id: ed + ":" + k + ":" + it.h, ord: ordOf(pi), cls: k === "rd" ? "rd" : "", news: 1, t: c[1], w: ago(it.t) + " ago", u: it.u, pic: it.u, ph: it.h, ps: it.s, fk: k, sh: {k: c[1], h: h, s: it.s, u: it.u, kn: knowArr(k)}, body: '<div class="pd-k">' + esc((k === "tech" && /\b(AI|artificial intelligence|OpenAI|ChatGPT|chatbots?)\b/.test(it.h) ? "AI news" : c[1]).toUpperCase()) + '</div>' + (function(){ var N = hnm(h); return '<div class="pd-h1' + ((it.n || 0) >= 4 ? ' pd-hx' : '') + '">' + esc(N ? N.t : h) + '</div>' + (N ? '<div class="pd-m">Comment by <b>' + esc(N.n) + '</b></div>' : ''); })() + (h !== it.h ? '<div class="pd-m" style="font-style:italic">' + esc(it.h) + '</div>' : '') + '<div class="pd-m">' + by(it) + '</div>' +
         (autoSet.indexOf(k) >= 0 && why[k] ? '<div class="pd-m" style="font-style:italic">Added by Pato because ' + why[k] + '.</div>' : '') + (kfBox(it) || plain(it) || know(k)) + jgBox(it) + fyBox(notes[k] || (ownT(it) + (it.fy || "")))}); });
@@ -7465,7 +7569,7 @@ TRACKER DATA:
           kfBox(LS) + (LS.sec ? (LS.pl ? kp(LS.pl) : "") + LS.sec.map(function(x){ return '<div class="pd-know"><i>' + esc(x[0]) + '</i>' + kp(x[1]) + '</div>'; }).join("") : (LS.pl ? '<div class="pd-know"><i>' + (ceo ? "WHAT THIS SHOWS" : "WHAT IT IS ABOUT") + '</i>' + kp(LS.pl) + '</div>' : '')) + jgBox(LS) + fyBox(ownT(LS) + (LS.fy || ""))}); }
     // no Daily Duel (Marco Nov 14)
     var cq = null, cs = callSt(); if(cq && !(cs && cs.q === cq.id && $("pdV").hidden)) L.push({id: ed + ":call:" + cq.id, cls: "call", t: CALL, w: "today's money question", call: cq, body: ""});
-    L.forEach(function(x, i){ x._i = i; x._o = x.cls === "take" ? 1 : x.fk === "big" ? 2 : x.fk === "preds" ? 5 : x.fk === "cotd" ? (x.ord || 6) : x.fk === "game" ? 7 : x.fk === "last" ? 9 : x.ord || 4; });
+    L.forEach(function(x, i){ x._i = i; x._o = x.cls === "take" ? 1 : x.fk === "big" ? 2 : x.fk === "preds" ? 7 : x.fk === "cotd" ? (x.ord || 6) : x.fk === "game" ? 8 : x.fk === "last" ? 9 : x.ord || 4; });
     L.sort(function(a, b){ return (a._o - b._o) || (a._i - b._i); });   // Marco Nov 14: take, breaking, topic 1, topic 2, predictions, company of the day, sports, topic 3, founder story
     L.forEach(function(x){ var src = x.fk === "big" ? big : x.fk && cats[x.fk] && cats[x.fk][0]; var mk = src && src.mk; if(!mk || !x.news) return;
       x.body += '<a class="pd-r2 pd-mk" data-u="' + esc(mk.u) + '"><span>🔮 MARKET ODDS</span><b>' + mk.p + '%</b> ' + esc(mk.q) + (mk.end ? ' <small>· by ' + esc(dlabel(mk.end)) + '</small>' : '') + '</a>'; });
@@ -7677,13 +7781,13 @@ TRACKER DATA:
   function pic(u, cb, h){ if(!u || !base() || !PHOTOS() || (u in IM.m)) return; IM.m[u] = null; pend++;
     fetch(base() + "/img?u=" + encodeURIComponent(u) + (h ? "&h=" + encodeURIComponent(h) : "")).then(function(r){ return r.ok ? r.json() : {}; }).then(function(d){ IM.m[u] = (d && d.img) || ""; pre(IM.m[u]); pend--; if(IM.m[u]) ls("pd-img3", {day: IM.day, m: Object.keys(IM.m).reduce(function(o, k){ if(IM.m[k]) o[k] = IM.m[k]; return o; }, {})}); if(cb) cb(); }).catch(function(){ if(ND()){ IM.m[u] = ""; pend--; if(cb) cb(); } else { delete IM.m[u]; pend--; } }); }
   window.__pdSwap = function(img){ var p = img && img.parentNode; if(!p) return; if(p.getAttribute("data-vis")) p.outerHTML = p.getAttribute("data-vis"); else p.remove(); };
-  setInterval(function(){ try { [].slice.call(document.querySelectorAll(".pd-img:not(.pd-vis) > img")).forEach(function(im){ var t = Number(im.getAttribute("data-t") || 0) || Date.now(); im.setAttribute("data-t", t); if((im.complete && im.naturalWidth === 0) || (!im.complete && Date.now() - t > 6000)) __pdSwap(im); }); } catch(e){} }, 1500);   // a photo that never loads is swapped for the logo/visual (Marco Nov 14: no blank area)
+  setInterval(function(){ try { [].slice.call(document.querySelectorAll(".pd-img:not(.pd-vis) > img")).forEach(function(im){ var t = Number(im.getAttribute("data-t") || 0) || Date.now(); im.setAttribute("data-t", t); if((im.complete && im.naturalWidth === 0) || (!im.complete && Date.now() - t > 25000)) __pdSwap(im); }); } catch(e){} }, 1500);   // a photo that never loads is swapped for the logo/visual (Marco Nov 14: no blank area)
   function logoOf(x){ if(x.logo) return x.logo; var t = Object.keys(CO).filter(function(t){ return t !== "VUAA" && CO[t].test(x.ph || ""); })[0]; return t ? "https://assets.parqet.com/logos/symbol/" + t + "?format=png" : ""; }
   function vmHtml(x){ var lg = logoOf(x), em = String(x.nav || "\uD83E\uDD86").split(" ")[0]; return '<div class="pd-vm">' + (lg ? '<span class="pd-vlg"><img src="' + esc(lg) + '" alt="" onerror="this.parentNode.outerHTML=\'<span class=pd-vem>' + esc(em) + '</span>\'"></span>' : '<span class="pd-vem">' + esc(em) + '</span>') + '</div>'; }
   function visHtml(x){ var lg = logoOf(x), em = String(x.nav || "🦆").split(" ")[0];   // no photo? the company logo or a visual that adds to the story, never plain text (Marco Nov 14)
     return '<div class="pd-img pd-vis"><div class="pd-vm">' + (lg ? '<span class="pd-vlg"><img src="' + esc(lg) + '" alt="" onerror="this.parentNode.outerHTML=\'<span class=pd-vem>' + esc(em) + '</span>\'"></span>' : '<span class="pd-vem">' + esc(em) + '</span>') + '</div>' + (x.ps ? '<span>' + esc(x.ps) + '</span>' : '') + '</div>'; }
-  function picHtml(x){ var raw = PHOTOS() && x.pic ? IM.m[x.pic] : "", im = raw, ix0 = S.indexOf(x), dup = false; if(im && S.some(function(y, j){ return j < ix0 && y.pic && IM.m[y.pic] === im; })){ dup = true; im = ""; }   // never the same photo twice
-    if(im) return '<div class="pd-img"' + (x.news || ND() ? ' data-vis="' + esc(visHtml(x)) + '"' : '') + '><div class="pd-bk">' + vmHtml(x) + '</div><img src="' + esc(im) + '" alt="" style="opacity:0;transition:opacity .35s" referrerpolicy="no-referrer" onerror="__pdSwap(this)" onload="if(this.naturalWidth<800||this.naturalHeight<450)__pdSwap(this);else this.style.opacity=1">' + (x.ps ? '<span>' + esc(x.ps) + '</span>' : '') + '</div>';
+  function picHtml(x){ var raw = PHOTOS() && x.pic ? IM.m[x.pic] : "", im = raw, ix0 = S.indexOf(x), dup = false;    // never the same photo twice
+    if(im) return '<div class="pd-img"' + (x.news || ND() ? ' data-vis="' + esc(visHtml(x)) + '"' : '') + '><div class="pd-bk">' + vmHtml(x) + '</div><img src="' + esc(im) + '" alt="" style="opacity:0;transition:opacity .35s" referrerpolicy="no-referrer" onerror="__pdSwap(this)" onload="if(this.naturalWidth<300||this.naturalHeight<170)__pdSwap(this);else this.style.opacity=1">' + (x.ps ? '<span>' + esc(x.ps) + '</span>' : '') + '</div>';
     return x.news && (!x.pic || !PHOTOS() || raw === "" || dup) ? visHtml(x) : ''; }
   var lastBase = null, NEW = {};   // what was unread when you opened: those chips get a dot, the slide gets a NEW tag
   function show(i){
@@ -7813,18 +7917,19 @@ TRACKER DATA:
 })();
 </script>
 <script id="stakd-setpage-js">(function(){
-  var NAMES = {look:["🎨","Look"], faceid:["🔒","Face ID"], alerts:["🔔","Alerts"], daily:["🦆","Pato Daily"], camera:["📷","Camera"], tabs:["🗂️","Tabs & account"], more:["⋯","More"]};
-  var ORDER = ["look","faceid","alerts","daily","camera","tabs","more"];
+  var NAMES = {look:["🎨","Look"], faceid:["🔒","Face ID"], alerts:["🔔","Alerts"], daily:["🦆","Pato Daily"], camera:["📷","Camera"], tabs:["🗂️","Tabs & account"], currency:["💱","Currency"], more:["⋯","More"]};
+  var ORDER = ["look","faceid","alerts","daily","camera","tabs","currency","more"];
   var $ = function(id){ return document.getElementById(id); };
   function key(c){
     if(c.classList.contains("sp-hd") || c.classList.contains("sp-list")) return null;
     if(c.id === "sfToggle") return "faceid"; if(c.id === "alWrap") return "alerts"; if(c.id === "snapKeyRow") return "camera";
-    if(c.id === "pdTopics") return "daily"; if(c.id === "sgTabs") return "tabs";
+    if(c.id === "curRow") return "currency"; if(c.id === "pdTopics") return "daily"; if(c.id === "sgTabs") return "tabs";
     if(c.classList.contains("seg") || (c.tagName === "SPAN" && /look/i.test(c.textContent))) return "look";
     return "more";
   }
   function val(k, sh){
     if(k === "look"){ var b = sh.querySelector('[data-pal][aria-pressed="true"]'); return b ? b.textContent.trim() : ""; }
+    if(k === "currency"){ return window.PCUR && PCUR.usd() ? "US$" : "RD$"; }
     if(k === "faceid"){ var t = ($("sfToggle")||{}).textContent || ""; return /on/i.test(t.split(":").pop()) ? "On" : "Off"; }
     return "";
   }
@@ -7849,6 +7954,11 @@ TRACKER DATA:
     var sh = $("palSheet"); if(!sh) return; sh.classList.add("full");
     new MutationObserver(function(){ if(!sh.hidden){ if(!sh.hasAttribute("data-sec")) build(); } else sh.removeAttribute("data-sec"); }).observe(sh, {attributes:true, attributeFilter:["hidden"]});
     new MutationObserver(function(){ if(!sh.hidden && !sh.hasAttribute("data-sec")) build(); }).observe(sh, {childList:true});
+    var cr = $("curRow"); if(cr && window.PCUR){
+      var on = PCUR.usd() ? "USD" : "DOP";
+      cr.querySelectorAll("[data-cur]").forEach(function(x){ x.setAttribute("aria-pressed", String(x.dataset.cur === on)); x.onclick = function(e){ e.stopPropagation(); if(x.dataset.cur !== on) PCUR.set(x.dataset.cur); }; });
+      var nt = $("curNote"); if(nt) nt.textContent = "1 US$ = RD$" + PCUR.rate.toFixed(2) + (PCUR.src === "today" ? " · today" : PCUR.src === "saved" ? " · " + PCUR.at : " · estimate");
+    }
     build();
   }
   if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
@@ -7883,5 +7993,213 @@ TRACKER DATA:
   }
   if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
 })();</script>
+<style id="pk-motion-css">
+/* Pato motion + new duck (Nov 17). Everything is off for "reduce motion". */
+.pduck{overflow:visible}
+.pduck .pk-all,.pduck .pk-head,.pduck .pk-lo,.pduck .pk-ey,.pduck .pk-brow,.pduck .pk-eye{transform-box:fill-box}
+.pduck .pk-all{transform-origin:50% 100%}
+.pduck .pk-head{transform-origin:60% 95%;transition:transform .45s cubic-bezier(.3,1.5,.5,1)}
+.pduck .pk-lo{transform-origin:100% 10%}
+.pduck .pk-ey,.pduck .pk-brow{transform-origin:center;transition:transform .25s ease}
+.pduck .pk-eye{transform:translate(var(--lx,0px),var(--ly,0px));transition:transform .35s cubic-bezier(.3,1.4,.5,1)}
+.pduck .pk-joy,.pduck .pk-brow{display:none}
+.pduck .pk-bgl{display:none}
+html[data-palette="goyardl"] .pduck .pk-bgd{display:none}
+html[data-palette="goyardl"] .pduck .pk-bgl{display:inline}
+.pduck.blink .pk-ey{animation:pkBlink .2s ease-in-out}
+@keyframes pkBlink{50%{transform:scaleY(.08)}}
+.pduck.joy .pk-ey{display:none}
+.pduck.joy .pk-joy{display:inline}
+.pduck.worry .pk-brow,.pduck.sad .pk-brow{display:inline;transform:rotate(16deg) translate(1px,1px)}
+.pduck.worry .pk-ey,.pduck.sad .pk-ey{transform:scaleY(.82) translateY(1.5px)}
+.pduck.sad .pk-head{transform:rotate(-7deg) translateY(2px)}
+.pduck.quack .pk-lo{animation:pkQuack .55s ease}
+@keyframes pkQuack{25%,65%{transform:rotate(-16deg)}45%{transform:rotate(-6deg)}}
+.pduck.hop .pk-all{animation:pkHop .7s cubic-bezier(.3,1.3,.5,1)}
+@keyframes pkHop{0%{transform:none}25%{transform:translateY(-12%) scale(1.03,.98)}50%{transform:translateY(0) scale(1.07,.9)}72%{transform:scale(.97,1.04)}100%{transform:none}}
+.pduck.nod .pk-head{animation:pkNod .6s ease}
+@keyframes pkNod{30%{transform:rotate(-9deg)}65%{transform:rotate(4deg)}}
+.pduck.flinch .pk-all{animation:pkFlinch .5s ease}
+@keyframes pkFlinch{20%{transform:translateX(3%) rotate(3deg)}45%{transform:translateX(-2%) rotate(-2deg)}70%{transform:translateX(1%)}}
+.pk-av{display:inline-block;flex:none;line-height:0}
+.pk-av svg{width:100%;height:100%;display:block}
+.pato-pill .pk-av{width:26px;height:26px;border-radius:8px;overflow:hidden}
+.toast .tk.pk-tk{width:40px;height:40px;background:none;border-radius:50%;overflow:hidden;font-size:0}
+.toast.on .tk.pk-tk{animation:pkTkIn .6s .08s cubic-bezier(.3,1.6,.5,1) both}
+@keyframes pkTkIn{from{transform:scale(.3) translateY(8px);opacity:0}to{transform:none;opacity:1}}
+.toast{transition:transform .5s cubic-bezier(.22,1.25,.36,1),opacity .3s}
+
+/* screens: slide in from the side you are going, cards rise one after another */
+html.pk-m .tabp:not([hidden]){animation:none}
+html.pk-m .tabp.pk-enter{animation:pkTabF .46s cubic-bezier(.22,1,.36,1) backwards}
+html.pk-m[data-pkdir="b"] .tabp.pk-enter{animation-name:pkTabB}
+@keyframes pkTabF{from{opacity:0;transform:translateX(28px)}}
+@keyframes pkTabB{from{opacity:0;transform:translateX(-28px)}}
+html.pk-m .tabp.pk-enter>*{animation:pkRise .5s cubic-bezier(.22,1,.36,1) backwards}
+html.pk-m .tabp.pk-enter>:nth-child(2){animation-delay:.04s}
+html.pk-m .tabp.pk-enter>:nth-child(3){animation-delay:.08s}
+html.pk-m .tabp.pk-enter>:nth-child(4){animation-delay:.12s}
+html.pk-m .tabp.pk-enter>:nth-child(5){animation-delay:.16s}
+html.pk-m .tabp.pk-enter>:nth-child(6){animation-delay:.2s}
+html.pk-m .tabp.pk-enter>:nth-child(n+7){animation-delay:.24s}
+@keyframes pkRise{from{opacity:0;transform:translateY(14px) scale(.985)}}
+
+/* tab bar: the highlight glides to the tab you tap, the icon pops */
+.tabs .pk-gl{position:absolute;left:0;top:0;width:0;height:0;z-index:0;pointer-events:none;opacity:0;will-change:transform}
+.tabs.pk-gl-on .pk-gl{opacity:1}
+.tabs.pk-gl-run .pk-gl{transition:transform .5s cubic-bezier(.3,1.25,.45,1),width .5s cubic-bezier(.3,1.25,.45,1),height .3s}
+.tabs.pk-gl-on>button:not(#snapBtn){position:relative;z-index:1}
+.tabs.pk-gl-on>button[aria-selected="true"],.tabs.pk-gl-on>button.on{background:transparent!important;box-shadow:none!important}
+html.pk-m .tabs button[aria-selected="true"] svg{animation:pkIco .5s cubic-bezier(.3,1.7,.5,1)}
+@keyframes pkIco{0%{transform:scale(.7) translateY(2px)}60%{transform:scale(1.15) translateY(-1px)}100%{transform:none}}
+
+/* taps: press in, spring back */
+html.pk-m .pk-pr{transform:scale(var(--pk-s,.95))!important;transition:transform .12s ease-out!important}
+html.pk-m .pk-rl{animation:pkRel .45s cubic-bezier(.3,1.6,.5,1)}
+@keyframes pkRel{from{transform:scale(var(--pk-s,.95))}to{transform:none}}
+
+/* numbers that change: a soft glow, green up, red down */
+.pk-up{animation:pkUp 1.2s ease-out}
+.pk-dn{animation:pkDn 1.2s ease-out}
+@keyframes pkUp{0%,30%{text-shadow:0 0 18px rgba(95,200,140,.75)}100%{text-shadow:none}}
+@keyframes pkDn{0%,30%{text-shadow:0 0 18px rgba(230,90,80,.7)}100%{text-shadow:none}}
+
+@media (prefers-reduced-motion: reduce){.pduck *{animation:none!important;transition:none!important}.toast.on .tk.pk-tk{animation:none}.tabs.pk-gl-run .pk-gl{transition:none}}
+</style>
+<script id="pk-motion-js">
+(function(){
+  // ---------- the new Pato duck (Nov 17): one sharp vector drawing, alive (blinks, looks at your taps, reacts to saves) ----------
+  var RM = function(){ try{ return matchMedia("(prefers-reduced-motion: reduce)").matches; }catch(e){ return false; } };
+  var N = 0;
+  var DEFS = '<radialGradient id="H#" cx=".4" cy=".28" r=".85"><stop offset="0" stop-color="#5CC292"/><stop offset=".4" stop-color="#249062"/><stop offset="1" stop-color="#0C4A31"/></radialGradient>' +
+    '<linearGradient id="N#" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#146243"/><stop offset="1" stop-color="#0E4C33"/></linearGradient>' +
+    '<radialGradient id="C#" cx=".35" cy=".2" r=".9"><stop offset="0" stop-color="#C98B5C"/><stop offset=".6" stop-color="#9A5C35"/><stop offset="1" stop-color="#6B3A20"/></radialGradient>' +
+    '<linearGradient id="W#" x1="0" y1="0" x2=".6" y2="1"><stop offset="0" stop-color="#F4F5F0"/><stop offset="1" stop-color="#AEB4AA"/></linearGradient>' +
+    '<linearGradient id="B#" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#FFDA75"/><stop offset="1" stop-color="#F29A2C"/></linearGradient>' +
+    '<linearGradient id="L#" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#E9922B"/><stop offset="1" stop-color="#C66F17"/></linearGradient>' +
+    '<linearGradient id="G#" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#3B7258"/><stop offset="1" stop-color="#122E20"/></linearGradient>' +
+    '<linearGradient id="P#" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#FBF8F0"/><stop offset="1" stop-color="#E9E2D2"/></linearGradient>';
+  var BODY = '<g class="pk-all">' +
+    '<path d="M30 140 C26 112 40 94 62 90 L88 90 C110 94 122 114 119 140 Z" fill="url(#C#)"/>' +
+    '<path d="M78 106 C94 98 114 106 118 124 C119.5 131 119 136 118 140 L84 140 C77 129 74 116 78 106 Z" fill="url(#W#)"/>' +
+    '<path d="M87 113 C97 110 107 114 112 121 M85 123 C95 120 105 124 110 132" stroke="#8F968B" stroke-width="1.6" fill="none" stroke-linecap="round" opacity=".55"/>' +
+    '<path d="M48 64 C45 78 47 88 52 94 L94 94 C98 84 98 72 93 60 Z" fill="url(#N#)"/>' +
+    '<path d="M50 89 Q72 96 95 89 L95 95 Q72 102 51 95 Z" fill="#F8F5EC"/>' +
+    '<g class="pk-head">' +
+      '<path class="pk-lo" d="M50 58 C40 62 26 64 16 63 C15 66 19 69 27 69.5 C38 70 47 67 52 63 Z" fill="url(#L#)"/>' +
+      '<path d="M50 45 C40 45 26 48 17 52 C10 55 9 59 13 61 C24 64 40 63 52 60 Z" fill="url(#B#)"/>' +
+      '<path d="M14 60.5 C25 63 39 62 50 59.5" stroke="#C9741D" stroke-width="1.2" fill="none" opacity=".8"/>' +
+      '<ellipse cx="25" cy="52.6" rx="2.3" ry="1.1" fill="#B9661B" transform="rotate(-10 25 52.6)"/>' +
+      '<circle cx="71" cy="49" r="30" fill="url(#H#)"/>' +
+      '<ellipse cx="64" cy="31" rx="11" ry="5.5" fill="#fff" opacity=".14" transform="rotate(-22 64 31)"/>' +
+      '<g class="pk-eye"><g class="pk-ey"><circle cx="58" cy="41" r="6.4" fill="#0B0D0C"/><circle cx="56" cy="38.8" r="2.2" fill="#fff"/><circle cx="60" cy="43.4" r="1" fill="#fff" opacity=".65"/></g>' +
+      '<path class="pk-joy" d="M51.5 43 Q58 34.5 64.5 43" stroke="#0B0D0C" stroke-width="2.8" fill="none" stroke-linecap="round"/>' +
+      '<path class="pk-brow" d="M50 33 Q57 29.5 64 31" stroke="#0A3A26" stroke-width="2.6" fill="none" stroke-linecap="round"/></g>' +
+    '</g></g>';
+  // o.bust = head-and-chest square (avatars), o.flip = face right like the app icon, o.bg = tile behind it, o.img = standalone file for an <img> (blinks by itself)
+  function svg(o){ o = o || {}; var u = "pk" + (++N) + "_", vb = o.bust ? "4 6 100 100" : "0 0 120 140";
+    var bg = o.bg ? '<rect class="pk-bgd" x="4" y="6" width="100" height="100" fill="url(#G#)"/><rect class="pk-bgl" x="4" y="6" width="100" height="100" fill="url(#P#)"/>' : "";
+    var body = o.flip ? '<g transform="translate(108 0) scale(-1 1)">' + BODY + '</g>' : BODY;
+    var st = o.img ? '<style>.pk-joy,.pk-brow' + (o.bg === "dark" ? ",.pk-bgl" : o.bg === "light" ? ",.pk-bgd" : "") + '{display:none}.pk-ey{transform-box:fill-box;transform-origin:center;animation:b 6s infinite}@keyframes b{0%,57%,61%,100%{transform:none}59%{transform:scaleY(.08)}}</style>' : "";
+    return ('<svg xmlns="http://www.w3.org/2000/svg" viewBox="' + vb + '" class="pduck' + (o.cls ? " " + o.cls : "") + '" aria-hidden="true">' + st + '<defs>' + DEFS + '</defs>' + bg + body + '</svg>').replace(/#(["\)])/g, u + "$1");   // unique gradient ids per duck
+  }
+  var IMG = {};
+  function imgURL(tone){ return IMG[tone] || (IMG[tone] = "data:image/svg+xml," + encodeURIComponent(svg({bust: true, flip: true, bg: tone, img: true}))); }
+
+  function play(s, cls, ms){ if(!s || RM()) return; s.classList.remove(cls); s.getBoundingClientRect(); s.classList.add(cls); clearTimeout(s["_" + cls]); s["_" + cls] = setTimeout(function(){ s.classList.remove(cls); }, ms || 700); }
+  function seen(el){ return el && el.isConnected && el.getClientRects().length > 0; }
+  var LIVE = [];
+  function live(s){ if(s._pk) return s; s._pk = 1; LIVE.push(s);
+    (function loop(){ setTimeout(function(){ if(!s.isConnected){ LIVE.splice(LIVE.indexOf(s), 1); return; } if(!document.hidden && seen(s)) play(s, "blink", 220); loop(); }, 2600 + Math.random() * 4200); })();
+    return s; }
+  function make(o){ var t = document.createElement("span"); t.innerHTML = svg(o); return live(t.firstChild); }
+  window.PatoDuck = {svg: svg, make: make, play: play, img: imgURL};
+
+  // the duck looks toward where you tap
+  document.addEventListener("pointerdown", function(e){ if(RM()) return; LIVE.forEach(function(s){ if(!seen(s)) return; var r = s.getBoundingClientRect(), dx = e.clientX - (r.left + r.width / 2), dy = e.clientY - (r.top + r.height / 2), d = Math.hypot(dx, dy) || 1, f = s.closest(".pk-flip") ? -1 : 1;
+    s.style.setProperty("--lx", (f * dx / d * 2.2).toFixed(2) + "px"); s.style.setProperty("--ly", (dy / d * 1.6).toFixed(2) + "px"); clearTimeout(s._lk); s._lk = setTimeout(function(){ s.style.removeProperty("--lx"); s.style.removeProperty("--ly"); }, 1400); }); }, {passive: true, capture: true});
+
+  // every other duck picture in the app (sign-in, Pato Daily header, Pato's take, cover) becomes the sharp one
+  function swapImgs(root){ (root || document).querySelectorAll('img[src^="icon-192.png"],img[src^="icon-light-192.png"]').forEach(function(im){ im.src = imgURL(/light/.test(im.getAttribute("src")) ? "light" : "dark"); }); }
+
+  // score pill: the duck's face follows your Pato score (Sinking worried ... Flying happy)
+  var MOOD = {z1: "sad", z2: "worry", z5: "joy"};
+  function pills(){ document.querySelectorAll(".pato-pill").forEach(function(b){ var im = b.querySelector("img"), sp = b.querySelector("span"), av = b.querySelector(".pk-av");
+    if(im){ av = document.createElement("span"); av.className = "pk-av pk-flip"; av.appendChild(make({bust: true, flip: true, bg: "dark"})); im.replaceWith(av); }
+    if(!av) return; var s = av.firstChild, z = sp && (sp.className.match(/z\d/) || [])[0], m = MOOD[z] || "";
+    if(s._mood !== m){ ["sad", "worry", "joy"].forEach(function(c){ s.classList.toggle(c, c === m); }); if(s._mood !== undefined && seen(s)) play(s, m === "joy" ? "hop" : m ? "flinch" : "nod", 700); s._mood = m; } }); }
+  var P0 = window.__patoPill;
+  if(P0){ window.__patoPill = function(){ var r = P0.apply(this, arguments); pills(); return r; }; pills(); }
+
+  // saves: the toast shows the duck, happy hop for good news, a wince for warnings
+  var T = document.getElementById("toast"), tk = T && T.querySelector(".tk"), td = null;
+  if(tk){ tk.classList.add("pk-tk"); tk.textContent = ""; td = make({bust: true, flip: true, bg: "dark", cls: "pk-flip"}); tk.appendChild(td);
+    var react = function(){ var on = T.classList.contains("on"), w = T.classList.contains("warn"), key = on ? (w ? "w" : "o") + T.textContent : "";
+      if(on && key !== T._k){ td.classList.toggle("joy", !w); td.classList.toggle("sad", w); setTimeout(function(){ if(T._k !== key) return; play(td, w ? "flinch" : "hop", 700); if(!w) setTimeout(function(){ if(T._k === key) play(td, "quack", 600); }, 380); }, 260); }
+      T._k = key; };
+    new MutationObserver(react).observe(T, {attributes: true, attributeFilter: ["class"], childList: true, subtree: true, characterData: true}); }
+
+  // Pato Daily peeking duck: same new duck, quacks when it pops out with a headline or when you tap it
+  function fab(){ var f = document.getElementById("pdFab"); if(!f) return; var old = f.querySelector("svg:not(.pduck)"); if(!old) return; var s = make({}); old.replaceWith(s);
+    f.addEventListener("pointerdown", function(){ play(s, "quack", 600); play(s, "nod", 600); });
+    var pw = document.getElementById("pdPeek"); if(pw) new MutationObserver(function(){ if(pw.className === "out"){ setTimeout(function(){ play(s, "quack", 600); }, 350); } }).observe(pw, {attributes: true, attributeFilter: ["class"]}); }
+
+  if(RM()) { swapImgs(); new MutationObserver(function(){ swapImgs(); fab(); pills(); }).observe(document.body, {childList: true, subtree: true}); return; }
+  document.documentElement.classList.add("pk-m");
+
+  // ---------- screens ----------
+  var nav = document.querySelector("nav.tabs");
+  function order(){ return nav ? [].slice.call(nav.querySelectorAll("[data-tab]")).map(function(b){ return b.dataset.tab; }) : []; }
+  function cur(){ var s = nav && nav.querySelector('[data-tab][aria-selected="true"]'); return s ? s.dataset.tab : null; }
+  if(nav) nav.addEventListener("click", function(e){ var b = e.target.closest && e.target.closest("[data-tab]"); if(!b) return; var o = order(), a = o.indexOf(cur()), z = o.indexOf(b.dataset.tab); document.documentElement.setAttribute("data-pkdir", z < a ? "b" : "f"); }, true);
+  var BARS = '.bar>i,.hbar>i,.sbar>i,.minibar>i,.wbar>i,.rpt-bar>i,.rpt-gbar>i,.sl-bar>i,.pk-sbar>i,.barx>i,.sg-bar>i,.psc-bars i';
+  function enter(p){ if(!p) return; p.classList.remove("pk-enter"); p.getBoundingClientRect(); p.classList.add("pk-enter"); clearTimeout(p._en); p._en = setTimeout(function(){ p.classList.remove("pk-enter"); }, 900);
+    // bars fill up from zero
+    var k = 0; p.querySelectorAll(BARS).forEach(function(i){ var r = i.getBoundingClientRect(); if(r.width < 2 || r.height > 40 || !i.animate) return; i.style.transformOrigin = "left center";
+      i.animate([{transform: "scaleX(0)"}, {transform: "scaleX(1)"}], {duration: 1000, delay: 120 + Math.min(k++, 10) * 45, easing: "cubic-bezier(.22,1,.36,1)", fill: "backwards"}); }); }
+  var lastTab = null;
+  new MutationObserver(function(){ var t = cur(); if(t && t !== lastTab){ lastTab = t; enter(document.getElementById("p-" + t)); glide(); } }).observe(nav || document.body, {attributes: true, subtree: true, attributeFilter: ["aria-selected"]});
+
+  // tab bar highlight glides
+  function glide(){ if(!nav) return; var sel = nav.querySelector('[data-tab][aria-selected="true"]'), g = nav.querySelector(".pk-gl");
+    if(!g){ g = document.createElement("i"); g.className = "pk-gl"; g.setAttribute("aria-hidden", "true"); nav.insertBefore(g, nav.firstChild); if(getComputedStyle(nav).position === "static") nav.style.position = "relative"; }
+    if(!sel){ nav.classList.remove("pk-gl-on"); return; }
+    nav.classList.remove("pk-gl-on"); var cs = getComputedStyle(sel), bg = cs.backgroundImage !== "none" ? cs.backgroundImage : cs.backgroundColor;
+    g.style.background = bg; g.style.borderRadius = cs.borderRadius; g.style.boxShadow = cs.boxShadow;
+    var nr = nav.getBoundingClientRect(), r = sel.getBoundingClientRect();
+    g.style.width = r.width + "px"; g.style.height = r.height + "px"; g.style.transform = "translate(" + (r.left - nr.left - nav.clientLeft) + "px," + (r.top - nr.top - nav.clientTop) + "px)";
+    nav.classList.add("pk-gl-on"); if(!nav._run){ nav._run = 1; requestAnimationFrame(function(){ requestAnimationFrame(function(){ nav.classList.add("pk-gl-run"); }); }); } }
+  window.addEventListener("resize", function(){ nav && nav.classList.remove("pk-gl-run"); nav && (nav._run = 0); glide(); });
+  new MutationObserver(function(){ nav && nav.classList.remove("pk-gl-run"); nav && (nav._run = 0); glide(); }).observe(document.documentElement, {attributes: true, attributeFilter: ["data-palette"]});
+
+  // ---------- taps: press in, spring back ----------
+  var pr = null, pt = 0;
+  function up(){ if(!pr) return; var b = pr; pr = null; var wait = Math.max(0, 90 - (Date.now() - pt)); setTimeout(function(){ b.classList.remove("pk-pr"); b.classList.remove("pk-rl"); b.getBoundingClientRect(); b.classList.add("pk-rl"); setTimeout(function(){ b.classList.remove("pk-rl"); }, 460); }, wait); }
+  document.addEventListener("pointerdown", function(e){ var b = e.target.closest && e.target.closest('button,[role="button"],.tg,a.btn'); if(!b || b.disabled || b.closest("#pdV,#pdPeek,.toast,.pk-gl")) return;
+    if(getComputedStyle(b).transform !== "none") return; var w = b.offsetWidth; b.style.setProperty("--pk-s", w > 260 ? ".985" : w > 120 ? ".97" : ".93"); pr = b; pt = Date.now(); b.classList.add("pk-pr"); }, {passive: true});
+  document.addEventListener("pointerup", up, {passive: true}); document.addEventListener("pointercancel", up, {passive: true});
+  window.addEventListener("scroll", function(){ if(pr){ pr.classList.remove("pk-pr"); pr = null; } }, {passive: true});
+
+  // ---------- big numbers: when a save changes them, they roll to the new value and glow ----------
+  var NUMS = ["pctBase", "pctFill", "saved", "left", "spTotal", "stVal", "pkAll", "pscNum"];
+  function numOf(s){ var m = String(s).match(/-?\d[\d,]*(\.\d+)?/); return m ? parseFloat(m[0].replace(/,/g, "")) : null; }
+  function roll(el, from, to, text){ var node = el.firstChild; if(!node || node.nodeType !== 3 || el.childNodes.length !== 1) return;
+    var m = text.match(/-?\d[\d,]*(\.\d+)?/), dec = (m[0].split(".")[1] || "").length, comma = m[0].indexOf(",") >= 0, t0 = performance.now(), dur = 900;
+    (function step(now){ if(node.nodeValue !== el._pkLast) return; var k = Math.min(1, (now - t0) / dur), e = 1 - Math.pow(1 - k, 4), v = from + (to - from) * e;
+      var s = comma ? v.toLocaleString("en-US", {minimumFractionDigits: dec, maximumFractionDigits: dec}) : v.toFixed(dec);
+      node.nodeValue = el._pkLast = k >= 1 ? text : text.replace(m[0], s); if(k < 1) requestAnimationFrame(step); })(t0); }
+  NUMS.forEach(function(id){ var el = document.getElementById(id); if(!el) return; var prev = el.textContent;
+    new MutationObserver(function(){ var now = el.textContent; var a = numOf(prev), b = numOf(now); prev = now;
+      if(a == null || b == null || a === b || !seen(el)) return;
+      if(id !== "pctFill" && id !== "left"){ var c = b > a ? "pk-up" : "pk-dn"; if(id === "spTotal") c = b > a ? "pk-dn" : "pk-up"; el.classList.remove("pk-up", "pk-dn"); el.getBoundingClientRect(); el.classList.add(c); setTimeout(function(){ el.classList.remove(c); }, 1300); }
+      el._pkLast = el.firstChild && el.firstChild.nodeValue; roll(el, a, b, now); }).observe(el, {childList: true}); });
+
+  // swap duck pictures as they appear
+  var q = 0; new MutationObserver(function(){ if(q) return; q = requestAnimationFrame(function(){ q = 0; swapImgs(); fab(); pills(); }); }).observe(document.body, {childList: true, subtree: true});
+  swapImgs(); fab(); pills();
+  function boot(){ lastTab = cur(); glide(); enter(lastTab && document.getElementById("p-" + lastTab)); }
+  if(document.readyState === "complete") boot(); else window.addEventListener("load", boot);
+})();
+</script>
 </body>
 </html>

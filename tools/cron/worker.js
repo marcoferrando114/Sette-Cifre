@@ -3,6 +3,7 @@
 //  2. Loan reminders -> Web Push to Marco's phone at 8:42am DR (the app's Reminders box has the Spanish text and the Remind button)
 // Variables (Worker > Settings > Variables and Secrets):
 //   BOT_PASSWORD (secret)   password of the sync robot sync-1f6e51ca@stakd-bot.app (same as STAKD_BOT_PASSWORD in the Claude environment)
+//   FLEX_TOKEN (secret) + FLEX_QUERY (query id): IBKR Flex Web Service, read-only; syncs positions and cash
 //   VAPID_PRIVATE (secret)  full text of vapid_private.pem (BEGIN/END PRIVATE KEY lines included), only needed for the push
 // KV binding LIMITS (shared). Keys used here start with "cron:".
 // GET /run?job=stocks|loans&key=... is not exposed; use "Trigger event" in the dashboard (Settings > Triggers) to test.
@@ -74,6 +75,7 @@ async function q(sym, ext = true) {
     ts: regTs.map(([t]) => t), close: regTs.map(([, c]) => c) };
 }
 async function stocks(env, dry) {
+  if (!dry) await flexDaily(env);   // positions + cash from IBKR first, then prices on top
   const d = await getDoc(env, "invest", "ibkr");
   if (!d || !(d.posiciones || []).length) return "no ibkr doc";
   if (!dry) await env.LIMITS.put("cron:ibkr-backup", JSON.stringify(d), { expirationTtl: 7 * 86400 });   // last copy before each write
@@ -95,6 +97,65 @@ async function stocks(env, dry) {
   if (!dry) await patchDoc(env, "invest", "ibkr", out);
   if (!dry) await stockAlerts(env, pos).catch(e => console.log("stock alerts", String(e)));
   return `stocks ok ${at} value US$${v}` + (dry ? " (dry run, nothing written)" : "");
+}
+
+
+// ---------- 1b. IBKR Flex sync (read-only: positions + cash straight from IBKR, no trading access) ----------
+// Needs two vars: FLEX_TOKEN (secret) and FLEX_QUERY (query id). Query must include Open Positions and Cash Report.
+// Flex data is as of the last market close, so it runs once a morning; positions the app already shows as bought AFTER the statement date are left alone.
+const attrs = tag => Object.fromEntries([...tag.matchAll(/(\w+)="([^"]*)"/g)].map(m => [m[1], m[2]]));
+const flexDate = s => { const m = String(s || "").match(/(\d{4})-?(\d{2})-?(\d{2})/); return m ? `${m[1]}-${m[2]}-${m[3]}` : ""; };
+async function flexFetch(env) {
+  const base = "https://ndcdyn.interactivebrokers.com/AccountManagement/FlexWebService/";
+  const h = { "user-agent": "pato-cron" };
+  const r1 = await (await fetch(`${base}SendRequest?t=${encodeURIComponent(env.FLEX_TOKEN)}&q=${encodeURIComponent(env.FLEX_QUERY)}&v=3`, { headers: h })).text();
+  const ref = (r1.match(/<ReferenceCode>(\d+)</) || [])[1];
+  if (!ref) throw new Error("flex request: " + ((r1.match(/<ErrorMessage>([^<]*)</) || [])[1] || r1.slice(0, 120)));
+  for (let i = 0; i < 6; i++) {
+    await new Promise(r => setTimeout(r, 2000 + i * 1500));
+    const x = await (await fetch(`${base}GetStatement?t=${encodeURIComponent(env.FLEX_TOKEN)}&q=${ref}&v=3`, { headers: h })).text();
+    if (x.includes("<FlexQueryResponse")) return x;
+    if (!/1019|in progress|try again/i.test(x)) throw new Error("flex statement: " + ((x.match(/<ErrorMessage>([^<]*)</) || [])[1] || x.slice(0, 120)));
+  }
+  throw new Error("flex statement not ready");
+}
+function flexParse(xml) {
+  const st = attrs((xml.match(/<FlexStatement\b[^>]*>/) || [""])[0]);
+  const toDate = flexDate(st.toDate);
+  const pos = [...xml.matchAll(/<OpenPosition\b[^>]*>/g)].map(m => attrs(m[0]))
+    .filter(a => (a.assetCategory || "STK") === "STK" && a.levelOfDetail !== "LOT" && Number(a.position) > 0)
+    .map(a => ({ t: a.symbol, sh: Math.round(Number(a.position) * 1e6) / 1e6, costo: Number(a.costBasisPrice) || 0, invertido: Number(a.costBasisMoney) || 0, mark: Number(a.markPrice) || 0 }));
+  const cr = [...xml.matchAll(/<CashReportCurrency\b[^>]*>/g)].map(m => attrs(m[0]));
+  const c = cr.find(a => a.currency === "USD") || cr.find(a => a.currency === "BASE_SUMMARY");
+  return { toDate, pos, cash: c && c.endingCash !== undefined ? Math.round(Number(c.endingCash) * 100) / 100 : null };
+}
+const appLast = p => [p.fecha, ...(p.compras || []).map(c => c.fecha)].filter(Boolean).sort().pop() || "";
+async function flexSync(env, dry) {
+  if (!env.FLEX_TOKEN || !env.FLEX_QUERY) return "flex: FLEX_TOKEN / FLEX_QUERY not set";
+  const f = flexParse(await flexFetch(env));
+  if (!f.toDate || !f.pos.length) return "flex: statement has no open positions, nothing changed";
+  const d = await getDoc(env, "invest", "ibkr"); if (!d) return "flex: no ibkr doc";
+  if (!dry) await env.LIMITS.put("cron:ibkr-backup-flex", JSON.stringify(d), { expirationTtl: 14 * 86400 });
+  const log = [], mine = d.posiciones || [], seen = new Set();
+  const out = [];
+  for (const p of mine) {
+    const x = f.pos.find(y => y.t === p.t); seen.add(p.t);
+    if (appLast(p) > f.toDate) { out.push(p); log.push(`${p.t} kept (app newer than ${f.toDate})`); continue; }
+    if (!x) { log.push(`${p.t} gone from IBKR, removed`); continue; }
+    if (Math.abs(x.sh - p.sh) < 1e-5) { out.push(p); continue; }
+    const q2 = { ...p, sh: x.sh }; if (!p.regalo && x.costo) { q2.costo = x.costo; q2.invertido = Math.round(x.invertido * 100) / 100; delete q2.comision; delete q2.comisionPagada; }
+    out.push(q2); log.push(`${p.t} shares ${p.sh} -> ${x.sh}`);
+  }
+  for (const x of f.pos) if (!seen.has(x.t)) { out.push({ t: x.t, sh: x.sh, costo: x.costo, invertido: Math.round(x.invertido * 100) / 100, precio: x.mark, fecha: f.toDate }); log.push(`${x.t} added ${x.sh}`); }
+  const patch = { posiciones: out, flex: { at: new Date().toISOString().replace(/\.\d+Z$/, "Z"), toDate: f.toDate } };
+  if (f.cash !== null && f.cash !== d.cash) { patch.cash = f.cash; log.push(`cash ${d.cash} -> ${f.cash}`); }
+  if (!dry) await patchDoc(env, "invest", "ibkr", patch);
+  return `flex ${f.toDate}: ` + (log.join("; ") || "no changes") + (dry ? " (dry run)" : "");
+}
+async function flexDaily(env) {   // at most once per 6 hours, only on the first tick of the day's market session
+  if (!env.FLEX_TOKEN || (await env.LIMITS.get("cron:flex:last"))) return;
+  await env.LIMITS.put("cron:flex:last", "1", { expirationTtl: 6 * 3600 });
+  console.log(await flexSync(env, false).catch(e => "flex ERROR " + String(e)));
 }
 
 // ---------- 2. Loan reminders (push) ----------
@@ -271,7 +332,7 @@ async function editionHealth(env) {
   await env.LIMITS.put(sent, "1", { expirationTtl: 2 * 86400 });
   const n = await push(env, "Pato Daily", body, "./", "pato-daily-health"); return "alert sent to " + n + " device(s): " + body;
 }
-export { stocks, loans, daily, lateIncome, stockAlerts, dueOf, dueDates, editionHealth };
+export { flexSync, flexParse, stocks, loans, daily, lateIncome, stockAlerts, dueOf, dueDates, editionHealth };
 export default {
   async scheduled(ev, env, ctx) {
     const job = ev.cron === "42 12 * * *" ? daily : stocks;
@@ -280,6 +341,9 @@ export default {
   async fetch(req, env) {
     // called by the pato-ai worker (service binding) 35 minutes after each Pato Daily drop; the free plan allows only 5 cron triggers, so pato-ai's 5-minute cron does the timing
     if (new URL(req.url).pathname === "/health" && req.headers.get("x-edition-check") === "1") return new Response(await editionHealth(env).catch(e => "error " + String(e).slice(0, 100)), { status: 200 });
+    const u = new URL(req.url);
+    if (u.pathname === "/flex" && env.BOT_PASSWORD && u.searchParams.get("pw") === env.BOT_PASSWORD)   // open once to preview, add &apply=1 to write
+      return new Response(await flexSync(env, u.searchParams.get("apply") !== "1").catch(e => "ERROR " + String(e).slice(0, 200)), { status: 200 });
     return new Response("pato-cron: runs on a schedule (stocks, loan reminders)", { status: 200 });
   },
 };
