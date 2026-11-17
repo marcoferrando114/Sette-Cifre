@@ -2126,7 +2126,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261117200000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261117190000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -7773,7 +7773,7 @@ TRACKER DATA:
       $("pnTrack").innerHTML = one + one; $("pnAt").textContent = " · Updated " + hr((tick && tick.at) || daily.at).replace(/:\d\d/, ""); $("pnTick").hidden = false;
       requestAnimationFrame(function(){ var w = $("pnTrack").scrollWidth / 2; $("pnTrack").style.setProperty("--pn-dur", Math.max(17, w / 51.75) + "s"); }); }
     if(!$("pdV").hidden) return;
-    S = stories(); if(PHOTOS()) S.slice(0, ND() ? 3 : S.length).forEach(function(x){ if(x.pic){ if(!(x.pic in IM.m)) pic(x.pic, null, x.ph); else pre(IM.m[x.pic]); } });
+    S = stories(); if(PHOTOS()) S.slice(0, ND() ? 6 : S.length).forEach(function(x){ if(x.pic){ if(!(x.pic in IM.m)) pic(x.pic, null, x.ph); else pre(IM.m[x.pic]); } });
      if(NDD() && !window.__pdDemoReset){ window.__pdDemoReset = 1; ls("pd-seen2", {day: day(), ids: {}}); }
      var u = unseen(), first = !(prefs && prefs.picked);
     $("pdFab").hidden = !S.length || !ready(); $("pdN").textContent = u.length || ""; $("pdN").hidden = !u.length;
@@ -7787,7 +7787,10 @@ TRACKER DATA:
   function PICS(){ var m = window.MP_ME; return !!(m && (m.owner || /^pato-?demo/i.test(m.email || ""))); }   // trial: demo account only until Marco approves
   function PHOTOS(){ return !!window.MP_ME; }   // Marco Nov 12: photos for everyone
   var PRE = {}, pend = 0;   // Nov 13 Marco: photos must be 100% loaded before a story is opened, so the duck waits for them
-  function pre(u){ if(!u || PRE[u]) return; PRE[u] = 1; pend++; var m = new Image(), d = function(ok){ if(!ok || m.naturalWidth < 640 || m.naturalHeight < 360) Object.keys(IM.m).forEach(function(k){ if(IM.m[k] === u) IM.m[k] = ""; }); pend--; render(); }; m.onload = function(){ d(1); }; m.onerror = function(){ d(0); }; m.src = u; }
+  var WARM = {};   // photos already downloaded and decoded in the background, so a tap shows the picture at once (Marco Nov 17)
+  function warm(u){ if(!u || WARM[u]) return; var m = new Image(); m.decoding = "async"; WARM[u] = m; m.onerror = function(){ delete WARM[u]; }; m.src = u; if(m.decode) m.decode().catch(function(){}); }
+  function warmAhead(){ try { for(var n = -1; n <= 4; n++){ var y = S[cur + n]; if(y && y.pic && IM.m[y.pic]) warm(IM.m[y.pic]); } } catch(e){} }
+  function pre(u){ if(!u || PRE[u]) return; PRE[u] = 1; pend++; var m = new Image(), d = function(ok){ if(!ok) Object.keys(IM.m).forEach(function(k){ if(IM.m[k] === u) IM.m[k] = ""; }); pend--; render(); }; m.onload = function(){ d(1); }; m.onerror = function(){ d(0); }; m.src = u; }
   function pic(u, cb, h){ if(!u || !base() || !PHOTOS() || (u in IM.m)) return; IM.m[u] = null; pend++;
     fetch(base() + "/img?u=" + encodeURIComponent(u) + (h ? "&h=" + encodeURIComponent(h) : "")).then(function(r){ return r.ok ? r.json() : {}; }).then(function(d){ IM.m[u] = (d && d.img) || ""; pre(IM.m[u]); pend--; if(IM.m[u]) ls("pd-img3", {day: IM.day, m: Object.keys(IM.m).reduce(function(o, k){ if(IM.m[k]) o[k] = IM.m[k]; return o; }, {})}); if(cb) cb(); }).catch(function(){ if(ND()){ IM.m[u] = ""; pend--; if(cb) cb(); } else { delete IM.m[u]; pend--; } }); }
   window.__pdSwap = function(img){ var p = img && img.parentNode; if(!p) return; if(p.getAttribute("data-vis")) p.outerHTML = p.getAttribute("data-vis"); else p.remove(); };
@@ -7797,11 +7800,11 @@ TRACKER DATA:
   function visHtml(x){ var lg = logoOf(x), em = String(x.nav || "🦆").split(" ")[0];   // no photo? the company logo or a visual that adds to the story, never plain text (Marco Nov 14)
     return '<div class="pd-img pd-vis"><div class="pd-vm">' + (lg ? '<span class="pd-vlg"><img src="' + esc(lg) + '" alt="" onerror="this.parentNode.outerHTML=\'<span class=pd-vem>' + esc(em) + '</span>\'"></span>' : '<span class="pd-vem">' + esc(em) + '</span>') + '</div>' + (x.ps ? '<span>' + esc(x.ps) + '</span>' : '') + '</div>'; }
   function picHtml(x){ var raw = PHOTOS() && x.pic ? IM.m[x.pic] : "", im = raw, ix0 = S.indexOf(x), dup = false;    // never the same photo twice
-    if(im) return '<div class="pd-img"' + (x.news || ND() ? ' data-vis="' + esc(visHtml(x)) + '"' : '') + '><div class="pd-bk">' + vmHtml(x) + '</div><img src="' + esc(im) + '" alt="" style="opacity:0;transition:opacity .35s" referrerpolicy="no-referrer" onerror="__pdSwap(this)" onload="if(this.naturalWidth<300||this.naturalHeight<170)__pdSwap(this);else this.style.opacity=1">' + (x.ps ? '<span>' + esc(x.ps) + '</span>' : '') + '</div>';
+    if(im) return '<div class="pd-img"' + (x.news || ND() ? ' data-vis="' + esc(visHtml(x)) + '"' : '') + '><div class="pd-bk"></div><img src="' + esc(im) + '" alt="" decoding="async"' + (WARM[im] && WARM[im].complete && WARM[im].naturalWidth ? ' style="opacity:1"' : ' style="opacity:0;transition:opacity .3s"') + ' referrerpolicy="no-referrer" onerror="__pdSwap(this)" onload="if(this.naturalWidth<300||this.naturalHeight<170)__pdSwap(this);else this.style.opacity=1">' + (x.ps ? '<span>' + esc(x.ps) + '</span>' : '') + '</div>';
     return x.news && (!x.pic || !PHOTOS() || raw === "" || dup) ? visHtml(x) : ''; }
   var lastBase = null, NEW = {};   // what was unread when you opened: those chips get a dot, the slide gets a NEW tag
   function show(i){
-    clearTimeout(timer); cur = Math.max(0, Math.min(i, S.length - 1)); var x = S[cur], s = seen();
+    clearTimeout(timer); cur = Math.max(0, Math.min(i, S.length - 1)); var x = S[cur], s = seen(); warmAhead();
     if(!x.pick){ s.ids[x.id] = 1; if(x.id2) s.ids[x.id2] = 1; ls("pd-seen2", s); }
     var base = "pd-s " + (x.cls||""); var pcur = window.__pdPrev; window.__pdPrev = cur; $("pdS").className = base; if(lastBase != null){ void $("pdS").offsetWidth; $("pdS").className = base + (String(x.cls || "").trim() && S[pcur] && String(S[pcur].cls || "").trim() !== String(x.cls).trim() ? " pd-slc" : pcur != null && cur < pcur ? " pd-slb" : " pd-slf"); }   // coloured slides (Breaking, Predictions, Sports...) arrive with a colour pop and a rise, plain ones slide sideways (Marco Nov 14) lastBase = base;   // every slide change slides in (from the right going forward, from the left going back), also between different layouts (Marco Nov 14)
        // Marco Nov 12: moving to a new kind of slide fades in instead of snapping $("pdT").innerHTML = (NEW[x.id] ? '<span class="pd-new">NEW</span>' : (x.pick ? '' : '<span class="pd-old">✓ Seen</span>')) + esc(x.t); $("pdW").textContent = x.w || "";
