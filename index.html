@@ -38,7 +38,7 @@
 })();</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'"><noscript><link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700;800&display=swap" rel="stylesheet"></noscript>
 <style>
 :root{
   --paper:#EAF0EA; --card:#F7FAF6; --ink:#12241B; --muted:#5B6E63; --line:#CBD8CD;
@@ -1713,7 +1713,8 @@ html.mp-guest #saGmRow,html.mp-guest #spSrc,html.mp-guest #saKey,html.mp-guest:n
 html.mp-guest:not(.on-spending) #tab-spending,html.mp-guest:not(.on-poker) #tab-poker,html.mp-guest:not(.on-loans) #tab-loans,html.mp-guest:not(.on-trends) #tab-trends{display:none!important}
 #sgSetup{position:fixed;inset:0;z-index:90;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:max(24px,env(safe-area-inset-top)) 16px 32px;background:var(--paper)}
 #sgSetup[hidden]{display:none}
-html.sg-on #sfOffer,html.sg-on .tabs{display:none!important}
+html.sg-on #sfOffer,html.sg-on .tabs{display:none!important}html.sg-on main{content-visibility:hidden}
+#sgSetup #sgBody{animation:sgIn .22s ease-out both}@keyframes sgIn{from{opacity:0;transform:translateX(14px)}to{opacity:1;transform:none}}#sgSetup #sgBody.back{animation-name:sgInB}@keyframes sgInB{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:none}}#sgSetup .primary,#sgSetup .sg-chips>*,#sgSetup .sg-big{touch-action:manipulation;-webkit-tap-highlight-color:transparent}#sgSetup .primary:active,#sgSetup .sg-chips>*:active{transform:scale(.97)}@media (prefers-reduced-motion:reduce){#sgSetup #sgBody{animation:none}}
 #sgSetup .g{width:100%;max-width:380px;background:var(--card);border-radius:20px;padding:24px 20px;outline:1.5px dashed color-mix(in srgb,var(--mango) 70%,transparent);outline-offset:-7px}
 #sgSetup h2{font-family:var(--serif,Georgia),serif;margin:0 0 4px;color:var(--ink)}
 #sgSetup p{margin:0 0 16px;color:var(--muted);font-size:.92rem}
@@ -2125,7 +2126,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261117050000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261117160000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -6460,10 +6461,10 @@ TRACKER DATA:
     });
   }
   let queued = false;
-  const run = () => { queued = false; document.querySelectorAll(SEL).forEach(wrap); };
+  const run = () => { queued = false; if(document.documentElement.classList.contains("sg-on")) return; document.querySelectorAll(SEL).forEach(wrap); };
   const q = () => { if(!queued){ queued = true; requestAnimationFrame(run); } };
   try{ new MutationObserver(q).observe(document.body, {childList:true, subtree:true, characterData:true}); }catch(e){}
-  q();
+  q(); window.__rdWrap = q;
 })();
 </script>
 <script id="stakd-gear-js">(function(){
@@ -6582,12 +6583,14 @@ TRACKER DATA:
 
   async function load(){
     try{
-      var c = await once(db.doc("config/main")); cfgHas = !!(c && c.exists);
+      var r = await Promise.all(["config/main", "prefs/ui", "prefs/news", "prefs/alerts", "prefs/setup"].map(function(p){ return once(db.doc(p)); }));
+      var c = r[0], u = r[1], n = r[2], a = r[3], s = r[4];
+      cfgHas = !!(c && c.exists);
       if(cfgHas){ var d = c.data(); W.cfg = d; if(d.meta) W.goal = String(d.meta); if(d.limiteMensual) W.limit = String(d.limiteMensual); }
-      var u = await once(db.doc("prefs/ui")); if(u && u.exists){ var ud = u.data(); var tb = Array.isArray(ud.tabs) ? ud.tabs : []; if(cfgHas){ W.prof = ["save"]; if(tb.indexOf("stocks") >= 0) W.prof.push("invest"); if(tb.indexOf("loans") >= 0) W.prof.push("lend"); if(Array.isArray(ud.prof)) W.prof = ud.prof.slice(); W.games = (Array.isArray(ud.track) ? ud.track : []).filter(function(k){ return ["poker","casino","bets"].indexOf(k) >= 0; }); } }
-      var n = await once(db.doc("prefs/news")); if(n && n.exists && Array.isArray(n.data().on)){ var on = n.data().on.filter(function(k){ return TOPICS.some(function(t){ return t[0] === k; }); }); if(on.length) W.topics = on.slice(0, 5); }
-      var a = await once(db.doc("prefs/alerts")); if(a && a.exists){ var ad = a.data(); ["drop","late","hl"].forEach(function(k){ if(ad[k] === false) W.al[k] = false; }); }
-      var s = await once(db.doc("prefs/setup")); if(s && s.exists && Array.isArray(s.data().skipped)) skipped = s.data().skipped.slice();
+      if(u && u.exists){ var ud = u.data(); var tb = Array.isArray(ud.tabs) ? ud.tabs : []; if(cfgHas){ W.prof = ["save"]; if(tb.indexOf("stocks") >= 0) W.prof.push("invest"); if(tb.indexOf("loans") >= 0) W.prof.push("lend"); if(Array.isArray(ud.prof)) W.prof = ud.prof.slice(); W.games = (Array.isArray(ud.track) ? ud.track : []).filter(function(k){ return ["poker","casino","bets"].indexOf(k) >= 0; }); } }
+      if(n && n.exists && Array.isArray(n.data().on)){ var on = n.data().on.filter(function(k){ return TOPICS.some(function(t){ return t[0] === k; }); }); if(on.length) W.topics = on.slice(0, 5); }
+      if(a && a.exists){ var ad = a.data(); ["drop","late","hl"].forEach(function(k){ if(ad[k] === false) W.al[k] = false; }); }
+      if(s && s.exists && Array.isArray(s.data().skipped)) skipped = s.data().skipped.slice();
     }catch(e){ console.warn("setup load", e); }
   }
 
@@ -6604,11 +6607,12 @@ TRACKER DATA:
     $s("sgNext").onclick = next; $s("sgBack").onclick = back; $s("sgSkip").onclick = skip;
     render();
   }
-  function closeSetup(){ isOpen = false; $s("sgSetup").hidden = true; H.classList.remove("sg-on"); lsSet("pato-setup-step", ""); if(cfgHas) todoSync(skipped); }
+  function closeSetup(){ isOpen = false; $s("sgSetup").hidden = true; H.classList.remove("sg-on"); if(window.__rdWrap) window.__rdWrap(); lsSet("pato-setup-step", ""); if(cfgHas) todoSync(skipped); }
 
   function render(){
     var o = single ? [step] : order(), i = o.indexOf(step), body = $s("sgBody"), btn = $s("sgNext");
     msg(""); lsSet("pato-setup-step", step === "done" ? "" : step + (single ? "!" : ""));
+    body.classList.toggle("back", !!W.goBack); W.goBack = false; body.style.animation = "none"; void body.offsetWidth; body.style.animation = "";
     $s("sgBarI").style.width = (single ? 100 : Math.round((i + 1) / o.length * 100)) + "%";
     $s("sgBack").style.visibility = (single || i === 0) ? "hidden" : "visible";
     $s("sgSkip").style.display = (step === "basics" || step === "done") ? "none" : "";
@@ -6739,15 +6743,16 @@ TRACKER DATA:
     step = o[i + 1]; render();
   }
   async function next(){
-    var b = $s("sgNext"); b.disabled = true; msg(step === "done" ? "" : "Saving…");
+    var b = $s("sgNext"); b.disabled = true; msg("");
     try{
-      if(step === "mail" && !W.gm){ var g = window.__patoGm; if(g){ var st = await g.status(); if(st && st.connected) W.gm = true; } }
       if(step === "mail" && !W.gm){ b.disabled = false; return advance(true); }
       if(step === "stocks" && !W.stk){ b.disabled = false; return advance(true); }
-      await saveStep(); b.disabled = false; await advance(false);
+      if(step === "basics"){ await saveStep(); }
+      else { saveStep().catch(function(e){ console.warn("setup save", e); }); }   /* later steps save in the background so Next is instant */
+      b.disabled = false; await advance(false);
     }catch(e){ console.error(e); b.disabled = false; msg("Couldn’t save. Check your connection and try again."); }
   }
-  function back(){ var o = order(), i = o.indexOf(step); if(i > 0){ step = o[i - 1]; render(); } }
+  function back(){ var o = order(), i = o.indexOf(step); if(i > 0){ step = o[i - 1]; W.goBack = true; render(); } }
   async function skip(){ if(step === "basics") return; await advance(true); }
 
   /* "Finish setting up": a card for anything skipped */
