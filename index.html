@@ -2102,7 +2102,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261117040000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261117050000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -4041,6 +4041,17 @@ html:not(.mp-guest) #s-gst{display:none!important}
     setTimeout(()=>{ const inp=document.querySelector('#debtPeople .editbox input[data-k="monto"]'); if(inp){ inp.scrollIntoView({behavior:"smooth", block:"center"}); inp.focus({preventScroll:true}); } }, 50);
   }
 
+  // camera / typed note says someone paid: open their payment box right away, amount filled in (Marco Nov 16: no "within the hour" queue)
+  window.__patoPay = (who, amt, date, toSav) => {
+    const sq = x => norm(x).replace(/[^a-z0-9]/g,""), k = sq(who);
+    const hit = n => { const x = sq(n); return k.length>=3 && x.length>=3 && (k.includes(x) || x.includes(k) || norm(who).split(/\s+/)[0]===norm(n).split(/\s+/)[0]); };
+    const ls = loans.filter(l=>!l.pagado && l.monto>0 && hit(l.nombre)).sort((a,b)=>String(a.fecha||"9").localeCompare(String(b.fecha||"9")));
+    if(ls.length){ showTab("loans"); collectLoan(ls[0]); if(amt>0) $("colAmt").value = Math.round(Math.min(amt, loanRemaining(ls[0]))).toLocaleString("en-US"); return true; }
+    const d = (config.deudas||[]).find(x=>hit(x.nombre) && x.total-paidTo(x.nombre)>0.5);
+    if(d){ openDebtPay(d.nombre, date, amt, !!toSav); return true; }
+    return false;
+  };
+
   // ---------- trust score ----------
   const norm = x => String(x||"").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
   // ---------- poker league debt: rakeback the league owes, one line per league week ----------
@@ -5682,7 +5693,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
     const bankChip = t => { if(window.MP_ME && !window.MP_ME.owner) return ""; const b = t.fromSav || t.source==="bhd" ? "bhd" : (t.kind==="manual" && !t.fromSav) || t.kind==="cashin" || t.kind==="deposito" ? "" : "pop"; return b ? `<span class="bk bk-${b}">${b==="bhd"?"BHD":"Popular"}</span>` : ""; };
     $("spLedger").innerHTML = list.length ? list.map(t=>{
       const wallet = spIsCashOut(t)||spIsCashIn(t), inc = spIsIn(t), off = !spLive(t);
-      const tag = t.status!=="Aprobada" ? t.status : t.excluded ? "Not counted" : t.dupe ? "Possible double" : spIsManual(t) ? (t.fromSav ? "Paid from savings" : "Paid in cash") : spIsCashOut(t) ? (t.kept ? "ATM · you kept it" : "ATM · not counted as spent") : spIsCashIn(t) ? "Cash count" : spIsDep(t) ? "Cash deposited · not spending" : spIsTransfer(t) ? (t.own ? "To your own account" : "Transfer from checking") : inc ? "Money in" : "";
+      const tag = t.status!=="Aprobada" ? t.status : t.excluded ? "Not counted" : t.dupe ? "Possible double" : t.pend ? "Charge pending" : spIsManual(t) ? (t.fromSav ? "Paid from savings" : "Paid in cash") : spIsCashOut(t) ? (t.kept ? "ATM · you kept it" : "ATM · not counted as spent") : spIsCashIn(t) ? "Cash count" : spIsDep(t) ? "Cash deposited · not spending" : spIsTransfer(t) ? (t.own ? "To your own account" : "Transfer from checking") : inc ? "Money in" : "";
       const sel = (spIsCard(t)||spIsManual(t)||spIsTransfer(t)) ? `<span class="tag sp-cattag">${spEsc(spCat(t.cat))}</span>` : "";
       const fx = t.currency && t.currency!=="DOP" ? `<small>${t.currency} ${Number(t.amount).toFixed(2)} · approx.</small>` : "";
       const act = canEdit && t.status==="Aprobada" ? (spIsManual(t)||spIsCashIn(t)||spIsDep(t) ? `<button type="button" class="x" data-spdel="${spEsc(t.id)}">Delete</button>` : "") : "";
@@ -6353,6 +6364,10 @@ TRACKER DATA:
       return;
     }
     syncSave(); syncLoan(); syncDebt();
+    // data arrives from ~12 listeners at once when the app opens: draw the screen once for the burst, not once per listener (Nov 16)
+    let rT = 0, sT = 0;
+    const renderSoon = () => { if(rT) return; rT = setTimeout(() => { rT = 0; try{ render(); }catch(e){ console.error(e); } }, 40); };
+    const renderSpendSoon = () => { if(sT) return; sT = setTimeout(() => { sT = 0; try{ renderSpend(); }catch(e){ console.error(e); } }, 40); };
     db.doc("prefs/ui").onSnapshot(s => { try{ if(s.exists && s.data().pal) window.__mpSetPal(s.data().pal); }catch(e){} }, ()=>{});
     db.doc("config/main").onSnapshot(s => {
       if(s.exists){ const d=s.data(); config = {
@@ -6360,49 +6375,49 @@ TRACKER DATA:
         hitos:Array.isArray(d.hitos)&&d.hitos.length?d.hitos:[500000,650000,800000,1000000], fijos:Array.isArray(d.fijos)?d.fijos:[], inversiones:Array.isArray(d.inversiones)?d.inversiones:[], extraMensual:Number(d.extraMensual)||0, creada:d.creada||"", gastosMensuales:Number(d.gastosMensuales)||0, limiteMensual:Number(d.limiteMensual)||0, plazo:d.plazo||"", celebrados:Array.isArray(d.celebrados)?d.celebrados:[], insignias:Array.isArray(d.insignias)?d.insignias:null, recordarDias: d.recordarDias===undefined || d.recordarDias===null ? 2 : Number(d.recordarDias) }; }
       loaded.config = true; deriveEntries();
       buildSources();
-      render();
-      try{ renderSpend(); }catch(e){}
+      renderSoon();
+      renderSpendSoon();
     }, ()=>{});
     db.collection("entries").onSnapshot(snap => {
       entriesRaw = snap.docs.map(d => ({id:d.id, ...d.data(), amount:Number(d.data().amount)||0})); deriveEntries();
       loaded.entries = true;
-      render();
+      renderSoon();
     }, () => { $("hist").innerHTML = '<li class="empty">Couldn’t load transactions.</li>'; });
     db.collection("pokerOtra").onSnapshot(snap => {
       pokerOtra = snap.docs.map(d => ({id:d.id, ...d.data(), monto:Number(d.data().monto)||0}));
-      render();
+      renderSoon();
     }, ()=>{});
-    db.collection("bets").onSnapshot(snap => { bets = snap.docs.map(d => ({id:d.id, ...d.data()})); render(); }, ()=>{});
+    db.collection("bets").onSnapshot(snap => { bets = snap.docs.map(d => ({id:d.id, ...d.data()})); renderSoon(); }, ()=>{});
     db.collection("pagos").onSnapshot(snap => {
       pagos = snap.docs.map(d => ({id:d.id, ...d.data(), monto:Number(d.data().monto)||0}));
-      render();
+      renderSoon();
     }, ()=>{});
     db.collection("checkins").onSnapshot(snap => {
       checkins = {}; snap.docs.forEach(d => checkins[d.id] = d.data());
-      render();
+      renderSoon();
     }, ()=>{});
     db.collection("corriente").onSnapshot(snap => {
       corriente = snap.docs.map(d => ({id:d.id, ...d.data(), saldo:Number(d.data().saldo)||0}));
-      render();
+      renderSoon();
     }, ()=>{});
     db.collection("spend").onSnapshot(snap => {
       spend = snap.docs.map(d => ({id:d.id, ...d.data()})).filter(t => t.date);
-      try{ renderSpend(); }catch(e){ console.error(e); }
+      renderSpendSoon();
     }, () => { $("spLedger").innerHTML = '<li class="empty">Couldn’t load your spending.</li>'; });
     db.collection("receipts").onSnapshot(snap => { receipts = snap.docs.map(d => ({id:d.id, ...d.data()})); try{ renderReceipts(); }catch(e){} }, ()=>{});
-    db.doc("spendMeta/sync").onSnapshot(s => { spMeta = s.exists ? s.data() : null; try{ renderSpend(); }catch(e){} }, ()=>{});
-    db.doc("spendMeta/wallet").onSnapshot(s => { spWalletDoc = s.exists ? s.data() : null; try{ renderSpend(); }catch(e){} }, ()=>{});
-    db.doc("invest/ibkr").onSnapshot(s => { ibkr = s.exists ? s.data() : null; try{ render(); }catch(e){ console.error(e); } }, ()=>{});
+    db.doc("spendMeta/sync").onSnapshot(s => { spMeta = s.exists ? s.data() : null; renderSpendSoon(); }, ()=>{});
+    db.doc("spendMeta/wallet").onSnapshot(s => { spWalletDoc = s.exists ? s.data() : null; renderSpendSoon(); }, ()=>{});
+    db.doc("invest/ibkr").onSnapshot(s => { ibkr = s.exists ? s.data() : null; renderSoon(); }, ()=>{});
     db.collection("contactos").onSnapshot(snap => {
       contactos = {}; snap.docs.forEach(d => contactos[d.id] = d.data());
-      render();
+      renderSoon();
     }, ()=>{});
     db.collection("prestamos").onSnapshot(snap => {
       loans = snap.docs.map(d => { const x = d.data(); return {id:d.id, ...x, monto:Number(x.monto)||0, interes:Number(x.interes)||0,
         destino: x.destino || (x.cobradoA==="otro" ? "otra" : x.cobradoA==="ahorro" ? "ahorro" : undefined)}; });
       try{ const op = loans.filter(l => !l.pagado && l.monto > 0), td = new Date(Date.now()-4*3600e3).toISOString().slice(0,10), nx = op.filter(l => l.vence).map(l => l.vence).sort()[0];
         window.__patoFacts = Object.assign(window.__patoFacts||{}, {lentOut: Math.round(op.reduce((a,l) => a + l.monto, 0)), backOwed: Math.round(op.reduce((a,l) => a + l.monto*(1+(l.interes||0)/100), 0)), loansOpen: op.length, lateLoans: op.filter(l => l.vence && l.vence < td).length, nextDueDays: nx ? Math.round((Date.parse(nx)-Date.parse(td))/864e5) : null}); }catch(_){}   // Pato's take reads these (amounts only, never names)
-      render();
+      renderSoon();
     }, ()=>{});
   })();
 })();
@@ -6871,6 +6886,27 @@ TRACKER DATA:
     try{ show(d || {}, tab); }catch(e){ console.error(e); toast(typed ? "Couldn’t understand that" : "Couldn’t read the photo", "Try again", true); }
   }
 
+  // a receipt saved before its bank charge (pend) joins the charge when the sync brings it in: same amount (1%), or up to 25% more
+  // (tip) at a place with a matching name, within 3 days. The charge keeps the receipt; the pending row is deleted.
+  var joining = {};
+  function joinPend(){
+    if(!db || !(window.MP_ME && window.MP_ME.owner)) return;
+    var wd = function(t){ return String(t||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").split(/[^a-z0-9]+/).filter(function(w){ return w.length >= 4; }); };
+    spend.filter(function(p){ return p.pend && p.kind === "consumo" && !p.excluded && !joining[p.id]; }).forEach(function(p){
+      var pa = Number(p.rd)||0, pw = wd(p.merchant); if(!(pa > 0)) return;
+      var m = spend.filter(function(x){
+        if(x.id === p.id || x.pend || x.kind !== "consumo" || x.excluded || x.receipt || x.status !== "Aprobada" || !x.date || joining["c" + x.id]) return false;
+        var a = Number(x.rd)||0; if(!(a > 0) || days(x.date, p.date) > 3) return false;
+        if(Math.abs(a - pa) <= Math.max(1, pa*0.01)) return true;
+        var xw = wd(x.merchant); return a > pa && a <= pa*1.25 && pw.some(function(w){ return xw.indexOf(w) >= 0; });
+      }).sort(function(x, y){ return Math.abs((Number(x.rd)||0) - pa) - Math.abs((Number(y.rd)||0) - pa) || days(x.date, p.date) - days(y.date, p.date); })[0];
+      if(!m) return;
+      joining[p.id] = 1; joining["c" + m.id] = 1;
+      var patch = {receipt:{merchant:String(p.merchant||"").slice(0,80), amount:pa, date:p.date}, note:"Receipt: " + String(p.merchant||"").slice(0,60)};
+      if(!m.userCat && p.cat && p.cat !== "other" && m.cat !== "errands") patch.cat = p.cat;
+      db.collection("spend").doc(m.id).update(patch).then(function(){ return db.collection("spend").doc(p.id).delete(); }).catch(function(e){ console.error(e); delete joining[p.id]; delete joining["c" + m.id]; });
+    });
+  }
   async function queue(d, note){ await db.collection("snaps").add({status:"pending", kind:d.kind, data:d, tab:curTab(), at:today(), ts:Date.now(), note:note||""}); }
 
   function show(d, tab){
@@ -6883,7 +6919,7 @@ TRACKER DATA:
       if(m) acts.push(["Save", async function(){ var patch = {receipt:{merchant:String(d.merchant||"").slice(0,80), amount:amt, date:dt}, note:"Receipt: " + String(d.merchant||"").slice(0,60)}; if(!m.userCat && cat !== "other" && m.cat !== "errands") patch.cat = cat; await db.collection("spend").doc(m.id).update(patch); toast("Receipt added", "Matched with your bank charge"); }]);
       else {
         var cash = async function(){ await db.collection("spend").add({date:dt, merchant:String(d.merchant||CATS[cat]).slice(0,80), amount:amt, currency:"DOP", rd:amt, kind:"manual", status:"Aprobada", cat:cat, source:"manual", excluded:false, ts:Date.now(), receipt:true}); toast(rd(amt) + " cash expense logged", CATS[cat]); };
-        var card = (window.MP_ME&&!window.MP_ME.owner) ? async function(){ await db.collection("spend").add({date:dt, merchant:String(d.merchant||CATS[cat]).slice(0,80), amount:amt, currency:"DOP", rd:amt, kind:"manual", status:"Aprobada", cat:cat, source:"manual", excluded:false, ts:Date.now(), receipt:true, card:true}); toast(rd(amt) + " expense logged", CATS[cat]); } : async function(){ await queue(d, "card charge not synced yet: attach to it, don’t add a new expense"); toast("Saved", "It joins the card charge when it comes in"); };
+        var card = (window.MP_ME&&!window.MP_ME.owner) ? async function(){ await db.collection("spend").add({date:dt, merchant:String(d.merchant||CATS[cat]).slice(0,80), amount:amt, currency:"DOP", rd:amt, kind:"manual", status:"Aprobada", cat:cat, source:"manual", excluded:false, ts:Date.now(), receipt:true, card:true}); toast(rd(amt) + " expense logged", CATS[cat]); } : async function(){ await db.collection("spend").add({date:dt, merchant:String(d.merchant||CATS[cat]).slice(0,80), amount:amt, currency:"DOP", rd:amt, kind:"consumo", status:"Aprobada", cat:cat, source:"manual", excluded:false, ts:Date.now(), receipt:true, pend:true, note:"Receipt logged before the bank charge came in"}); toast(rd(amt) + " logged", "Joins the card charge when it comes in"); };
         if(d.paid === "cash") acts.push(["Paid cash, save", cash], ["I paid by card", card]); else acts.push(["Paid by card, save", card], ["I paid cash", cash]);
       }
       open(html + buttons(acts)); wire(acts); return;
@@ -6918,7 +6954,9 @@ TRACKER DATA:
         toast(rd(own ? 0 : a) + " transfer logged", to); }; };
       if(out && tab !== "tab-loans"){ if(d.own) acts4.push(["To my own account, save", saveTr(true)], ["It was spending", saveTr(false)]); else acts4.push(["Save as spending", saveTr(false)], ["It went to my own account", saveTr(true)]); }
       if(false) acts4.push(["Fill the transfer form", async function(){ $("spTrAmt").value = a.toLocaleString("en-US"); $("spTrTo").value = String(d.person||"").slice(0,80); $("spTrDate").value = dt2; ["spTrAmt","spTrTo","spTrDate"].forEach(function(x){ $(x).dispatchEvent(new Event("input")); }); setTimeout(function(){ $("s-sptr").scrollIntoView({behavior:"smooth", block:"start"}); }, 50); toast("Check it and tap Log transfer", ""); }]);
-      acts4.push([tab === "tab-loans" ? (out ? "Save as a loan" : "Save as a payment") : out ? "It’s a loan" : "Save", async function(){ if((window.MP_ME&&!window.MP_ME.owner) && window.__gstTr){ window.__gstTr(d, tab, out); return; } await queue(d, tab === "tab-loans" ? (out ? "loan given" : "loan payment received") : ""); toast("Saved", "It’s added within the hour"); }]);
+      acts4.push([tab === "tab-loans" ? (out ? "Save as a loan" : "Save as a payment") : out ? "It’s a loan" : "Save", async function(){ if((window.MP_ME&&!window.MP_ME.owner) && window.__gstTr){ window.__gstTr(d, tab, out); return; }
+        if(window.__gstTr){ if(!out && window.__patoPay && window.__patoPay(d.person, a, dt2, /bhd/i.test(d.bank||""))) return; window.__gstTr(d, out ? tab : "tab-savings", out); return; }
+        await queue(d, tab === "tab-loans" ? (out ? "loan given" : "loan payment received") : ""); toast("Saved", "It’s added within the hour"); }]);
       open(html4 + buttons(acts4)); wire(acts4); return;
     }
     open('<h3>Couldn’t tell what this is</h3><p class="sub">' + esc(d.summary || "Try a clearer photo or screenshot.") + '</p><div class="bt"><button type="button" class="secondary" id="snapOk">OK</button></div>'); $("snapOk").onclick = close;
@@ -6927,7 +6965,7 @@ TRACKER DATA:
   if(!window.claude) return;
   window.claude.use("db").then(function(d){
     db = d; addKeyRow();
-    db.collection("spend").onSnapshot(function(s){ spend = s.docs.map(function(x){ var o = x.data(); o.id = x.id; return o; }); }, function(){});
+    db.collection("spend").onSnapshot(function(s){ spend = s.docs.map(function(x){ var o = x.data(); o.id = x.id; return o; }); try{ joinPend(); }catch(e){ console.error(e); } }, function(){});
     db.collection("bets").onSnapshot(function(s){ bets = s.docs.map(function(x){ return {id:x.id}; }); }, function(){});
   });
 })();
