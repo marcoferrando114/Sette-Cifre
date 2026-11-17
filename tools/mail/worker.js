@@ -130,23 +130,24 @@ const WATCH_Q = "from:(Alertas@bhd.com.do OR notificaciones@bhd.com.do OR notifi
 const nice = s => String(s || "").toLowerCase().replace(/(^|[\s,.'-])([a-zà-ÿ])/g, (m, a, b) => a + b.toUpperCase()).trim();
 const money = (cur, n) => (cur === "USD" ? "US$" : "RD$") + n.toLocaleString("en-US", { minimumFractionDigits: Math.round(n * 100) % 100 ? 2 : 0, maximumFractionDigits: 2 });
 const num = a => Number(String(a).replace(/,/g, ""));
+const isoD = d => { let m = String(d || "").match(/^(\d\d)\/(\d\d)\/(\d{4})/); if (m) return m[3] + "-" + m[2] + "-" + m[1]; m = String(d || "").match(/^(\d{4})(\d\d)(\d\d)$/); return m ? m[1] + "-" + m[2] + "-" + m[3] : ""; };
 const curOf = c => /^US/i.test(c) ? "USD" : "DOP";
 // One bank alert email -> {bank, kind: card|transfer|deposit|cash|in, amount, cur, detail, status, date} or null (ads, codes, anything else)
 function parseAlert(from, subject, text) {
   const bank = /bhd\.com\.do/i.test(from) ? "BHD" : /popularenlinea/i.test(from) ? "Popular" : null; if (!bank) return null;
   const T = String(text || "").replace(/[­ ]/g, " ").replace(/\s+/g, " "), S = String(subject || ""); let x;
   if (/C[oó]digo Cash/i.test(S + " " + T) && (x = T.match(/RD\s*\$?\s*([\d,]+\.\d\d)\s+(\d\d\/\d\d\/\d{4})\s+(Aprobada|Declinada|Rechazada)/i)))
-    return { bank, kind: "cash", amount: num(x[1]), cur: "DOP", detail: "", status: x[3], date: x[2] };
+    return { bank, kind: "cash", amount: num(x[1]), cur: "DOP", detail: "", status: x[3], date: isoD(x[2]) };
   if (/Dep[oó]sito/i.test(S) && (x = T.match(/RD\s*\$?\s*([\d,]+\.\d\d)\s+(\d{8})\s+(.+?)\s+En caso/i)))
-    return { bank, kind: "deposit", amount: num(x[1]), cur: "DOP", detail: /ATM/i.test(S) ? "ATM" : nice(x[3].replace(/_/g, " ")), status: "Aprobada", date: x[2] };
+    return { bank, kind: "deposit", amount: num(x[1]), cur: "DOP", detail: /ATM/i.test(S) ? "ATM" : nice(x[3].replace(/_/g, " ")), raw: S, status: "Aprobada", date: isoD(x[2]) };
   if (bank === "BHD" && /Beneficiario/i.test(T) && (x = T.match(/Monto:?\s*(RD|US)\s*\$?\s*([\d,]+\.\d\d)/i))) {
     const b = (T.match(/Beneficiario:?\s*(.+?)\s+N.{1,3}mero de confirmaci/i) || [])[1] || "";
-    return { bank, kind: "transfer", amount: num(x[2]), cur: curOf(x[1]), detail: /MARCO/i.test(b) && /FERRANDO/i.test(b) ? "to yourself" : "to " + nice(b), status: "Aprobada", date: "" };
+    return { bank, kind: "transfer", amount: num(x[2]), cur: curOf(x[1]), detail: /MARCO/i.test(b) && /FERRANDO/i.test(b) ? "to yourself" : "to " + nice(b), bene: b, status: "Aprobada", date: isoD((T.match(/transacci.{1,3}n:?\s*(\d\d\/\d\d\/\d{4})/i) || [])[1]) };
   }
   if (bank === "BHD" && (x = T.match(/(\d\d\/\d\d\/\d{4})\s+\d{1,2}:\d\d\s*[ap]m\s+(RD|US)\s*\$?\s*([\d,]+\.\d\d)\s+(.+?)\s+(Aprobada|Declinada|Rechazada|Reversada)\b/i)))
-    return { bank, kind: "card", amount: num(x[3]), cur: curOf(x[2]), detail: nice(x[4]), status: x[5], date: x[1] };
+    return { bank, kind: "card", amount: num(x[3]), cur: curOf(x[2]), detail: nice(x[4]), raw: x[4].trim(), status: x[5], date: isoD(x[1]) };
   if (bank === "Popular" && (x = T.match(/(RD|US)\$\s*([\d,]+\.\d\d)\s+(?:Peso dominicano|D[oó]lar[a-z ]*|Euro)\s+(\d\d\/\d\d\/\d{4})\s+(.+?)\s+(Aprobada|Declinada|Rechazada|Reversada)/i)))
-    return { bank, kind: "card", amount: num(x[2]), cur: curOf(x[1]), detail: nice(x[4]), status: x[5], date: x[3] };
+    return { bank, kind: "card", amount: num(x[2]), cur: curOf(x[1]), detail: nice(x[4]), raw: x[4].trim(), status: x[5], date: isoD(x[3]) };
   if (/dep[oó]sito|cr[eé]dito|acredit|recibi|transferencia recibida/i.test(S) && !/publicidad|plazo/i.test(S) && (x = T.match(/(RD|US)\s*\$?\s*([\d,]+\.\d\d)/i)))   // money in: any wording the bank may use
     return { bank, kind: "in", amount: num(x[2]), cur: curOf(x[1]), detail: "", status: "Aprobada", date: "" };
   return null;
@@ -160,9 +161,9 @@ function alertText(a) {
   return [a.bank + " money in", m];
 }
 async function notifyKey(env) { let k = await env.LIMITS.get("gm:notifykey"); if (!k) { k = b64(crypto.getRandomValues(new Uint8Array(24))).replace(/[+/=]/g, ""); await env.LIMITS.put("gm:notifykey", k); } return k; }
-async function notify(env, title, body, tag) {
+async function notify(env, title, body, tag, alert) {
   if (!env.CRON) throw new Error("no CRON binding");
-  const r = await env.CRON.fetch("https://pato-cron/notify", { method: "POST", headers: { "content-type": "application/json", "x-notify-key": await notifyKey(env) }, body: JSON.stringify({ title, body, tag }) });
+  const r = await env.CRON.fetch("https://pato-cron/notify", { method: "POST", headers: { "content-type": "application/json", "x-notify-key": await notifyKey(env) }, body: JSON.stringify({ title, body, tag, alert }) });
   if (!r.ok) throw new Error("notify " + r.status + " " + (await r.text()).slice(0, 80));
 }
 async function watch(env) {
@@ -189,7 +190,7 @@ async function watch(env) {
     const m = await google(G + "/" + id + "?format=full", at).catch(() => null); if (!m) continue;
     const a = parseAlert(head(m, "from"), head(m, "subject"), bodyText(m.payload));
     if (a) { const [title, body] = alertText(a);
-      try { await notify(env, title, body, "bank-" + id); } catch (e) { console.log("notify failed", String(e)); break; }   // not marked seen: tried again on the next run (for 3 hours)
+      try { await notify(env, title, body, "bank-" + id, { ...a, id, ts: Number(m.internalDate) || Date.now() }); } catch (e) { console.log("notify failed", String(e)); break; }   // not marked seen: tried again on the next run (for 3 hours)
       log.push({ id, ts: Number(m.internalDate) || Date.now(), ...a }); sent++; }
     st.seen.push(id);
   }

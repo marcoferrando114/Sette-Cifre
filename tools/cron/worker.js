@@ -7,6 +7,7 @@
 //   VAPID_PRIVATE (secret)  full text of vapid_private.pem (BEGIN/END PRIVATE KEY lines included), only needed for the push
 // KV binding LIMITS (shared). Keys used here start with "cron:".
 // GET /run?job=stocks|loans&key=... is not exposed; use "Trigger event" in the dashboard (Settings > Triggers) to test.
+import { ingest } from "./ingest.js";
 const API_KEY = "AIzaSyAMuD9zu8-MXApaHTCVsaXLi5CtV3WufY4";   // Firebase web key (public by design, same as the app)
 const PROJECT = "stakd-3d1b9";
 const OWNER = "e16AkFccPaRJjc5uosBXY5AGXyx1";
@@ -53,6 +54,22 @@ async function patchDoc(env, col, doc, data) {   // merge top-level fields
   const keys = Object.keys(data), mask = keys.map(k => "updateMask.fieldPaths=" + encodeURIComponent(/^[A-Za-z_][A-Za-z0-9_]*$/.test(k) ? k : "`" + k + "`")).join("&");
   return fs(env, "PATCH", path(col, doc) + "?" + mask, { fields: Object.fromEntries(keys.map(k => [k, val(data[k])])) });
 }
+
+// Store for ingest.js (bank alert auto-logging): queries with a single filter only, so no Firestore index is needed
+const flt = (f, op, v) => ({ fieldFilter: { field: { fieldPath: f }, op, value: val(v) } });
+async function runQuery(env, col, filters) {
+  const where = filters.length === 1 ? filters[0] : { compositeFilter: { op: "AND", filters } };
+  const r = await fs(env, "POST", `${BASE}/users/${OWNER}:runQuery`, { structuredQuery: { from: [{ collectionId: col }], where, limit: 300 } });
+  return (r || []).filter(x => x.document).map(x => docOf(x.document));
+}
+const fsStore = env => ({
+  get: (c, id) => getDoc(env, c, id),
+  put: (c, id, data) => patchDoc(env, c, id, data),
+  eq: (c, f, v) => runQuery(env, c, [flt(f, "EQUAL", v)]),
+  arrayHas: (c, f, v) => runQuery(env, c, [flt(f, "ARRAY_CONTAINS", v)]),
+  range: (c, f, lo, hi) => runQuery(env, c, [flt(f, "GREATER_THAN_OR_EQUAL", lo), flt(f, "LESS_THAN_OR_EQUAL", hi)]),
+  list: c => listCol(env, c),
+});
 
 // ---------- 1. Stock prices ----------
 async function q(sym, ext = true) {
@@ -347,7 +364,10 @@ export default {
       if (!key || req.headers.get("x-notify-key") !== key) return new Response("no", { status: 403 });
       const b = await req.json().catch(() => ({})); if (!b.title) return new Response("missing title", { status: 400 });
       if (!(await pref(env, "bank").catch(() => true))) return new Response("off", { status: 200 });
-      try { return new Response("ok " + await push(env, String(b.title).slice(0, 80), String(b.body || "").slice(0, 160), "./", String(b.tag || "bank").slice(0, 60)), { status: 200 }); }
+      let logged = "", body = String(b.body || "");
+      if (b.alert && await pref(env, "autolog").catch(() => true)) {   // auto-logging (Nov 17): a failure never blocks the push, it says so in it
+        try { logged = await ingest(fsStore(env), b.alert); } catch (e) { logged = "error"; console.log("ingest failed", String(e).slice(0, 200)); await env.LIMITS.put("cron:ingesterr", String(e).slice(0, 300) + " @" + new Date().toISOString(), { expirationTtl: 7 * 86400 }).catch(() => 0); body += " · not logged"; } }
+      try { return new Response("ok " + await push(env, String(b.title).slice(0, 80), body.slice(0, 160), "./", String(b.tag || "bank").slice(0, 60)) + (logged ? " | " + logged : ""), { status: 200 }); }
       catch (e) { return new Response("error " + String(e).slice(0, 120), { status: 500 }); }
     }
     if (u.pathname === "/flex" && env.BOT_PASSWORD && u.searchParams.get("pw") === env.BOT_PASSWORD)   // open once to preview, add &apply=1 to write

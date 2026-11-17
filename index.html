@@ -2126,7 +2126,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261117180000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261117200000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -2379,6 +2379,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
       </div>
       <div class="hint" style="margin-top:6px">Not spending, not income. Only the two balances change.</div>
     </div>
+    <div id="mvList" hidden style="margin-top:14px"><div class="hint" id="mvHead" style="margin-bottom:4px"></div><ul class="hist" id="mvHist"></ul></div>
     <ul class="hist" id="ccHist" style="margin-top:8px" hidden></ul>
     <script>document.getElementById("ccBox").addEventListener("click",()=>{const h=document.getElementById("ccHist");h.hidden=!h.hidden;});</script>
   </section>
@@ -4707,6 +4708,15 @@ html:not(.mp-guest) #s-gst{display:none!important}
       else if($("ccDelta")) { $("ccDelta").textContent = "—"; $("ccDelta").className=""; }
     }
     $("s-cc").hidden = !cc.length;
+    { const mv = entries.filter(e=>e.traslado).sort((a,b)=>(b.date||"").localeCompare(a.date||"")||(b.createdAt||0)-(a.createdAt||0));
+      const mk = today().slice(0,7), mt = mv.filter(e=>(e.date||"").slice(0,7)===mk).reduce((t,e)=>t+e.amount,0);
+      $("mvList").hidden = !mv.length;
+      $("mvHead").textContent = "Between my accounts" + (mt ? ` · ${fmt(mt)} this month` : "");
+      const ml = $("mvHist"); ml.innerHTML = "";
+      mv.slice(0,5).forEach(e => { const li = document.createElement("li");
+        li.innerHTML = `<div><div class="src"></div></div><div class="amt num"></div>`;
+        li.querySelector(".src").textContent = fmtDate(e.date,false) + " · " + (e.type==="in" ? "Popular → BHD" : "BHD → Popular");
+        li.querySelector(".amt").textContent = fmt(e.amount); ml.appendChild(li); }); }
     const ch = $("ccHist"); ch.innerHTML = "";
     cc.slice(0,6).forEach(c => {
       const li=document.createElement("li");
