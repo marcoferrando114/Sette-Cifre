@@ -2126,7 +2126,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261117160000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261117170000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -4775,7 +4775,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
       $("brief").hidden = !rows.length;
     })(); }catch(e){ console.error(e); }
     // ---- Pato score ----
-    if(!window.__pscDb && typeof db!=="undefined" && db){ window.__pscDb = db; window.__pscHist = {}; db.doc("prefs/score").onSnapshot(s=>{ window.__pscHist = (s.exists && s.data().hist) || {}; }, ()=>{}); }
+    if(!window.__pscDb && typeof db!=="undefined" && db){ window.__pscDb = db; window.__pscHist = {}; db.doc("prefs/score").onSnapshot(s=>{ window.__pscHist = (s.exists && s.data().hist) || {}; window.__pscHistOk = true; }, ()=>{}); }
     try{ (()=>{
       const t = today(), from = iso(new Date(Date.now() - 90*864e5)), inW = d => !!d && d >= from && d <= t;
       const pw = (x, pts) => { if(x<=pts[0][0]) return pts[0][1]; for(let i=1;i<pts.length;i++){ const [a,sa]=pts[i-1], [b,sb]=pts[i]; if(x<=b) return sa+(sb-sa)*(x-a)/(b-a); } return pts[pts.length-1][1]; };   // smooth scale through fixed points
@@ -4864,7 +4864,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
         const arc = (s0,s1) => { const [x0,y0] = pt(s0,R), [x1,y1] = pt(s1,R); return `M${x0.toFixed(1)} ${y0.toFixed(1)} A${R} ${R} 0 0 1 ${x1.toFixed(1)} ${y1.toFixed(1)}`; };
         const [nx,ny] = pt(score, R-14);
         $("pscG").innerHTML = `<svg viewBox="0 0 200 112" aria-hidden="true">${[[0,19.4,"z1"],[20.6,39.4,"z2"],[40.6,59.4,"z3"],[60.6,79.4,"z4"],[80.6,100,"z5"]].map(([a,b,c])=>`<path d="${arc(a,b)}" class="g-${c}${c===z[3]?" on":""}"/>`).join("")}<line x1="${cx}" y1="${cy}" x2="${nx.toFixed(1)}" y2="${ny.toFixed(1)}" class="g-n"/><circle cx="${cx}" cy="${cy}" r="5" class="g-c"/></svg>`; }
-      $("pscNum").textContent = score; $("pscBand").textContent = z[1]; $("pscBand").className = "psc-z " + z[3]; window.__patoLast = [score, z[1], z[3]]; window.__patoPill && window.__patoPill(score, z[1], z[3]); /* pill on every tab (restored Nov 12) */ $("pscMean").textContent = z[2][Math.floor(new Date(t+"T12:00").getTime()/864e5) % z[2].length];
+      $("pscNum").textContent = score; $("pscBand").textContent = z[1]; $("pscBand").className = "psc-z " + z[3]; window.__patoLast = [score, z[1], z[3]]; try{ window.__patoPill && window.__patoPill(score, z[1], z[3]); }catch(e){ console.error(e); } /* pill on every tab (restored Nov 12) */ $("pscMean").textContent = z[2][Math.floor(new Date(t+"T12:00").getTime()/864e5) % z[2].length];
       // why it moved: compare with the saved score from about a week ago
       const PH = {spend:["you spent less compared to what you earn","you spent more compared to what you earn"], limit:["you're on a better pace for your limit","you're spending faster than your limit"],
         months:["your savings cushion grew","your savings cushion shrank"], inv:["more of your money is invested","less of your money is invested"], ontime:["loans came back on time","a loan is late"],
@@ -4877,7 +4877,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
         $("pscWhy").innerHTML = d===0 ? `No change ${span}` : `<b class="${d>0?"up":"dn"}">${d>0?"▲ +":"▼ −"}${Math.abs(d)}</b> ${span}${best && Math.abs(best[1])>=0.5 && (best[1]>0)===(d>0) ? ": " + PH[best[0]][d>0?0:1] : ""}`; }
       else $("pscWhy").textContent = "";
       // remember today's score (one per day) so the next ones can explain the change
-      try{ const prev = hist[t]; if(window.__pscDb && (!prev || prev.s!==score || JSON.stringify(prev.c)!==JSON.stringify(contrib)) && window.__pscSaved!==t+score){
+      try{ const prev = hist[t]; if(window.__pscDb && window.__pscHistOk && (!prev || prev.s!==score || JSON.stringify(prev.c)!==JSON.stringify(contrib)) && window.__pscSaved!==t+score){
         window.__pscSaved = t+score; const keep = {}; Object.keys(hist).filter(d=>daysBetween(d,t)<=60).forEach(d=>keep[d]=hist[d]); keep[t] = {s:score, c:contrib};
         window.__pscDb.doc("prefs/score").set({hist:keep, at:Date.now()}).catch(()=>{}); } }catch(e){}
       $("pscBars").innerHTML = pil.map(x=>`<div class="psc-b"><span>${x.n}</span><i><em style="width:${Math.max(4,Math.round(x.v))}%" class="${x.v>=80?"good":x.v>=40?"mid":"bad"}"></em></i></div>`).join("");
@@ -7007,8 +7007,8 @@ TRACKER DATA:
       var row = tp.querySelector(":scope > .pp-row");
       if(!row){ row = document.createElement("div"); row.className = "pp-row"; row.innerHTML = '<button type="button" class="pato-pill"><img alt=""><b></b><span></span></button>'; tp.insertBefore(row, tp.firstChild);
         row.firstChild.onclick = function(){ var t = document.getElementById("tab-savings"); if(t && t.getAttribute("aria-selected") !== "true") t.click(); setTimeout(function(){ var c = document.getElementById("psc"); if(c) c.scrollIntoView({behavior:"smooth", block:"center"}); }, 80); }; }
-      var b = row.firstChild; b.querySelector("img").src = light ? "icon-light-192.png?v=6" : "icon-192.png?v=7";
-      b.querySelector("b").textContent = s; var sp = b.querySelector("span"); sp.textContent = name; sp.className = cls;
+      var b = row.firstChild, im = b.querySelector("img"); if(im) im.src = light ? "icon-light-192.png?v=6" : "icon-192.png?v=7";   /* the duck replaces the img after the first draw (Nov 17) */
+      b.querySelector("b").textContent = s; var sp = b.querySelector(":scope > span:not(.pk-av)"); sp.textContent = name; sp.className = cls;
       b.setAttribute("aria-label", "Pato score " + s + ", " + name);
     });
   };
@@ -8124,7 +8124,7 @@ html.pk-m .pk-rl{animation:pkRel .45s cubic-bezier(.3,1.6,.5,1)}
 
   // score pill: the duck's face follows your Pato score (Sinking worried ... Flying happy)
   var MOOD = {z1: "sad", z2: "worry", z5: "joy"};
-  function pills(){ document.querySelectorAll(".pato-pill").forEach(function(b){ var im = b.querySelector("img"), sp = b.querySelector("span"), av = b.querySelector(".pk-av");
+  function pills(){ document.querySelectorAll(".pato-pill").forEach(function(b){ var im = b.querySelector("img"), sp = b.querySelector(":scope > span:not(.pk-av)"), av = b.querySelector(".pk-av");
     if(im){ av = document.createElement("span"); av.className = "pk-av pk-flip"; av.appendChild(make({bust: true, flip: true, bg: "dark"})); im.replaceWith(av); }
     if(!av) return; var s = av.firstChild, z = sp && (sp.className.match(/z\d/) || [])[0], m = MOOD[z] || "";
     if(s._mood !== m){ ["sad", "worry", "joy"].forEach(function(c){ s.classList.toggle(c, c === m); }); if(s._mood !== undefined && seen(s)) play(s, m === "joy" ? "hop" : m ? "flinch" : "nod", 700); s._mood = m; } }); }
@@ -8181,7 +8181,7 @@ html.pk-m .pk-rl{animation:pkRel .45s cubic-bezier(.3,1.6,.5,1)}
   window.addEventListener("scroll", function(){ if(pr){ pr.classList.remove("pk-pr"); pr = null; } }, {passive: true});
 
   // ---------- big numbers: when a save changes them, they roll to the new value and glow ----------
-  var NUMS = ["pctBase", "pctFill", "saved", "left", "spTotal", "stVal", "pkAll", "pscNum"];
+  var NUMS = ["pctBase", "pctFill", "left", "spTotal", "stVal", "pkAll", "pscNum"];
   function numOf(s){ var m = String(s).match(/-?\d[\d,]*(\.\d+)?/); return m ? parseFloat(m[0].replace(/,/g, "")) : null; }
   function roll(el, from, to, text){ var node = el.firstChild; if(!node || node.nodeType !== 3 || el.childNodes.length !== 1) return;
     var m = text.match(/-?\d[\d,]*(\.\d+)?/), dec = (m[0].split(".")[1] || "").length, comma = m[0].indexOf(",") >= 0, t0 = performance.now(), dur = 900;
