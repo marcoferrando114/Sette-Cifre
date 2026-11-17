@@ -2102,7 +2102,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261117030000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261117040000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -2342,6 +2342,18 @@ html:not(.mp-guest) #s-gst{display:none!important}
     <div class="row" style="margin-top:12px">
       <input id="ccIn" inputmode="decimal" placeholder="Today’s balance (RD$)" autocomplete="off" aria-label="Current checking account balance">
       <button class="mini" type="button" id="ccSave" disabled>Update balance</button>
+    </div>
+    <button class="mini" type="button" id="mvOpen" style="margin-top:10px">Move money between accounts</button>
+    <div id="mvBox" hidden style="margin-top:10px">
+      <div class="row">
+        <select id="mvDir" aria-label="Direction"><option value="pb">Popular → BHD</option><option value="bp">BHD → Popular</option></select>
+        <input id="mvAmt" inputmode="decimal" placeholder="Amount (RD$)" autocomplete="off" aria-label="Amount to move">
+      </div>
+      <div class="row" style="margin-top:8px">
+        <input id="mvDate" type="date" aria-label="Date of the move">
+        <button class="mini" type="button" id="mvSave" disabled>Save move</button>
+      </div>
+      <div class="hint" style="margin-top:6px">Not spending, not income. Only the two balances change.</div>
     </div>
     <ul class="hist" id="ccHist" style="margin-top:8px" hidden></ul>
     <script>document.getElementById("ccBox").addEventListener("click",()=>{const h=document.getElementById("ccHist");h.hidden=!h.hidden;});</script>
@@ -4775,7 +4787,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
         const NOTREG = new Set([...NOPOKER, "Saldo inicial", "Préstamo", "Reposición", "Retiro"]);
         const inK = k => d => (d||"").slice(0,7)===k;
         const gm = k => entries.filter(e=>NOPOKER.has(e.source) && inK(k)(e.date)).reduce((s,e)=>s+(e.type==="out"?-e.amount:e.amount),0);   // only what moved through savings
-        const regIn = k => entries.filter(e=>e.type!=="out" && !NOTREG.has(e.source) && inK(k)(e.date)).reduce((s,e)=>s+e.amount,0) + interestBy(inK(k), "ahorro");
+        const regIn = k => entries.filter(e=>e.type!=="out" && !e.traslado && !NOTREG.has(e.source) && inK(k)(e.date)).reduce((s,e)=>s+e.amount,0) + interestBy(inK(k), "ahorro");
         const fk = [1,2,3].map(i => { const d = new Date(+mk.slice(0,4), +mk.slice(5,7)-1-i, 1); return d.getFullYear()+"-"+pad(d.getMonth()+1); })
                     .filter(k => entries.some(e=>inK(k)(e.date) && e.source!=="Saldo inicial"))   // finished months with data
                     .filter((k,i,a) => !spend.length || spend.some(t=>!t.excluded && (t.date||"").slice(0,7)===k) || !a.some(x=>spend.some(t=>!t.excluded && (t.date||"").slice(0,7)===x)));   // with spending tracked, only months it covers
@@ -5286,6 +5298,31 @@ html:not(.mp-guest) #s-gst{display:none!important}
     $("ccSave").disabled = true;
     try{ await db.collection("corriente").add({saldo:v, date:today(), createdAt:Date.now()}); $("ccIn").value=""; toast("Balance updated", `Checking account: ${fmt(v)}`); }
     catch(e){ warnMsg("Couldn’t save the balance."); $("ccSave").disabled=false; }
+  };
+
+  // ---------- move money between own accounts (Popular checking <-> BHD savings), Marco Nov 16 ----------
+  // One savings entry with traslado:true (never income or spending) + a new checking balance = last balance -/+ amount.
+  // The bank sync matches these by amount and date (entries without a bhd/popular id), so nothing is counted twice.
+  $("mvOpen").onclick = () => { const b = $("mvBox"); b.hidden = !b.hidden; if(!b.hidden){ $("mvDate").value = today(); $("mvAmt").focus(); } };
+  $("mvAmt").addEventListener("input", ()=>{ $("mvSave").disabled = !db || !(parseAmt($("mvAmt").value) > 0); });
+  $("mvSave").onclick = async () => {
+    if(!db) return;
+    const amt = parseAmt($("mvAmt").value), toBhd = $("mvDir").value==="pb", date = $("mvDate").value || today();
+    if(!(amt>0)) return;
+    const last = [...corriente].sort((a,b)=>(b.date||"").localeCompare(a.date||"") || (b.createdAt||0)-(a.createdAt||0))[0];
+    const cc0 = last ? last.saldo : 0;
+    if(toBhd && amt > cc0 + 0.5 && !await sure(`Checking only shows ${fmt(cc0)}. Move ${fmt(amt)} anyway?`)) return;
+    $("mvSave").disabled = true;
+    try{
+      const now = Date.now(), batch = db.batch(), eRef = db.collection("entries").doc(), cRef = db.collection("corriente").doc();
+      batch.set(eRef, toBhd
+        ? {type:"in", source:"Otro", amount:amt, date, createdAt:now, note:"Moved from Popular checking", traslado:true, ccRef:cRef.id}
+        : {type:"out", source:"Retiro", motivo:"corriente", amount:amt, date, createdAt:now, note:"Moved to Popular checking", traslado:true, ccRef:cRef.id});
+      batch.set(cRef, {saldo: Math.max(0, cc0 + (toBhd ? -amt : amt)), date: date > (last&&last.date||"") ? date : today(), createdAt: now, move: (toBhd?-amt:amt), entryRef: eRef.id});
+      await batch.commit();
+      $("mvAmt").value = ""; $("mvBox").hidden = true;
+      toast("Money moved", `${fmt(amt)} · ${toBhd ? "Popular → BHD" : "BHD → Popular"}`, false, async () => { const u = db.batch(); u.delete(eRef); u.delete(cRef); await u.commit(); });
+    }catch(e){ warnMsg("Couldn’t save the move."); $("mvSave").disabled = false; }
   };
 
   // ---------- spending (checking account card + cash) ----------
