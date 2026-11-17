@@ -655,17 +655,26 @@ const FOUNDERS = [
     fy: "She moved from cars to AI by following where the hardest engineering was." },
 ];
 // A real photo for a person or company from Wikipedia and Wikimedia Commons (Marco Nov 17: "a picture of Peter Thiel should be easy to find"): the page's lead photo, then the search's best page, then Commons files; remembered for 30 days
-async function wikiImg(env, title) {
-  const kvk = "wimg:" + String(title).toLowerCase().replace(/[^a-z0-9]+/g, "_"), kv = env && env.LIMITS;
+async function wikiImg(env, title) {   // Marco Nov 17: the photo must be the person himself. Only the person's own page lead photo, or a search hit / Commons file whose title contains the whole name (Zuckerberg's search once returned his wife's page)
+  const kvk = "wimg2:" + String(title).toLowerCase().replace(/[^a-z0-9]+/g, "_"), kv = env && env.LIMITS;
   try { const hit = kv && await kv.get(kvk); if (hit) return hit; } catch (e) {}
-  const H = { headers: { "user-agent": WUA, accept: "application/json" } }, good = o => o && o.source && /\.(jpe?g|png|webp)(\?|$)/i.test(o.source) && o.width >= 480 && o.height >= 320, tries = [];
-  const lead = async t => { try { const r = await cf("https://en.wikipedia.org/w/api.php?action=query&format=json&redirects=1&prop=pageimages&piprop=original&titles=" + encodeURIComponent(t), H); if (!r.ok) return null; const j = await r.json(), pg = Object.values((j.query || {}).pages || {})[0] || {}, o = pg.original; return good(o) ? o.source : null; } catch (e) { return null; } };
-  const sum = async t => { try { const r = await cf("https://en.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(t.replace(/ /g, "_")), H); if (!r.ok) return null; const j = await r.json(); return good(j.originalimage) ? j.originalimage.source : null; } catch (e) { return null; } };
-  let img = await lead(title) || await sum(title);
-  if (!img) { try { const r = await cf("https://en.wikipedia.org/w/api.php?action=query&format=json&list=search&srlimit=2&srsearch=" + encodeURIComponent(title), H), j = await r.json(); for (const x of ((j.query || {}).search || [])) { img = await lead(x.title); if (img) break; } } catch (e) {} }
-  if (!img) { try { const r = await cf("https://commons.wikimedia.org/w/api.php?action=query&format=json&generator=search&gsrnamespace=6&gsrlimit=6&gsrsearch=" + encodeURIComponent(title) + "&prop=imageinfo&iiprop=url|size|mime", H), j = await r.json(); for (const pg of Object.values((j.query || {}).pages || {})) { const ii = (pg.imageinfo || [])[0]; if (ii && /^image\/(jpeg|png|webp)$/.test(ii.mime || "") && ii.width >= 480 && ii.height >= 320) { img = ii.url; break; } } } catch (e) {} }
+  const toks = String(title).toLowerCase().split(/[^a-z0-9]+/).filter(t => t.length > 2), nameOk = t => { const l = String(t).toLowerCase(); return toks.length > 0 && toks.every(k => l.includes(k)); };
+  const H = { headers: { "user-agent": WUA, accept: "application/json" } }, good = (o, w, h) => o && o.source && /\.(jpe?g|png|webp)(\?|$)/i.test(o.source) && o.width >= w && o.height >= h;
+  const lead = async (t, w, h) => { try { const r = await cf("https://en.wikipedia.org/w/api.php?action=query&format=json&redirects=1&prop=pageimages&piprop=original&titles=" + encodeURIComponent(t), H); if (!r.ok) return null; const j = await r.json(), pg = Object.values((j.query || {}).pages || {})[0] || {}; return good(pg.original, w, h) ? pg.original.source : null; } catch (e) { return null; } };
+  const sum = async t => { try { const r = await cf("https://en.wikipedia.org/api/rest_v1/page/summary/" + encodeURIComponent(t.replace(/ /g, "_")), H); if (!r.ok) return null; const j = await r.json(); return good(j.originalimage, 300, 300) ? j.originalimage.source : null; } catch (e) { return null; } };
+  let img = await lead(title, 300, 300) || await sum(title);
+  if (!img) { try { const r = await cf("https://en.wikipedia.org/w/api.php?action=query&format=json&list=search&srlimit=4&srsearch=" + encodeURIComponent(title), H), j = await r.json(); for (const x of ((j.query || {}).search || [])) { if (!nameOk(x.title)) continue; img = await lead(x.title, 400, 300); if (img) break; } } catch (e) {} }
+  if (!img) { try { const r = await cf("https://commons.wikimedia.org/w/api.php?action=query&format=json&generator=search&gsrnamespace=6&gsrlimit=8&gsrsearch=" + encodeURIComponent(title) + "&prop=imageinfo&iiprop=url|size|mime", H), j = await r.json(); for (const pg of Object.values((j.query || {}).pages || {})) { const ii = (pg.imageinfo || [])[0]; if (nameOk(pg.title || "") && ii && /^image\/(jpeg|png|webp)$/.test(ii.mime || "") && ii.width >= 480 && ii.height >= 320) { img = ii.url; break; } } } catch (e) {} }
   if (img && kv) await kv.put(kvk, img, { expirationTtl: 2592000 }).catch(() => 0);
   return img || "";
+}
+const HEADS = `You fix confusing news headlines for a young reader. For each numbered headline decide whether it is confusing or hard to read: a name that looks like ordinary words (a horse, band, product or company named like a phrase), jargon, or a clause that is hard to parse. If it is fine, return "". If not, rewrite it clearly in plain words, same facts, same language as the headline, no new facts, at most 16 words, and put names that look like ordinary words in double quotes. Return ONLY a JSON object mapping each number to the new headline or "".`;
+async function clearHeads(env, b) {   // Marco Nov 17: "the title seems confusing and hard to read"
+  if (!env.ANTHROPIC_KEY || !b) return;
+  const its = [b.big].concat(Object.values(b.cats || {}).reduce((a, v) => a.concat((v || []).slice(0, 2)), [])).filter(it => it && it.h && !it.hc); if (!its.length) return;
+  try { const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "content-type": "application/json", "x-api-key": env.ANTHROPIC_KEY, "anthropic-version": "2023-06-01" }, body: JSON.stringify({ model: "claude-haiku-5-5", max_tokens: 1500, messages: [{ role: "user", content: HEADS + "\n\nHEADLINES:\n" + its.map((it, i) => i + ". " + it.h).join("\n") }] }) });
+    if (!r.ok) return; const j = await r.json(), txt = ((j.content || []).find(c => c.type === "text") || {}).text || "", m = txt.match(/\{[\s\S]*\}/); const o = JSON.parse(m[0]);
+    its.forEach((it, i) => { it.hc = 1; const v = typeof o[i] === "string" ? o[i].trim() : ""; if (v && v.length >= 12 && v.length <= 140 && v !== it.h) { it.h0 = it.h; it.h = v; } }); } catch (e) {}
 }
 async function founderOf(env, now) {   // one per day, rotating through the roster so none repeats for weeks; the real Wikipedia photo is required: a founder without a big sharp photo is skipped for the next one (Marco Nov 15)
   const day = Math.floor((now - 11 * 3600e3) / 864e5); let first = null;
@@ -703,6 +712,7 @@ async function finishSteps(env, E, key) {
   if (!x.wk) { for (const it of [E.b.cotd, E.b.ceo]) { if (it && !it.img) { const w = await wikiImg(env, it.name || "").catch(() => ""); if (w) it.img = w; } } x.wk = 1; await save(); }   // Company of the day and the founder always get a real photo from Wikipedia/Commons (Marco Nov 17)
   if (!x.ver) { FN = 0; await verifyImgs(E.b, env, E.b.idx); x.ver = 1; await save(); }
   if (!x.brief) { if (E.b.big) { if (E.b.big.d2) E.b.big.d = E.b.big.d2; E.b.big.brief = await brief(env, E.b.big).catch(() => null); } x.brief = 1; await save(); }
+  if (!x.hd) { await clearHeads(env, E.b); x.hd = 1; await save(); }
   if (!x.plain) { await plainAll(env, E.b).catch(() => null); x.plain = 1; await save(); }
   if (!x.means) { DBG = {}; await meansAll(env, E.b).catch(() => null); E.b._dbg = Object.assign({}, E.b._dbg, { means: DBG.means || "cached", miss: DBG.miss }); x.means = 1; }
   x.done = 1; E.st = "ready"; E.at = Date.now(); await save();
@@ -802,7 +812,7 @@ async function repairEd(env, E, q) {   // one repair round: swap in the next bes
   if (q.hard.some(r => /key facts/.test(r))) { x.means = 0; x.plain = 0; acts.push("redid key facts"); }
   if (q.hard.some(r => /different language/.test(r))) { edItems(b).forEach(it => { ["kf", "wm", "fy"].forEach(f => { if (it[f] && String(it[f]).length > 20 && langOf(it[f]) && langOf(it.h) && langOf(it[f]) !== langOf(it.h)) { it[f] = ""; if (f === "wm") it.jg = []; } }); }); acts.push("removed wrong-language key points"); }
   if (q.hard.some(r => /sports story/.test(r))) { Object.keys(b.cats || {}).forEach(k => { const cur = (b.cats[k] || [])[0]; if (cur && SPORTS.test(cur.h || "")) { const alt = (b._alt && b._alt[k] || []).filter(a => !SPORTS.test(a.h || "") && !rep(a.h, cur)); if (alt.length) { b.cats[k] = [alt[0]]; b._alt[k] = alt.slice(1); acts.push("moved a sports story out of " + k); x.img = 0; x.plain = 0; x.means = 0; x.ver = 0; } else { delete b.cats[k]; acts.push("dropped sports story from " + k); } } }); }
-  x.done = 0; E.st = "built"; return acts;
+  x.done = 0; x.hd = 0; E.st = "built"; return acts;
 }
 async function advance(env, idx) {   // one step per call (every cron tick, or every phone request while no cron has done it): build, finish, check, repair, publish or hold
   const key = "ed9q:" + idx; let E = await env.LIMITS.get(key, "json").catch(() => null); if (E && E.pub !== undefined) return E;
@@ -829,7 +839,8 @@ async function advance(env, idx) {   // one step per call (every cron tick, or e
 }
 async function getEdition(env, force, dbg, ctx) {   // what a phone gets: this drop's edition once it has passed the check, otherwise the last good one (never a broken one)
   const idx = dropIdx(Date.now()), key = "ed9q:" + idx, kv = env.LIMITS; let E = kv ? await kv.get(key, "json").catch(() => null) : null;
-  if (E && E.pub) { const o = finalize(E.b); o.fin = 1; if (dbg) { o._dbg = E.b._dbg; o._q = E.q; o._log = E.log; } return o; }
+  if (E && E.pub) { if (kv && E.b && !E.fx2) { E.fx2 = 1; try { const c = E.b.ceo; if (c && c.founder && c.name) { const w = await wikiImg(env, c.name).catch(() => ""); if (w) { c.img = w; c.vf = 3; } } await clearHeads(env, E.b); await kv.put(key, JSON.stringify(E), { expirationTtl: 172800 }); } catch (e) {} }   // one-time repair of an edition published before these rules: the founder's own photo, clearer headlines
+    const o = finalize(E.b); o.fin = 1; if (dbg) { o._dbg = E.b._dbg; o._q = E.q; o._log = E.log; } return o; }
   let L = null; try { const pt = kv && await kv.get("edpub", "json"); if (pt) L = await kv.get(pt.key, "json"); } catch (e) { L = null; }
   if (!L && kv) { for (const k8 of ["ed8:" + idx, "ed8:" + (idx - 1)]) { const v = await kv.get(k8, "json").catch(() => null); if (v && v.b && v.st === "ready") { L = v; break; } } }   // first deploy: the previous generation's finished edition keeps showing while the new one is built
   const failed = E && E.pub === false;
