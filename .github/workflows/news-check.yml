@@ -1,0 +1,24 @@
+name: news-check
+on: push
+jobs:
+  c:
+    runs-on: ubuntu-latest
+    steps:
+      - run: |
+          curl -s -H "Origin: https://marcoferrando114.github.io" "https://pato-ai.marcoferrando.workers.dev/edition?dbg=1" -o ed.json
+          python3 - <<'P'
+          import json
+          d=json.load(open('ed.json'))
+          print("stale",d.get('stale'),"fin",d.get('fin'),"idx",d.get('idx'),"at",d.get('at'))
+          def show(n,it):
+              if not it: print(n,"NONE"); return
+              print(n,"img=",(it.get('img') or '')[:90],"imgv=",it.get('imgv'),"logo=",bool(it.get('logo')),"|",(it.get('h') or it.get('name') or '')[:60])
+          show("BIG",d.get('big'))
+          for k,a in (d.get('cats') or {}).items(): show("CAT "+k,a[0] if a else None)
+          show("COTD",d.get('cotd')); show("CEO",d.get('ceo')); show("LAST",d.get('last'))
+          for k in ('deep','rising'):
+              v=d.get(k)
+              if isinstance(v,dict): show(k,v)
+          print("GAMES",[(g.get('league'),(g.get('teams') or [{}])[0].get('logo','')[:30]) for g in (d.get('games') or [])][:3])
+          print("KEYS",list(d.keys()))
+          P
