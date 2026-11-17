@@ -15,3 +15,7 @@ crons = ["*/5 * * * *"]   # every 5 minutes; the code decides: games + predictio
 [[services]]
 binding = "CRON"          # pato-cron: sends the push when a Pato Daily drop was not clean
 service = "pato-cron"
+
+[[services]]
+binding = "MAIL"          # pato-mail: every 5 minutes it checks Marco's bank emails and sends instant alerts
+service = "pato-mail"

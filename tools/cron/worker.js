@@ -342,6 +342,14 @@ export default {
     // called by the pato-ai worker (service binding) 35 minutes after each Pato Daily drop; the free plan allows only 5 cron triggers, so pato-ai's 5-minute cron does the timing
     if (new URL(req.url).pathname === "/health" && req.headers.get("x-edition-check") === "1") return new Response(await editionHealth(env).catch(e => "error " + String(e).slice(0, 100)), { status: 200 });
     const u = new URL(req.url);
+    if (req.method === "POST" && u.pathname === "/notify") {   // instant bank alert from pato-mail (shared key in KV, so only our own workers can use it)
+      const key = await env.LIMITS.get("gm:notifykey");
+      if (!key || req.headers.get("x-notify-key") !== key) return new Response("no", { status: 403 });
+      const b = await req.json().catch(() => ({})); if (!b.title) return new Response("missing title", { status: 400 });
+      if (!(await pref(env, "bank").catch(() => true))) return new Response("off", { status: 200 });
+      try { return new Response("ok " + await push(env, String(b.title).slice(0, 80), String(b.body || "").slice(0, 160), "./", String(b.tag || "bank").slice(0, 60)), { status: 200 }); }
+      catch (e) { return new Response("error " + String(e).slice(0, 120), { status: 500 }); }
+    }
     if (u.pathname === "/flex" && env.BOT_PASSWORD && u.searchParams.get("pw") === env.BOT_PASSWORD)   // open once to preview, add &apply=1 to write
       return new Response(await flexSync(env, u.searchParams.get("apply") !== "1").catch(e => "ERROR " + String(e).slice(0, 200)), { status: 200 });
     return new Response("pato-cron: runs on a schedule (stocks, loan reminders)", { status: 200 });
