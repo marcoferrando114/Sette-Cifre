@@ -2153,7 +2153,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261117190000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261118045305";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -6951,12 +6951,14 @@ TRACKER DATA:
   });
   async function read(src){
     var tab = curTab(), btn = $("snapBtn"), typed = !!src.text; btn.classList.add("busy"); toast(typed ? "Got it…" : "Reading the photo…", "");
-    var P = (typed ? 'You read a short note the person typed into a personal money app in the Dominican Republic, e.g. "500 valet tip" or "sent 2000 to mom". If no payment method is said, use "cash" for tips, colmados, parking and small cash things, otherwise null. Use today unless a day is said.' : 'You read a photo for a personal money app in the Dominican Republic.') + ' Amounts are RD$ (Dominican pesos) unless shown as US$/USD. The person is on the "' + tab.replace("tab-","") + '" tab, so it is probably ' + (HINT[tab] || "a receipt") + ', but decide from ' + (typed ? 'the note' : 'the image') + ' itself. Today is ' + today() + '.\n' +
+    var P = (typed ? 'You read a short note the person typed into a personal money app in the Dominican Republic, e.g. "500 valet tip" or "sent 2000 to mom". If no payment method is said, use "cash" for tips, colmados, parking and small cash things, otherwise null. Use today unless a day is said.' : 'You read a photo for a personal money app in the Dominican Republic.') + ' Amounts are RD$ (Dominican pesos) unless shown as US$/USD. ' + (typed ? 'Decide from the note.' : 'The person is on the "' + tab.replace("tab-","") + '" tab, so it is probably ' + (HINT[tab] || "a receipt") + ', but decide from the image itself.') + ' Today is ' + today() + '.\n' +
       'Answer with JSON only, exactly one of these shapes:\n' +
       '{"kind":"receipt","merchant":string,"amount":number,"date":"YYYY-MM-DD","cat":one of ' + JSON.stringify(Object.keys(CATS)) + ',"paid":"card"|"cash"|null}\n' +
       '{"kind":"bet","casa":string (sportsbook),"tipo":"single"|"parlay","stake":number,"odds":American odds integer for the whole ticket,"toWin":number,"payout":number (0 if lost or pending),"result":"won"|"lost"|"pending"|"void","fecha":"YYYY-MM-DD","hora":"HH:MM","legs":[{"sport":string,"game":string,"pick":string,"odds":integer,"result":"won"|"lost"|"pending"|"void","fecha":"YYYY-MM-DD HH:MM"}]}\n' +
       '{"kind":"stocks","trades":[{"t":ticker,"side":"buy"|"sell","sh":number,"price":number,"usd":number,"fee":number,"limite":number,"status":"filled"|"open"|"cancelled","date":"YYYY-MM-DD"}],"summary":string}\n' +
       '{"kind":"transfer","direction":"out"|"in","amount":number,"date":"YYYY-MM-DD","person":string (the other person, no account numbers),"bank":string,"note":string,"cat":one of ' + JSON.stringify(Object.keys(CATS)) + ',"own":true if it went to their own account}\n' +
+      (typed ? '{"kind":"casino","result":"loss"|"win","amount":number,"date":"YYYY-MM-DD","game":"arcade"|"poker_casino"|"poker_amigos","from":"bhd"|"popular"|"cash"|null (where the money came from or went, only if said)}  (use for money lost or won at a casino, slots, online casino or "arcade"; "casino" and "arcade" mean game "arcade"; poker at a casino is "poker_casino"; poker at home or with friends is "poker_amigos")\n' +
+      '{"kind":"owed","person":string,"amount":number,"as":"loan"|"debt"|null (only if the word loan/lent or debt is clear),"due":"YYYY-MM-DD"|null,"note":string|null}  (use when someone owes the person money, or the person lent money: "Miguelito owes me 3000 more", "lent Isaac 5000")\n' : '') +
       '{"kind":"other","summary":string}\n' +
       'Numbers may use a comma for decimals (RD$2.000,00 means 2000). Use null for anything you cannot see. Food includes groceries, restaurants and delivery; car is gas, tolls, parking, car wash; rides is Uber; wants is clothes, electronics and personal purchases; essentials is paperwork, repairs, utilities, insurance.';
     var d;
@@ -6994,6 +6996,63 @@ TRACKER DATA:
     });
   }
   async function queue(d, note){ await db.collection("snaps").add({status:"pending", kind:d.kind, data:d, tab:curTab(), at:today(), ts:Date.now(), note:note||""}); }
+
+
+  // typed: "lost 3000 at the casino" asks where the money came from, then logs it like the Log form does
+  var nrm = function(t){ return String(t||"").toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "").replace(/\s+/g, " ").trim(); };
+  var isOwner = function(){ return !(window.MP_ME && !window.MP_ME.owner); };
+  function nope(t){ open('<h3>Couldn’t tell what this is</h3><p class="sub">' + esc(t || "Try again with the amount.") + '</p><div class="bt"><button type="button" class="secondary" id="snapOk">OK</button></div>'); $("snapOk").onclick = close; }
+  function casino(d){
+    var ca = Math.round(Number(d.amount)||0), win = d.result === "win", cd = okDate(d.date);
+    var G = {arcade:["Casino", "arcade", "Premio casino"], poker_casino:["Casino poker", "poker_casino", "Póker casino"], poker_amigos:["Home poker", "poker_amigos", "Póker con amigos"]};
+    var g = G[d.game] || G.arcade, own = isOwner();
+    if(!(ca > 0)){ nope("Add the amount, like “lost 3000 at the casino”."); return; }
+    var A = own ? [["BHD", "bhd"], ["Popular ••5935", "popular"], ["Cash", "cash"]] : [["Savings", "bhd"], ["Other account or cash", "cash"]];
+    var said = d.from === "popular" && !own ? "cash" : d.from;
+    A.sort(function(x, y){ return (y[1] === said) - (x[1] === said); });
+    var save = function(acct){ return async function(){
+      var sign = win ? 1 : -1, hit = null;
+      if(acct === "bhd"){
+        var q = await db.collection("entries").where("date", "==", cd).get();
+        q.forEach(function(x){ var e = x.data(); if(!hit && e.type === (win ? "in" : "out") && e.source === g[2] && (win || e.motivo === g[1]) && !e.repone && !e.traslado) hit = {id:x.id, a:Number(e.amount)||0}; });
+        if(hit) await db.collection("entries").doc(hit.id).update({amount: hit.a + ca});
+        else await db.collection("entries").add(Object.assign({amount:ca, type: win ? "in" : "out", source:g[2], date:cd, note: g[0] + (win ? " win" : " loss"), createdAt:Date.now()}, win ? {} : {motivo:g[1]}));
+      } else {
+        var q2 = await db.collection("pokerOtra").where("fecha", "==", cd).get();
+        q2.forEach(function(x){ var e = x.data(); if(!hit && e.source === g[2] && (Number(e.monto) < 0) === !win && (win || e.motivo === g[1])) hit = {id:x.id, m:Number(e.monto)||0, t:Number(e.total)||0}; });
+        if(hit) await db.collection("pokerOtra").doc(hit.id).update({monto: hit.m + sign*ca, total: hit.t + sign*ca});
+        else await db.collection("pokerOtra").add(Object.assign({source:g[2], monto:sign*ca, fecha:cd, total:sign*ca, cuenta:acct, createdAt:Date.now()}, win ? {} : {motivo:g[1]}));
+      }
+      toast(rd(ca) + (win ? " win logged" : " loss logged"), g[0] + " · " + (acct === "bhd" ? (own ? "BHD" : "Savings") : acct === "popular" ? "Popular" : own ? "Cash" : "Other account"));
+    }; };
+    var acts = A.map(function(a){ return [a[0], save(a[1])]; });
+    open('<h3>' + g[0] + (win ? " win" : " loss") + '</h3><p class="sub">' + (win ? "Where did it go?" : "Where did the money come from?") + '</p>' + rows([["Amount", rd(ca)], ["Date", cd]]) + buttons(acts)); wire(acts);
+  }
+  function owed(d){
+    var who = String(d.person||"").trim().slice(0, 80), am = Math.round(Number(d.amount)||0);
+    if(!who || !(am > 0)){ nope("Add a name and an amount, like “Miguelito owes me 3000 more”."); return; }
+    Promise.all([db.collection("prestamos").get(), db.doc("config/main").get()]).then(function(r){
+      var same = function(n){ var a = nrm(n), b = nrm(who); return a && b && (a === b || a.indexOf(b + " ") === 0 || b.indexOf(a + " ") === 0); };
+      var loans = r[0].docs.map(function(x){ return x.data(); }).filter(function(l){ return !l.pagado && same(l.nombre); });
+      var list = (r[1].data() || {}).deudas || [], exD = list.filter(function(x){ return same(x.nombre); })[0];
+      var name = loans[0] ? loans[0].nombre : exD ? exD.nombre : who.replace(/(^|\s)(\S)/g, function(m, a, c){ return a + c.toUpperCase(); });
+      var as = d.as === "loan" || d.as === "debt" ? d.as : loans.length ? "loan" : exD ? "debt" : "loan";
+      var dues = loans.map(function(l){ return l.fecha; }).filter(Boolean).sort(), t = new Date(); t.setDate(t.getDate() + 30);
+      var due = /^\d{4}-\d{2}-\d{2}$/.test(String(d.due||"")) ? d.due : dues[0] || t.toISOString().slice(0, 10), own = isOwner();
+      var loanFn = function(sav){ return async function(){
+        var dv = ($("snapDue") && $("snapDue").value) || due, rid = null;
+        if(sav){ var e = await db.collection("entries").add({amount:am, type:"out", source:"Préstamo", date:today(), note:"Loan to " + name, createdAt:Date.now()}); rid = e.id; }
+        await db.collection("prestamos").add({nombre:name, monto:am, interes:0, fecha:dv, pagado:false, retiroId:rid, cuotas:1, frecuencia:"mensual", cuotasPagadas:[], createdAt:Date.now()});
+        toast(name + " owes you " + rd(am) + " more", "Owed to me"); }; };
+      var debtFn = async function(){
+        var s2 = await db.doc("config/main").get(), L = (s2.data() || {}).deudas || [], x = L.filter(function(y){ return same(y.nombre); })[0], note = d.note ? String(d.note).slice(0, 80) : "";
+        var nl = x ? L.map(function(y){ return y === x ? Object.assign({}, y, {total:(Number(y.total)||0) + am}, note ? {nota:[y.nota, note].filter(Boolean).join(" · ")} : {}) : y; }) : L.concat([Object.assign({nombre:name, total:am, creada:today()}, note ? {nota:note} : {})]);
+        await db.doc("config/main").update({deudas:nl});
+        toast(name + " owes you " + rd(am) + (x ? " more" : ""), "Other owed to me"); };
+      var acts = as === "loan" ? [["Add loan", loanFn(false)], [own ? "Add loan, from BHD savings" : "Add loan, from savings", loanFn(true)], ["Add as other debt", debtFn]] : [["Add to other debts", debtFn], ["Add as a loan", loanFn(false)]];
+      open('<h3>' + esc(name) + ' owes you more</h3><p class="sub">' + (loans.length ? "Already has an open loan." : exD ? "Already in other debts." : "New person.") + '</p>' + rows([["Amount", rd(am)], ["Type", as === "loan" ? "Loan · Owed to me" : "Debt · Other owed to me"]]) + (as === "loan" ? '<div class="r"><span>Due</span><input type="date" id="snapDue" value="' + due + '"></div>' : "") + buttons(acts)); wire(acts);
+    }).catch(function(e){ console.error(e); toast("Couldn’t read your loans", "Try again", true); });
+  }
 
   function show(d, tab){
     var k = d.kind;
@@ -7045,6 +7104,8 @@ TRACKER DATA:
         await queue(d, tab === "tab-loans" ? (out ? "loan given" : "loan payment received") : ""); toast("Saved", "It’s added within the hour"); }]);
       open(html4 + buttons(acts4)); wire(acts4); return;
     }
+    if(k === "casino"){ casino(d); return; }
+    if(k === "owed"){ owed(d); return; }
     open('<h3>Couldn’t tell what this is</h3><p class="sub">' + esc(d.summary || "Try a clearer photo or screenshot.") + '</p><div class="bt"><button type="button" class="secondary" id="snapOk">OK</button></div>'); $("snapOk").onclick = close;
   }
 
