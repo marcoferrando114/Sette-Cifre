@@ -2153,7 +2153,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261118045305";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261118153528";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -6381,6 +6381,12 @@ TRACKER DATA:
   async function ask(){
     const q = $("aIn").value.trim();
     if(!sample || !q || aBusy) return;
+    if(window.__patoTypedLog && /\d/.test(q) && !/\?\s*$/.test(q) && /lost|lose|won\b|win\b|owe|lent|lend|loan|debt|casino|arcade|slots|perd|gan[eéó]|debe|prest|deuda|apost|bet\b/i.test(q)){
+      aBusy = true; $("aSend").disabled = true; let done = false;
+      try{ done = await window.__patoTypedLog(q); }catch(e){ console.error(e); }
+      aBusy = false; setBusy(false);
+      if(done){ $("aIn").value = ""; return; }
+    }
     $("aIn").value = "";
     const me = bubble("me",""); me.textContent = q;
     aTurns.push({role:"user", content:q});
@@ -6950,7 +6956,7 @@ TRACKER DATA:
     file = $("snapFile").files && $("snapFile").files[0]; $("snapFile").value = ""; if(file) read({file:file});
   });
   async function read(src){
-    var tab = curTab(), btn = $("snapBtn"), typed = !!src.text; btn.classList.add("busy"); toast(typed ? "Got it…" : "Reading the photo…", "");
+    var tab = curTab(), btn = $("snapBtn"), typed = !!src.text; btn.classList.add("busy"); if(!src.chat) toast(typed ? "Got it…" : "Reading the photo…", "");
     var P = (typed ? 'You read a short note the person typed into a personal money app in the Dominican Republic, e.g. "500 valet tip" or "sent 2000 to mom". If no payment method is said, use "cash" for tips, colmados, parking and small cash things, otherwise null. Use today unless a day is said.' : 'You read a photo for a personal money app in the Dominican Republic.') + ' Amounts are RD$ (Dominican pesos) unless shown as US$/USD. ' + (typed ? 'Decide from the note.' : 'The person is on the "' + tab.replace("tab-","") + '" tab, so it is probably ' + (HINT[tab] || "a receipt") + ', but decide from the image itself.') + ' Today is ' + today() + '.\n' +
       'Answer with JSON only, exactly one of these shapes:\n' +
       '{"kind":"receipt","merchant":string,"amount":number,"date":"YYYY-MM-DD","cat":one of ' + JSON.stringify(Object.keys(CATS)) + ',"paid":"card"|"cash"|null}\n' +
@@ -6965,14 +6971,19 @@ TRACKER DATA:
     try{ var s = await window.claude.use("sample"); if(!s) throw Object.assign(new Error(), {code:"no_key"}); d = typed ? await s.json(P + '\nThe note: """' + src.text.slice(0, 300) + '"""', {modelTier:"quick"}) : await s.json(P, {images: src.file}); }
     catch(e){
       btn.classList.remove("busy");
+      if(src.chat) return false;
       var c = e && e.code;
       if(c === "no_key" || c === "bad_key"){ if(c === "bad_key") toast("Claude didn’t accept the key", "Add it again", true); keySheet(); return; }
       toast(c === "no_credit" ? "Your Claude account is out of credit" : c === "rate_limited" ? "Claude is busy, try again in a minute" : c === "network" ? "No connection" : c === "image_rejected" ? "That photo couldn’t be read" : "Couldn’t read the photo", c === "no_credit" ? "Add credit at console.anthropic.com" : "Try again", true);
       return;
     }
     btn.classList.remove("busy");
-    try{ show(d || {}, tab); }catch(e){ console.error(e); toast(typed ? "Couldn’t understand that" : "Couldn’t read the photo", "Try again", true); }
+    if(src.chat && (!d || !d.kind || d.kind === "other")) return false;
+    try{ show(d || {}, tab); }catch(e){ console.error(e); toast(typed ? "Couldn’t understand that" : "Couldn’t read the photo", "Try again", true); return false; }
+    return true;
   }
+  // the Pato AI chat hands typed lines here first; true = a log sheet opened, false = just chat
+  window.__patoTypedLog = function(t){ return read({text:t, chat:true}); };
 
   // a receipt saved before its bank charge (pend) joins the charge when the sync brings it in: same amount (1%), or up to 25% more
   // (tip) at a place with a matching name, within 3 days. The charge keeps the receipt; the pending row is deleted.
@@ -7033,10 +7044,11 @@ TRACKER DATA:
     if(!who || !(am > 0)){ nope("Add a name and an amount, like “Miguelito owes me 3000 more”."); return; }
     Promise.all([db.collection("prestamos").get(), db.doc("config/main").get()]).then(function(r){
       var same = function(n){ var a = nrm(n), b = nrm(who); return a && b && (a === b || a.indexOf(b + " ") === 0 || b.indexOf(a + " ") === 0); };
-      var loans = r[0].docs.map(function(x){ return x.data(); }).filter(function(l){ return !l.pagado && same(l.nombre); });
+      var loans = r[0].docs.map(function(x){ return Object.assign({id:x.id}, x.data()); }).filter(function(l){ return !l.pagado && same(l.nombre); });
       var list = (r[1].data() || {}).deudas || [], exD = list.filter(function(x){ return same(x.nombre); })[0];
       var name = loans[0] ? loans[0].nombre : exD ? exD.nombre : who.replace(/(^|\s)(\S)/g, function(m, a, c){ return a + c.toUpperCase(); });
-      var as = d.as === "loan" || d.as === "debt" ? d.as : loans.length ? "loan" : exD ? "debt" : "loan";
+      var as = d.as === "loan" || d.as === "debt" ? d.as : exD ? "debt" : "loan";
+      if(as === "loan" && !loans.length && exD) as = "debt";
       var dues = loans.map(function(l){ return l.fecha; }).filter(Boolean).sort(), t = new Date(); t.setDate(t.getDate() + 30);
       var due = /^\d{4}-\d{2}-\d{2}$/.test(String(d.due||"")) ? d.due : dues[0] || t.toISOString().slice(0, 10), own = isOwner();
       var loanFn = function(sav){ return async function(){
@@ -7044,12 +7056,15 @@ TRACKER DATA:
         if(sav){ var e = await db.collection("entries").add({amount:am, type:"out", source:"Préstamo", date:today(), note:"Loan to " + name, createdAt:Date.now()}); rid = e.id; }
         await db.collection("prestamos").add({nombre:name, monto:am, interes:0, fecha:dv, pagado:false, retiroId:rid, cuotas:1, frecuencia:"mensual", cuotasPagadas:[], createdAt:Date.now()});
         toast(name + " owes you " + rd(am) + " more", "Owed to me"); }; };
+      var addFn = async function(){ var l0 = loans.slice().sort(function(a, b){ return String(a.fecha||"9").localeCompare(String(b.fecha||"9")); })[0];
+        await db.collection("prestamos").doc(l0.id).update({monto:(Number(l0.monto)||0) + am});
+        toast(name + " owes you " + rd(am) + " more", "Added to the loan"); };
       var debtFn = async function(){
         var s2 = await db.doc("config/main").get(), L = (s2.data() || {}).deudas || [], x = L.filter(function(y){ return same(y.nombre); })[0], note = d.note ? String(d.note).slice(0, 80) : "";
         var nl = x ? L.map(function(y){ return y === x ? Object.assign({}, y, {total:(Number(y.total)||0) + am}, note ? {nota:[y.nota, note].filter(Boolean).join(" · ")} : {}) : y; }) : L.concat([Object.assign({nombre:name, total:am, creada:today()}, note ? {nota:note} : {})]);
         await db.doc("config/main").update({deudas:nl});
         toast(name + " owes you " + rd(am) + (x ? " more" : ""), "Other owed to me"); };
-      var acts = as === "loan" ? [["Add loan", loanFn(false)], [own ? "Add loan, from BHD savings" : "Add loan, from savings", loanFn(true)], ["Add as other debt", debtFn]] : [["Add to other debts", debtFn], ["Add as a loan", loanFn(false)]];
+      var acts = as === "loan" ? (loans.length ? [["Add to the current loan", addFn], ["Add as a new loan", loanFn(false)]] : [["Add loan", loanFn(false)]]).concat([ [own ? "Add loan, from BHD savings" : "Add loan, from savings", loanFn(true)], ["Add as other debt", debtFn]]) : [["Add to other debts", debtFn], ["Add as a loan", loanFn(false)]];
       open('<h3>' + esc(name) + ' owes you more</h3><p class="sub">' + (loans.length ? "Already has an open loan." : exD ? "Already in other debts." : "New person.") + '</p>' + rows([["Amount", rd(am)], ["Type", as === "loan" ? "Loan · Owed to me" : "Debt · Other owed to me"]]) + (as === "loan" ? '<div class="r"><span>Due</span><input type="date" id="snapDue" value="' + due + '"></div>' : "") + buttons(acts)); wire(acts);
     }).catch(function(e){ console.error(e); toast("Couldn’t read your loans", "Try again", true); });
   }
