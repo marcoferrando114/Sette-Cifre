@@ -366,7 +366,10 @@ export default {
       if (!(await pref(env, "bank").catch(() => true))) return new Response("off", { status: 200 });
       let logged = "", body = String(b.body || "");
       if (b.alert && await pref(env, "autolog").catch(() => true)) {   // auto-logging (Nov 17): a failure never blocks the push, it says so in it
-        try { logged = await ingest(fsStore(env), b.alert); } catch (e) { logged = "error"; console.log("ingest failed", String(e).slice(0, 200)); await env.LIMITS.put("cron:ingesterr", String(e).slice(0, 300) + " @" + new Date().toISOString(), { expirationTtl: 7 * 86400 }).catch(() => 0); body += " · not logged"; } }
+        try { logged = await ingest(fsStore(env), b.alert); } catch (e) { logged = "error"; console.log("ingest failed", String(e).slice(0, 200)); await env.LIMITS.put("cron:ingesterr", String(e).slice(0, 300) + " @" + new Date().toISOString(), { expirationTtl: 7 * 86400 }).catch(() => 0); 
+          // Nov 19: do NOT push as if all is well and mark the email seen: answer 503 so pato-mail tries the same email again (for 48 h) once the cause is fixed, and warn once per 6 h
+          if (!(await env.LIMITS.get("cron:ingestwarn"))) { await env.LIMITS.put("cron:ingestwarn", "1", { expirationTtl: 6 * 3600 }); await push(env, "Pato can't log your bank emails", "Add BOT_PASSWORD to pato-cron in Cloudflare", "./", "bank-logerr").catch(() => 0); }
+          return new Response("ingest error", { status: 503 }); } }
       try { return new Response("ok " + await push(env, String(b.title).slice(0, 80), body.slice(0, 160), "./", String(b.tag || "bank").slice(0, 60)) + (logged ? " | " + logged : ""), { status: 200 }); }
       catch (e) { return new Response("error " + String(e).slice(0, 120), { status: 500 }); }
     }

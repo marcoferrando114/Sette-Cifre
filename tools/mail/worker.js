@@ -167,7 +167,9 @@ async function notify(env, title, body, tag, alert) {
   if (!r.ok) throw new Error("notify " + r.status + " " + (await r.text()).slice(0, 80));
 }
 async function watch(env) {
-  const uid = OWNER_UID, t = await getTok(env, uid); if (!t) return "gmail not connected";
+  const uid = OWNER_UID, t = await getTok(env, uid); if (!t) {   // Nov 19: never fail silently: one nudge a day until Marco taps Connect
+    if (!(await env.LIMITS.get("gm:nowarn"))) { await env.LIMITS.put("gm:nowarn", "1", { expirationTtl: 86400 }); try { await notify(env, "Pato can't read bank emails", "Open Pato > Settings > Spend and tap Connect", "bank-noconnect"); } catch (x) {} }
+    return "gmail not connected"; }
   const last = Number(await env.LIMITS.get("gm:watch:last")) || 0; if (Date.now() - last < 90e3) return "too soon";
   await env.LIMITS.put("gm:watch:last", String(Date.now()), { expirationTtl: 600 });
   const wk = "gm:watch:" + uid; let st = JSON.parse((await env.LIMITS.get(wk)) || "null");
@@ -181,7 +183,7 @@ async function watch(env) {
     await env.LIMITS.put("gm:at:" + uid, at, { expirationTtl: 3000 });
   }
   const G = "https://gmail.googleapis.com/gmail/v1/users/me/messages";
-  let l; try { l = await google(G + "?maxResults=15&q=" + encodeURIComponent(WATCH_Q + " after:" + Math.max(st.since, now - 3 * 3600)), at); }
+  let l; try { l = await google(G + "?maxResults=15&q=" + encodeURIComponent(WATCH_Q + " after:" + Math.max(st.since, now - 48 * 3600)), at); }
   catch (e) { if (e.status === 401) await env.LIMITS.delete("gm:at:" + uid); throw e; }
   const fresh = (l.messages || []).map(m => m.id).filter(id => !st.seen.includes(id)).slice(0, 4);   // a few per run keeps each run light; the rest comes next run
   if (!fresh.length) return "nothing new";
