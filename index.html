@@ -1298,6 +1298,8 @@ html[data-palette^="goyard"] :is(.pk-three b,.pk-det .r b,.pk-ototal b){font-fam
 #savSplit b{display:block;font-size:1.1rem;font-weight:800;margin-top:3px;font-family:var(--sans,Inter,system-ui,sans-serif)}
 #savSplit small{display:block;font-size:.75rem;color:var(--muted);margin-top:1px}
 #savSplit.n3>div{padding:10px 3px}#savSplit.n3 b{font-size:.84rem;letter-spacing:-.01em;white-space:nowrap}#savSplit.n3 small{font-size:.68rem}
+#savSplit>div{min-width:0;overflow:hidden}
+#savSplit.n3.n4{grid-template-columns:repeat(2,minmax(0,1fr))}#savSplit.n3.n4>div{padding:10px 8px}#savSplit.n3.n4 b{font-size:1rem;letter-spacing:0;white-space:normal;overflow-wrap:anywhere}#savSplit.n3.n4 small{font-size:.72rem}
 /* v302 roomier Poker */
 #pkNew .pk-seg{margin:22px 0 6px}
 #pkNew .pk-seg button{padding:11px 2px}
@@ -2275,7 +2277,12 @@ html:not(.mp-guest) #s-gst{display:none!important}
 <script id="stakd-dockfix">(function(){
   var st = navigator.standalone || (window.matchMedia && matchMedia("(display-mode: standalone)").matches);
   if (!st) return;
+  var lastScroll = 0;
   function fix(){
+    // never measure while the page is moving or rubber-banding: that read a wrong gap and left the bar floating mid-screen (Nov 20)
+    if (Date.now() - lastScroll < 350) return;
+    var maxY = Math.max(0, (document.scrollingElement || document.documentElement).scrollHeight - innerHeight);
+    if (window.scrollY < 0 || window.scrollY > maxY + 1) return;
     var bar = document.querySelector(".tabs"), pr = document.getElementById("sdProbe"); if (!bar || !pr) return;
     var land = innerWidth > innerHeight, full = land ? Math.min(screen.width, screen.height) : Math.max(screen.width, screen.height);
     var gap = Math.round(full - pr.getBoundingClientRect().bottom);
@@ -2284,8 +2291,11 @@ html:not(.mp-guest) #s-gst{display:none!important}
       bar.style.setProperty("padding-bottom", "calc(6px + max(env(safe-area-inset-bottom,0px), 22px))", "important");
     } else { bar.style.removeProperty("bottom"); bar.style.removeProperty("padding-bottom"); }
   }
-  ["resize","orientationchange","pageshow","scroll"].forEach(function(e){ addEventListener(e, fix, {passive:true}); });
-  if (window.visualViewport) { visualViewport.addEventListener("resize", fix); visualViewport.addEventListener("scroll", fix); }
+  ["resize","orientationchange","pageshow"].forEach(function(e){ addEventListener(e, fix, {passive:true}); });
+  // scrolling only schedules ONE check after it stops (no layout reads while scrolling, so it stays smooth)
+  var scrollT = 0;
+  addEventListener("scroll", function(){ lastScroll = Date.now(); clearTimeout(scrollT); scrollT = setTimeout(fix, 400); }, {passive:true});
+  if (window.visualViewport) { visualViewport.addEventListener("resize", fix); }
   document.addEventListener("visibilitychange", function(){ if (!document.hidden) { fix(); setTimeout(fix, 300); setTimeout(fix, 1200); } });
   // keyboard: hide the bar while typing; when the keyboard closes iOS can leave the page shifted, so nudge it back
   function kb(){ var bar = document.querySelector(".tabs"); if (!bar || !window.visualViewport) return;
@@ -5499,6 +5509,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
     const invs = (config.inversiones||[]).filter(x=>Number(x.rd)>0).map(x=>{ if(!/ibkr/i.test(x.nombre||"")) return x; const c = ibkrCalc(); return c ? {...x, usd:Math.round(c.live*100)/100, rd:Math.round(c.liveRd)} : x; }), inv = invs.reduce((t,x)=>t+Number(x.rd),0);
     $("savSplit").hidden = !(inv || heldT || usdRd);
     $("savSplit").classList.toggle("n3", 1 + invs.length + held.length + (usdRd>0?1:0) >= 3);
+    $("savSplit").classList.toggle("n4", 1 + invs.length + held.length + (usdRd>0?1:0) >= 4);
     if(inv || heldT || usdRd) $("savSplit").innerHTML = `<div><span>${(window.MP_ME&&!window.MP_ME.owner)?"Savings":"BHD"}</span><b>${fmt(sav-inv-heldT-usdRd)}</b></div>` + held.map(x=>`<div><span>${spEsc(x.nombre)}</span><b>${fmt(x.rd)}</b>${x.vence?`<small>back ${fmtDate(x.vence,false)}</small>`:""}</div>`).join("") + invs.map(x=>`<div><span>${spEsc(x.nombre)}</span><b>${x.usd?"US$"+Number(x.usd).toLocaleString("en-US"):fmt(x.rd)}</b>${x.usd?`<small>≈ ${fmt(x.rd)}</small>`:""}</div>`).join("") + (usdRd>0 ? `<div><span>USD account</span><b>US$${Number(usdAcc.amount).toLocaleString("en-US")}</b><small>≈ ${fmt(usdRd)}</small></div>` : "");
     $("netTotal").innerHTML = `<b>${fmt(all)}</b>in your accounts plus what you’re owed`;
     const parts = [["Savings",sav-inv-heldT-usdRd,"--c-sav"], ...held.map(x=>["Lent: "+x.nombre, x.rd, "--c-owe"]), ...invs.map(x=>[x.nombre, Number(x.rd), "--c-al"]), ...(usdRd>0?[["USD account",usdRd,"--c-pk"]]:[]),["Checking",cc,"--c-cc"],["Cash",cash,"--c-int"],["Owed to you",owed,"--c-owe"]];
