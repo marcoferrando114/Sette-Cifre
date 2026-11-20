@@ -5,6 +5,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - run: |
+          sleep 540
           curl -s -H "Origin: https://marcoferrando114.github.io" "https://pato-ai.marcoferrando.workers.dev/edition?dbg=1" | python3 -c "
           import sys,json
           j=json.load(sys.stdin); print('v',j.get('v'),'fin',j.get('fin'),'stale',j.get('stale'),'at',j.get('at'))
