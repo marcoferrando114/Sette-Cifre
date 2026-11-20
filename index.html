@@ -2151,6 +2151,17 @@ html:not(.mp-guest) #s-gst{display:none!important}
 #pdPeek.dive #pdFab.shine::after,#pdPeek.dive #pdFab.shine::before,#pdFab[hidden]::after{animation-play-state:paused}
 @media (prefers-reduced-motion:reduce){#pdFab.shine::after{animation:none;opacity:.6}}
 </style>
+<style id="pato-metals">
+#stMetals .cr-row{display:flex;align-items:center;gap:12px;padding:10px 2px;border-top:1px solid var(--line)}
+#stMetals .cr-row:first-of-type{border-top:0}
+#stMetals .cr-ic{width:36px;height:36px;border-radius:50%;display:grid;place-items:center;font-weight:800;color:#2b2208;flex:none;font-size:.85rem}
+#stMetals .cr-n{flex:1;min-width:0}
+#stMetals .cr-n b{display:block;color:var(--ink)}
+#stMetals .cr-n small,#stMetals .cr-p small{color:var(--muted);font-size:.78rem}
+#stMetals .cr-p{text-align:right}
+#stMetals .cr-p b{display:block;color:var(--ink);font-family:var(--sans,Inter,system-ui,sans-serif)}
+#stMetals .cr-p small.up{color:var(--good,#7fd1a4)} #stMetals .cr-p small.dn{color:var(--bad,#f09a8a)}
+</style>
 </head>
 <body>
 <script id="stakd-ver">window.STAKD_V="20261118153528";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
@@ -2664,6 +2675,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
     <div class="num" id="stBoxes"></div>
     <div id="stList"></div>
     <div id="stMore"></div>
+    <div id="stMetals"></div>
     <div id="stCrypto"></div>
     <div id="stAt"></div>
     <div class="sa-st" id="saStRow"><small id="saStT"></small><div class="sa-st-r"><button type="button" class="mini" id="saSt">Refresh prices</button></div>
@@ -2933,6 +2945,12 @@ html:not(.mp-guest) #s-gst{display:none!important}
     { const el = $("stStale"), atMs = c.at ? Date.parse(c.at) : 0, old = atMs && Date.now() - atMs > 75*60000;
       el.hidden = !old; if(old) el.textContent = "Last trade " + new Date(atMs).toLocaleString("en-US",{weekday:"short", hour:"numeric", minute:"2-digit", timeZone:"America/Santo_Domingo"}).replace(",","").replace(/ (AM|PM)$/, m=>m.toLowerCase()); }
     $("stAt").textContent = c.at ? "Updated " + new Date(c.at).toLocaleString("en-US",{weekday:"short", hour:"numeric", minute:"2-digit", timeZone:"America/Santo_Domingo"}) : "";
+    { // gold and silver, price per ounce (doc invest/ibkr.metales, filled in by the price worker with the stock prices)
+      const mt = (ibkr||{}).metales || {}, el = $("stMetals"), M = [["oro","Gold","XAU","Au","linear-gradient(135deg,#F6D87A,#C9A227)"],["plata","Silver","XAG","Ag","linear-gradient(135deg,#E8EBEF,#9AA3AE)"]];
+      const rowsM = M.map(m => { const x = mt[m[0]], p = x && Number(x.precio), pv = x && Number(x.prev); if(!(p>0)) return ""; const d = pv>0 ? (p/pv-1)*100 : 0;
+        return `<div class="cr-row"><div class="cr-ic" style="background:${m[4]}">${m[3]}</div><div class="cr-n"><b>${m[1]}</b><small>${m[2]} · per oz</small></div><div class="cr-p"><b>${usd(p)}</b><small class="${d>=0?"up":"dn"}">${pc(d)} <span style="opacity:.7">1D</span></small></div></div>`; }).join("");
+      if(el) el.innerHTML = rowsM ? '<div class="st-h">Metals</div>' + rowsM : "";
+    }
   }
   const heldList = () => (config.deudas||[]).filter(d=>Number(d.prestado)>0).map(d=>({nombre:d.nombre, vence:d.vence, rd:Math.max(0, Number(d.prestado) - paidTo(d.nombre))})).filter(x=>x.rd>0);
   let type = "in";

@@ -111,6 +111,11 @@ async function stocks(env, dry) {
   if (!h.length || latest > h[h.length - 1].t + 600) h.push({ t: latest, v });
   else if (latest >= h[h.length - 1].t) h[h.length - 1] = { t: latest, v };
   const out = { posiciones: pos, bench: b, at, hist: h.slice(-400) };
+  // gold and silver (COMEX futures, US$ per troy ounce) for the Stocks tab; a failure here never blocks the stock update
+  try {
+    const au = await q("GC=F", false), ag = await q("SI=F", false);
+    out.metales = { oro: { precio: au.precio, prev: au.prev }, plata: { precio: ag.precio, prev: ag.prev }, at: new Date(Math.max(au.time, ag.time) * 1000).toISOString().replace(/\.\d+Z$/, "Z") };
+  } catch (e) { console.log("metals", String(e)); }
   if (!dry) await patchDoc(env, "invest", "ibkr", out);
   if (!dry) await stockAlerts(env, pos).catch(e => console.log("stock alerts", String(e)));
   return `stocks ok ${at} value US$${v}` + (dry ? " (dry run, nothing written)" : "");
