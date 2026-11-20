@@ -166,7 +166,7 @@ async function games() {
       const ms = (e.competitions || []).length ? e.competitions : (e.groupings || []).filter(g2 => /singles/i.test(((g2.grouping || {}).slug || (g2.grouping || {}).displayName || ""))).flatMap(g2 => g2.competitions || []), big = /ATP Finals|WTA Finals|Nitto|Paris Masters|Rolex Paris/i.test(tn) || slam;
       ms.forEach(m => { const ms2 = m.status && m.status.type && m.status.type.state; if (ms2 === "post" || (m.competitors || []).length < 2) return; const md = Date.parse(m.date || m.startDate || e.date) || 0; if (ms2 !== "in" && (md < Date.now() - 36e5 || md > Date.now() + 30 * 36e5)) return;   // only today's matches, not the whole week
         const pl = m.competitors.slice(0, 2).map(x => { const a = x.athlete || {}; return { n: a.shortName || a.displayName || "", full: a.displayName || "", ab: "", logo: (a.flag && a.flag.href) || "", rec: x.seed ? "Seed " + x.seed : "", score: ms2 === "in" ? (x.linescores || []).map(l => l.value).join(" ") : "", rk: x.curatedRank && x.curatedRank.current || 99 }; });
-        if (!pl[0].n || !pl[1].n) return; const rd = ((m.round || {}).displayName || (m.notes && m.notes[0] && m.notes[0].text) || ""), o0 = (m.odds || [])[0], best = Math.min(pl[0].rk, pl[1].rk);
+        if (!pl[0].n || !pl[1].n || /^TBD$/i.test(pl[0].n) || /^TBD$/i.test(pl[1].n)) return; const rd = ((m.round || {}).displayName || (m.notes && m.notes[0] && m.notes[0].text) || ""), o0 = (m.odds || [])[0], best = Math.min(pl[0].rk, pl[1].rk);
         out.push({ path, id: m.id || e.id, ref: path + "|" + (m.id || e.id), tn: 1, odds0: o0 ? { line: o0.details || "", ou: "", ml: [(o0.awayTeamOdds || {}).moneyLine, (o0.homeTeamOdds || {}).moneyLine], by: (o0.provider || {}).name || "" } : null, league: tn.replace(/^\d{4}\s+/, ""), name: pl[0].n + " vs " + pl[1].n, short: pl[0].n + " vs " + pl[1].n, t: Date.parse(m.date || m.startDate || e.date) || 0, tv: [], note: rd, live: ms2 === "in", teams: pl.map(x => ({ n: x.n, full: x.full, ab: x.ab, logo: x.logo, rec: x.rec, score: x.score })),
           score: w + SPRIO(path) + (big ? 10 : 4) + (/final/i.test(rd) && !/semi|quarter/i.test(rd) ? 6 : /semi/i.test(rd) ? 4 : 0) + (best <= 3 ? 6 : best <= 10 ? 3 : 0) + (ms2 === "in" ? 2 : 0) }); });
       return; }   // Marco Nov 13: "Austin 125" meant nothing; small events are dropped and big ones say what they are
@@ -864,7 +864,7 @@ async function repairEd(env, E, q) {   // one repair round: swap in the next bes
   x.done = 0; x.hd = 0; E.st = "built"; return acts;
 }
 async function advance(env, idx) {   // one step per call (every cron tick, or every phone request while no cron has done it): build, finish, check, repair, publish or hold
-  const key = "ed9s:" + idx; let E = await env.LIMITS.get(key, "json").catch(() => null); if (E && E.pub !== undefined) return E;
+  const key = "ed9t:" + idx; let E = await env.LIMITS.get(key, "json").catch(() => null); if (E && E.pub !== undefined) return E;
   await loadHL(env);
   if (!E || !E.b) { const b = await buildEdition(env, idx); if (Object.keys(b.cats).length < 2) { await env.LIMITS.put("edh:" + idx, JSON.stringify({ at: Date.now(), level: "hard", reasons: ["could not build: too few stories"], pub: false }), { expirationTtl: 172800 }).catch(() => 0); return null; }
     E = { at: Date.now(), bat: Date.now(), st: "built", b, x: {}, tries: 0 }; await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }); await saveHL(env).catch(() => 0); return E; }
@@ -887,7 +887,7 @@ async function advance(env, idx) {   // one step per call (every cron tick, or e
   await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }); return E;
 }
 async function getEdition(env, force, dbg, ctx) {   // what a phone gets: this drop's edition once it has passed the check, otherwise the last good one (never a broken one)
-  const idx = dropIdx(Date.now()), key = "ed9s:" + idx, kv = env.LIMITS; let E = kv ? await kv.get(key, "json").catch(() => null) : null;
+  const idx = dropIdx(Date.now()), key = "ed9t:" + idx, kv = env.LIMITS; let E = kv ? await kv.get(key, "json").catch(() => null) : null;
   if (E && E.pub) { if (kv && E.b && !E.fx3) { E.fx3 = 1; try { const c = E.b.ceo; if (c && c.founder && c.name) { const w = await wikiImg(env, c.name, true).catch(() => ""); if (w) { c.img = w; c.vf = 4; } } await clearHeads(env, E.b); await kv.put(key, JSON.stringify(E), { expirationTtl: 172800 }); } catch (e) {} }   // one-time repair of an edition published before these rules: the founder's own photo, clearer headlines
     const o = finalize(E.b); o.fin = 1; if (dbg) { o._dbg = E.b._dbg; o._q = E.q; o._log = E.log; } return o; }
   let L = null; try { const pt = kv && await kv.get("edpub", "json"); if (pt) L = await kv.get(pt.key, "json"); } catch (e) { L = null; }
