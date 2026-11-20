@@ -159,7 +159,7 @@ async function games() {
   await Promise.all(LEAGUES.map(([path, name, w, only]) => cached("https://site.api.espn.com/apis/site/v2/sports/" + path + "/scoreboard?dates=" + d, 3600, "json").then(f => {
     (f.body.events || []).forEach(e => {
       if (only && !only.test(e.name || e.shortName || "")) return;   // Marco Nov 12: MLS = Inter Miami only, Ligue 1 = PSG only
-      const st = e.status && e.status.type && e.status.type.state; if (st === "post") return;
+      const st = e.status && e.status.type && e.status.type.state; if (st === "post" && !/^tennis/.test(path)) return;   // a tennis event is the whole tournament: its own matches say what is finished
       if (/^tennis/.test(path)) { const tn = e.name || "", slam = /Australian Open|French Open|Roland Garros|Wimbledon|US Open|Six Kings/i.test(tn), atp = /Indian Wells|BNP Paribas Open|Miami Open|Monte[- ]Carlo|Madrid|Italian Open|Stuttgart|Charleston|Berlin|Eastbourne|Linz|Guadalajara|Rome|Canadian Open|National Bank Open|Cincinnati|Shanghai|Paris Masters|Rolex Paris|ATP Finals|WTA Finals|Nitto|Rotterdam|Dubai|Acapulco|Barcelona|Halle|Queen'?s|Hamburg|Washington|Beijing|China Open|Tokyo|Japan Open|Basel|Vienna|Erste Bank|Rio Open|Doha|Qatar/i.test(tn);
       if (!(slam || atp)) return;
       // Marco Nov 20: real matches (player vs player) with odds, not a tournament line. Every unfinished singles match of the day becomes its own game; the best ones lead the Sports tab.
@@ -864,7 +864,7 @@ async function repairEd(env, E, q) {   // one repair round: swap in the next bes
   x.done = 0; x.hd = 0; E.st = "built"; return acts;
 }
 async function advance(env, idx) {   // one step per call (every cron tick, or every phone request while no cron has done it): build, finish, check, repair, publish or hold
-  const key = "ed9t:" + idx; let E = await env.LIMITS.get(key, "json").catch(() => null); if (E && E.pub !== undefined) return E;
+  const key = "ed9u:" + idx; let E = await env.LIMITS.get(key, "json").catch(() => null); if (E && E.pub !== undefined) return E;
   await loadHL(env);
   if (!E || !E.b) { const b = await buildEdition(env, idx); if (Object.keys(b.cats).length < 2) { await env.LIMITS.put("edh:" + idx, JSON.stringify({ at: Date.now(), level: "hard", reasons: ["could not build: too few stories"], pub: false }), { expirationTtl: 172800 }).catch(() => 0); return null; }
     E = { at: Date.now(), bat: Date.now(), st: "built", b, x: {}, tries: 0 }; await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }); await saveHL(env).catch(() => 0); return E; }
@@ -887,7 +887,7 @@ async function advance(env, idx) {   // one step per call (every cron tick, or e
   await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }); return E;
 }
 async function getEdition(env, force, dbg, ctx) {   // what a phone gets: this drop's edition once it has passed the check, otherwise the last good one (never a broken one)
-  const idx = dropIdx(Date.now()), key = "ed9t:" + idx, kv = env.LIMITS; let E = kv ? await kv.get(key, "json").catch(() => null) : null;
+  const idx = dropIdx(Date.now()), key = "ed9u:" + idx, kv = env.LIMITS; let E = kv ? await kv.get(key, "json").catch(() => null) : null;
   if (E && E.pub) { if (kv && E.b && !E.fx3) { E.fx3 = 1; try { const c = E.b.ceo; if (c && c.founder && c.name) { const w = await wikiImg(env, c.name, true).catch(() => ""); if (w) { c.img = w; c.vf = 4; } } await clearHeads(env, E.b); await kv.put(key, JSON.stringify(E), { expirationTtl: 172800 }); } catch (e) {} }   // one-time repair of an edition published before these rules: the founder's own photo, clearer headlines
     const o = finalize(E.b); o.fin = 1; if (dbg) { o._dbg = E.b._dbg; o._q = E.q; o._log = E.log; } return o; }
   let L = null; try { const pt = kv && await kv.get("edpub", "json"); if (pt) L = await kv.get(pt.key, "json"); } catch (e) { L = null; }
