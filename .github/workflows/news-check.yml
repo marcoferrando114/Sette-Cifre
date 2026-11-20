@@ -4,11 +4,13 @@ jobs:
   c:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - run: |
-          sleep 540
-          curl -s -H "Origin: https://marcoferrando114.github.io" "https://pato-ai.marcoferrando.workers.dev/edition?dbg=1" | python3 -c "
-          import sys,json
-          j=json.load(sys.stdin); print('v',j.get('v'),'fin',j.get('fin'),'stale',j.get('stale'),'at',j.get('at'))
-          print('WHY',json.dumps(j.get('_why'))[:800]); print('DBG',json.dumps(j.get('_dbg'))[:600])
-          for x in (j.get('games') or []): print('GAME',x.get('league'),'|',x.get('name'),'|',x.get('t'),'|',x.get('odds'),'|',x.get('win'))
-          "
+          cp tools/pato-ai-worker.js /tmp/w.mjs
+          echo 'export { games };' >> /tmp/w.mjs
+          cat > /tmp/run.mjs <<'EOF'
+          globalThis.caches = { default: { match: async () => null, put: async () => {} } };
+          const m = await import("/tmp/w.mjs");
+          try { const g = await m.games(); for (const x of g) console.log("G", x.league, "|", x.name, "|", x.score, "|", JSON.stringify(x.odds), "|", x.note); console.log("n", g.length); } catch (e) { console.log("ERR", e.stack); }
+          EOF
+          node /tmp/run.mjs 2>&1 | head -40
