@@ -2882,7 +2882,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
   ST_LOGOS.GOOG = ST_LOGOS.GOOGL;
   window.ST_LOGOS = ST_LOGOS;   // Pato Daily Breaking uses the same logos
   const stLogo = t => ST_LOGOS[t] ? `<span class="st-logo">${ST_LOGOS[t]}</span>` : `<span class="st-logo txt">${spEsc(String(t).slice(0,4))}</span>`;
-  const mktGain = () => { try{ const c = ibkrCalc(); return c ? c.gainRd : 0; }catch(e){ return 0; } };
+  const mktGain = () => { let g = 0; try{ const c = ibkrCalc(); g = c ? c.gainRd : 0; }catch(e){} try{ g += usdAccRd(); }catch(e){} return g; };
   function renderStocks(){
     const c = ibkrCalc(); if(!c){ $("stVal").textContent = "—"; return; }
     const cl = v => v>0.004 ? "st-up" : v<-0.004 ? "st-dn" : "", bx = v => usd(v, Math.abs(v)>=1000?0:2), sg = v => (v>0.004?"+":"") + bx(v);
@@ -5409,6 +5409,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
   window.__SP = SP_CATS;
   const spCat = k => k==="cash" ? "Cash" : (k==="groceries"||k==="delivery") ? SP_CATS.food : k==="gaming" ? SP_CATS.shopping : (SP_CATS[k] || "Other");
   const spKey = k => (k==="groceries"||k==="delivery") ? "food" : k==="gaming" ? "shopping" : k; // old keys share one category
+  let usdAcc = null; const usdAccRd = () => { try{ return usdAcc ? Math.round((Number(usdAcc.amount)||0) * (Number(spMeta&&spMeta.fx&&spMeta.fx.USD)||60)) : 0; }catch(e){ return 0; } };
   let spend = [], spMeta = null, spWalletDoc = null, spMonth = null, spFilter = "all", spPendWd = null;
   const SP_ASK_FROM = "2026-10-12"; // withdrawals before this were already sorted out by hand
   const spLive = t => t.status==="Aprobada" && !t.excluded;
@@ -5470,7 +5471,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
   }
   // net worth: savings + checking (estimated) + cash in hand + what people owe you
   function renderNet(){
-    const gainRd = mktGain(), sav = entries.reduce((s,e)=> s + (e.type==="out" ? -e.amount : e.amount), 0) + gainRd;
+    const usdRd = usdAccRd(), gainRd = mktGain(), sav = entries.reduce((s,e)=> s + (e.type==="out" ? -e.amount : e.amount), 0) + gainRd;
     const ccE = ccEstimate(), cc = ccE.last ? Math.max(0, ccE.est) : 0;
     const cash = spWallet() || 0;
     const held = heldList(), heldT = held.reduce((t,x)=>t+x.rd,0);
@@ -5478,11 +5479,11 @@ html:not(.mp-guest) #s-gst{display:none!important}
     const all = sav + cc + cash + owed;
     // investments (e.g. IBKR) are part of savings: no entry moved them out, so they're inside sav; shown as their own line
     const invs = (config.inversiones||[]).filter(x=>Number(x.rd)>0).map(x=>{ if(!/ibkr/i.test(x.nombre||"")) return x; const c = ibkrCalc(); return c ? {...x, usd:Math.round(c.live*100)/100, rd:Math.round(c.liveRd)} : x; }), inv = invs.reduce((t,x)=>t+Number(x.rd),0);
-    $("savSplit").hidden = !(inv || heldT);
-    $("savSplit").classList.toggle("n3", 1 + invs.length + held.length >= 3);
-    if(inv || heldT) $("savSplit").innerHTML = `<div><span>${(window.MP_ME&&!window.MP_ME.owner)?"Savings":"BHD"}</span><b>${fmt(sav-inv-heldT)}</b></div>` + held.map(x=>`<div><span>${spEsc(x.nombre)}</span><b>${fmt(x.rd)}</b>${x.vence?`<small>back ${fmtDate(x.vence,false)}</small>`:""}</div>`).join("") + invs.map(x=>`<div><span>${spEsc(x.nombre)}</span><b>${x.usd?"US$"+Number(x.usd).toLocaleString("en-US"):fmt(x.rd)}</b>${x.usd?`<small>≈ ${fmt(x.rd)}</small>`:""}</div>`).join("");
+    $("savSplit").hidden = !(inv || heldT || usdRd);
+    $("savSplit").classList.toggle("n3", 1 + invs.length + held.length + (usdRd>0?1:0) >= 3);
+    if(inv || heldT || usdRd) $("savSplit").innerHTML = `<div><span>${(window.MP_ME&&!window.MP_ME.owner)?"Savings":"BHD"}</span><b>${fmt(sav-inv-heldT-usdRd)}</b></div>` + held.map(x=>`<div><span>${spEsc(x.nombre)}</span><b>${fmt(x.rd)}</b>${x.vence?`<small>back ${fmtDate(x.vence,false)}</small>`:""}</div>`).join("") + invs.map(x=>`<div><span>${spEsc(x.nombre)}</span><b>${x.usd?"US$"+Number(x.usd).toLocaleString("en-US"):fmt(x.rd)}</b>${x.usd?`<small>≈ ${fmt(x.rd)}</small>`:""}</div>`).join("") + (usdRd>0 ? `<div><span>USD account</span><b>US$${Number(usdAcc.amount).toLocaleString("en-US")}</b><small>≈ ${fmt(usdRd)}</small></div>` : "");
     $("netTotal").innerHTML = `<b>${fmt(all)}</b>in your accounts plus what you’re owed`;
-    const parts = [["Savings",sav-inv-heldT,"--c-sav"], ...held.map(x=>["Lent: "+x.nombre, x.rd, "--c-owe"]), ...invs.map(x=>[x.nombre, Number(x.rd), "--c-al"]),["Checking",cc,"--c-cc"],["Cash",cash,"--c-int"],["Owed to you",owed,"--c-owe"]];
+    const parts = [["Savings",sav-inv-heldT-usdRd,"--c-sav"], ...held.map(x=>["Lent: "+x.nombre, x.rd, "--c-owe"]), ...invs.map(x=>[x.nombre, Number(x.rd), "--c-al"]), ...(usdRd>0?[["USD account",usdRd,"--c-pk"]]:[]),["Checking",cc,"--c-cc"],["Cash",cash,"--c-int"],["Owed to you",owed,"--c-owe"]];
     $("netBar").innerHTML = all>0 ? parts.map(([,v,c])=>v>0?`<i style="width:${v/all*100}%;background:var(${c})"></i>`:"").join("") : "";
     $("netSplit").innerHTML = parts.filter(([n,v])=>v>0||n==="Savings").map(([n,v,c])=>`<a><span><i style="background:var(${c})"></i>${n}</span><b>${fmt(v)}</b><small>${all>0?Math.round(v/all*100):0}%${n==="Checking"&&!ccE.last?" · not logged":n==="Cash"&&spWallet()===null?" · not logged":""}</small></a>`).join("");
     { const nl = n => n.startsWith("Lent: ") ? "Held by " + n.slice(6) : n, note = n => n==="Checking"&&!ccE.last ? "not logged" : n==="Cash"&&spWallet()===null ? "not logged" : "";
@@ -6490,6 +6491,7 @@ TRACKER DATA:
     }, () => { $("spLedger").innerHTML = '<li class="empty">Couldn’t load your spending.</li>'; });
     db.collection("receipts").onSnapshot(snap => { receipts = snap.docs.map(d => ({id:d.id, ...d.data()})); try{ renderReceipts(); }catch(e){} }, ()=>{});
     db.doc("spendMeta/sync").onSnapshot(s => { spMeta = s.exists ? s.data() : null; renderSpendSoon(); }, ()=>{});
+    db.doc("spendMeta/usdAccount").onSnapshot(s => { usdAcc = s.exists ? s.data() : null; renderSpendSoon(); try{ render(); }catch(e){} }, ()=>{});
     db.doc("spendMeta/wallet").onSnapshot(s => { spWalletDoc = s.exists ? s.data() : null; renderSpendSoon(); }, ()=>{});
     db.doc("invest/ibkr").onSnapshot(s => { ibkr = s.exists ? s.data() : null; renderSoon(); }, ()=>{});
     db.collection("contactos").onSnapshot(snap => {
