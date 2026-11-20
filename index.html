@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <title>Pato</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -1297,6 +1297,7 @@ html[data-palette^="goyard"] :is(.pk-three b,.pk-det .r b,.pk-ototal b){font-fam
 #savSplit span{display:block;font-size:.7rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600}
 #savSplit b{display:block;font-size:1.1rem;font-weight:800;margin-top:3px;font-family:var(--sans,Inter,system-ui,sans-serif)}
 #savSplit small{display:block;font-size:.75rem;color:var(--muted);margin-top:1px}
+#savSplit.n4{grid-template-columns:repeat(2,minmax(0,1fr))}#savSplit.n4>div{padding:10px 8px}#savSplit.n4 b{font-size:.98rem;white-space:normal;overflow-wrap:anywhere}#savSplit.n4 small{font-size:.72rem}
 #savSplit.n3>div{padding:10px 3px}#savSplit.n3 b{font-size:.84rem;letter-spacing:-.01em;white-space:nowrap}#savSplit.n3 small{font-size:.68rem}
 #savSplit>div{min-width:0;overflow:hidden}
 #savSplit.n3.n4{grid-template-columns:repeat(2,minmax(0,1fr))}#savSplit.n3.n4>div{padding:10px 8px}#savSplit.n3.n4 b{font-size:1rem;letter-spacing:0;white-space:normal;overflow-wrap:anywhere}#savSplit.n3.n4 small{font-size:.72rem}
@@ -1381,6 +1382,7 @@ html.mp-guest #p-stocks > #pnTick:not([hidden]){display:flex!important}
 .pd-bd .pd-img{margin:-28px -24px 18px;border-radius:0;aspect-ratio:4/3}.pd-bd .pd-img::after{content:"";position:absolute;inset:auto 0 0 0;height:45%;background:linear-gradient(to top,rgba(10,18,14,.85),transparent);pointer-events:none}
 .pd-s.brk .pd-bd .pd-img{aspect-ratio:4/3;margin-bottom:-44px}.pd-s.brk .pd-bd .pd-img::after{height:70%;background:linear-gradient(to top,#1E100D,transparent)}.pd-s.brk .pd-brkrow,.pd-s.brk .pd-bigh{position:relative;z-index:1}.pd-s.brk .pd-img>span{display:none}
 .pd-img>span{z-index:1}
+.pd-bd .pd-img.pd-fd,.pd-bd>.pd-img.pd-fd:has(+ .pd-k){aspect-ratio:5/4}.pd-fd img{object-fit:contain!important;position:relative}.pd-fd .pd-bk{position:absolute;inset:0}.pd-bio{font-size:.82rem;opacity:.8;margin:-2px 0 10px;line-height:1.4}
 .pd-s.launch{background:linear-gradient(170deg,#3A2412 0%,#140B05 80%);border-color:#A8662E}.pd-s.rise{background:linear-gradient(170deg,#0F3A3A 0%,#06171A 80%);border-color:#2E9A8E}.pd-lr{padding:12px 14px}.pd-lr .pd-pmq{font-size:.98rem}.pd-lrm{margin-top:6px;font-size:.78rem;color:#CFE0D6}.pd-lrm b{color:#E3BC6A;font-weight:800}.pd-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.pd-chips span{padding:4px 10px;border-radius:999px;background:rgba(80,220,200,.14);border:1px solid rgba(80,220,200,.35);color:#9FF0E2;font-weight:800;font-size:.8rem}
 .pd-s.preds{background:linear-gradient(170deg,#2A2350 0%,#0F0C1F 80%);border-color:#5B4FA8}.pd-pm{display:block;cursor:pointer;margin-top:14px;padding:13px 14px;border-radius:16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:inherit;text-decoration:none}.pd-pmq{font-weight:700;font-size:1rem;line-height:1.3}.pd-pmq small{display:block;font-weight:500;color:#B8B0E6;margin-top:3px;font-size:.82rem}.pd-pmr{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:6px 12px;margin-top:9px}.pd-pmr b{font-size:1.6rem;font-weight:900;color:#B9A8FF}.pd-pmr i{height:8px;border-radius:8px;background:rgba(255,255,255,.12);overflow:hidden}.pd-pmr i u{display:block;height:100%;background:linear-gradient(90deg,#8C7BFF,#B9A8FF);border-radius:8px}.pd-pmr small{grid-column:1/-1;font-size:.76rem;color:#9C95C6}.pd-pmr em{font-style:normal;font-weight:700}.pd-pmr em.up{color:#7BE0A6}.pd-pmr em.dn{color:#FF8A80}.pd-mk{display:block;cursor:pointer;margin-top:16px;padding:11px 13px;border-radius:14px;background:rgba(140,123,255,.14);border:1px solid rgba(140,123,255,.35);color:#E6E1FF;font-size:.9rem;line-height:1.35;text-decoration:none}.pd-mk span{display:block;font-size:.66rem;font-weight:800;letter-spacing:.12em;color:#B9A8FF;margin-bottom:4px}.pd-mk b{font-size:1.05rem;color:#fff;margin-right:4px}.pd-mk small{color:#B8B0E6}
 .pd-at i.fin{background:#3B4A42;color:#E3BC6A}.pd-at small{display:block;margin-top:6px;font-size:.7rem;color:#CFE0D6;letter-spacing:0}.pd-team em.w{color:#E3BC6A}
@@ -1602,6 +1604,7 @@ main{padding-bottom:calc(128px + env(safe-area-inset-bottom,0px))!important}
 .pd-chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:16px}
 .pd-chips button{all:unset;cursor:pointer;font-size:.88rem;padding:8px 13px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);color:#CFE0D6}
 .pd-chips button.on{background:#E3BC6A;border-color:#E3BC6A;color:#13241B;font-weight:700}
+input,select,textarea{font-size:max(16px,1em)}
 </style>
 <style>
 html,body{overscroll-behavior-y:none}
@@ -2166,7 +2169,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261118153528";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261120041000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -7729,8 +7732,8 @@ TRACKER DATA:
           (mine ? '<div class="pd-note"><i>YOUR BET</i><p>' + bold("You have RD$" + (Number(mine.stake)||0).toLocaleString("en-US") + " on this game.") + '</p></div>' : "")}); } }
     // 8. A CEO / founder story or a deep read, alternating (Marco Nov 14)
     var LS = E.last; if(LS && LS.h){ var ceo = LS.kind === "ceo";
-      L.push({id: ed + ":last:" + LS.h, cls: "", news: 1, t: ceo ? "CEOs & founders" : "Deep read", w: ago(LS.t) + " ago", u: LS.u, pic: LS.u, ph: LS.h, ps: LS.s, fk: "last", nav: ceo ? (MG() ? "👤 Founders" : "👤 CEOs") : "🧭 Deep read", sh: {k: ceo ? "CEOs & founders" : "Deep read", h: LS.h, s: LS.s, u: LS.u},
-        body: '<div class="pd-k">' + (ceo ? (LS.founder ? "👤 FOUNDER STORY" : "👤 HOW LEADERS GET THERE") : "🧭 DEEP READ") + '</div><div class="pd-h1">' + esc(LS.h) + '</div><div class="pd-m">' + by(LS) + ' · <a class="pd-r2" data-u="' + esc(LS.u) + '">Read ›</a></div>' +
+      L.push({id: ed + ":last:" + LS.h, cls: "", news: 1, t: ceo ? "CEOs & founders" : "Deep read", w: ago(LS.t) + " ago", u: LS.u, pic: LS.u, ph: LS.h, ps: LS.s, fk: "last", fd: LS.founder ? 1 : 0, nav: ceo ? (MG() ? "👤 Founders" : "👤 CEOs") : "🧭 Deep read", sh: {k: ceo ? "CEOs & founders" : "Deep read", h: LS.h, s: LS.s, u: LS.u},
+        body: '<div class="pd-k">' + (ceo ? (LS.founder ? "👤 FOUNDER STORY" : "👤 HOW LEADERS GET THERE") : "🧭 DEEP READ") + '</div><div class="pd-h1">' + esc(LS.h) + '</div>' + (LS.bio ? '<div class="pd-bio">' + esc(LS.bio) + '</div>' : '') + '<div class="pd-m">' + by(LS) + ' · <a class="pd-r2" data-u="' + esc(LS.u) + '">Read ›</a></div>' +
           kfBox(LS) + (LS.sec ? (LS.pl ? kp(LS.pl) : "") + LS.sec.map(function(x){ return '<div class="pd-know"><i>' + esc(x[0]) + '</i>' + kp(x[1]) + '</div>'; }).join("") : (LS.pl ? '<div class="pd-know"><i>' + (ceo ? "WHAT THIS SHOWS" : "WHAT IT IS ABOUT") + '</i>' + kp(LS.pl) + '</div>' : '')) + jgBox(LS) + fyBox(ownT(LS) + (LS.fy || ""))}); }
     // no Daily Duel (Marco Nov 14)
     var cq = null, cs = callSt(); if(cq && !(cs && cs.q === cq.id && $("pdV").hidden)) L.push({id: ed + ":call:" + cq.id, cls: "call", t: CALL, w: "today's money question", call: cq, body: ""});
@@ -7955,7 +7958,7 @@ TRACKER DATA:
   function visHtml(x){ var lg = logoOf(x), em = String(x.nav || "🦆").split(" ")[0];   // no photo? the company logo or a visual that adds to the story, never plain text (Marco Nov 14)
     return '<div class="pd-img pd-vis"><div class="pd-vm">' + (lg ? '<span class="pd-vlg"><img src="' + esc(lg) + '" alt="" onerror="this.parentNode.outerHTML=\'<span class=pd-vem>' + esc(em) + '</span>\'"></span>' : '<span class="pd-vem">' + esc(em) + '</span>') + '</div>' + (x.ps ? '<span>' + esc(x.ps) + '</span>' : '') + '</div>'; }
   function picHtml(x){ var raw = PHOTOS() && x.pic ? IM.m[x.pic] : "", im = raw, ix0 = S.indexOf(x), dup = false;    // never the same photo twice
-    if(im) return '<div class="pd-img"' + (x.news || ND() ? ' data-vis="' + esc(visHtml(x)) + '"' : '') + '><div class="pd-bk"></div><img src="' + esc(im) + '" alt="" decoding="async"' + (WARM[im] && WARM[im].complete && WARM[im].naturalWidth ? ' style="opacity:1"' : ' style="opacity:0;transition:opacity .3s"') + ' referrerpolicy="no-referrer" onerror="__pdSwap(this)" onload="if(this.naturalWidth<300||this.naturalHeight<170)__pdSwap(this);else this.style.opacity=1">' + (x.ps ? '<span>' + esc(x.ps) + '</span>' : '') + '</div>';
+    if(im) return '<div class="pd-img' + (x.fd ? ' pd-fd' : '') + '"' + (x.news || ND() ? ' data-vis="' + esc(visHtml(x)) + '"' : '') + '><div class="pd-bk"' + (x.fd ? ' style="background:url(\'' + esc(im) + '\') center/cover;filter:blur(22px) brightness(.7);transform:scale(1.2)"' : '') + '></div><img src="' + esc(im) + '" alt="" decoding="async"' + (WARM[im] && WARM[im].complete && WARM[im].naturalWidth ? ' style="opacity:1"' : ' style="opacity:0;transition:opacity .3s"') + ' referrerpolicy="no-referrer" onerror="__pdSwap(this)" onload="if(this.naturalWidth<300||this.naturalHeight<170)__pdSwap(this);else this.style.opacity=1">' + (x.ps ? '<span>' + esc(x.ps) + '</span>' : '') + '</div>';
     return x.news && (!x.pic || !PHOTOS() || raw === "" || dup) ? visHtml(x) : ''; }
   var lastBase = null, NEW = {};   // what was unread when you opened: those chips get a dot, the slide gets a NEW tag
   function show(i){
