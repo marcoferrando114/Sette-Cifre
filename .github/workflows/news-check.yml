@@ -8,6 +8,12 @@ jobs:
       - run: |
           cp tools/pato-ai-worker.js /tmp/w.mjs
           echo 'export { games };' >> /tmp/w.mjs
+          python3 - <<'PY'
+          s=open('/tmp/w.mjs').read()
+          s=s.replace('if (!(slam || atp)) return;','console.log("TNEV", tn, slam, atp); if (!(slam || atp)) return;')
+          s=s.replace('ms.forEach(m => { const ms2','console.log("TNMS", ms.length); ms.forEach(m => { const ms2')
+          open('/tmp/w.mjs','w').write(s)
+          PY
           cat > /tmp/run.mjs <<'EOF'
           globalThis.caches = { default: { match: async () => null, put: async () => {} } };
           const m = await import("/tmp/w.mjs");
