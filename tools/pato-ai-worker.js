@@ -153,7 +153,7 @@ function bigExtra(path, e, note) { const t = String(e.name || "") + " " + String
   if (STARS.test(JSON.stringify(e.competitions || []).slice(0, 4000))) x += 3;
   return x; }
 // Sports priority (Marco Nov 14), top first: UFC main event, soccer (important teams and games), tennis, NBA, NFL, boxing, MLB. Games he bet on rank first (in the app).
-const SPRIO = p => /^mma|ufc/i.test(p) ? 40 : /^soccer/i.test(p) ? 30 : /^tennis/i.test(p) ? 22 : /^basketball\/nba$/i.test(p) ? 16 : /^football\/nfl$/i.test(p) ? 12 : /^boxing/i.test(p) ? 8 : /^baseball\/mlb$/i.test(p) ? 4 : 0;
+const SPRIO = p => /^mma|ufc/i.test(p) ? 40 : /^soccer/i.test(p) ? 30 : /^tennis/i.test(p) ? 36 : /^basketball\/nba$/i.test(p) ? 16 : /^football\/nfl$/i.test(p) ? 12 : /^boxing/i.test(p) ? 8 : /^baseball\/mlb$/i.test(p) ? 4 : 0;
 async function games() {
   const d = drDay().replace(/-/g, ""), out = [];
   await Promise.all(LEAGUES.map(([path, name, w, only]) => cached("https://site.api.espn.com/apis/site/v2/sports/" + path + "/scoreboard?dates=" + d, 3600, "json").then(f => {
@@ -161,7 +161,15 @@ async function games() {
       if (only && !only.test(e.name || e.shortName || "")) return;   // Marco Nov 12: MLS = Inter Miami only, Ligue 1 = PSG only
       const st = e.status && e.status.type && e.status.type.state; if (st === "post") return;
       if (/^tennis/.test(path)) { const tn = e.name || "", slam = /Australian Open|French Open|Roland Garros|Wimbledon|US Open|Six Kings/i.test(tn), atp = /Indian Wells|BNP Paribas Open|Miami Open|Monte[- ]Carlo|Madrid|Italian Open|Stuttgart|Charleston|Berlin|Eastbourne|Linz|Guadalajara|Rome|Canadian Open|National Bank Open|Cincinnati|Shanghai|Paris Masters|Rolex Paris|ATP Finals|WTA Finals|Nitto|Rotterdam|Dubai|Acapulco|Barcelona|Halle|Queen'?s|Hamburg|Washington|Beijing|China Open|Tokyo|Japan Open|Basel|Vienna|Erste Bank|Rio Open|Doha|Qatar/i.test(tn);
-      if (!(slam || atp)) return; e.name = tn + " tennis tournament (matches today)"; }   // Marco Nov 13: "Austin 125" meant nothing; small events are dropped and big ones say what they are
+      if (!(slam || atp)) return;
+      // Marco Nov 20: real matches (player vs player) with odds, not a tournament line. Every unfinished singles match of the day becomes its own game; the best ones lead the Sports tab.
+      const ms = (e.competitions || []).length ? e.competitions : (e.groupings || []).filter(g2 => /singles/i.test(((g2.grouping || {}).slug || (g2.grouping || {}).displayName || ""))).flatMap(g2 => g2.competitions || []), big = /ATP Finals|WTA Finals|Nitto|Paris Masters|Rolex Paris/i.test(tn) || slam;
+      ms.forEach(m => { const ms2 = m.status && m.status.type && m.status.type.state; if (ms2 === "post" || (m.competitors || []).length < 2) return;
+        const pl = m.competitors.slice(0, 2).map(x => { const a = x.athlete || {}; return { n: a.shortName || a.displayName || "", full: a.displayName || "", ab: "", logo: (a.flag && a.flag.href) || "", rec: x.seed ? "Seed " + x.seed : "", score: ms2 === "in" ? (x.linescores || []).map(l => l.value).join(" ") : "", rk: x.curatedRank && x.curatedRank.current || 99 }; });
+        if (!pl[0].n || !pl[1].n) return; const rd = ((m.round || {}).displayName || (m.notes && m.notes[0] && m.notes[0].text) || ""), o0 = (m.odds || [])[0], best = Math.min(pl[0].rk, pl[1].rk);
+        out.push({ path, id: m.id || e.id, ref: path + "|" + (m.id || e.id), tn: 1, odds0: o0 ? { line: o0.details || "", ou: "", ml: [(o0.awayTeamOdds || {}).moneyLine, (o0.homeTeamOdds || {}).moneyLine], by: (o0.provider || {}).name || "" } : null, league: tn.replace(/^\d{4}\s+/, ""), name: pl[0].n + " vs " + pl[1].n, short: pl[0].n + " vs " + pl[1].n, t: Date.parse(m.date || m.startDate || e.date) || 0, tv: [], note: rd, live: ms2 === "in", teams: pl.map(x => ({ n: x.n, full: x.full, ab: x.ab, logo: x.logo, rec: x.rec, score: x.score })),
+          score: w + SPRIO(path) + (big ? 10 : 4) + (/final/i.test(rd) && !/semi|quarter/i.test(rd) ? 6 : /semi/i.test(rd) ? 4 : 0) + (best <= 3 ? 6 : best <= 10 ? 3 : 0) + (ms2 === "in" ? 2 : 0) }); });
+      return; }   // Marco Nov 13: "Austin 125" meant nothing; small events are dropped and big ones say what they are
       const c = (e.competitions || [])[0] || {}, tv = (c.broadcasts || []).flatMap(b => b.names || []), note = ((c.notes || [])[0] || {}).headline || "";
       const ranked = (c.competitors || []).filter(x => x.curatedRank && x.curatedRank.current && x.curatedRank.current <= 10).length;
       const nat = tv.some(n => /ESPN|ABC|TNT|NBC|CBS|FOX|Prime|Netflix|Peacock|TBS|Paramount/i.test(n));
@@ -175,9 +183,21 @@ async function games() {
   }).catch(() => null)));
   const srt = out.sort((a, b) => b.score - a.score), seenL = new Set(), one = [], more = [];   // best game of each league first, so the day mixes sports (Marco Nov 11)
   srt.forEach(g => { if (seenL.has(g.league)) more.push(g); else { seenL.add(g.league); one.push(g); } });
-  const top = one.concat(more).slice(0, 10);
-  await Promise.all(top.slice(0, 5).map(g => gameInfo(g))); top.slice(5).forEach(g => { if (g.odds0) g.odds = { line: String(g.odds0.line || ""), ou: g.odds0.ou ? String(g.odds0.ou) : "", ml: [], by: g.odds0.by }; delete g.path; delete g.id; delete g.odds0; });   // all shown games get the full card (Marco Nov 11: odds, form, key players, injuries)   // injury report + starting lineups for the biggest games (Marco Nov 11)
+  const tnm = srt.filter(g => g.tn).slice(0, 4), top = Array.from(new Set(one.concat(tnm, more))).slice(0, 10);   // Marco Nov 20: the best tennis matches always make the list
+  await Promise.all(top.slice(0, 5).map(g => g.tn ? tennisInfo(g) : gameInfo(g))); top.slice(5).forEach(g => { if (g.tn) { tennisInfoSync(g); return; } if (g.odds0) g.odds = { line: String(g.odds0.line || ""), ou: g.odds0.ou ? String(g.odds0.ou) : "", ml: [], by: g.odds0.by }; delete g.path; delete g.id; delete g.odds0; });   // all shown games get the full card (Marco Nov 11: odds, form, key players, injuries)   // injury report + starting lineups for the biggest games (Marco Nov 11)
   return top;
+}
+const odd = p => p <= 0 || p >= 1 ? "" : (p >= 0.5 ? "-" + Math.round(100 * p / (1 - p)) : "+" + Math.round(100 * (1 - p) / p));   // win chance to American odds
+function tennisInfoSync(g) { if (g.odds0 && (g.odds0.line || g.odds0.ml.some(v => v != null))) g.odds = { line: String(g.odds0.line || ""), ou: "", ml: g.odds0.ml.map(v => v == null ? "" : /^[+-]/.test(String(v)) ? String(v) : (Number(v) > 0 ? "+" : "") + v), by: g.odds0.by }; delete g.path; delete g.id; delete g.odds0; delete g.tn; }
+async function tennisInfo(g) {   // odds: ESPN if it has them, else the Polymarket market on this match (win chance turned into odds); nothing made up
+  try {
+    if (!(g.odds0 && g.odds0.ml.some(v => v != null))) {
+      const sn = g.teams.map(t => String(t.full || t.n).trim().split(/\s+/).pop().toLowerCase()), f = await xf("https://gamma-api.polymarket.com/public-search?q=" + encodeURIComponent(sn.join(" ")) + "&limit_per_type=6", { headers: { "user-agent": "Mozilla/5.0 (compatible; PatoDaily/1.0)" } }).then(r => r.ok ? r.json() : {}).catch(() => ({}));
+      for (const ev of (f.events || [])) for (const m of (ev.markets || [])) { const o = PJ(m.outcomes), pr = PJ(m.outcomePrices).map(Number), txt = ((m.question || "") + " " + (ev.title || "")).toLowerCase(); if (m.closed || o.length !== 2 || !sn.every(n => txt.includes(n))) continue;
+        const idx = sn.map(n => o.findIndex(x => String(x).toLowerCase().includes(n))); if (idx.some(i => i < 0) || idx[0] === idx[1] || !pr.every(isFinite) || pr[0] + pr[1] < 0.9) continue;
+        g.odds0 = { line: "", ou: "", ml: [odd(pr[idx[0]]), odd(pr[idx[1]])].map(v => v || null), by: "Polymarket" }; g.win = [Math.round(pr[idx[0]] * 100), Math.round(pr[idx[1]] * 100)]; break; } }
+  } catch (e) {}
+  tennisInfoSync(g);
 }
 async function gameInfo(g) {
   try {
@@ -844,7 +864,7 @@ async function repairEd(env, E, q) {   // one repair round: swap in the next bes
   x.done = 0; x.hd = 0; E.st = "built"; return acts;
 }
 async function advance(env, idx) {   // one step per call (every cron tick, or every phone request while no cron has done it): build, finish, check, repair, publish or hold
-  const key = "ed9r:" + idx; let E = await env.LIMITS.get(key, "json").catch(() => null); if (E && E.pub !== undefined) return E;
+  const key = "ed9s:" + idx; let E = await env.LIMITS.get(key, "json").catch(() => null); if (E && E.pub !== undefined) return E;
   await loadHL(env);
   if (!E || !E.b) { const b = await buildEdition(env, idx); if (Object.keys(b.cats).length < 2) { await env.LIMITS.put("edh:" + idx, JSON.stringify({ at: Date.now(), level: "hard", reasons: ["could not build: too few stories"], pub: false }), { expirationTtl: 172800 }).catch(() => 0); return null; }
     E = { at: Date.now(), bat: Date.now(), st: "built", b, x: {}, tries: 0 }; await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }); await saveHL(env).catch(() => 0); return E; }
@@ -867,7 +887,7 @@ async function advance(env, idx) {   // one step per call (every cron tick, or e
   await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }); return E;
 }
 async function getEdition(env, force, dbg, ctx) {   // what a phone gets: this drop's edition once it has passed the check, otherwise the last good one (never a broken one)
-  const idx = dropIdx(Date.now()), key = "ed9r:" + idx, kv = env.LIMITS; let E = kv ? await kv.get(key, "json").catch(() => null) : null;
+  const idx = dropIdx(Date.now()), key = "ed9s:" + idx, kv = env.LIMITS; let E = kv ? await kv.get(key, "json").catch(() => null) : null;
   if (E && E.pub) { if (kv && E.b && !E.fx3) { E.fx3 = 1; try { const c = E.b.ceo; if (c && c.founder && c.name) { const w = await wikiImg(env, c.name, true).catch(() => ""); if (w) { c.img = w; c.vf = 4; } } await clearHeads(env, E.b); await kv.put(key, JSON.stringify(E), { expirationTtl: 172800 }); } catch (e) {} }   // one-time repair of an edition published before these rules: the founder's own photo, clearer headlines
     const o = finalize(E.b); o.fin = 1; if (dbg) { o._dbg = E.b._dbg; o._q = E.q; o._log = E.log; } return o; }
   let L = null; try { const pt = kv && await kv.get("edpub", "json"); if (pt) L = await kv.get(pt.key, "json"); } catch (e) { L = null; }
