@@ -14,7 +14,8 @@ self.addEventListener("notificationclick", e => {
   e.notification.close();
   e.waitUntil((async () => {
     const all = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
-    for (const c of all) { if ("focus" in c) return c.focus(); }
+    const u = (e.notification.data && e.notification.data.url) || "./";
+    for (const c of all) { if ("focus" in c) { if (/remind/.test(u)) c.postMessage({ go: "remind" }); return c.focus(); } }
     return self.clients.openWindow((e.notification.data && e.notification.data.url) || "./");
   })());
 });

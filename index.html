@@ -2173,7 +2173,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261120041000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261123200500";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -3780,6 +3780,10 @@ html:not(.mp-guest) #s-gst{display:none!important}
     try{ await db.doc("config/main").update({recordarDias:Number($("rDays").value)}); toast("Reminder setting saved", Number($("rDays").value) ? `${$("rDays").selectedOptions[0].textContent} each payment` : "Reminders are off"); }
     catch(e){ toast("Couldn’t save the setting", "Try again", true); }
   });
+  // tap on a "payment due" push: open the ready-to-send WhatsApp message (Nov 23)
+  window.__remindAsk = function(){ window.__remindGo = true; setTimeout(()=>{ window.__remindGo = false; }, 20000); try{ renderRemind(); }catch(e){} };
+  if(/remind/.test(location.hash)) window.__remindAsk();
+  try{ navigator.serviceWorker && navigator.serviceWorker.addEventListener("message", ev => { if(ev.data && ev.data.go === "remind") window.__remindAsk(); }); }catch(e){}
   function renderRemind(){
     const box = $("remind");
     $("rDays").value = String(remindDays());
@@ -3787,6 +3791,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
     const items = db ? dueReminders() : [];
     if(!items.length){ box.style.display = "none"; return; }
     box.style.display = "block";
+    if(window.__remindGo && db){ window.__remindGo = false; const first = items.find(i=>i.kind==="late"||i.d<=0) || items[0]; if(first && !waOpened.has(itKey(first))) setTimeout(()=>openWA(first), 250); }
     const late = items.filter(i=>i.kind==="late").length, soon = items.length - late;
     $("rmSub").textContent = [soon ? `${soon} payment${soon>1?"s":""} coming up` : "", late ? `${late} late` : ""].filter(Boolean).join(" · ") + ". Tap Remind to send a WhatsApp.";
     const ul = $("rmList"); ul.innerHTML = "";
