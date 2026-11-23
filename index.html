@@ -13,7 +13,12 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="apple-touch-icon" href="icon-180.png?v=7">
 <link rel="icon" type="image/png" href="icon-192.png?v=7">
-<script>(function(){var p="goyards";try{p=localStorage.getItem("mp-palette")||"goyards";}catch(e){}if(["goyards","goyardt","goyardl"].indexOf(p)<0)p="goyards";document.documentElement.setAttribute("data-palette",p);document.documentElement.setAttribute("data-theme",p==="goyardl"?"light":"dark");var t=document.querySelector('meta[name="theme-color"]');if(t)t.setAttribute("content",p==="goyardt"?"#24170E":p==="goyardl"?"#E8D7B8":"#0F241B");})();</script>
+<script>
+window.BK_LOGO = {
+  bhd: '<svg viewBox="0 0 24 24" role="img" aria-label="BHD"><rect width="24" height="24" fill="#00833E"/><text x="12" y="15.2" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-weight="800" font-size="8.6" fill="#fff">BHD</text></svg>',
+  pop: '<svg viewBox="0 0 24 24" role="img" aria-label="Banco Popular"><rect width="24" height="24" fill="#0A4EA3"/><circle cx="12" cy="12" r="6.6" fill="none" stroke="#fff" stroke-width="2.2"/><circle cx="17.6" cy="6.4" r="2.4" fill="#F26B21"/></svg>'
+};
+(function(){var p="goyards";try{p=localStorage.getItem("mp-palette")||"goyards";}catch(e){}if(["goyards","goyardt","goyardl"].indexOf(p)<0)p="goyards";document.documentElement.setAttribute("data-palette",p);document.documentElement.setAttribute("data-theme",p==="goyardl"?"light":"dark");var t=document.querySelector('meta[name="theme-color"]');if(t)t.setAttribute("content",p==="goyardt"?"#24170E":p==="goyardl"?"#E8D7B8":"#0F241B");})();</script>
 <script id="pato-lag-fix">(function(){
   // Number.toLocaleString and Date.toLocaleDateString build a new Intl formatter on every call; amounts are formatted thousands of times per redraw.
   // Same results (same locale + options, same date defaults), one formatter each. Falls back to the browser's own on anything unusual.
@@ -777,10 +782,9 @@ html[data-palette^="goyard"] .sp-lim{font-family:var(--sans)}
 .sp-ledger .meta{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:2px}
 .sp-ledger select{width:auto;padding:3px 8px;font-size:.8rem;border-radius:999px}
 .sp-ledger .tag{font-size:.75rem;color:var(--muted)}
-.bk{display:inline-block;font-size:.62rem;font-weight:800;letter-spacing:.03em;padding:1px 6px;border-radius:999px;margin-left:6px;vertical-align:1px;line-height:1.4}
+.bk{display:inline-flex;align-items:center;margin-left:6px;vertical-align:-2px;line-height:0}
+.bk svg{width:20px;height:20px;display:block;border-radius:5px}
 .sp-ledger .meta .bk{margin-left:0}
-.bk-bhd{background:#E3F3E6;color:#1E7A37}.bk-pop{background:#E2EBFA;color:#1F4FA3}
-@media (prefers-color-scheme:dark){.bk-bhd{background:#1F3A27;color:#7FD393}.bk-pop{background:#1B2B4A;color:#8FB4F5}}
 .sp-ledger .a{font-weight:800;text-align:right}
 .sp-ledger .a small{display:block;font-weight:400;font-size:.75rem;color:var(--muted)}
 .sp-ledger li.off .m,.sp-ledger li.off .a{opacity:.45;text-decoration:line-through}
@@ -5370,7 +5374,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
       const rp = isSpend(e) ? repuestoDe(e.id) : 0, rw = e.source===REP && e.repone ? entries.find(x=>x.id===e.repone) : null;
       // row shows only the label, the short date and the amount; the details open on tap
       li.querySelector(".meta").textContent = fmtDate(e.date,false);
-      if(!(window.MP_ME && !window.MP_ME.owner)){ const bk = document.createElement("span"); bk.className = "bk bk-bhd"; bk.textContent = "BHD"; li.querySelector(".meta").appendChild(bk); }
+      if(!(window.MP_ME && !window.MP_ME.owner)){ const bk = document.createElement("span"); bk.className = "bk"; bk.innerHTML = window.BK_LOGO.bhd; li.querySelector(".meta").appendChild(bk); }
       const extra = [useNote ? why : "", useNote && sn===e.note ? "" : (e.note || ""), rw ? `Puts back the ${fmtDate(rw.date,false)} ${rw.motivo ? whyLbl(rw.motivo).toLowerCase() : "withdrawal"}` : "",
         e.cubierto ? "Covered" : rp>0 ? (rp>=e.amount-0.5 ? "Put back in full" : `${fmt(rp)} put back`) : ""].filter(Boolean).join(" · ");
       if(extra){ const dx=document.createElement("div"); dx.className="hdet"; dx.hidden=true; dx.textContent=extra; li.firstElementChild.appendChild(dx);
@@ -5785,7 +5789,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
     { let m = $("spMore"); if(!m){ m = document.createElement("div"); m.id = "spMore"; m.className = "hist-more"; $("spLedger").after(m); }
       m.innerHTML = ""; if(spAll > spN){ const b = document.createElement("button"); b.type = "button"; b.textContent = `View more (${spAll-spN})`; b.onclick = () => { window.__spShow = spN + 8; renderSpend(); }; m.appendChild(b); }
       if(spN > 8){ const b = document.createElement("button"); b.type = "button"; b.textContent = "Show less"; b.onclick = () => { window.__spShow = 8; renderSpend(); $("s-spledger").scrollIntoView({block:"start"}); }; m.appendChild(b); } }
-    const bankChip = t => { if(window.MP_ME && !window.MP_ME.owner) return ""; const b = t.fromSav || t.source==="bhd" ? "bhd" : (t.kind==="manual" && !t.fromSav) || t.kind==="cashin" || t.kind==="deposito" ? "" : "pop"; return b ? `<span class="bk bk-${b}">${b==="bhd"?"BHD":"Popular"}</span>` : ""; };
+    const bankChip = t => { if(window.MP_ME && !window.MP_ME.owner) return ""; const b = t.fromSav || t.source==="bhd" ? "bhd" : (t.kind==="manual" && !t.fromSav) || t.kind==="cashin" || t.kind==="deposito" ? "" : "pop"; return b ? `<span class="bk">${window.BK_LOGO[b]}</span>` : ""; };
     $("spLedger").innerHTML = list.length ? list.map(t=>{
       const wallet = spIsCashOut(t)||spIsCashIn(t), inc = spIsIn(t), off = !spLive(t);
       const tag = t.status!=="Aprobada" ? t.status : t.excluded ? "Not counted" : t.dupe ? "Possible double" : t.pend ? "Charge pending" : spIsManual(t) ? (t.fromSav ? "Paid from savings" : "Paid in cash") : spIsCashOut(t) ? (t.kept ? "ATM · you kept it" : "ATM · not counted as spent") : spIsCashIn(t) ? "Cash count" : spIsDep(t) ? "Cash deposited · not spending" : spIsTransfer(t) ? (t.own ? "To your own account" : "Transfer from checking") : inc ? "Money in" : "";
