@@ -6601,6 +6601,13 @@ TRACKER DATA:
     db.doc("spendMeta/usdAccount").onSnapshot(s => { usdAcc = s.exists ? s.data() : null; renderSpendSoon(); try{ render(); }catch(e){} }, ()=>{});
     db.doc("spendMeta/wallet").onSnapshot(s => { spWalletDoc = s.exists ? s.data() : null; renderSpendSoon(); }, ()=>{});
     db.doc("invest/ibkr").onSnapshot(s => { ibkr = s.exists ? s.data() : null; renderSoon(); }, ()=>{});
+    // gold and silver stay live: on open, every 5 min while open, and on coming back (the price worker only updates them with stocks)
+    const metalsLive = async () => { if(!(window.MP_ME && window.MP_ME.owner) || document.hidden) return;
+      try{ const m = await (await fetch("https://pato-ai.marcoferrando.workers.dev/metals", {cache:"no-store"})).json();
+        if(!(m && m.oro && m.oro.precio > 0 && m.plata && m.plata.precio > 0 && m.at)) return;
+        const cur = (ibkr||{}).metales || {}; if(cur.at === m.at && cur.oro && cur.oro.precio === m.oro.precio && cur.plata && cur.plata.precio === m.plata.precio) return;
+        await db.doc("invest/ibkr").set({metales: m}, {merge: true}); }catch(e){} };
+    setTimeout(metalsLive, 2500); setInterval(metalsLive, 5*60000); document.addEventListener("visibilitychange", () => { if(!document.hidden) metalsLive(); });
     db.collection("contactos").onSnapshot(snap => {
       contactos = {}; snap.docs.forEach(d => contactos[d.id] = d.data());
       renderSoon();
