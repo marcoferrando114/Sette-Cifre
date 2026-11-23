@@ -6606,7 +6606,8 @@ TRACKER DATA:
       try{ const m = await (await fetch("https://pato-ai.marcoferrando.workers.dev/metals", {cache:"no-store"})).json();
         if(!(m && m.oro && m.oro.precio > 0 && m.plata && m.plata.precio > 0 && m.at)) return;
         const cur = (ibkr||{}).metales || {}; if(cur.at === m.at && cur.oro && cur.oro.precio === m.oro.precio && cur.plata && cur.plata.precio === m.plata.precio) return;
-        await db.doc("invest/ibkr").set({metales: m}, {merge: true}); }catch(e){} };
+        if(!ibkr || !Array.isArray(ibkr.posiciones)) return;   // only ever add to the full stocks doc (this db's set() replaces the whole doc)
+        await db.doc("invest/ibkr").update({metales: m}); }catch(e){} };
     setTimeout(metalsLive, 2500); setInterval(metalsLive, 5*60000); document.addEventListener("visibilitychange", () => { if(!document.hidden) metalsLive(); });
     db.collection("contactos").onSnapshot(snap => {
       contactos = {}; snap.docs.forEach(d => contactos[d.id] = d.data());
