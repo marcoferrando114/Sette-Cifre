@@ -753,6 +753,8 @@ html[data-palette^="goyard"] .sp-lim{font-family:var(--sans)}
 .sp-pace{margin-top:12px;font-size:.95rem;color:var(--muted)}
 .sp-pace b{color:var(--ink)}
 .sp-cats{display:grid;gap:10px}
+.lsrc{margin:4px 0 12px}
+.lsrc>label{display:block;margin-bottom:6px}
 .sp-subs{display:flex;flex-direction:column}
 .sp-sub{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;align-items:baseline;padding:11px 0;border-top:1px solid var(--line)}
 .sp-sub:first-child{border-top:0;padding-top:2px}
@@ -2571,7 +2573,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
       <div><label for="lFreq">Frequency</label><select id="lFreq"><option value="semanal">Weekly</option><option value="quincenal">Every 2 weeks</option><option value="mensual" selected>Monthly</option></select></div>
       <div class="full"><label for="lTel">Their WhatsApp number (optional)</label><input id="lTel" inputmode="tel" placeholder="809 555 1234" autocomplete="off"></div>
     </div>
-    <label class="check"><input type="checkbox" id="lFromSav" checked> The money came from the savings account</label>
+    <div class="lsrc"><label>Money came from</label><div class="seg" role="group" aria-label="Money came from" id="lSrc"><button type="button" data-src="bhd" aria-pressed="true">BHD savings</button><button type="button" data-src="pop" aria-pressed="false">Popular</button><button type="button" data-src="other" aria-pressed="false">Other</button></div><input type="checkbox" id="lFromSav" checked hidden></div>
     <div class="record" id="lRecord"></div>
     <div class="hint" id="lPreview">You’ll get back RD$0.</div>
     <div class="impact" id="lImpact"></div>
@@ -3146,6 +3148,11 @@ html:not(.mp-guest) #s-gst{display:none!important}
     updLoanImpact();
   }
   $("lFromSav").addEventListener("change", syncLoan);
+  // where the lent money came from: BHD savings (out of savings), Popular checking (checking balance goes down), or other
+  let lSrc = "bhd";
+  const setLSrc = v => { lSrc = v; $("lSrc").querySelectorAll("[data-src]").forEach(b=>b.setAttribute("aria-pressed", b.dataset.src===v ? "true" : "false")); $("lFromSav").checked = v==="bhd"; syncLoan(); };
+  $("lSrc").querySelectorAll("[data-src]").forEach(b=>b.onclick=()=>setLSrc(b.dataset.src));
+  $("lSrc").closest("details").addEventListener("toggle", ()=>{ if(window.MP_ME && !window.MP_ME.owner){ const n = {bhd:"Savings", pop:"Checking"}; $("lSrc").querySelectorAll("[data-src]").forEach(b=>{ if(n[b.dataset.src]) b.textContent = n[b.dataset.src]; }); } });
   $("lTel").addEventListener("input", ()=>{ $("lTel").dataset.touched = $("lTel").value ? "1" : ""; });
   $("lN").addEventListener("input", syncLoan); $("lFreq").addEventListener("change", syncLoan);
   ["lName","lAmt","lInt","lDate"].forEach(id=>$(id).addEventListener("input", syncLoan));
@@ -3158,12 +3165,15 @@ html:not(.mp-guest) #s-gst{display:none!important}
       if($("lFromSav").checked){
         const r = await db.collection("entries").add({ amount:monto, type:"out", source:"Préstamo", date:today(), note:"Loan to "+nombre, createdAt:Date.now() });
         retiroId = r.id;
+      } else if(lSrc==="pop"){
+        const last = [...corriente].sort((a,b)=>(b.date||"").localeCompare(a.date||"") || (b.createdAt||0)-(a.createdAt||0))[0], cc0 = last ? Number(last.saldo)||0 : 0;
+        await db.collection("corriente").add({saldo: Math.max(0, cc0 - monto), date: today() > (last&&last.date||"") ? today() : (last.date||today()), createdAt: Date.now(), move: -monto, note: "Loan to " + nombre});
       }
       const cuotas = Math.max(1, Math.round(parseAmt($("lN").value))||1);
       await db.collection("prestamos").add({ nombre, monto, interes, fecha, pagado:false, retiroId, cuotas, frecuencia:$("lFreq").value, cuotasPagadas:[], createdAt:Date.now() });
       if($("lTel").value.trim()) await saveTel(nombre, $("lTel").value);
       ["lName","lAmt","lInt","lDate","lN","lTel"].forEach(id=>$(id).value="");
-      syncLoan();
+      setLSrc("bhd");
     }catch(err){ warnMsg("Couldn’t save the loan. Try again."); syncLoan(); }
   };
   // ---------- new debt (owed to you, not a loan) ----------
