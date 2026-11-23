@@ -23,8 +23,18 @@ const KEYS = [
   ["subs", /spotify|netflix|disney|hbo|deliveroo|youtube|icloud|google one|openai|claude/],
   ["health", /farmacia|pharm|carol|\bgbc\b|clinica|laboratorio|medic/],
 ];
+// the bank spells one store many ways (branch, city, cut-off names): same first two words, or the same single long word, is the same store (same rule as the app)
+const STOP = /^(s ?a|srl|sas|the|de|del|la|el|los|las|dr|rd|santo|domingo|sto|dgo|www|com)$/;
+const words = k => String(k || "").split(" ").filter(w => w.length >= 3 && !STOP.test(w));
+function learnFor(L, merchant) {
+  const k = spMerch(merchant); if (!k || !L) return null; if (L[k]) return L[k];
+  const w = words(k); if (!w.length) return null; let best = null, bl = 0;
+  for (const lk in L) { const lw = words(lk); let n = 0; while (n < w.length && n < lw.length && w[n] === lw[n]) n++;
+    if ((n >= 2 || (n === 1 && (w.length === 1 || lw.length === 1) && w[0].length >= 5)) && n >= bl) { bl = n; best = L[lk]; } }
+  return best;
+}
 function catOf(merchant, learned) {
-  const k = spMerch(merchant); if (learned && learned[k]) return learned[k];
+  const c = learnFor(learned, merchant); if (c) return c;
   const n = nrm(merchant); for (const [c, re] of KEYS) if (re.test(n)) return c;
   return "other";
 }
