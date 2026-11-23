@@ -8244,6 +8244,30 @@ html.pk-m .pk-rl{animation:pkRel .45s cubic-bezier(.3,1.6,.5,1)}
 @keyframes pkUp{0%,30%{text-shadow:0 0 18px rgba(95,200,140,.75)}100%{text-shadow:none}}
 @keyframes pkDn{0%,30%{text-shadow:0 0 18px rgba(230,90,80,.7)}100%{text-shadow:none}}
 
+/* dialogs and sheets: fade + spring in, quick fade out */
+html.pk-m .celebrate.pk-in{animation:pkFadeIn .24s ease-out}
+html.pk-m .celebrate.pk-in>.cel-card{animation:pkCardIn .46s cubic-bezier(.22,1.25,.36,1)}
+html.pk-m #snapDlg.pk-in,html.pk-m #sfOffer.pk-in{animation:pkFadeIn .24s ease-out}
+html.pk-m #snapDlg.pk-in>.sd,html.pk-m #sfOffer.pk-in>*{animation:pkSheetIn .44s cubic-bezier(.22,1.08,.36,1)}
+html.pk-m .pk-out{pointer-events:none!important;animation:pkFadeOut .2s ease-in forwards!important}
+html.pk-m .celebrate.pk-out>.cel-card{animation:pkCardOut .2s ease-in forwards}
+html.pk-m #snapDlg.pk-out>.sd,html.pk-m #sfOffer.pk-out>*{animation:pkSheetOut .22s ease-in forwards}
+html.pk-m #mpGate.pk-out,html.pk-m #sfLock.pk-out{animation:pkGateOut .32s ease-in forwards!important}
+html.pk-m #palSheet.full.pk-in{animation:pkPushIn .36s cubic-bezier(.22,1,.36,1)}
+html.pk-m .palsheet:not(.full).pk-in{animation:pkCardIn .36s cubic-bezier(.22,1.25,.36,1)}
+@keyframes pkFadeIn{from{opacity:0}}
+@keyframes pkFadeOut{to{opacity:0}}
+@keyframes pkCardIn{from{opacity:0;transform:translateY(22px) scale(.94)}}
+@keyframes pkCardOut{to{opacity:0;transform:translateY(10px) scale(.97)}}
+@keyframes pkSheetIn{from{transform:translateY(105%)}}
+@keyframes pkSheetOut{to{transform:translateY(105%)}}
+@keyframes pkGateOut{to{opacity:0;transform:scale(1.04)}}
+@keyframes pkPushIn{from{opacity:0;transform:translateX(22%)}}
+
+/* no grey flash or text-select popups on taps (iPhone) */
+button,summary,[role="button"],.tabs,a{-webkit-tap-highlight-color:transparent}
+button,summary,[role="button"],.tabs{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:manipulation}
+
 @media (prefers-reduced-motion: reduce){.pduck *{animation:none!important;transition:none!important}.toast.on .tk.pk-tk{animation:none}.tabs.pk-gl-run .pk-gl{transition:none}}
 </style>
 <script id="pk-motion-js">
@@ -8331,12 +8355,32 @@ html.pk-m .pk-rl{animation:pkRel .45s cubic-bezier(.3,1.6,.5,1)}
   var nav = document.querySelector("nav.tabs");
   function order(){ return nav ? [].slice.call(nav.querySelectorAll("[data-tab]")).map(function(b){ return b.dataset.tab; }) : []; }
   function cur(){ var s = nav && nav.querySelector('[data-tab][aria-selected="true"]'); return s ? s.dataset.tab : null; }
+  if(nav) nav.addEventListener("click", function(e){ var b = e.target.closest && e.target.closest("[data-tab]"); if(!b || b.getAttribute("aria-selected") !== "true" || window.scrollY < 4) return; e.stopPropagation(); window.scrollTo({top: 0, behavior: "smooth"}); }, true);
   if(nav) nav.addEventListener("click", function(e){ var b = e.target.closest && e.target.closest("[data-tab]"); if(!b) return; var o = order(), a = o.indexOf(cur()), z = o.indexOf(b.dataset.tab); document.documentElement.setAttribute("data-pkdir", z < a ? "b" : "f"); }, true);
   var BARS = '.bar>i,.hbar>i,.sbar>i,.minibar>i,.wbar>i,.rpt-bar>i,.rpt-gbar>i,.sl-bar>i,.pk-sbar>i,.barx>i,.sg-bar>i,.psc-bars i';
-  function enter(p){ if(!p) return; p.classList.remove("pk-enter"); p.getBoundingClientRect(); p.classList.add("pk-enter"); clearTimeout(p._en); p._en = setTimeout(function(){ p.classList.remove("pk-enter"); }, 900);
-    // bars fill up from zero
-    var k = 0; p.querySelectorAll(BARS).forEach(function(i){ var r = i.getBoundingClientRect(); if(r.width < 2 || r.height > 40 || !i.animate) return; i.style.transformOrigin = "left center";
-      i.animate([{transform: "scaleX(0)"}, {transform: "scaleX(1)"}], {duration: 1000, delay: 120 + Math.min(k++, 10) * 45, easing: "cubic-bezier(.22,1,.36,1)", fill: "backwards"}); }); }
+  // bars fill up from zero (on a screen change only the ones you can see; the rest fill when you scroll to them)
+  function bars(root, d0, all){ var k = 0, H = innerHeight; root.querySelectorAll(BARS).forEach(function(i){ var r = i.getBoundingClientRect(); if(r.width < 2 || r.height > 40 || (!all && r.top > H) || !i.animate) return; i.style.transformOrigin = "left center";
+      i.animate([{transform: "scaleX(0)"}, {transform: "scaleX(1)"}], {duration: 1000, delay: d0 + Math.min(k++, 10) * 45, easing: "cubic-bezier(.22,1,.36,1)", fill: "backwards"}); }); }
+  // Pato score: when the gauge comes into view the needle swings up from zero and the number counts with it
+  function gauge(){ var n = document.querySelector("#pscG .g-n"), num = document.getElementById("pscNum"); if(!n || !n.animate) return;
+    var s = numOf(num && num.textContent); if(s == null) return; n.style.transformBox = "view-box"; n.style.transformOrigin = "100px 96px";
+    n.animate([{transform: "rotate(" + (-s * 1.8) + "deg)"}, {transform: "rotate(0deg)"}], {duration: 1200, delay: 100, easing: "cubic-bezier(.3,1.22,.45,1)", fill: "backwards"});
+    if(s > 0 && num.childNodes.length === 1 && num.firstChild.nodeType === 3){ var txt = num.textContent; num._pkLast = num.firstChild.nodeValue = txt.replace(/\d+/, "0"); roll(num, 0, s, txt); } }
+  var T0 = 0, IO = null, GIO = null, gDone = false;
+  if("IntersectionObserver" in window){
+    // cards rise in as you scroll down to them (each once per visit to a screen)
+    IO = new IntersectionObserver(function(es){ var now = performance.now(); es.forEach(function(e){ var c = e.target;
+      if(!e.isIntersecting){ if(window.scrollY < 10) c._pkRev = false; return; }   // pushed down while loading: it still gets its entrance
+      if(c._pkRev) return; c._pkRev = true; if(now - T0 < 650 || e.boundingClientRect.top < innerHeight * .35) return;
+      if(c.animate) c.animate([{opacity: 0, transform: "translateY(24px) scale(.985)"}, {opacity: 1, transform: "none"}], {duration: 540, easing: "cubic-bezier(.22,1,.36,1)"});
+      bars(c, 120, true); }); });
+    GIO = new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting && !gDone){ gDone = true; gauge(); } else if(!e.isIntersecting && window.scrollY < 10) gDone = false; }); }, {threshold: .6});
+  }
+  function enter(p){ if(!p) return; T0 = performance.now();
+    if(IO){ IO.disconnect(); [].forEach.call(p.children, function(c){ c._pkRev = false; IO.observe(c); }); }
+    if(GIO){ GIO.disconnect(); gDone = false; var g = p.querySelector("#pscG"); if(g) GIO.observe(g); }
+    p.classList.remove("pk-enter"); p.getBoundingClientRect(); p.classList.add("pk-enter"); clearTimeout(p._en); p._en = setTimeout(function(){ p.classList.remove("pk-enter"); }, 900);
+    bars(p, 120); }
   var lastTab = null;
   new MutationObserver(function(){ var t = cur(); if(t && t !== lastTab){ lastTab = t; enter(document.getElementById("p-" + t)); glide(); } }).observe(nav || document.body, {attributes: true, subtree: true, attributeFilter: ["aria-selected"]});
 
@@ -8355,7 +8399,7 @@ html.pk-m .pk-rl{animation:pkRel .45s cubic-bezier(.3,1.6,.5,1)}
   // ---------- taps: press in, spring back ----------
   var pr = null, pt = 0;
   function up(){ if(!pr) return; var b = pr; pr = null; var wait = Math.max(0, 90 - (Date.now() - pt)); setTimeout(function(){ b.classList.remove("pk-pr"); b.classList.remove("pk-rl"); b.getBoundingClientRect(); b.classList.add("pk-rl"); setTimeout(function(){ b.classList.remove("pk-rl"); }, 460); }, wait); }
-  document.addEventListener("pointerdown", function(e){ var b = e.target.closest && e.target.closest('button,[role="button"],.tg,a.btn'); if(!b || b.disabled || b.closest("#pdV,#pdPeek,.toast,.pk-gl")) return;
+  document.addEventListener("pointerdown", function(e){ var b = e.target.closest && e.target.closest('button,[role="button"],.tg,a.btn,summary'); if(!b || b.disabled || b.closest("#pdV,#pdPeek,.toast,.pk-gl")) return;
     if(getComputedStyle(b).transform !== "none") return; var w = b.offsetWidth; b.style.setProperty("--pk-s", w > 260 ? ".985" : w > 120 ? ".97" : ".93"); pr = b; pt = Date.now(); b.classList.add("pk-pr"); }, {passive: true});
   document.addEventListener("pointerup", up, {passive: true}); document.addEventListener("pointercancel", up, {passive: true});
   window.addEventListener("scroll", function(){ if(pr){ pr.classList.remove("pk-pr"); pr = null; } }, {passive: true});
@@ -8374,9 +8418,31 @@ html.pk-m .pk-rl{animation:pkRel .45s cubic-bezier(.3,1.6,.5,1)}
       if(id !== "pctFill" && id !== "left"){ var c = b > a ? "pk-up" : "pk-dn"; if(id === "spTotal") c = b > a ? "pk-dn" : "pk-up"; el.classList.remove("pk-up", "pk-dn"); el.getBoundingClientRect(); el.classList.add(c); setTimeout(function(){ el.classList.remove(c); }, 1300); }
       el._pkLast = el.firstChild && el.firstChild.nodeValue; roll(el, a, b, now); }).observe(el, {childList: true}); });
 
+  // ---------- dialogs and sheets: spring in, fade out (Nov 23) ----------
+  var OV = [{s: ".celebrate", m: "on"}, {s: "#snapDlg"}, {s: "#sfOffer"}, {s: "#palSheet", noOut: 1}, {s: "#mpGate", noIn: 1, ms: 330}, {s: "#sfLock", noIn: 1, ms: 330}];
+  function shown(el, o){ return o.m ? el.classList.contains(o.m) : !el.hidden; }
+  function watchOv(el, o){ if(el._pkOv) return; el._pkOv = 1; var was = shown(el, o); if(was) el._pkD = getComputedStyle(el).display;
+    new MutationObserver(function(){ var now = shown(el, o); if(now === was) return; was = now; clearTimeout(el._pkT);
+      if(el._pkOut){ el.classList.remove("pk-out"); el.style.display = el._pkOut[0]; el._pkOut = null; }
+      if(now){ el._pkD = getComputedStyle(el).display; if(o.noIn) return; el.classList.remove("pk-in"); void el.offsetWidth; el.classList.add("pk-in"); el._pkT = setTimeout(function(){ el.classList.remove("pk-in"); }, 520); return; }
+      el.classList.remove("pk-in"); if(o.noOut || !el._pkD || el._pkD === "none") return;
+      el._pkOut = [el.style.display]; el.style.setProperty("display", el._pkD, "important"); el.classList.add("pk-out");
+      el._pkT = setTimeout(function(){ if(!el._pkOut) return; el.classList.remove("pk-out"); el.style.display = el._pkOut[0]; el._pkOut = null; }, o.ms || 230);
+    }).observe(el, {attributes: true, attributeFilter: o.m ? ["class"] : ["hidden"]}); }
+  function ovs(){ OV.forEach(function(o){ document.querySelectorAll(o.s).forEach(function(el){ watchOv(el, o); }); }); }
+  // Settings: sections slide in from the side, like a phone settings app
+  (function(){ var sh = document.getElementById("palSheet"); if(!sh) return; var last = sh.getAttribute("data-sec");
+    new MutationObserver(function(){ var now = sh.getAttribute("data-sec"); if(now === last) return; var back = !now; last = now; if(sh.hidden) return;
+      requestAnimationFrame(function(){ [].forEach.call(sh.children, function(c){ if(c.classList.contains("sp-hd") || !c.animate || !c.getClientRects().length) return;
+        c.animate([{opacity: 0, transform: "translateX(" + (back ? -22 : 22) + "px)"}, {opacity: 1, transform: "none"}], {duration: 320, easing: "cubic-bezier(.22,1,.36,1)"}); }); });
+    }).observe(sh, {attributes: true, attributeFilter: ["data-sec"]}); })();
+  // folded sections: what opens slides down softly
+  document.addEventListener("toggle", function(e){ var d = e.target; if(!d || d.tagName !== "DETAILS" || !d.open || !seen(d)) return;
+    [].forEach.call(d.children, function(c){ if(c.tagName === "SUMMARY" || !c.animate) return; c.animate([{opacity: 0, transform: "translateY(-6px)"}, {opacity: 1, transform: "none"}], {duration: 300, easing: "cubic-bezier(.22,1,.36,1)"}); }); }, true);
+
   // swap duck pictures as they appear
-  var q = 0; new MutationObserver(function(){ if(q) return; q = requestAnimationFrame(function(){ q = 0; swapImgs(); fab(); pills(); }); }).observe(document.body, {childList: true, subtree: true});
-  swapImgs(); fab(); pills();
+  var q = 0; new MutationObserver(function(){ if(q) return; q = requestAnimationFrame(function(){ q = 0; swapImgs(); fab(); pills(); ovs(); }); }).observe(document.body, {childList: true, subtree: true});
+  swapImgs(); fab(); pills(); ovs();
   function boot(){ lastTab = cur(); glide(); enter(lastTab && document.getElementById("p-" + lastTab)); }
   if(document.readyState === "complete") boot(); else window.addEventListener("load", boot);
 })();
