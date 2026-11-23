@@ -1039,6 +1039,14 @@ export default {
       if (!ORIGINS.includes(origin)) return json({ error: { type: "forbidden" } }, 403, origin);
       try { return json(await getEdition(env, false, url.searchParams.get("dbg") === "1", ctx), 200, origin); } catch (e) { return json({ error: { type: "news_failed" } }, 502, origin); }
     }
+    if (req.method === "GET" && url.pathname === "/metals") {   // gold and silver (COMEX futures, US$/oz) for the Stocks tab, live when the app opens (Nov 23), cached 5 min
+      if (!ORIGINS.includes(origin)) return json({ error: { type: "forbidden" } }, 403, origin);
+      const one = async sym => { const f = await cached("https://query1.finance.yahoo.com/v8/finance/chart/" + sym + "?interval=5m&range=1d", 300, "json"); const m = ((((f.body || {}).chart || {}).result || [])[0] || {}).meta || {};
+        return { precio: Math.round(Number(m.regularMarketPrice) * 1e4) / 1e4, prev: Number(m.chartPreviousClose || m.previousClose) || null, time: Number(m.regularMarketTime) || 0 }; };
+      try { const [au, ag] = await Promise.all([one("GC=F"), one("SI=F")]); if (!(au.precio > 0 && ag.precio > 0)) return json({}, 200, origin);
+        return json({ oro: { precio: au.precio, prev: au.prev }, plata: { precio: ag.precio, prev: ag.prev }, at: new Date(Math.max(au.time, ag.time) * 1000).toISOString().replace(/\.\d+Z$/, "Z") }, 200, origin);
+      } catch (e) { return json({}, 200, origin); }
+    }
     if (req.method === "GET" && url.pathname === "/scores") {   // live scores for the games on screen (Marco Nov 12: update when you come back), cached 60s
       if (!ORIGINS.includes(origin)) return json({ error: { type: "forbidden" } }, 403, origin);
       const refs = (url.searchParams.get("r") || "").split(",").map(x => x.trim()).filter(x => /^[a-z0-9.\-]+\/[a-z0-9.\-]+\|\d{3,12}$/i.test(x)).slice(0, 12), paths = [...new Set(refs.map(x => x.split("|")[0]))].slice(0, 6), out = {};
