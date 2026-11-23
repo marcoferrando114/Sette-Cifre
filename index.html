@@ -7558,7 +7558,7 @@ TRACKER DATA:
   var CO = {IBKR: /\b(IBKR|Interactive Brokers)\b/, MU: /\bMicron\b/, AAPL: /\bApple\b/, TSLA: /\bTesla\b/, NVDA: /\bNvidia\b/i, AMZN: /\bAmazon\b/, GOOGL: /\b(Google|Alphabet)\b/, META: /\b(Meta|Facebook|Instagram)\b/, MSFT: /\bMicrosoft\b/, NFLX: /\bNetflix\b/, AVGO: /\bBroadcom\b/, AMD: /\bAMD\b/, TSM: /\b(TSMC|Taiwan Semiconductor)\b/, DIS: /\bDisney\b/, NKE: /\bNike\b/, KO: /\bCoca-Cola\b/, JPM: /\bJPMorgan\b/, V: /\bVisa\b/, MA: /\bMastercard\b/, UBER: /\bUber\b/, SPOT: /\bSpotify\b/, PLTR: /\bPalantir\b/, COIN: /\bCoinbase\b/, WMT: /\bWalmart\b/};
   function learn(text, w){ if(!text || !db) return; var co = Object.assign({}, (prefs && prefs.co) || {}), hit = 0;
     Object.keys(CO).forEach(function(t){ if(CO[t].test(text)){ co[t] = (co[t] || 0) + (w || 1); hit = 1; } }); if(!hit) return;
-    prefs = Object.assign({}, prefs || {}, {co: co}); try{ db.doc("prefs/news").set({co: co}, {merge: true}); }catch(_){} }
+    prefs = Object.assign({}, prefs || {}, {co: co}); try{ db.doc("prefs/news").set(prefs); }catch(_){} }
   function autoT(){ var a = []; if(pos.length) a.push(["stocks", "you own stocks"]); if(bets.length) a.push(["game", "you track sports bets"]); return a; }   // Pato adds topics from what you hold and bet, and says so
   var onNew = function(){ var valid = function(x){ return FIX.indexOf(x) < 0 && CATS.some(function(c){ return c[0] === x; }); };
     var o = prefs && Array.isArray(prefs.on) ? prefs.on.filter(valid) : (MG() ? ["stocks", "tech", "startups", "rd"] : DEF.slice());
