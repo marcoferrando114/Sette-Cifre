@@ -753,6 +753,15 @@ html[data-palette^="goyard"] .sp-lim{font-family:var(--sans)}
 .sp-pace{margin-top:12px;font-size:.95rem;color:var(--muted)}
 .sp-pace b{color:var(--ink)}
 .sp-cats{display:grid;gap:10px}
+.sp-subs{display:flex;flex-direction:column}
+.sp-sub{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:2px 12px;align-items:baseline;padding:11px 0;border-top:1px solid var(--line)}
+.sp-sub:first-child{border-top:0;padding-top:2px}
+.sp-sub .n{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sp-sub .v{font-weight:800;text-align:right}
+.sp-sub .d{grid-column:1/-1;color:var(--muted);font-size:.85rem}
+.sp-sub .d.due{color:var(--mango)}
+.sp-subs-tot{display:flex;justify-content:space-between;margin-top:6px;padding-top:12px;border-top:1px solid var(--line);color:var(--muted);font-size:.9rem}
+.sp-subs-tot b{color:var(--ink)}
 .sp-crow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 12px;align-items:baseline}
 .sp-crow .n{font-weight:600}
 .sp-crow .v{font-weight:800}
@@ -2467,6 +2476,11 @@ html:not(.mp-guest) #s-gst{display:none!important}
   <section id="s-spcats">
     <h2>Where it went</h2>
     <div class="sp-cats num" id="spCats"><div class="empty">Loading your purchases…</div></div>
+  </section>
+
+  <section id="s-spsubs" hidden>
+    <h2>Subscriptions</h2>
+    <div id="spSubs"></div>
   </section>
 
   <section id="s-spcash">
@@ -5812,7 +5826,35 @@ html:not(.mp-guest) #s-gst{display:none!important}
     const fxr = spMeta && spMeta.fx;
     $("spNote").textContent = (spMeta && spMeta.lastSync ? `Card purchases come from your Popular alerts in Gmail, last updated ${spDay(spMeta.lastSync)}. ` : "") + (fxr ? `Dollar and euro charges are converted at about RD$${fxr.USD} and RD$${fxr.EUR}.` : "");
     syncSp(); try{ syncTr(); }catch(e){}
+    try{ renderSubs(); }catch(e){ console.error(e); }
     spAutoCat();
+  }
+  // ---- subscriptions: charges marked Subscriptions, or the same store charging about the same amount about once a month ----
+  function renderSubs(){
+    const box = $("spSubs"), sec = $("s-spsubs"); if(!box || !sec) return;
+    const T = today(), NOT = ["food","rides","gas","out","family","fees","errands","health","cash"];
+    const addM = d => { const x = new Date(d+"T12:00"), day = x.getDate(); x.setDate(1); x.setMonth(x.getMonth()+1); x.setDate(Math.min(day, new Date(x.getFullYear(), x.getMonth()+1, 0).getDate())); return x.toISOString().slice(0,10); };
+    const gap = (a,b) => Math.round((new Date(b+"T12:00") - new Date(a+"T12:00"))/864e5);
+    const nice = m => String(m||"").replace(/\.(com|net|io)\b|\bwww\./gi," ").replace(/[\d#*•.]+/g," ").replace(/(^|\s)\S(?=\s|$)/g," ").replace(/\s+/g," ").trim().toLowerCase().replace(/(^|[\s.'-])([a-zà-ÿ])/g,(x,a,b)=>a+b.toUpperCase()) || "Subscription";
+    const G = {};
+    spend.filter(t=>spLive(t) && !t.pend && t.date && spAmt(t)>0 && (spIsCard(t) || (spIsManual(t) && (t.fromSav || spKey(t.cat)==="subs")))).forEach(t=>{ const k = spWords(spMerch(t.merchant)).slice(0,2).join(" ") || spMerch(t.merchant); if(k) (G[k] = G[k] || []).push(t); });
+    const subs = [];
+    Object.values(G).forEach(g=>{
+      g.sort((a,b)=>a.date.localeCompare(b.date) || (a.ts||0)-(b.ts||0));
+      const last = g[g.length-1], tagged = spKey(last.cat)==="subs";
+      if(!tagged && NOT.includes(spKey(last.cat))) return;
+      let regular = false;
+      if(g.length >= 2){ const per = {}; g.forEach(t=>{ const m = spMKey(t.date); per[m] = (per[m]||0)+1; });
+        const amts = g.map(spAmt).sort((a,b)=>a-b), med = amts[Math.floor(amts.length/2)];
+        regular = Object.values(per).every(n=>n===1) && g.slice(1).every((t,i)=>{ const d = gap(g[i].date, t.date); return d>=25 && d<=35; }) && amts.every(a=>Math.abs(a-med) <= med*.25); }
+      if(!tagged && !regular) return;
+      if(gap(last.date, T) > 40) return;   // stopped: no charge for over a month
+      let next = addM(last.date); subs.push({name: nice(last.merchant), amt: spAmt(last), next});
+    });
+    subs.sort((a,b)=>a.next.localeCompare(b.next));
+    sec.hidden = !subs.length; if(!subs.length){ box.innerHTML = ""; return; }
+    const tot = subs.reduce((a,x)=>a+x.amt,0);
+    box.innerHTML = `<div class="sp-subs num">${subs.map(x=>`<div class="sp-sub"><span class="n">${spEsc(x.name)}</span><span class="v">${fmt(x.amt)}</span><span class="d${x.next<=T?" due":""}">${x.next<T ? "Due" : x.next===T ? "Today" : "Next " + spDay(x.next)}</span></div>`).join("")}</div><div class="sp-subs-tot num"><span>A month</span><b>${fmt(tot)}</b></div>`;
   }
   // ---- automatic categories ----
   // Card purchases and transfers with no category (or "Other") are sorted on their own: first by the category you
@@ -5820,15 +5862,29 @@ html:not(.mp-guest) #s-gst{display:none!important}
   // and picking one also re-sorts the other purchases from that merchant that you haven't set by hand.
   const SP_AUTO_SEEN = new Set(); let spAutoBusy = false, spSampler = null, spSamplerTried = false;
   const spMerch = m => norm(m).replace(/[\d#*•.,:-]+/g," ").replace(/\s+/g," ").trim();
-  function spLearned(){ const m = {}; spend.filter(t=>t.userCat && t.cat && !spIsTransfer(t)).sort((a,b)=>(a.ts||0)-(b.ts||0)).forEach(t=>{ m[spMerch(t.merchant)] = t.cat; }); return m; }
+  function spLearned(){ const m = {}; spend.filter(t=>t.userCat && t.cat && !spIsTransfer(t)).sort((a,b)=>(a.ts||0)-(b.ts||0)).forEach(t=>{ m[spMerch(t.merchant)] = t.cat; if(t.raw) m[spMerch(t.raw)] = t.cat; }); return m; }
+  // the bank spells one store many ways (branch, city, cut-off names): same first two words, or the same single long word, is the same store
+  const SP_STOP = /^(s ?a|srl|sas|the|de|del|la|el|los|las|dr|rd|santo|domingo|sto|dgo|www|com)$/;
+  const spWords = k => String(k||"").split(" ").filter(w=>w.length>=3 && !SP_STOP.test(w));
+  function spLearnFor(L, merchant){ const k = spMerch(merchant); if(!k) return null; if(L[k]) return L[k];
+    const w = spWords(k); if(!w.length) return null; let best = null, bl = 0;
+    for(const lk in L){ const lw = spWords(lk); let n = 0; while(n < w.length && n < lw.length && w[n]===lw[n]) n++;
+      if((n>=2 || (n===1 && (w.length===1 || lw.length===1) && w[0].length>=5)) && n>=bl){ bl = n; best = L[lk]; } }
+    return best; }
+  window.__spLearnFor = spLearnFor;
   const spNeedsCat = t => spLive(t) && (spIsCard(t) || (spIsTransfer(t) && !t.own)) && !t.userCat && !t.autoCat && (!t.cat || t.cat==="other" || !SP_CATS[t.cat]) && !SP_AUTO_SEEN.has(t.id);
   async function spAutoCat(){
     if(!db || spAutoBusy) return;
-    const todo = spend.filter(spNeedsCat); if(!todo.length) return;
+    const learned0 = spLearned();
+    // rows the bank sync sorted by keyword follow the category you picked before for that store
+    const fix = spend.filter(t=>spLive(t) && spIsCard(t) && !t.userCat && !t.autoCat && !SP_AUTO_SEEN.has("L"+t.id)).map(t=>{ SP_AUTO_SEEN.add("L"+t.id); const c = spLearnFor(learned0, t.merchant) || (t.raw ? spLearnFor(learned0, t.raw) : null); return c && c!==t.cat && SP_CATS[c] && c!=="errands" ? [t, c] : null; }).filter(Boolean);
+    const todo = spend.filter(spNeedsCat); if(!todo.length && !fix.length) return;
     spAutoBusy = true;
     try{
-      const learned = spLearned(), ask = [];
-      for(const t of todo){ SP_AUTO_SEEN.add(t.id); const c = learned[spMerch(t.merchant)]; if(c && SP_CATS[c] && c!=="errands") await db.collection("spend").doc(t.id).update({cat:c, autoCat:true}); else ask.push(t); }
+      for(const [t, c] of fix) await db.collection("spend").doc(t.id).update({cat:c, autoCat:true});
+      if(!todo.length) return;
+      const learned = learned0, ask = [];
+      for(const t of todo){ SP_AUTO_SEEN.add(t.id); const c = spLearnFor(learned, t.merchant) || (t.raw ? spLearnFor(learned, t.raw) : null); if(c && SP_CATS[c] && c!=="errands") await db.collection("spend").doc(t.id).update({cat:c, autoCat:true}); else ask.push(t); }
       if(!ask.length) return;
       if(!spSamplerTried){ spSamplerTried = true; try{ spSampler = window.claude ? await window.claude.use("sample") : null; }catch(e){ spSampler = null; } }
       if(!spSampler || typeof spSampler.json!=="function") return;
@@ -5933,8 +5989,8 @@ Purchases (id | merchant | amount RD$):
     const t = spend.find(x=>x.id===id); if(!db || !t) return;
     try{
       await db.collection("spend").doc(id).update({cat, userCat:true});
-      const key = spMerch(t.merchant);
-      const same = key && !spIsTransfer(t) ? spend.filter(x=>x.id!==id && !x.userCat && x.cat!==cat && spIsCard(x) && spMerch(x.merchant)===key) : []; // transfers to people: a pick stays on that one transfer
+      const key = spMerch(t.merchant), one = {[key]: cat};
+      const same = key && !spIsTransfer(t) ? spend.filter(x=>x.id!==id && !x.userCat && x.cat!==cat && (spIsCard(x) || (spIsManual(x) && x.fromSav)) && spLearnFor(one, x.merchant)===cat) : []; // transfers to people: a pick stays on that one transfer
       for(const x of same) await db.collection("spend").doc(x.id).update({cat, autoCat:true});
       toast("Category updated", spCat(cat) + (same.length ? ` · ${same.length} more from ${t.merchant}` : ""));
     }catch(e){ toast("Couldn’t save that change", "Try again", true); }
@@ -7045,8 +7101,39 @@ TRACKER DATA:
       if(!m) return;
       joining[p.id] = 1; joining["c" + m.id] = 1;
       var patch = {receipt:{merchant:String(p.merchant||"").slice(0,80), amount:pa, date:p.date}, note:"Receipt: " + String(p.merchant||"").slice(0,60)};
-      if(!m.userCat && p.cat && p.cat !== "other" && m.cat !== "errands") patch.cat = p.cat;
+      if(!m.userCat && !m.autoCat && p.cat && p.cat !== "other" && m.cat !== "errands") patch.cat = p.cat;
       db.collection("spend").doc(m.id).update(patch).then(function(){ return db.collection("spend").doc(p.id).delete(); }).catch(function(e){ console.error(e); delete joining[p.id]; delete joining["c" + m.id]; });
+    });
+  }
+  // a purchase logged by hand (cash form, camera, typed) that is also on the bank: same amount (1%), within 2 days, and a
+  // shared word in the name (or a plain category name like "Food" with the exact amount the same day). The bank row stays,
+  // keeps your category and receipt, and the hand-logged one goes (Undo brings it back).
+  var deduping = {};
+  function dedupe(){
+    if(!db) return;
+    var wd = function(t){ return String(t||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").split(/[^a-z0-9]+/).filter(function(w){ return w.length >= 4; }); };
+    var gen = Object.keys(CATS).map(function(k){ return CATS[k].toLowerCase(); }).concat(["cash", "expense", "purchase", "compra", "gasto"]);
+    var since = new Date(Date.now() - 35*864e5).toISOString().slice(0,10);
+    spend.filter(function(m){ return m.kind === "manual" && m.source === "manual" && !m.fromSav && !m.wd && !m.notDup && m.status === "Aprobada" && !m.excluded && m.date >= since && !deduping[m.id]; }).forEach(function(m){
+      var ma = Number(m.rd)||0; if(!(ma > 0)) return;
+      var mw = wd(m.merchant), generic = gen.indexOf(String(m.merchant||"").trim().toLowerCase()) >= 0;
+      var b = spend.filter(function(x){
+        if(x.id === m.id || x.pend || x.status !== "Aprobada" || x.excluded || x.mergedDup || deduping["b" + x.id] || !x.date) return false;
+        if(!((x.kind === "consumo" && x.source !== "manual") || (x.kind === "manual" && x.fromSav))) return false;
+        var a = Number(x.rd)||0; if(Math.abs(a - ma) > Math.max(1, ma*0.01) || days(x.date, m.date) > 2) return false;
+        var xw = wd(x.merchant + " " + (x.raw||"")); return mw.some(function(w){ return xw.indexOf(w) >= 0; }) || (generic && x.date === m.date && Math.abs(a - ma) <= 0.5);
+      }).sort(function(x, y){ return days(x.date, m.date) - days(y.date, m.date); })[0];
+      if(!b) return;
+      deduping[m.id] = 1; deduping["b" + b.id] = 1;
+      var keep = {}; Object.keys(m).forEach(function(k){ if(k !== "id") keep[k] = m[k]; });
+      var before = {mergedDup: null, cat: b.cat || "other", autoCat: !!b.autoCat, receipt: b.receipt || null, note: b.note || null};
+      var patch = {mergedDup: {id: m.id, merchant: String(m.merchant||"").slice(0,80), amount: ma, date: m.date}};
+      if(!b.userCat && m.cat && m.cat !== "other" && m.cat !== "errands" && m.cat !== b.cat){ patch.cat = m.cat; patch.autoCat = true; }
+      if(m.receipt && !b.receipt){ patch.receipt = {merchant: String(m.merchant||"").slice(0,80), amount: ma, date: m.date}; patch.note = "Receipt: " + String(m.merchant||"").slice(0,60); }
+      db.collection("spend").doc(b.id).update(patch).then(function(){ return db.collection("spend").doc(m.id).delete(); }).then(function(){
+        if(window.mpToast) window.mpToast("Double removed", (m.merchant || "Purchase") + " " + rd(ma) + " was also on your card", false, async function(){
+          keep.notDup = true; await db.collection("spend").doc(m.id).set(keep); await db.collection("spend").doc(b.id).update(before); });
+      }).catch(function(e){ console.error(e); delete deduping[m.id]; delete deduping["b" + b.id]; });
     });
   }
   async function queue(d, note){ await db.collection("snaps").add({status:"pending", kind:d.kind, data:d, tab:curTab(), at:today(), ts:Date.now(), note:note||""}); }
@@ -7119,7 +7206,7 @@ TRACKER DATA:
       var m = spend.filter(function(x){ var a = Number(x.rd != null ? x.rd : x.amount)||0; return !x.excluded && x.kind !== "manual" && a > 0 && Math.abs(a - amt) <= Math.max(1, amt*0.01) && x.date && days(x.date, dt) <= 3 && !x.receipt; }).sort(function(a, b){ return days(a.date, dt) - days(b.date, dt); })[0];
       var html = '<h3>Receipt</h3><p class="sub">' + (m ? "Matches your bank charge on " + esc(m.date) + ", so it won’t count twice." : "No bank charge for this yet.") + '</p>' + rows([["Where", d.merchant], ["Amount", rd(amt)], ["Date", dt], ["Category", CATS[cat]]]);
       var acts = [];
-      if(m) acts.push(["Save", async function(){ var patch = {receipt:{merchant:String(d.merchant||"").slice(0,80), amount:amt, date:dt}, note:"Receipt: " + String(d.merchant||"").slice(0,60)}; if(!m.userCat && cat !== "other" && m.cat !== "errands") patch.cat = cat; await db.collection("spend").doc(m.id).update(patch); toast("Receipt added", "Matched with your bank charge"); }]);
+      if(m) acts.push(["Save", async function(){ var patch = {receipt:{merchant:String(d.merchant||"").slice(0,80), amount:amt, date:dt}, note:"Receipt: " + String(d.merchant||"").slice(0,60)}; if(!m.userCat && !m.autoCat && cat !== "other" && m.cat !== "errands") patch.cat = cat; await db.collection("spend").doc(m.id).update(patch); toast("Receipt added", "Matched with your bank charge"); }]);
       else {
         var cash = async function(){ await db.collection("spend").add({date:dt, merchant:String(d.merchant||CATS[cat]).slice(0,80), amount:amt, currency:"DOP", rd:amt, kind:"manual", status:"Aprobada", cat:cat, source:"manual", excluded:false, ts:Date.now(), receipt:true}); toast(rd(amt) + " cash expense logged", CATS[cat]); };
         var card = (window.MP_ME&&!window.MP_ME.owner) ? async function(){ await db.collection("spend").add({date:dt, merchant:String(d.merchant||CATS[cat]).slice(0,80), amount:amt, currency:"DOP", rd:amt, kind:"manual", status:"Aprobada", cat:cat, source:"manual", excluded:false, ts:Date.now(), receipt:true, card:true}); toast(rd(amt) + " expense logged", CATS[cat]); } : async function(){ await db.collection("spend").add({date:dt, merchant:String(d.merchant||CATS[cat]).slice(0,80), amount:amt, currency:"DOP", rd:amt, kind:"consumo", status:"Aprobada", cat:cat, source:"manual", excluded:false, ts:Date.now(), receipt:true, pend:true, note:"Receipt logged before the bank charge came in"}); toast(rd(amt) + " logged", "Joins the card charge when it comes in"); };
@@ -7170,7 +7257,7 @@ TRACKER DATA:
   if(!window.claude) return;
   window.claude.use("db").then(function(d){
     db = d; addKeyRow();
-    db.collection("spend").onSnapshot(function(s){ spend = s.docs.map(function(x){ var o = x.data(); o.id = x.id; return o; }); try{ joinPend(); }catch(e){ console.error(e); } }, function(){});
+    db.collection("spend").onSnapshot(function(s){ spend = s.docs.map(function(x){ var o = x.data(); o.id = x.id; return o; }); try{ joinPend(); }catch(e){ console.error(e); } try{ dedupe(); }catch(e){ console.error(e); } }, function(){});
     db.collection("bets").onSnapshot(function(s){ bets = s.docs.map(function(x){ return {id:x.id}; }); }, function(){});
   });
 })();
