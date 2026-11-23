@@ -222,14 +222,14 @@ async function loans(env, dry) {
     if (x.liga || x.pausado || !x.vence) continue;
     const d = daysBetween(today, x.vence); items.push({ name: String(x.nombre || "").trim(), date: x.vence, d, amt: x.total || 0, kind: d < 0 ? "late" : "pre", avisos: [] });
   }
-  const pick = items.filter(it => (it.d === 7 || it.d === 2) && !it.avisos.includes(it.kind + ":" + it.date)).sort((a, b) => a.date.localeCompare(b.date));
-  const lines = pick.map(it => `${cap(it.name)} · ${rd(it.amt)} · in ${it.d} days`);
+  const pick = items.filter(it => (it.d === 7 || it.d === 2 || it.d === 0) && !it.avisos.includes(it.kind + ":" + it.date)).sort((a, b) => a.date.localeCompare(b.date));
+  const lines = pick.map(it => `${cap(it.name)} · ${rd(it.amt)} · ${it.d === 0 ? "due today" : "in " + it.d + " days"}`);
   if (!lines.length) return "loans ok, nothing due in 7 or 2 days";
   const sentKey = "cron:loans:" + today;
   if (!dry && await env.LIMITS.get(sentKey)) return "loans already sent today";
   const body = lines.join("\n");
   if (dry) return "WOULD SEND: " + body;
-  const n = await push(env, "Payments coming up", body, APP + "#loans", "loans");
+  const n = await push(env, pick.some(it => it.d === 0) ? "Payment due today" : "Payments coming up", body, APP + "#remind", "loans");
   await env.LIMITS.put(sentKey, "1", { expirationTtl: 2 * 86400 });
   return `loans ok, push sent to ${n} phone(s): ${lines.length} item(s)`;
 }
@@ -375,6 +375,8 @@ export default {
           // Nov 19: do NOT push as if all is well and mark the email seen: answer 503 so pato-mail tries the same email again (for 48 h) once the cause is fixed, and warn once per 6 h
           if (!(await env.LIMITS.get("cron:ingestwarn"))) { await env.LIMITS.put("cron:ingestwarn", "1", { expirationTtl: 6 * 3600 }); await push(env, "Pato can't log your bank emails", "Add BOT_PASSWORD to pato-cron in Cloudflare", "./", "bank-logerr").catch(() => 0); }
           return new Response("ingest error", { status: 503 }); } }
+      const lm = /LOAN\|([^|]+)\|(\d+)\|(\d+)/.exec(logged);   // Nov 23: a loan payment was matched and marked received
+      if (lm) await push(env, "Loan payment received", `${cap(lm[1])} · ${rd(Number(lm[2]))}` + (Number(lm[3]) > 0 ? ` · ${rd(Number(lm[3]))} left` : " · paid off"), APP + "#loans", "loan-paid-" + lm[1].slice(0, 20)).catch(() => 0);
       try { return new Response("ok " + await push(env, String(b.title).slice(0, 80), body.slice(0, 160), "./", String(b.tag || "bank").slice(0, 60)) + (logged ? " | " + logged : ""), { status: 200 }); }
       catch (e) { return new Response("error " + String(e).slice(0, 120), { status: 500 }); }
     }

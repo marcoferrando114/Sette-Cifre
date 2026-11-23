@@ -43,7 +43,7 @@ async function alreadyLogged(S, id) {   // spend or savings docs written by this
   return false;
 }
 
-async function ingest(S, a) {
+async function ingestCore(S, a) {
   if (!a || !a.id || !(a.amount > 0)) return "skipped";
   const ts = a.ts || Date.now(), date = a.date || drDay(ts), cur = FX[a.cur] ? a.cur : "DOP", rdAmt = r2(a.amount * FX[cur]), bad = /Declinada|Rechazada|Reversada/i.test(a.status || "");
   if (await alreadyLogged(S, a.id)) return "already logged";
@@ -115,6 +115,51 @@ async function ingest(S, a) {
     }
   }
   return "not logged";
+}
+
+// ---------- Loan payments (Nov 23): a clear incoming deposit marks the loan payment as received ----------
+// Clear = the borrower's name is in the alert, or the amount equals exactly what one open loan owes and that payment is due within a week (or late). Anything else is left for Marco.
+const lTotal = l => (Number(l.monto) || 0) * (1 + (Number(l.interes) || 0) / 100);
+const lPaid = l => (Array.isArray(l.cuotasPagadas) ? l.cuotasPagadas : []).reduce((t, c) => t + (Number(c.monto) || 0), 0);
+const lN = l => Math.max(1, Math.round(Number(l.cuotas) || 1));
+function lDates(l) {
+  const n = lN(l), d0 = new Date((l.fecha || "") + "T12:00:00Z"), out = [];
+  for (let k = 0; k < n; k++) {
+    if (l.frecuencia === "semanal") out.push(addDays(d0.toISOString().slice(0, 10), 7 * k));
+    else if (l.frecuencia === "quincenal") out.push(addDays(d0.toISOString().slice(0, 10), 14 * k));
+    else { const day = d0.getUTCDate(), d = new Date(Date.UTC(d0.getUTCFullYear(), d0.getUTCMonth() + k, 1, 12)); d.setUTCDate(Math.min(day, new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth() + 1, 0)).getUTCDate())); out.push(d.toISOString().slice(0, 10)); }
+  }
+  return out;
+}
+function lNext(l) {   // {amt, date, k, n} of the payment Pato expects next
+  const n = lN(l), left = Math.max(0, lTotal(l) - lPaid(l)); if (l.pagado || l.pausado || left < 0.5 || !l.fecha) return null;
+  if (n === 1) return { amt: left, date: l.fecha, k: 1, n };
+  const each = lTotal(l) / n, paid = lPaid(l), k = Math.min(n - 1, Math.floor((paid + 0.5) / each));
+  return { amt: k + 1 === n ? left : Math.min(each * (k + 1) - paid, left), date: lDates(l)[k], k: k + 1, n };
+}
+async function collectLoan(S, a, bank) {
+  const date = a.date || drDay(a.ts || Date.now()), text = nrm([a.detail, a.bene, a.raw].join(" "));
+  const loans = (await S.list("prestamos")).filter(l => !l.pagado && !l.pausado && lNext(l));
+  if (loans.some(l => (l.cuotasPagadas || []).some(c => c.bankId === a.id))) return "";
+  const nameHit = l => { const n = nrm(l.nombre).split(/\s+/).filter(w => w.length >= 3); return n.length > 0 && n.every(w => text.includes(w)); };
+  let pick = loans.filter(nameHit).filter(l => a.amount <= lTotal(l) - lPaid(l) + 0.5);
+  if (pick.length !== 1) {
+    const near = loans.filter(l => { const x = lNext(l), left = lTotal(l) - lPaid(l); return (Math.abs(x.amt - a.amount) <= 0.5 || Math.abs(left - a.amount) <= 0.5) && Date.parse(x.date + "T12:00:00Z") <= Date.parse(date + "T12:00:00Z") + 7 * 864e5; });
+    pick = pick.length ? [] : near;   // two borrowers named, or none: only a unique exact amount counts
+  }
+  if (pick.length !== 1) return "";
+  const l = pick[0], left = lTotal(l) - lPaid(l), amt = Math.min(left, a.amount), x = lNext(l), done = amt >= left - 0.5;
+  const lbl = x.n > 1 ? `Payment ${x.k}/${x.n} from ${l.nombre}` : `Payment from ${l.nombre}`, sav = bank === "BHD";
+  let entryId = null;
+  if (sav) { entryId = "loan-" + a.id; await S.put("entries", entryId, { amount: amt, type: "in", source: "Préstamo", date, note: lbl, createdAt: a.ts || Date.now(), auto: true, bhd: a.id }); }
+  const list = [...(Array.isArray(l.cuotasPagadas) ? l.cuotasPagadas : []), { fecha: date, monto: amt, destino: sav ? "ahorro" : "otra", entryId, bankId: a.id, auto: true }];
+  await S.put("prestamos", l.id, { cuotasPagadas: list, ...(done ? { pagado: true, cobradoEl: date, destino: sav ? "ahorro" : "otra" } : {}) });
+  return `LOAN|${l.nombre}|${Math.round(amt)}|${Math.round(left - amt)}`;
+}
+async function ingest(S, a) {
+  const r = await ingestCore(S, a);
+  if (r === "already logged" || r === "skipped" || !a || !(a.amount > 0) || a.cur === "USD" || a.cur === "EUR" || !/^(deposit|in)$/.test(a.kind) || /Declinada|Rechazada|Reversada/i.test(a.status || "")) return r;
+  try { const m = await collectLoan(S, a, a.bank); return m ? r + " | " + m : r; } catch (e) { return r + " | loan match error"; }
 }
 async function spendFor(S, a, entryId, name, date, ts, rdAmt, cur) {
   await S.put("spend", "bhd-" + a.id, { date, merchant: name, raw: a.raw || name, amount: a.amount, currency: cur, rd: rdAmt, kind: "manual", fromSav: true, savEntry: entryId, status: "Aprobada", cat: catOf(name, await learnedCats(S)), source: "bhd", excluded: false, ts, note: "Paid with the BHD savings card" });
