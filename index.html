@@ -2859,7 +2859,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
   const LABELS = {"Apuestas":"Sports bets","Premio casino":"Arcade","Saldo inicial":"Starting balance","Rakeback de la liga":"League rakeback","Póker jugando":"League Action","Mensualidad":"Monthly allowance","Préstamo":"Loan","Otro":"Other","Rakeback como jugador":"Player rakeback","Póker casino":"Outside Tables","Póker con amigos":"Home games","Retiro":"Withdrawal","Reposición":"Replacement"};
   const WHY = [["gasto","Expense"],["emergencia","Emergency"],["corriente","Moved to checking account"],["negocio","Business or investment"],["poker","League poker loss or buy-in"],["poker_casino","Outside Tables loss"],["poker_amigos","Home game loss"],["apuesta","Sports bet"],["arcade","Arcade"],["favor","Favor"],["efectivo","Cash"],["otro","Other"]];
   window.__LB = LABELS; window.__WHY = WHY;
-  const whyLbl = k => (WHY.find(w=>w[0]===k)||[])[1] || "Other";
+  const whyLbl = k => (WHY.find(w=>w[0]===k)||[])[1] || (k==="repago" ? "Repayment" : "Other");
   const whySrc = k => ({poker:"Póker jugando",poker_casino:"Póker casino",poker_amigos:"Póker con amigos",apuesta:"Apuestas",arcade:"Premio casino"})[k] || "Retiro";
   const cap = x => String(x||"").replace(/(^|[\s(·-])(\p{Ll})/gu, (m,a,b)=>a+b.toUpperCase());
   const lbl = x => LABELS[x] || cap(x);
@@ -5410,8 +5410,15 @@ html:not(.mp-guest) #s-gst{display:none!important}
         li.classList.add("hx"); }
       if(db && isSpend(e) && !e.motivo){
         const sel=document.createElement("select"); sel.className="why-sel"; sel.id="why-"+e.id; sel.setAttribute("aria-label","Reason for this withdrawal");
-        sel.innerHTML = '<option value="">+ Add a reason</option>' + WHY.map(x=>`<option value="${x[0]}">${x[1]}</option>`).join("");
-        sel.onchange = async () => { if(!sel.value) return; try{ await db.collection("entries").doc(e.id).update({motivo:sel.value, source:whySrc(sel.value)}); toast("Reason saved", whyLbl(sel.value)); }catch(err){ sel.value=""; toast("Couldn’t save the reason", "Try again", true); } };
+        sel.innerHTML = '<option value="">+ Add a reason</option>' + WHY.map(x=>`<option value="${x[0]}">${x[1]}</option>`).join("") + (/^Transfer to /.test(e.note||"") ? '<option value="repago">Repayment</option>' : "");
+        sel.onchange = async () => { if(!sel.value) return; try{ await db.collection("entries").doc(e.id).update({motivo:sel.value, source:whySrc(sel.value)});
+          if(sel.value==="repago"){ // paying back someone I owe: pay down their open "To pay" item
+            const nk = x => norm(x), who = nk(String(e.note||"").replace(/^Transfer to /,"")), left = x => Math.max(0,(Number(x.total)||0)-(Number(x.pagado)||0));
+            const ts = await db.collection("topay").get(), same = x => { const b = nk(x); return who && b && (who===b || who.indexOf(b+" ")===0 || b.indexOf(who+" ")===0 || who.split(" ")[0]===b.split(" ")[0]); };
+            const hit = ts.docs.map(x=>({id:x.id, ...x.data()})).filter(x=>left(x)>0.5 && same(x.nombre)).sort((p,q)=>String(p.vence||"9").localeCompare(String(q.vence||"9")))[0];
+            if(hit){ const pay = Math.min(Number(e.amount)||0, left(hit)); await db.collection("topay").doc(hit.id).update({pagado:(Number(hit.pagado)||0)+pay, pagos:(hit.pagos||[]).concat([{fecha:e.date||today(), monto:pay}])}); toast("Repayment saved", hit.nombre + (left(hit)-pay>0.5 ? " · " + fmt(left(hit)-pay) + " left" : " · paid off")); return; }
+          }
+          toast("Reason saved", whyLbl(sel.value)); }catch(err){ sel.value=""; toast("Couldn’t save the reason", "Try again", true); } };
         li.firstElementChild.appendChild(sel);
       }
       const a = li.querySelector(".amt"); a.textContent = (e.type==="out"?"−":"+") + fmt(e.raw ?? e.amount); a.classList.add(e.type==="out"?"out":"in");
