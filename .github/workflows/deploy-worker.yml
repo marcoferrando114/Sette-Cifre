@@ -29,4 +29,7 @@ jobs:
           command: deploy
       - name: Check Banco Central rate
         continue-on-error: true
-        run: sleep 15; curl -s -H "Origin: https://marcoferrando114.github.io" https://pato-ai.marcoferrando.workers.dev/fx; echo
+        run: |
+          sleep 15
+          curl -s -H "Origin: https://marcoferrando114.github.io" https://pato-ai.marcoferrando.workers.dev/fx
+          echo
