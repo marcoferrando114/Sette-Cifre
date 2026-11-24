@@ -7,7 +7,7 @@
 //   VAPID_PRIVATE (secret)  full text of vapid_private.pem (BEGIN/END PRIVATE KEY lines included), only needed for the push
 // KV binding LIMITS (shared). Keys used here start with "cron:".
 // GET /run?job=stocks|loans&key=... is not exposed; use "Trigger event" in the dashboard (Settings > Triggers) to test.
-import { ingest } from "./ingest.js";
+import { ingest, ingestPay } from "./ingest.js";
 const API_KEY = "AIzaSyAMuD9zu8-MXApaHTCVsaXLi5CtV3WufY4";   // Firebase web key (public by design, same as the app)
 const PROJECT = "stakd-3d1b9";
 const OWNER = "e16AkFccPaRJjc5uosBXY5AGXyx1";
@@ -212,6 +212,7 @@ function dueOf(l, today) {
   return { name: String(l.nombre || "").trim(), date, d, amt, kind: d < 0 ? "late" : "pre", avisos: Array.isArray(l.avisos) ? l.avisos : [] };
 }
 const rd = n => "RD$" + Math.round(n).toLocaleString("en-US");
+const CATL = { food: "Food", gas: "Car", sport: "Tennis & club", out: "Going out", subs: "Subscriptions", rides: "Rides", health: "Pharmacy & health", family: "Family", needs: "Essentials", shopping: "Wants", fees: "Fees", other: "Other" };
 const cap = s => s.replace(/\b\w/g, c => c.toUpperCase());
 async function loans(env, dry) {
   const today = iso(new Date(Date.now() - 4 * 3600e3));   // DR date
@@ -364,6 +365,23 @@ export default {
     // called by the pato-ai worker (service binding) 35 minutes after each Pato Daily drop; the free plan allows only 5 cron triggers, so pato-ai's 5-minute cron does the timing
     if (new URL(req.url).pathname === "/health" && req.headers.get("x-edition-check") === "1") return new Response(await editionHealth(env).catch(e => "error " + String(e).slice(0, 100)), { status: 200 });
     const u = new URL(req.url);
+    if (u.pathname === "/pay" && (req.method === "POST" || req.method === "GET")) {   // Apple Pay tap from the iPhone Shortcut (Nov 24): ?t=<token from Pato > Settings > Apple Pay>, body {amount, merchant, card}
+      const tok = await env.LIMITS.get("pay:token"), t = u.searchParams.get("t") || "";
+      if (!tok || t.length !== tok.length || [...t].reduce((x, c, i) => x | (c.charCodeAt(0) ^ tok.charCodeAt(i)), 0) !== 0) return new Response("no", { status: 403 });
+      let b = {}; const ct = req.headers.get("content-type") || "";
+      if (req.method === "POST") { const raw = await req.text(); try { b = JSON.parse(raw); } catch (e) { try { b = Object.fromEntries(new URLSearchParams(raw)); } catch (e2) {} } }
+      for (const [k, v] of u.searchParams) if (k !== "t" && b[k] === undefined) b[k] = v;
+      const amount = b.amount, merchant = String(b.merchant || b.name || "").trim();
+      if (!amount || !merchant) return new Response("missing amount or merchant", { status: 400 });
+      const dk = "cron:pay:" + String(amount) + "|" + merchant.slice(0, 30);
+      if (await env.LIMITS.get(dk)) return new Response("dup", { status: 200 });   // the automation fired twice for one tap
+      await env.LIMITS.put(dk, "1", { expirationTtl: 90 });
+      try {
+        const r = await ingestPay(fsStore(env), { amount, currency: b.currency, merchant, card: b.card || b.pass || "" });
+        if (r.result === "spend row" || /^combined/.test(r.result)) await push(env, "Logged " + rd(r.rdAmt) + " · " + r.merchant, CATL[r.cat] || "Other", APP + "#spend", "applepay-" + Date.now()).catch(() => 0);
+        return new Response(JSON.stringify(r), { status: 200, headers: { "content-type": "application/json" } });
+      } catch (e) { await env.LIMITS.delete(dk).catch(() => 0); console.log("pay failed", String(e).slice(0, 200)); await push(env, "Couldn't log your Apple Pay tap", merchant + " · " + String(amount), APP + "#spend", "applepay-err").catch(() => 0); return new Response("error", { status: 503 }); }
+    }
     if (req.method === "POST" && u.pathname === "/notify") {   // instant bank alert from pato-mail (shared key in KV, so only our own workers can use it)
       const key = await env.LIMITS.get("gm:notifykey");
       if (!key || req.headers.get("x-notify-key") !== key) return new Response("no", { status: 403 });
@@ -377,6 +395,7 @@ export default {
           return new Response("ingest error", { status: 503 }); } }
       const lm = /LOAN\|([^|]+)\|(\d+)\|(\d+)/.exec(logged);   // Nov 23: a loan payment was matched and marked received
       if (lm) await push(env, "Loan payment received", `${cap(lm[1])} · ${rd(Number(lm[2]))}` + (Number(lm[3]) > 0 ? ` · ${rd(Number(lm[3]))} left` : " · paid off"), APP + "#loans", "loan-paid-" + lm[1].slice(0, 20)).catch(() => 0);
+      if (/^(receipt matched|already logged)/.test(logged) && b.alert && b.alert.kind === "receipt") return new Response("ok quiet | " + logged, { status: 200 });   // the bank push already told Marco; the receipt only added details
       try { return new Response("ok " + await push(env, String(b.title).slice(0, 80), body.slice(0, 160), "./", String(b.tag || "bank").slice(0, 60)) + (logged ? " | " + logged : ""), { status: 200 }); }
       catch (e) { return new Response("error " + String(e).slice(0, 120), { status: 500 }); }
     }
