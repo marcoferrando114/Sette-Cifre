@@ -126,9 +126,12 @@ async function sync(env, uid, body) {
 // ---- Instant bank alerts for Marco (Nov 17): pato-ai's 5-minute timer calls /watch; new bank emails become a push within minutes ----
 // Reads only the alert emails from BHD and Popular, with plain text rules (no AI, no cost). The push itself is sent by pato-cron (service binding CRON).
 const OWNER_UID = "e16AkFccPaRJjc5uosBXY5AGXyx1";
-const WATCH_Q = "from:(Alertas@bhd.com.do OR notificaciones@bhd.com.do OR notificaciones@popularenlinea.com)";
+const BANK_Q = "from:(Alertas@bhd.com.do OR notificaciones@bhd.com.do OR notificaciones@popularenlinea.com)";
+// Nov 24: receipts and subscription notices from stores Marco uses (plain text rules, no AI). Anything that is not a receipt is ignored by parseReceipt.
+const RCPT_Q = "from:(noreply@uber.com OR pedidosya OR amazon.com OR amazon.it OR amazon.es OR email.apple.com OR netflix.com OR spotify.com OR openai.com OR anthropic.com OR disneyplus.com OR youtube.com OR google.com) subject:(order OR pedido OR receipt OR recibo OR trip OR viaje OR charged OR renew OR renews OR invoice OR factura OR ordered OR payment OR pago)";
+const WATCH_Q = "(" + BANK_Q + " OR " + RCPT_Q.replace(/^from:/, "from:") + ")";
 const nice = s => String(s || "").toLowerCase().replace(/(^|[\s,.'-])([a-zà-ÿ])/g, (m, a, b) => a + b.toUpperCase()).trim();
-const money = (cur, n) => (cur === "USD" ? "US$" : "RD$") + n.toLocaleString("en-US", { minimumFractionDigits: Math.round(n * 100) % 100 ? 2 : 0, maximumFractionDigits: 2 });
+const money = (cur, n) => (cur === "USD" ? "US$" : cur === "EUR" ? "€" : "RD$") + n.toLocaleString("en-US", { minimumFractionDigits: Math.round(n * 100) % 100 ? 2 : 0, maximumFractionDigits: 2 });
 const num = a => Number(String(a).replace(/,/g, ""));
 const isoD = d => { let m = String(d || "").match(/^(\d\d)\/(\d\d)\/(\d{4})/); if (m) return m[3] + "-" + m[2] + "-" + m[1]; m = String(d || "").match(/^(\d{4})(\d\d)(\d\d)$/); return m ? m[1] + "-" + m[2] + "-" + m[3] : ""; };
 const curOf = c => /^US/i.test(c) ? "USD" : "DOP";
@@ -152,8 +155,54 @@ function parseAlert(from, subject, text) {
     return { bank, kind: "in", amount: num(x[2]), cur: curOf(x[1]), detail: "", status: "Aprobada", date: "" };
   return null;
 }
+const numL = t => { let n = String(t || "").replace(/[^\d.,]/g, ""); if (/,\d{1,2}$/.test(n) && !/\.\d{1,2}$/.test(n)) n = n.replace(/\./g, "").replace(",", "."); else n = n.replace(/,/g, ""); return Math.round(Number(n) * 100) / 100 || 0; };
+const curL = t => /US\$|USD/i.test(t) ? "USD" : /€|EUR/i.test(t) ? "EUR" : "DOP";
+const BRAND = [[/uber/i, "Uber"], [/pedidosya/i, "PedidosYa"], [/amazon/i, "Amazon"], [/apple/i, "Apple"], [/netflix/i, "Netflix"], [/spotify/i, "Spotify"], [/openai/i, "OpenAI"], [/anthropic/i, "Claude"], [/disney/i, "Disney+"], [/youtube/i, "YouTube"], [/google/i, "Google"]];
+const addDaysISO = (iso, n) => new Date(Date.parse(iso + "T12:00:00Z") + n * 864e5).toISOString().slice(0, 10);
+// One store email -> {kind:"receipt", merchant, detail, amount, cur, card4, cat} | {kind:"sub", merchant, amount, cur, renews, every} | null (marketing, shipping notices, anything else)
+function parseReceipt(from, subject, text, tsMs) {
+  const brand = (BRAND.find(([re]) => re.test(from)) || [])[1]; if (!brand) return null;
+  const T = String(text || "").replace(/[­ ]/g, " ").replace(/[ \t]+/g, " "), S = String(subject || ""), one = T.replace(/\s*\n\s*/g, " ");
+  const day = new Date((tsMs || Date.now()) - 4 * 3600e3).toISOString().slice(0, 10);
+  const card = (one.match(/(?:Visa|Mastercard|MasterCard|Amex|card|tarjeta)[^\d]{0,12}(\d{4})\b/i) || [])[1] || "";
+  let x;
+  if (brand === "Uber" && /Uber Eats/i.test(S)) {   // "Here's your receipt for <restaurant>."  Total  DOP 780.00
+    const rest = (one.match(/receipt for (.+?)\.\s/i) || [])[1] || "", tot = one.match(/\bTotal\s+(DOP|RD\$|USD|US\$)\s*([\d,]+\.\d\d)/i);
+    if (!tot) return null;
+    return { kind: "receipt", merchant: "Uber Eats", detail: rest.trim().slice(0, 80), amount: numL(tot[2]), cur: curL(tot[1]), card4: card, cat: "food" };
+  }
+  if (brand === "Uber" && /trip|ride|viaje|receipt|recibo/i.test(S) && !/enjoyed|see what/i.test(S)) {   // ride: Total, pickup/drop-off lines "12:05 PM <address>"
+    const tot = one.match(/\bTotal\s*:?\s*(DOP|RD\$|USD|US\$|\$)\s*([\d,]+\.\d\d)/i); if (!tot) return null;
+    const stops = [...T.matchAll(/(\d{1,2}:\d\d\s?[AP]M)\s*\n?\s*([^\n]{6,90})/gi)].map(m => m[2].trim().replace(/,\s*(Santo Domingo|Distrito Nacional|Dominican Republic).*$/i, ""));
+    const km = (one.match(/([\d.]+)\s?(km|mi)\b/i) || []), mins = (one.match(/(\d+)\s?min(?:utes|s)?\b/i) || [])[1];
+    const route = stops.length >= 2 ? stops[0] + " → " + stops[1] : "";
+    const detail = [route, km[1] ? km[1] + " " + km[2].toLowerCase() : "", mins ? mins + " min" : ""].filter(Boolean).join(" · ");
+    return { kind: "receipt", merchant: "Uber", detail: detail.slice(0, 140), amount: numL(tot[2]), cur: curL(tot[1]), card4: card, cat: "rides" };
+  }
+  if (brand === "PedidosYa" && /pedido|order|recibo|receipt|factura/i.test(S)) {
+    const tot = one.match(/\bTotal(?: a pagar| pagado)?\s*:?\s*(RD\s?\$|\$|DOP)?\s*([\d.,]+\d)/i); if (!tot) return null;
+    const rest = (one.match(/(?:en|from|de)\s+([A-ZÁÉÍÓÚÑ][^.\n]{2,40}?)(?:\.|,| Total| Pedido)/) || [])[1] || "";
+    const items = [...T.matchAll(/(\d+)\s?x\s+([^\n$]{3,40}?)\s*(?:RD|\$|\n|$)/gi)].slice(0, 3).map(m => m[1] + "× " + m[2].trim());
+    return { kind: "receipt", merchant: "PedidosYa", detail: [rest, items.join(", ")].filter(Boolean).join(" · ").slice(0, 140), amount: numL(tot[2]), cur: "DOP", card4: card, cat: "food" };
+  }
+  if (brand === "Amazon" && /^Ordered:|Your Amazon.*order|Tu pedido|Il tuo ordine/i.test(S)) {
+    const tot = one.match(/(?:Order Total|Total (?:del pedido|order|ordine)|Totale ordine)\s*:?\s*(EUR|USD|US\$|\$|€)?\s*([\d.,]+\d)\s*(€|EUR|USD)?/i); if (!tot) return null;
+    const item = ((S.match(/^Ordered:\s*['"‘](.+?)['"’]?$/) || [])[1] || (one.match(/Order(?:ed)?:?\s+(.{10,70}?)\s+Quantity/i) || [])[1] || "").replace(/\.\.\.$/, "…");
+    return { kind: "receipt", merchant: "Amazon", detail: item.trim().slice(0, 100), amount: numL(tot[2]), cur: curL((tot[1] || "") + (tot[3] || "")), card4: card, cat: "shopping" };
+  }
+  if (/will be charged|renews?|renovaci|subscription|suscripci/i.test(S + " " + one.slice(0, 600)) && !/receipt|recibo|invoice|factura/i.test(S)) {   // heads-up before a charge: noted with its renewal date, not spending
+    const m = one.match(/renews?\s+(monthly|yearly|annually|weekly)?\s*for\s*([\d.,]+\d)\s*(€|EUR|\$|USD|US\$)?|(€|\$|US\$)\s?([\d.,]+\d)\s*(?:\/|per)\s*(month|year)/i); if (!m) return null;
+    const inN = (S.match(/in (\d+) days?/i) || [])[1], plan = (S.match(/your (.+?) (?:plan|subscription)/i) || [])[1] || brand;
+    return { kind: "sub", merchant: String(plan).replace(/^iCloud\+?$/i, "iCloud+").slice(0, 40), amount: numL(m[2] || m[5]), cur: curL((m[3] || m[4] || "") + one.slice(0, 0)), renews: addDaysISO(day, Number(inN) || 0), every: (m[1] || m[6] || "").replace(/annually/, "yearly").replace(/^month$/, "monthly").replace(/^year$/, "yearly") };
+  }
+  if (/receipt|recibo|invoice|factura|payment|pago|charged/i.test(S) && ["Netflix", "Spotify", "OpenAI", "Claude", "Disney+", "YouTube", "Google", "Apple"].includes(brand) && (x = one.match(/(?:Total|Amount|Importe|Charged|paid)\s*:?\s*(US\$|\$|€|EUR|USD|RD\$)\s?([\d.,]+\d)/i)))   // an actual subscription charge
+    return { kind: "receipt", merchant: brand, detail: S.slice(0, 80), amount: numL(x[2]), cur: curL(x[1]), card4: card, cat: "subs" };
+  return null;
+}
 function alertText(a) {
   const m = money(a.cur, a.amount), bad = /Declinada|Rechazada/i.test(a.status), rev = /Reversada/i.test(a.status);
+  if (a.kind === "receipt") return [a.merchant + " receipt", m + (a.detail ? " · " + a.detail : "")];
+  if (a.kind === "sub") return [a.merchant + " renews " + (a.renews || ""), m + (a.every ? " " + a.every : "")];
   if (a.kind === "card") return [a.bank + (bad ? " card declined" : rev ? " card reversed" : " card"), m + " · " + a.detail];
   if (a.kind === "transfer") return [a.bank + " transfer out", m + " · " + a.detail];
   if (a.kind === "deposit") return [a.bank + " deposit", m + (a.detail ? " · " + a.detail : "")];
@@ -190,7 +239,7 @@ async function watch(env) {
   const log = JSON.parse((await env.LIMITS.get("gm:alerts:" + uid)) || "[]"); let sent = 0;
   for (const id of fresh.reverse()) {   // oldest first
     const m = await google(G + "/" + id + "?format=full", at).catch(() => null); if (!m) continue;
-    const a = parseAlert(head(m, "from"), head(m, "subject"), bodyText(m.payload));
+    const txt = bodyText(m.payload), a = parseAlert(head(m, "from"), head(m, "subject"), txt) || parseReceipt(head(m, "from"), head(m, "subject"), txt, Number(m.internalDate) || Date.now());
     if (a) { const [title, body] = alertText(a);
       try { await notify(env, title, body, "bank-" + id, { ...a, id, ts: Number(m.internalDate) || Date.now() }); } catch (e) { console.log("notify failed", String(e)); break; }   // not marked seen: tried again on the next run (for 3 hours)
       log.push({ id, ts: Number(m.internalDate) || Date.now(), ...a }); sent++; }
@@ -241,6 +290,11 @@ export default {
         const q = new URLSearchParams({ client_id: env.GOOGLE_ID, redirect_uri: redirectUri(req), response_type: "code", scope: SCOPE, access_type: "offline", prompt: "consent", state: st });
         return json({ url: "https://accounts.google.com/o/oauth2/v2/auth?" + q }, 200, origin);
       }
+      if (url.pathname === "/paylink") {   // Apple Pay Shortcut link for Marco only: the token lives in KV (pay:token), pato-cron /pay checks it
+        if (uid !== OWNER_UID) return json({ error: "forbidden" }, 403, origin);
+        let k = await env.LIMITS.get("pay:token"); if (!k || body.reset) { k = b64(crypto.getRandomValues(new Uint8Array(24))).replace(/[+/=]/g, ""); await env.LIMITS.put("pay:token", k); }
+        return json({ url: "https://pato-cron.marcoferrando.workers.dev/pay?t=" + k }, 200, origin);
+      }
       if (url.pathname === "/status") { const t = await getTok(env, uid); return json(t ? { connected: true, email: t.email, months: t.months, lastRunAt: t.lastRunAt || 0 } : { connected: false }, 200, origin); }
       if (url.pathname === "/sync") return json(await sync(env, uid, body), 200, origin);
       if (url.pathname === "/disconnect") {
@@ -253,3 +307,4 @@ export default {
     return json({ error: "not_found" }, 404, origin);
   }
 };
+export { parseReceipt, parseAlert };

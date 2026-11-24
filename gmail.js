@@ -110,6 +110,20 @@
     paint();
     if (st && st.connected && !OWNER && Date.now() - lastTry > 10 * 60e3) run(false);
   }
+  function payRow(){   // owner only: one tap copies the private link the Shortcut posts every Apple Pay tap to
+    var r = document.createElement("div"); r.className = "sa-gm"; r.id = "apRow";
+    r.innerHTML = '<div><b>Apple Pay</b><small id="apT">Logs every tap</small></div><button type="button" class="mini" id="apBtn">Copy link</button>';
+    row.parentNode.insertBefore(r, row.nextSibling);
+    var link = "", b = r.querySelector("#apBtn"), t = r.querySelector("#apT");
+    call("/paylink").then(function(j){ link = j.url || ""; }).catch(function(){ t.textContent = "Not available yet"; b.hidden = true; });
+    b.onclick = function(){
+      if (!link) { toast("Not ready", "Try again in a moment", true); return; }
+      var ok = false;
+      try { var ta = document.createElement("textarea"); ta.value = link; ta.style.cssText = "position:fixed;opacity:0"; document.body.appendChild(ta); ta.focus(); ta.setSelectionRange(0, link.length); ok = document.execCommand("copy"); ta.remove(); } catch (e) {}
+      if (!ok && navigator.clipboard) navigator.clipboard.writeText(link).then(function(){ toast("Link copied", "Paste it in the Shortcut"); }, function(){ toast("Couldn’t copy", "Try again", true); });
+      else toast(ok ? "Link copied" : "Couldn’t copy", ok ? "Paste it in the Shortcut" : "Try again", !ok);
+    };
+  }
   window.__patoGm = {   // used by the first-run setup
     status: async function(){ try { return await call("/status"); } catch (e) { return String(e.message) === "not_set_up" ? { off: true } : { connected: false }; } },
     start: async function(m){ var r = await call("/start", { months: m || 3 }); location.href = r.url; }
@@ -119,6 +133,7 @@
     if (!window.claude) return;
     db = await window.claude.use("db"); if (!db) return;
     var me = window.MP_ME || {};
+    if (me.owner) { payRow(); }   // Nov 24: Apple Pay link for the iPhone Shortcut
     if (me.owner) { OWNER = true; $("gmInfo").firstChild.textContent = "Instant bank alerts"; $("gmT").textContent = "…"; row.hidden = false; paint(); status(); return; }   // Marco keeps his own sync; this row only connects Gmail for the alerts
     row.hidden = false; paint();
     db.collection("spend").onSnapshot(function(s){ var first = !have; have = new Set(s.docs.map(function(d){ return d.id; })); if (first) status(); }, function(){});

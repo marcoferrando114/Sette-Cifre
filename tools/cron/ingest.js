@@ -62,6 +62,8 @@ async function ingestCore(S, a) {
   if (a.bank === "Popular") {
     if (a.kind === "card") {
       const merchant = a.detail || "Bank charge", cat = catOf(merchant, await learnedCats(S));
+      if (!bad) { const pre = await findPre(S, date, rdAmt, cur !== "DOP");   // Apple Pay tap or email receipt already logged this one: attach the bank id, no second row
+        if (pre) { await S.put("spend", pre.row.id, { bhdIds: [...(pre.row.bhdIds || []), a.id], preOpen: pre.rest }); return "matched " + pre.row.source + " row " + pre.row.id; } }
       if (!bad) { const same = (await S.eq("spend", "date", date)).find(t => t.kind === "consumo" && t.source === "email" && t.status === "Aprobada" && !t.excluded && spMerch(t.merchant) === spMerch(merchant));
         if (same) {   // COMBINE RULE: same day, same place = one row
           const parts = same.note && /\+/.test(same.note) ? same.note + " + " + rd(a.amount) : rd(Number(same.amount) || 0) + " + " + rd(a.amount);
@@ -93,6 +95,8 @@ async function ingestCore(S, a) {
     const cand = near.filter(e => mine ? !!e.traslado : !e.traslado).sort((x, y) => Math.abs(x.amount - a.amount) - Math.abs(y.amount - a.amount) || Math.abs(Date.parse(x.date) - Date.parse(date)) - Math.abs(Date.parse(y.date) - Date.parse(date)));
     if (cand.length && !/modyloft|betcris/i.test(name)) {
       await S.put("entries", cand[0].id, { bhd: a.id, bhdInfo: info });
+      const pre0 = a.kind === "card" ? await findPre(S, date, rdAmt, cur !== "DOP") : null;
+      if (pre0) { await linkPreSav(S, pre0, a.id, cand[0].id); return "matched your hand-logged entry + " + pre0.row.source + " row"; }
       if (a.kind === "card" && !(await S.eq("spend", "savEntry", cand[0].id)).length && cand[0].motivo !== "favor") await spendFor(S, a, cand[0].id, name, date, ts, rdAmt, cur);
       return "matched your hand-logged entry";
     }
@@ -100,6 +104,11 @@ async function ingestCore(S, a) {
       if (/modyloft|betcris/i.test(name)) {   // sports bets: savings entry only, never a spend row, never combined
         await S.put("entries", "bhd-" + a.id, { type: "out", source: "Apuestas", motivo: "apuesta", amount: a.amount, date, createdAt: ts, note: "Betcris", bhdInfo: "BHD card · Betcris (Modyloft) · " + rd(a.amount) + " · " + mon(date), bhd: a.id, auto: true });
         return "bet entry";
+      }
+      const pre1 = await findPre(S, date, rdAmt, cur !== "DOP");   // Apple Pay tap / receipt came first: the savings withdrawal is new, the spend row is not
+      if (pre1) {
+        await S.put("entries", "bhd-" + a.id, { type: "out", source: "Retiro", motivo: "gasto", amount: a.amount, date, createdAt: ts, note: name, bhdInfo: info, bhd: a.id, auto: true });
+        await linkPreSav(S, pre1, a.id, "bhd-" + a.id); return "savings entry + matched " + pre1.row.source + " row";
       }
       const same = (await S.eq("entries", "date", date)).find(e => e.bhd && e.type === "out" && e.source === "Retiro" && e.motivo === "gasto" && e.auto && spMerch(e.note) === spMerch(name));
       if (same) {   // COMBINE RULE
@@ -166,7 +175,70 @@ async function collectLoan(S, a, bank) {
   await S.put("prestamos", l.id, { cuotasPagadas: list, ...(done ? { pagado: true, cobradoEl: date, destino: sav ? "ahorro" : "otra" } : {}) });
   return `LOAN|${l.nombre}|${Math.round(amt)}|${Math.round(left - amt)}`;
 }
+
+// ---------- Apple Pay taps and email receipts (Nov 24) ----------
+// A tap (iOS Shortcut) or a receipt email (Uber, Amazon, PedidosYa...) is logged the moment it arrives, as a spend row with preOpen = [RD$ amounts the bank has not confirmed yet].
+// The later bank alert finds that row (same day +-1, same amount) and only attaches its id (BHD: the savings withdrawal is still created). If the bank row came first, the tap/receipt attaches to it instead.
+const hash = str => { let h = 5381; for (let i = 0; i < str.length; i++) h = ((h * 33) ^ str.charCodeAt(i)) >>> 0; return h.toString(36); };
+const tolOf = (rdAmt, foreign) => foreign ? Math.max(30, rdAmt * 0.06) : Math.max(1, rdAmt * 0.005);
+async function findPre(S, date, rdAmt, foreign) {
+  const t = tolOf(rdAmt, foreign);
+  for (const r of await S.range("spend", "date", addDays(date, -1), addDays(date, 1)))
+    if (Array.isArray(r.preOpen)) { const i = r.preOpen.findIndex(x => Math.abs(Number(x) - rdAmt) <= t); if (i >= 0) return { row: r, rest: r.preOpen.filter((_, k) => k !== i) }; }
+  return null;
+}
+async function findPost(S, date, rdAmt, foreign, forReceipt) {   // a bank-made row (no tap/receipt linked yet) for the same charge
+  const t = tolOf(rdAmt, foreign);
+  return (await S.range("spend", "date", addDays(date, -1), addDays(date, 1))).filter(r => (forReceipt ? !r.rcpt : !r.apLinked) && !Array.isArray(r.preOpen) && ["email", "bhd"].includes(r.source) && r.status === "Aprobada" && !r.excluded && (r.kind === "consumo" || (r.kind === "manual" && r.fromSav)) && Math.abs((Number(r.rd) || 0) - rdAmt) <= t)
+    .sort((x, y) => Math.abs(x.rd - rdAmt) - Math.abs(y.rd - rdAmt))[0] || null;
+}
+async function linkPreSav(S, pre, bankId, entryId) {
+  await S.put("spend", pre.row.id, { bhdIds: [...(pre.row.bhdIds || []), bankId], preOpen: pre.rest, fromSav: true, savEntry: entryId, kind: "manual", bank: "bhd", note: "Paid with the BHD savings card" });
+}
+const bankOfCard = c => /bhd|6133/i.test(c || "") ? "bhd" : /popular|5935/i.test(c || "") ? "pop" : "";
+function parseMoney(txt) {   // "RD$1,250.00", "US$ 12.5", "1.250,00", "€9,99": amount + currency
+  const t = String(txt || ""), cur = /US|USD/i.test(t) ? "USD" : /EUR|€/i.test(t) ? "EUR" : "DOP";
+  let n = (t.match(/\d[\d.,]*/) || [""])[0];
+  if (/,\d{1,2}$/.test(n) && !/\.\d{1,2}$/.test(n)) n = n.replace(/\./g, "").replace(",", ".");   // European decimal comma
+  return { amount: r2(Number(n.replace(/,/g, "")) || 0), cur };
+}
+async function ingestPay(S, p) {   // p = {amount (number or text), currency?, merchant, card?, ts?}
+  const m = typeof p.amount === "number" ? { amount: r2(p.amount), cur: p.currency || "DOP" } : parseMoney(p.amount);
+  if (p.currency && FX[String(p.currency).toUpperCase()]) m.cur = String(p.currency).toUpperCase();
+  if (!(m.amount > 0)) return { result: "skipped" };
+  const ts = p.ts || Date.now(), date = drDay(ts), merchant = nice(String(p.merchant || "Apple Pay").replace(/\s+/g, " ").slice(0, 80)) || "Apple Pay", rdAmt = r2(m.amount * FX[m.cur]);
+  const id = "ap-" + hash([date, m.amount, spMerch(merchant), Math.floor(ts / 120e3)].join("|"));   // the same tap sent twice within 2 minutes is one
+  if (await S.get("spend", id)) return { result: "already logged" };
+  const post = await findPost(S, date, rdAmt, m.cur !== "DOP");
+  if (post) { await S.put("spend", post.id, { apLinked: true }); return { result: "already logged by the bank", merchant, rdAmt, cat: post.cat }; }
+  const cat = catOf(merchant, await learnedCats(S)), bank = bankOfCard(p.card);
+  const same = (await S.eq("spend", "date", date)).find(t => t.source === "applepay" && t.status === "Aprobada" && !t.excluded && spMerch(t.merchant) === spMerch(merchant) && t.currency === m.cur);
+  if (same) {   // COMBINE RULE: same day, same place = one row
+    const parts = same.note && /\+/.test(same.note) ? same.note + " + " + rd(m.amount) : rd(Number(same.amount) || 0) + " + " + rd(m.amount);
+    await S.put("spend", same.id, { amount: r2((Number(same.amount) || 0) + m.amount), rd: r2((Number(same.rd) || 0) + rdAmt), preOpen: [...(same.preOpen || []), rdAmt], note: parts });
+    return { result: "combined into " + same.id, merchant, rdAmt, cat: same.cat };
+  }
+  await S.put("spend", id, { date, merchant, raw: p.merchant || merchant, amount: m.amount, currency: m.cur, rd: rdAmt, kind: "consumo", status: "Aprobada", cat, source: "applepay", excluded: false, ts, card: String(p.card || "").slice(0, 40), bank, preOpen: [rdAmt] });
+  return { result: "spend row", merchant, rdAmt, cat };
+}
+// a = {kind:"receipt", id, ts, merchant (platform), detail, amount, cur, card4, cat?, date?}  or  {kind:"sub", id, ts, merchant, amount, cur, renews, every}
+async function ingestReceipt(S, a) {
+  if (!a || !a.id || !(a.amount > 0)) return "skipped";
+  if (a.kind === "sub") { const slug = nrm(a.merchant).replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "sub"; await S.put("subs", slug, { name: a.merchant, amount: a.amount, currency: a.cur || "DOP", renews: a.renews || "", every: a.every || "", at: a.ts || Date.now() }); return "subscription noted"; }
+  if ((await S.eq("spend", "rcpt", a.id)).length || await S.get("spend", "rc-" + a.id)) return "already logged";
+  const ts = a.ts || Date.now(), date = a.date || drDay(ts), cur = FX[a.cur] ? a.cur : "DOP", rdAmt = r2(a.amount * FX[cur]), foreign = cur !== "DOP";
+  const post = await findPost(S, date, rdAmt, foreign, true);
+  if (post) {   // the bank row came first: add the details (and a better category if the bank row had none)
+    const up = { rcpt: a.id, apLinked: true, detail: a.detail || "" };
+    if (post.cat === "other" && !post.userCat && a.cat) up.cat = a.cat;
+    await S.put("spend", post.id, up); return "receipt matched " + post.id;
+  }
+  const cat = a.cat || catOf(a.merchant, await learnedCats(S)), bank = a.card4 === "6133" ? "bhd" : a.card4 === "5935" ? "pop" : "";
+  await S.put("spend", "rc-" + a.id, { date, merchant: a.merchant, raw: a.merchant, detail: a.detail || "", amount: a.amount, currency: cur, rd: rdAmt, kind: "consumo", status: "Aprobada", cat, source: "receipt", rcpt: a.id, excluded: false, ts, bank, preOpen: [rdAmt] });
+  return "receipt row";
+}
 async function ingest(S, a) {
+  if (a && (a.kind === "receipt" || a.kind === "sub")) return ingestReceipt(S, a);
   const r = await ingestCore(S, a);
   if (r === "already logged" || r === "skipped" || !a || !(a.amount > 0) || a.cur === "USD" || a.cur === "EUR" || !/^(deposit|in)$/.test(a.kind) || /Declinada|Rechazada|Reversada/i.test(a.status || "")) return r;
   try { const m = await collectLoan(S, a, a.bank); return m ? r + " | " + m : r; } catch (e) { return r + " | loan match error"; }
@@ -175,4 +247,4 @@ async function spendFor(S, a, entryId, name, date, ts, rdAmt, cur) {
   await S.put("spend", "bhd-" + a.id, { date, merchant: name, raw: a.raw || name, amount: a.amount, currency: cur, rd: rdAmt, kind: "manual", fromSav: true, savEntry: entryId, status: "Aprobada", cat: catOf(name, await learnedCats(S)), source: "bhd", excluded: false, ts, note: "Paid with the BHD savings card" });
 }
 
-export { ingest, catOf, spMerch };
+export { ingest, ingestPay, catOf, spMerch };

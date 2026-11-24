@@ -66,6 +66,11 @@ Loans show one line per loan; one Remind and one Paid round icon per person; Pai
 - Hook-style content matters (TikTok-like), but don't depend on user feedback yet.
 - Usage economy: he runs low on Claude usage, so prefer Cloudflare for anything scheduled; Claude only for judgment.
 
+## Apple Pay + email receipts (Nov 24)
+- iOS Shortcut automation (Transaction trigger) POSTs `{amount, merchant, card}` to `https://pato-cron.marcoferrando.workers.dev/pay?t=<token>`; token lives in KV `pay:token`, minted/read by pato-mail `/paylink` (owner only; Settings > Apple Pay > Copy link). `ingestPay` (tools/cron/ingest.js) logs a spend row (`source:"applepay"`, learned categories, combine rule) with `preOpen:[rd]`.
+- Gmail receipts: pato-mail `/watch` also reads Uber/Uber Eats, PedidosYa, Amazon, Apple/Netflix/Spotify... emails (`parseReceipt`, no AI) -> `/notify` -> `ingestReceipt`: row with `detail` (trip route, restaurant, items), `source:"receipt"`; renewal notices go to `users/{uid}/subs`.
+- Dedup: bank alert, tap and receipt for the same charge (same day +-1, same amount) share ONE row: whoever comes second attaches (`preOpen`, `bhdIds`, `apLinked`, `rcpt`). BHD still creates its savings withdrawal.
+
 ## Declined ideas (do not re-offer)
 Poker results by game, borrower history, income by source, net worth chart, what-if slider, phone shortcuts, collections board, all CFP ideas (weekly pace, emergency fund, windfall split, category limits, safe-to-spend), USD/inflation view, BHD reconciliation, tax pack, loan discount/caps, IOU, stress number, bankroll, date as range, odd-charge alerts, "days of saving", weekly savings chart, 25k badges, in-app "Add to today's entry?", "Pato vs the crowd", "Log something" subtitle.
 

@@ -1753,6 +1753,7 @@ html.mp-guest #alWrap{display:none}
 <style id="stakd-guest">
 #mpGate input{display:block;width:100%}
 html.mp-guest #saGmRow,html.mp-guest #spSrc,html.mp-guest #saKey,html.mp-guest:not(.on-stocks) #tab-stocks,html.mp-guest #p-stocks > :not(#s-gst){display:none!important}
+#spLedger .m small.dt{display:block;font-weight:400;opacity:.62;font-size:.78em;line-height:1.3;white-space:normal;margin-top:1px}
 html.mp-guest:not(.on-spending) #tab-spending,html.mp-guest:not(.on-poker) #tab-poker,html.mp-guest:not(.on-loans) #tab-loans,html.mp-guest:not(.on-trends) #tab-trends{display:none!important}
 #sgSetup{position:fixed;inset:0;z-index:90;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:max(24px,env(safe-area-inset-top)) 16px 32px;background:var(--paper)}
 #sgSetup[hidden]{display:none}
@@ -2293,7 +2294,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 <script src="mp-firebase.js?v=10"></script>
 <script src="faceid.js?v=2" defer></script>
 <script src="sync.js?v=6" defer></script>
-<script src="gmail.js?v=3" defer></script>
+<script src="gmail.js?v=4" defer></script>
 <div id="sdProbe" aria-hidden="true" style="position:fixed;left:0;bottom:0;width:1px;height:1px;pointer-events:none;visibility:hidden"></div>
 <script id="stakd-dockfix">(function(){
   var st = navigator.standalone || (window.matchMedia && matchMedia("(display-mode: standalone)").matches);
@@ -5831,7 +5832,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
     { let m = $("spMore"); if(!m){ m = document.createElement("div"); m.id = "spMore"; m.className = "hist-more"; $("spLedger").after(m); }
       m.innerHTML = ""; if(spAll > spN){ const b = document.createElement("button"); b.type = "button"; b.textContent = `View more (${spAll-spN})`; b.onclick = () => { window.__spShow = spN + 8; renderSpend(); }; m.appendChild(b); }
       if(spN > 8){ const b = document.createElement("button"); b.type = "button"; b.textContent = "Show less"; b.onclick = () => { window.__spShow = 8; renderSpend(); $("s-spledger").scrollIntoView({block:"start"}); }; m.appendChild(b); } }
-    const bankChip = t => { if(window.MP_ME && !window.MP_ME.owner) return ""; const b = t.fromSav || t.source==="bhd" ? "bhd" : (t.kind==="manual" && !t.fromSav) || t.kind==="cashin" || t.kind==="deposito" ? "" : "pop"; return b ? `<span class="bk">${window.BK_LOGO[b]}</span>` : ""; };
+    const bankChip = t => { if(window.MP_ME && !window.MP_ME.owner) return ""; const b = t.fromSav || t.source==="bhd" || t.bank==="bhd" ? "bhd" : (t.kind==="manual" && !t.fromSav) || t.kind==="cashin" || t.kind==="deposito" ? "" : "pop"; return b ? `<span class="bk">${window.BK_LOGO[b]}</span>` : ""; };
     $("spLedger").innerHTML = list.length ? list.map(t=>{
       const wallet = spIsCashOut(t)||spIsCashIn(t), inc = spIsIn(t), off = !spLive(t);
       const tag = t.status!=="Aprobada" ? t.status : t.excluded ? "Not counted" : t.dupe ? "Possible double" : t.pend ? "Charge pending" : spIsManual(t) ? (t.fromSav ? "Paid from savings" : "Paid in cash") : spIsCashOut(t) ? (t.kept ? "ATM · you kept it" : "ATM · not counted as spent") : spIsCashIn(t) ? "Cash count" : spIsDep(t) ? "Cash deposited · not spending" : spIsTransfer(t) ? (t.own ? "To your own account" : "Transfer from checking") : inc ? "Money in" : "";
@@ -5840,7 +5841,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
       const act = canEdit && t.status==="Aprobada" ? (spIsManual(t)||spIsCashIn(t)||spIsDep(t) ? `<button type="button" class="x" data-spdel="${spEsc(t.id)}">Delete</button>` : "") : "";
       const swL = canEdit && t.status==="Aprobada" ? (spIsManual(t)||spIsCashIn(t)||spIsDep(t) ? "Delete" : t.excluded ? "Count again" : "Remove") : "";
       const swR = canEdit && t.status==="Aprobada" && (spIsManual(t)||spIsCard(t)||spIsTransfer(t)) ? "Edit" : "";
-      return `<li class="${off?"off":""}${wallet?" wallet":""}" data-sw="${spEsc(t.id)}" data-swl="${swL}" data-swr="${swR}"><div class="sw-bg" aria-hidden="true"><span class="sw-e">${swR}</span><span class="sw-d">${swL}</span></div><div class="sw-in"><span class="d">${spDay(t.date)}</span><div style="min-width:0"><div class="m">${spEsc(t.merchant)}</div><div class="meta">${bankChip(t)}${sel}${tag?`<span class="tag${/^Paid (from savings|in cash)$/.test(tag)?" soft":""}">${spEsc(tag)}</span>`:""}${act}</div></div><span class="a"${inc?' style="color:var(--green)"':""}>${wallet?"":inc?"+":"−"}${fmt(spAmt(t))}${fx}</span></div></li>`;
+      return `<li class="${off?"off":""}${wallet?" wallet":""}" data-sw="${spEsc(t.id)}" data-swl="${swL}" data-swr="${swR}"><div class="sw-bg" aria-hidden="true"><span class="sw-e">${swR}</span><span class="sw-d">${swL}</span></div><div class="sw-in"><span class="d">${spDay(t.date)}</span><div style="min-width:0"><div class="m">${spEsc(t.merchant)}${t.detail?`<small class="dt">${spEsc(t.detail)}</small>`:""}</div><div class="meta">${bankChip(t)}${sel}${tag?`<span class="tag${/^Paid (from savings|in cash)$/.test(tag)?" soft":""}">${spEsc(tag)}</span>`:""}${act}</div></div><span class="a"${inc?' style="color:var(--green)"':""}>${wallet?"":inc?"+":"−"}${fmt(spAmt(t))}${fx}</span></div></li>`;
     }).join("") : `<li class="empty">${spend.length ? "No transactions here." : db ? "No purchases loaded yet." : "No connection to data."}</li>`;
     $("spLedger").querySelectorAll("[data-spcat]").forEach(s=>s.onchange=()=>spSetCat(s.dataset.spcat, s.value));
     $("spLedger").querySelectorAll("[data-spex]").forEach(b=>b.onclick=()=>{ const t=spend.find(x=>x.id===b.dataset.spex); if(t) spWrite(t.id,{excluded:!t.excluded}, t.excluded?"Counted again":"Removed from the totals", t.merchant); });
