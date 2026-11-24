@@ -427,7 +427,7 @@ export default {
           return new Response("ingest error", { status: 503 }); } }
       const lm = /LOAN\|([^|]+)\|(\d+)\|(\d+)/.exec(logged);   // Nov 23: a loan payment was matched and marked received
       if (lm) await push(env, "Loan payment received", `${cap(lm[1])} · ${rd(Number(lm[2]))}` + (Number(lm[3]) > 0 ? ` · ${rd(Number(lm[3]))} left` : " · paid off"), APP + "#loans", "loan-paid-" + lm[1].slice(0, 20)).catch(() => 0);
-      if (/^(receipt matched|already logged)/.test(logged) && b.alert && b.alert.kind === "receipt") return new Response("ok quiet | " + logged, { status: 200 });   // the bank push already told Marco; the receipt only added details
+      if (b.alert && b.alert.kind === "receipt") return new Response("ok quiet | " + logged, { status: 200 });   // receipts never push (Nov 24): the bank alert or the Apple Pay tap already told Marco; the receipt only adds details or a row
       try { return new Response("ok " + await push(env, String(b.title).slice(0, 80), body.slice(0, 160), "./", String(b.tag || "bank").slice(0, 60)) + (logged ? " | " + logged : ""), { status: 200 }); }
       catch (e) { return new Response("error " + String(e).slice(0, 120), { status: 500 }); }
     }
