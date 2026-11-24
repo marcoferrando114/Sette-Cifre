@@ -57,7 +57,7 @@ window.BK_LOGO = {
       var r = d && d.rates && Number(d.rates.DOP); if(!(r > 20 && r < 200)) return;
       try{ localStorage.setItem(R, JSON.stringify({rate:r, day:day})); }catch(e){}
       var was = C.rate; C.rate = r; C.src = "today"; C.at = day;
-      if(C.cur === "USD" && Math.abs(was - r) > 0.005){ try{ document.dispatchEvent(new Event("pato-fx")); }catch(e){} }
+      if(Math.abs(was - r) > 0.005){ try{ document.dispatchEvent(new Event("pato-fx")); }catch(e){} }
     }).catch(function(){}); }catch(e){}
   }
 })();</script>
@@ -2900,11 +2900,14 @@ html:not(.mp-guest) #s-gst{display:none!important}
   // ---------- stocks (IBKR): doc invest/ibkr, prices filled in hourly by a scheduled task ----------
   let ibkr = null, stOpen = null;
   const usd = (v, d) => (v<0?"−":"") + "US$" + Math.abs(v).toLocaleString("en-US",{minimumFractionDigits:d??2, maximumFractionDigits:d??2});
+  // US$ → RD$ at the day's rate (pato-currency-js fetches it once a day; falls back to the last saved rate) — Marco, Nov 24
+  const fxToday = () => { const P = window.PCUR; return (P && P.rate > 20 && P.src !== "estimate") ? P.rate : 0; };
+  document.addEventListener("pato-fx", () => { try{ render(); }catch(e){} });
   function ibkrCalc(){
     const cfg = (config.inversiones||[]).find(x=>/ibkr/i.test(x.nombre||""));
     if(!cfg) return null;
     const d = ibkr || {}; let pos = (d.posiciones||[]).filter(x=>Number(x.sh)>0).map(x=>({...x}));
-    const dep = Number(d.depositoUsd ?? cfg.usd) || 0, tasa = Number(d.tasa ?? cfg.tasa) || 0;
+    const dep = Number(d.depositoUsd ?? cfg.usd) || 0, tasa = fxToday() || Number(d.tasa ?? cfg.tasa) || 0;
     const costUsd = pos.reduce((t,x)=>t+x.sh*x.costo,0);
     const cash = typeof d.cash==="number" ? d.cash : dep - costUsd;
     // IBKR folds commissions into each position's cost basis: money that left cash but isn't in any position's cost is spread across positions
@@ -5480,7 +5483,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
   window.__SP = SP_CATS;
   const spCat = k => k==="cash" ? "Cash" : (k==="groceries"||k==="delivery") ? SP_CATS.food : k==="gaming" ? SP_CATS.shopping : (SP_CATS[k] || "Other");
   const spKey = k => (k==="groceries"||k==="delivery") ? "food" : k==="gaming" ? "shopping" : k; // old keys share one category
-  let usdAcc = null; const usdAccRd = () => { try{ return usdAcc ? Math.round((Number(usdAcc.amount)||0) * (Number(spMeta&&spMeta.fx&&spMeta.fx.USD)||60)) : 0; }catch(e){ return 0; } };
+  let usdAcc = null; const usdAccRd = () => { try{ return usdAcc ? Math.round((Number(usdAcc.amount)||0) * (fxToday() || Number(ibkr&&ibkr.tasa) || Number(spMeta&&spMeta.fx&&spMeta.fx.USD) || 60)) : 0; }catch(e){ return 0; } };
   let spend = [], spMeta = null, spWalletDoc = null, spMonth = null, spFilter = "all", spPendWd = null;
   const SP_ASK_FROM = "2026-10-12"; // withdrawals before this were already sorted out by hand
   const spLive = t => t.status==="Aprobada" && !t.excluded;
