@@ -6608,7 +6608,22 @@ TRACKER DATA:
         const cur = (ibkr||{}).metales || {}; if(cur.at === m.at && cur.oro && cur.oro.precio === m.oro.precio && cur.plata && cur.plata.precio === m.plata.precio) return;
         if(!ibkr || !Array.isArray(ibkr.posiciones)) return;   // only ever add to the full stocks doc (this db's set() replaces the whole doc)
         await db.doc("invest/ibkr").update({metales: m}); }catch(e){} };
-    setTimeout(metalsLive, 2500); setInterval(metalsLive, 5*60000); document.addEventListener("visibilitychange", () => { if(!document.hidden) metalsLive(); });
+    // stock prices too: on open, every 2 min while open, and on coming back (same rules as the price worker; never older over newer)
+    let stBusy = false;
+    const stocksLive = async () => { if(stBusy || !(window.MP_ME && window.MP_ME.owner) || document.hidden || !ibkr || !Array.isArray(ibkr.posiciones) || !ibkr.posiciones.length) return; stBusy = true;
+      try{ const d = ibkr, b0 = d.bench || {t:"SPY"}, syms = [...new Set([...d.posiciones.map(p=>p.t), b0.t || "SPY", "^GSPC"])];
+        const Q = await (await fetch("https://pato-ai.marcoferrando.workers.dev/quotes?s=" + encodeURIComponent(syms.join(",")), {cache:"no-store"})).json();
+        if(!Q || !d.posiciones.every(p=>Q[p.t] && Q[p.t].precio > 0)) return;
+        let latest = 0; const pos = d.posiciones.map(p=>{ const x = Q[p.t]; latest = Math.max(latest, x.time||0); return Object.assign({}, p, {precio:x.precio, prev:x.prev, open:x.open}); });
+        const b = Object.assign({}, b0); const s = Q[b.t || "SPY"]; if(s){ b.precio = s.precio; latest = Math.max(latest, s.time||0); } const g = Q["^GSPC"]; if(g){ b.idx = g.precio; b.idxPrev = g.prev; }
+        const atS = d.at ? Date.parse(d.at)/1000 : 0; if(!(latest > 0) || latest < atS) return;
+        if(latest === atS && pos.every((p,i)=>p.precio === d.posiciones[i].precio)) return;
+        const at = new Date(latest*1000).toISOString().replace(/\.\d+Z$/, "Z"), v = Math.round(((Number(d.cash)||0) + pos.reduce((t,p)=>t + (p.sh||0)*p.precio, 0))*100)/100;
+        let h = (d.hist||[]).filter(x=>x && typeof x==="object" && "t" in x && "v" in x); if(!h.length || latest > h[h.length-1].t + 600) h.push({t:latest, v}); else if(latest >= h[h.length-1].t) h[h.length-1] = {t:latest, v};
+        if(ibkr !== d) return;   // the doc changed while prices loaded (e.g. a new buy): next round uses the new one
+        await db.doc("invest/ibkr").update({posiciones:pos, bench:b, at, hist:h.slice(-400)}); }catch(e){} finally{ stBusy = false; } };
+    const pricesLive = () => { metalsLive(); stocksLive(); };
+    setTimeout(pricesLive, 2500); setInterval(pricesLive, 2*60000); document.addEventListener("visibilitychange", () => { if(!document.hidden) pricesLive(); });
     db.collection("contactos").onSnapshot(snap => {
       contactos = {}; snap.docs.forEach(d => contactos[d.id] = d.data());
       renderSoon();
@@ -8470,20 +8485,20 @@ button,summary,[role="button"],.tabs{-webkit-touch-callout:none;-webkit-user-sel
   function gauge(){ var n = document.querySelector("#pscG .g-n"), num = document.getElementById("pscNum"); if(!n || !n.animate) return;
     var s = numOf(num && num.textContent); if(s == null) return; n.style.transformBox = "view-box"; n.style.transformOrigin = "100px 96px";
     n.animate([{transform: "rotate(" + (-s * 1.8) + "deg)"}, {transform: "rotate(0deg)"}], {duration: 1200, delay: 100, easing: "cubic-bezier(.3,1.22,.45,1)", fill: "backwards"});
-    if(s > 0 && num.childNodes.length === 1 && num.firstChild.nodeType === 3){ var txt = num.textContent; num._pkLast = num.firstChild.nodeValue = txt.replace(/\d+/, "0"); roll(num, 0, s, txt); } }
+  }
   var T0 = 0, IO = null, GIO = null, gDone = false;
   if("IntersectionObserver" in window){
     // cards rise in as you scroll down to them (each once per visit to a screen)
     IO = new IntersectionObserver(function(es){ var now = performance.now(); es.forEach(function(e){ var c = e.target;
       if(!e.isIntersecting){ if(window.scrollY < 10) c._pkRev = false; return; }   // pushed down while loading: it still gets its entrance
       if(c._pkRev) return; c._pkRev = true; if(now - T0 < 650 || e.boundingClientRect.top < innerHeight * .35) return;
-      if(c.animate) c.animate([{opacity: 0, transform: "translateY(24px) scale(.985)"}, {opacity: 1, transform: "none"}], {duration: 540, easing: "cubic-bezier(.22,1,.36,1)"});
+      if(c.animate) c.animate([{opacity: 0, transform: "translateY(14px)"}, {opacity: 1, transform: "none"}], {duration: 380, easing: "cubic-bezier(.22,1,.36,1)"});
       bars(c, 120, true); }); });
-    GIO = new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting && !gDone){ gDone = true; gauge(); } else if(!e.isIntersecting && window.scrollY < 10) gDone = false; }); }, {threshold: .6});
+    GIO = new IntersectionObserver(function(es){ es.forEach(function(e){ if(e.isIntersecting && !gDone){ gDone = true; gauge(); } }); }, {threshold: .6});
   }
   function enter(p){ if(!p) return; T0 = performance.now();
     if(IO){ IO.disconnect(); [].forEach.call(p.children, function(c){ c._pkRev = false; IO.observe(c); }); }
-    if(GIO){ GIO.disconnect(); gDone = false; var g = p.querySelector("#pscG"); if(g) GIO.observe(g); }
+    if(GIO && !gDone){ GIO.disconnect(); var g = p.querySelector("#pscG"); if(g) GIO.observe(g); }
     p.classList.remove("pk-enter"); p.getBoundingClientRect(); p.classList.add("pk-enter"); clearTimeout(p._en); p._en = setTimeout(function(){ p.classList.remove("pk-enter"); }, 900);
     bars(p, 120); }
   var lastTab = null;
