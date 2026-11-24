@@ -62,6 +62,44 @@ function parse(xml) {
     return { h: title, s: src, u: g("link"), t: Date.parse(g("pubDate")) || 0, n: cover.size, by: [...cover].slice(0, 3), also };
   });
 }
+// ---------- Banco Central RD reference rate (tasa de referencia del mercado cambiario) ----------
+const BCRD_XLSX = "https://cdn.bancentral.gov.do/documents/estadisticas/mercado-cambiario/documents/TASA_DOLAR_REFERENCIA_MC.xlsx";
+async function unzipEntry(buf, want) {   // minimal zip reader: finds one file by name and inflates it
+  const v = new DataView(buf), u8 = new Uint8Array(buf); let e = -1;
+  for (let i = buf.byteLength - 22; i >= Math.max(0, buf.byteLength - 70000); i--) if (v.getUint32(i, true) === 0x06054b50) { e = i; break; }
+  if (e < 0) throw new Error("not a zip");
+  let p = v.getUint32(e + 16, true); const n = v.getUint16(e + 10, true), td = new TextDecoder();
+  for (let k = 0; k < n; k++) {
+    if (v.getUint32(p, true) !== 0x02014b50) break;
+    const meth = v.getUint16(p + 10, true), csz = v.getUint32(p + 20, true), nl = v.getUint16(p + 28, true), xl = v.getUint16(p + 30, true), cl = v.getUint16(p + 32, true), off = v.getUint32(p + 42, true);
+    const name = td.decode(u8.subarray(p + 46, p + 46 + nl));
+    if (want.test(name)) {
+      const st = off + 30 + v.getUint16(off + 26, true) + v.getUint16(off + 28, true), data = u8.subarray(st, st + csz);
+      if (meth === 0) return td.decode(data);
+      return await new Response(new Blob([data]).stream().pipeThrough(new DecompressionStream("deflate-raw"))).text();
+    }
+    p += 46 + nl + xl + cl;
+  }
+  throw new Error("no " + want);
+}
+async function bcrdRate() {
+  const cache = caches.default, key = new Request("https://pato.cache/bcrd-fx-v1"); const hit = await cache.match(key); if (hit) return await hit.json();
+  const f = await fetch(BCRD_XLSX + "?v=" + Math.floor(Date.now() / 3600000), { headers: { "user-agent": "Mozilla/5.0 (compatible; PatoDaily/1.0)" } });
+  if (!f.ok) throw new Error("bcrd " + f.status);
+  const buf = await f.arrayBuffer(), xml = await unzipEntry(buf, /^xl\/worksheets\/sheet1\.xml$/);
+  let ss = []; try { ss = (await unzipEntry(buf, /^xl\/sharedStrings\.xml$/)).split("<si>").slice(1).map(x => (x.match(/<t[^>]*>([^<]*)/) || [])[1] || ""); } catch (e) {}
+  const rows = xml.split("<row").slice(1); let out = null;
+  for (let i = rows.length - 1; i >= 0 && !out; i--) {
+    const cells = [...rows[i].matchAll(/<c ([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)].map(m => { const val = ((m[2] || "").match(/<v>([^<]*)<\/v>/) || [])[1]; if (val == null) return null; return /t="s"/.test(m[1]) ? ss[+val] : Number(val); });
+    const nums = cells.filter(x => typeof x === "number" && x > 30 && x < 150);
+    if (nums.length >= 2) { const yr = cells.find(x => typeof x === "number" && x > 1990 && x < 2100), mon = cells.find(x => typeof x === "string" && x.trim()), day = cells.find(x => typeof x === "number" && x >= 1 && x <= 31 && x !== yr);
+      out = { compra: Math.round(nums[0] * 1e4) / 1e4, venta: Math.round(nums[1] * 1e4) / 1e4, fecha: [yr, mon, day].filter(x => x != null).join(" "), src: "BCRD", at: new Date().toISOString() }; }
+  }
+  if (!out) throw new Error("no rate row");
+  await cache.put(key, new Response(JSON.stringify(out), { headers: { "content-type": "application/json", "cache-control": "public, max-age=10800" } }));
+  return out;
+}
+
 async function cached(url, ttl, kind, nocache) {
   const cache = caches.default, key = new Request(url);
   let r = nocache ? null : await cache.match(key);
@@ -1054,6 +1092,10 @@ export default {
         if (precio > 0) out[sym] = { precio: Math.round(precio * 1e4) / 1e4, prev: prev || null, open: op ? Math.round(op[1] * 1e4) / 1e4 : null, time: Math.min(time, Math.floor(Date.now() / 1000)) };
       } catch (e) {} }));
       return json(out, 200, origin);
+    }
+    if (req.method === "GET" && url.pathname === "/fx") {   // Banco Central RD daily US$ reference rate (Marco, Nov 24): read from BCRD's published Excel, cached 3h
+      if (!ORIGINS.includes(origin)) return json({ error: { type: "forbidden" } }, 403, origin);
+      try { return json(await bcrdRate(), 200, origin); } catch (e) { return json({ error: { type: "fx_failed", msg: String(e && e.message || e).slice(0, 120) } }, 502, origin); }
     }
     if (req.method === "GET" && url.pathname === "/metals") {   // gold and silver (COMEX futures, US$/oz) for the Stocks tab, live when the app opens (Nov 23), cached 5 min
       if (!ORIGINS.includes(origin)) return json({ error: { type: "forbidden" } }, 403, origin);
