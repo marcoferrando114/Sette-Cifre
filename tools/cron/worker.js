@@ -118,6 +118,7 @@ async function stocks(env, dry) {
   } catch (e) { console.log("metals", String(e)); }
   if (!dry) await patchDoc(env, "invest", "ibkr", out);
   if (!dry) await stockAlerts(env, pos).catch(e => console.log("stock alerts", String(e)));
+  if (!dry) await radar(env, d).catch(e => console.log("radar", String(e)));
   return `stocks ok ${at} value US$${v}` + (dry ? " (dry run, nothing written)" : "");
 }
 
@@ -261,6 +262,33 @@ async function stockAlerts(env, pos) {
     }
   }
   return "stock alerts sent: " + sent;
+}
+
+
+// ---------- 1c. Limit-order radar (Nov 24): Dec 1 plan picks; one push per pick when it pulls back to a good entry, with the limit price to set ----------
+// Good entry = regular session open and price at least 4% under its 20-day high, or under its 20-day average. Limit = 0.3% under the last price. One push per pick per day; re-arms after it recovers within 2% of the high.
+const RADAR = { VOO: 3000, NVDA: 1000, META: 1200, GOOGL: 500, AVGO: 900, MELI: 700, TSM: 700 };   // US$ per pick for the Dec 1 deposit
+const RADAR_UNTIL = "2026-12-15";   // stops by itself
+async function radar(env, d) {
+  const day = iso(new Date(Date.now() - 4 * 3600e3));
+  if (day > RADAR_UNTIL || !(await pref(env, "radar"))) return "radar off";
+  const kv = env.LIMITS, open = new Set((d.ordenes || []).map(o => String(o.t || o.sym || "").toUpperCase())); let sent = 0;
+  for (const [sym, usd] of Object.entries(RADAR)) {
+    if (open.has(sym)) continue;   // you already have a limit order for it
+    const r = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${sym}?interval=1d&range=1mo`, { headers: { "user-agent": "Mozilla/5.0" } });
+    if (!r.ok) continue;
+    const res = (await r.json()).chart.result[0], m = res.meta, cl = (res.indicators.quote[0].close || []).filter(Boolean).slice(-20);
+    const reg = (m.currentTradingPeriod || {}).regular || {}, now = Date.now() / 1000;
+    if (!(now >= reg.start && now <= reg.end) || cl.length < 10) continue;   // market closed: nothing to act on
+    const px = m.regularMarketPrice, hi = Math.max(...cl, px), avg = cl.reduce((a, b) => a + b, 0) / cl.length, dd = px / hi - 1, ak = "cron:rd:" + sym;
+    if (dd > -0.02) { await kv.delete(ak); continue; }
+    if ((dd <= -0.04 || px < avg) && !(await kv.get(ak))) {
+      const lim = Math.floor(px * 0.997 * 100) / 100, sh = Math.floor(usd / lim * 10000) / 10000;
+      await push(env, `${sym} pulled back ${(Math.abs(dd) * 100).toFixed(1)}%`, `Limit US$${lim.toFixed(2)} · about ${sh} shares for US$${usd.toLocaleString("en-US")}`, APP + "#stocks", "radar-" + sym);
+      await kv.put(ak, "1", { expirationTtl: 20 * 3600 }); sent++;
+    }
+  }
+  return "radar sent: " + sent;
 }
 
 // "Expected income is late": an expected date (config fijos) passed with no matching payment logged. Once per date, checked every morning with the loan reminders.
