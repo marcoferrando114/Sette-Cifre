@@ -2184,7 +2184,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261123200500";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261124140921";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -6489,7 +6489,7 @@ TRACKER DATA:
   async function ask(){
     const q = $("aIn").value.trim();
     if(!sample || !q || aBusy) return;
-    if(window.__patoTypedLog && /\d/.test(q) && !/\?\s*$/.test(q) && /lost|lose|won\b|win\b|owe|lent|lend|loan|debt|casino|arcade|slots|perd|gan[eéó]|debe|prest|deuda|apost|bet\b/i.test(q)){
+    if(window.__patoTypedLog && /\d/.test(q) && !/\?\s*$/.test(q) && /lost|lose|won\b|win\b|owe|lent|lend|loan|debt|casino|arcade|slots|receiv|paid me|pays me|sent me|got paid|deposit|salary|income|cobr|recib|me pag|me mand|me envi|perd|gan[eéó]|debe|prest|deuda|apost|bet\b/i.test(q)){
       aBusy = true; $("aSend").disabled = true; let done = false;
       try{ done = await window.__patoTypedLog(q); }catch(e){ console.error(e); }
       aBusy = false; setBusy(false);
@@ -7096,6 +7096,7 @@ TRACKER DATA:
       '{"kind":"stocks","trades":[{"t":ticker,"side":"buy"|"sell","sh":number,"price":number,"usd":number,"fee":number,"limite":number,"status":"filled"|"open"|"cancelled","date":"YYYY-MM-DD"}],"summary":string}\n' +
       '{"kind":"transfer","direction":"out"|"in","amount":number,"date":"YYYY-MM-DD","person":string (the other person, no account numbers),"bank":string,"note":string,"cat":one of ' + JSON.stringify(Object.keys(CATS)) + ',"own":true if it went to their own account}\n' +
       (typed ? '{"kind":"casino","result":"loss"|"win","amount":number,"date":"YYYY-MM-DD","game":"arcade"|"poker_casino"|"poker_amigos","from":"bhd"|"popular"|"cash"|null (where the money came from or went, only if said)}  (use for money lost or won at a casino, slots, online casino or "arcade"; "casino" and "arcade" mean game "arcade"; poker at a casino is "poker_casino"; poker at home or with friends is "poker_amigos")\n' +
+      '{"kind":"income","amount":number,"from":string|null (who paid, no account numbers),"to":"bhd"|"popular"|"cash"|null (only if said),"date":"YYYY-MM-DD","note":string|null}  (use for money the person received or earned: "received 5000 from Isaac", "Isaac paid me 2000", "got paid 15000"; instead of transfer)\n' +
       '{"kind":"owed","person":string,"amount":number,"as":"loan"|"debt"|null (only if the word loan/lent or debt is clear),"due":"YYYY-MM-DD"|null,"note":string|null}  (use when someone owes the person money, or the person lent money: "Miguelito owes me 3000 more", "lent Isaac 5000")\n' : '') +
       '{"kind":"other","summary":string}\n' +
       'Numbers may use a comma for decimals (RD$2.000,00 means 2000). Use null for anything you cannot see. Food includes groceries, restaurants and delivery; car is gas, tolls, parking, car wash; rides is Uber; wants is clothes, electronics and personal purchases; essentials is paperwork, repairs, utilities, insurance.';
@@ -7202,6 +7203,44 @@ TRACKER DATA:
     var acts = A.map(function(a){ return [a[0], save(a[1])]; });
     open('<h3>' + g[0] + (win ? " win" : " loss") + '</h3><p class="sub">' + (win ? "Where did it go?" : "Where did the money come from?") + '</p>' + rows([["Amount", rd(ca)], ["Date", cd]]) + buttons(acts)); wire(acts);
   }
+  // typed: "received 5000 from Isaac to BHD" logs money in right away (a loan payment opens that person's payment box)
+  function income(d){
+    var am = Math.round(Number(d.amount)||0), who = String(d.from||"").trim().slice(0, 80), dt = okDate(d.date), own = isOwner();
+    if(!(am > 0)){ nope("Add the amount, like “received 5000 from Isaac”."); return; }
+    Promise.all([db.collection("prestamos").get(), db.doc("config/main").get()]).then(function(r){
+      var same = function(n){ var a = nrm(n), b = nrm(who); return a && b && (a === b || a.indexOf(b + " ") === 0 || b.indexOf(a + " ") === 0); };
+      var owes = who && (r[0].docs.some(function(x){ var l = x.data(); return !l.pagado && same(l.nombre); }) || ((r[1].data() || {}).deudas || []).some(function(x){ return same(x.nombre); }));
+      var A = own ? [["BHD", "bhd"], ["Popular ••5935", "popular"], ["Cash", "cash"]] : [["Savings", "bhd"], ["Cash", "cash"]];
+      var said = d.to === "popular" && !own ? "cash" : d.to;
+      A.sort(function(x, y){ return (y[1] === said) - (x[1] === said); });
+      var save = function(acct){ return async function(){
+        var all = await db.collection("entries").where("type", "==", "in").get(), src = "", now = Date.now();
+        all.forEach(function(x){ var s = x.data().source; if(!src && who && nrm(s) === nrm(who)) src = s; });
+        src = src || (who ? who.replace(/(^|\s)(\S)/g, function(m, a, c){ return a + c.toUpperCase(); }) : "Otro");
+        var note = d.note ? String(d.note).slice(0, 80) : "", hit = null;
+        if(acct === "bhd"){
+          all.forEach(function(x){ var e = x.data(); if(!hit && e.source === src && e.date === dt && !e.traslado && !e.repone && !e.extra) hit = {id:x.id, a:Number(e.amount)||0}; });
+          if(hit) await db.collection("entries").doc(hit.id).update({amount: hit.a + am});
+          else await db.collection("entries").add({amount:am, type:"in", source:src, date:dt, note:note, createdAt:now});
+        } else if(acct === "cash"){
+          await db.collection("entries").add({amount:am, type:"in", source:src, date:dt, note:note, createdAt:now});
+          await db.collection("entries").add({amount:am, type:"out", source:"Retiro", motivo:"efectivo", date:dt, note:"Kept as cash", createdAt:now + 1});
+        } else {
+          var cs = await db.collection("corriente").get(), last = null;
+          cs.forEach(function(x){ var c = x.data(); if(!last || String(c.date||"") > String(last.date||"") || (c.date === last.date && (c.createdAt||0) > (last.createdAt||0))) last = c; });
+          var b = db.batch(), eIn = db.collection("entries").doc(), eOut = db.collection("entries").doc(), cRef = db.collection("corriente").doc();
+          b.set(eIn, {amount:am, type:"in", source:src, date:dt, note:note, createdAt:now});
+          b.set(eOut, {type:"out", source:"Retiro", motivo:"corriente", amount:am, date:dt, createdAt:now + 1, note:"Kept in Popular checking", traslado:true, ccRef:cRef.id});
+          b.set(cRef, {saldo:(last ? Number(last.saldo)||0 : 0) + am, date:dt > String(last && last.date || "") ? dt : today(), createdAt:now, move:am, entryRef:eOut.id});
+          await b.commit();
+        }
+        toast(rd(am) + " received" + (who ? " from " + src : ""), acct === "bhd" ? (own ? "BHD" : "Savings") : acct === "popular" ? "Popular" : "Cash");
+      }; };
+      var acts = A.map(function(a){ return [owes ? "Income · " + a[0] : a[0], save(a[1])]; });
+      if(owes) acts.unshift(["Loan payment", async function(){ if(!(window.__patoPay && window.__patoPay(who, am, dt, said === "bhd"))) toast("Couldn’t find that loan", "Log it as income", true); }]);
+      open('<h3>' + (who ? esc(who) + " paid you" : "Money received") + '</h3><p class="sub">' + (owes ? "They owe you. Is it a payment?" : "Where did it go?") + '</p>' + rows([["Amount", rd(am)], ["Date", dt]]) + buttons(acts)); wire(acts);
+    }).catch(function(e){ console.error(e); toast("Couldn’t save", "Try again", true); });
+  }
   function owed(d){
     var who = String(d.person||"").trim().slice(0, 80), am = Math.round(Number(d.amount)||0);
     if(!who || !(am > 0)){ nope("Add a name and an amount, like “Miguelito owes me 3000 more”."); return; }
@@ -7293,6 +7332,7 @@ TRACKER DATA:
     }
     if(k === "casino"){ casino(d); return; }
     if(k === "owed"){ owed(d); return; }
+    if(k === "income"){ income(d); return; }
     open('<h3>Couldn’t tell what this is</h3><p class="sub">' + esc(d.summary || "Try a clearer photo or screenshot.") + '</p><div class="bt"><button type="button" class="secondary" id="snapOk">OK</button></div>'); $("snapOk").onclick = close;
   }
 
