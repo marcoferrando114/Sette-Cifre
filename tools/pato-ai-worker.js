@@ -1039,6 +1039,22 @@ export default {
       if (!ORIGINS.includes(origin)) return json({ error: { type: "forbidden" } }, 403, origin);
       try { return json(await getEdition(env, false, url.searchParams.get("dbg") === "1", ctx), 200, origin); } catch (e) { return json({ error: { type: "news_failed" } }, 502, origin); }
     }
+    if (req.method === "GET" && url.pathname === "/quotes") {   // stock prices for the Stocks tab when the app opens (Nov 24): latest trade incl. pre/after hours, previous close, today's open; cached 60s
+      if (!ORIGINS.includes(origin)) return json({ error: { type: "forbidden" } }, 403, origin);
+      const syms = [...new Set((url.searchParams.get("s") || "").split(",").map(x => x.trim().toUpperCase()).filter(x => /^\^?[A-Z0-9.=-]{1,12}$/.test(x)))].slice(0, 20), out = {};
+      await Promise.all(syms.map(async sym => { try {
+        const ext = sym[0] !== "^", f = await cached("https://query1.finance.yahoo.com/v8/finance/chart/" + sym.replace("^", "%5E") + "?interval=5m&range=1d" + (ext ? "&includePrePost=true" : ""), 60, "json");
+        const r = (((f.body || {}).chart || {}).result || [])[0]; if (!r) return; const m = r.meta || {}, qq = ((r.indicators || {}).quote || [])[0] || {}, ts = r.timestamp || [];
+        const reg = (m.currentTradingPeriod || {}).regular || {}, rs = reg.start || 0, re = reg.end || 0;
+        const op = ts.map((t, i) => [t, (qq.open || [])[i]]).find(([t, o]) => o && rs <= t && t < re);
+        let precio = m.regularMarketPrice, time = m.regularMarketTime; const last = ts.map((t, i) => [t, (qq.close || [])[i]]).filter(([, c]) => c);
+        if (ext && last.length && last[last.length - 1][0] > time + 60) { time = last[last.length - 1][0] + 300; precio = last[last.length - 1][1]; }
+        let prev = m.chartPreviousClose || m.previousClose; const preS = ((m.currentTradingPeriod || {}).pre || {}).start || 0;
+        if (ext && preS && m.regularMarketTime < preS && last.length && last[last.length - 1][0] >= preS) prev = m.regularMarketPrice;
+        if (precio > 0) out[sym] = { precio: Math.round(precio * 1e4) / 1e4, prev: prev || null, open: op ? Math.round(op[1] * 1e4) / 1e4 : null, time: Math.min(time, Math.floor(Date.now() / 1000)) };
+      } catch (e) {} }));
+      return json(out, 200, origin);
+    }
     if (req.method === "GET" && url.pathname === "/metals") {   // gold and silver (COMEX futures, US$/oz) for the Stocks tab, live when the app opens (Nov 23), cached 5 min
       if (!ORIGINS.includes(origin)) return json({ error: { type: "forbidden" } }, 403, origin);
       const one = async sym => { const f = await cached("https://query1.finance.yahoo.com/v8/finance/chart/" + sym + "?interval=5m&range=1d", 300, "json"); const m = ((((f.body || {}).chart || {}).result || [])[0] || {}).meta || {};
