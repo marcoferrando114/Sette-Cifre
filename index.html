@@ -7277,6 +7277,15 @@ TRACKER DATA:
         toast(rd(own ? 0 : a) + " transfer logged", to); }; };
       if(out && tab !== "tab-loans"){ if(d.own) acts4.push(["To my own account, save", saveTr(true)], ["It was spending", saveTr(false)]); else acts4.push(["Save as spending", saveTr(false)], ["It went to my own account", saveTr(true)]); }
       if(false) acts4.push(["Fill the transfer form", async function(){ $("spTrAmt").value = a.toLocaleString("en-US"); $("spTrTo").value = String(d.person||"").slice(0,80); $("spTrDate").value = dt2; ["spTrAmt","spTrTo","spTrDate"].forEach(function(x){ $(x).dispatchEvent(new Event("input")); }); setTimeout(function(){ $("s-sptr").scrollIntoView({behavior:"smooth", block:"start"}); }, 50); toast("Check it and tap Log transfer", ""); }]);
+      if(out){ acts4.push(["It’s a repayment", async function(){
+        var to = String(d.person||"someone").slice(0,80), k = nrm(to), items = [];
+        try{ var ts = await db.collection("topay").get(); items = ts.docs.map(function(x){ return Object.assign({id:x.id}, x.data()); }); }catch(e){ console.error(e); }
+        var same = function(n){ var b = nrm(n); return k && b && (k === b || k.indexOf(b + " ") === 0 || b.indexOf(k + " ") === 0 || k.split(" ")[0] === b.split(" ")[0]); };
+        var left = function(x){ return Math.max(0, (Number(x.total)||0) - (Number(x.pagado)||0)); };
+        var hit = items.filter(function(x){ return left(x) > 0.5 && same(x.nombre); }).sort(function(p, q){ return String(p.vence||"9").localeCompare(String(q.vence||"9")); })[0];
+        await db.collection("spend").add({date:dt2, merchant:"Repayment to " + to, amount:a, currency:"DOP", rd:0, kind:"transfer", status:"Aprobada", cat:"other", source:"manual", excluded:false, ts:Date.now(), note:"RD$" + a + " paid back; not spending", fromSnap:true, own:true, repay:true});
+        if(hit){ var pay = Math.min(a, left(hit)); await db.collection("topay").doc(hit.id).update({pagado:(Number(hit.pagado)||0) + pay, pagos:(hit.pagos||[]).concat([{fecha:dt2, monto:pay}])}); toast(rd(a) + " repayment logged", hit.nombre + (left(hit) - pay > 0.5 ? " · " + rd(left(hit) - pay) + " left" : " · paid off")); }
+        else toast(rd(a) + " repayment logged", "No open debt to " + to + " found"); }]); }
       acts4.push([tab === "tab-loans" ? (out ? "Save as a loan" : "Save as a payment") : out ? "It’s a loan" : "Save", async function(){ if((window.MP_ME&&!window.MP_ME.owner) && window.__gstTr){ window.__gstTr(d, tab, out); return; }
         if(window.__gstTr){ if(!out && window.__patoPay && window.__patoPay(d.person, a, dt2, /bhd/i.test(d.bank||""))) return; window.__gstTr(d, out ? tab : "tab-savings", out); return; }
         await queue(d, tab === "tab-loans" ? (out ? "loan given" : "loan payment received") : ""); toast("Saved", "It’s added within the hour"); }]);
