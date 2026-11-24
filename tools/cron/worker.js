@@ -273,7 +273,7 @@ const RADAR_UNTIL = "2026-12-15";   // stops by itself
 async function radar(env, d) {
   const day = iso(new Date(Date.now() - 4 * 3600e3));
   if (day > RADAR_UNTIL || !(await pref(env, "radar"))) return "radar off";
-  const kv = env.LIMITS, open = new Set((d.ordenes || []).map(o => String(o.t || o.sym || "").toUpperCase())); let sent = 0;
+  const kv = env.LIMITS, open = new Set((d.ordenes || []).map(o => String(o.t || o.sym || "").toUpperCase())), hits = [];
   for (const [sym, usd] of Object.entries(RADAR)) {
     if (open.has(sym)) continue;   // you already have a limit order for it
     const r = await fetch(`https://query1.finance.yahoo.com/v8/finance/chart/${sym}?interval=1d&range=1mo`, { headers: { "user-agent": "Mozilla/5.0" } });
@@ -285,11 +285,15 @@ async function radar(env, d) {
     if (dd > -0.02) { await kv.delete(ak); continue; }
     if ((dd <= -0.04 || px < avg) && !(await kv.get(ak))) {
       const lim = Math.floor(px * 0.997 * 100) / 100, sh = Math.floor(usd / lim * 10000) / 10000;
-      await push(env, `${sym} pulled back ${(Math.abs(dd) * 100).toFixed(1)}%`, `Limit US$${lim.toFixed(2)} · about ${sh} shares for US$${usd.toLocaleString("en-US")}`, APP + "#stocks", "radar-" + sym);
-      await kv.put(ak, "1", { expirationTtl: 20 * 3600 }); sent++;
+      hits.push({ sym, dd, lim, sh, usd }); await kv.put(ak, "1", { expirationTtl: 20 * 3600 });
     }
   }
-  return "radar sent: " + sent;
+  if (hits.length) {   // one push per run; says plainly these are buy ideas, not holdings
+    const one = hits.length === 1 ? hits[0] : null;
+    await push(env, one ? `Dec 1 pick · ${one.sym} dipped ${(Math.abs(one.dd) * 100).toFixed(1)}%` : `Dec 1 picks · ${hits.length} dipped`,
+      one ? `Not bought yet. Limit US$${one.lim.toFixed(2)} · about ${one.sh} shares for US$${one.usd.toLocaleString("en-US")}` : "Not bought yet. " + hits.map(h => `${h.sym} limit US$${h.lim.toFixed(2)}`).join(" · "), APP + "#stocks", "radar");
+  }
+  return "radar sent: " + hits.length;
 }
 
 // "Expected income is late": an expected date (config fijos) passed with no matching payment logged. Once per date, checked every morning with the loan reminders.
