@@ -11,7 +11,7 @@
   var tt = null, toast = function(t, s, warn){ var el = $("toast"); if (!el) return;
     $("toastT").textContent = t; $("toastS").textContent = s || ""; $("toastUndo").hidden = true; el.classList.toggle("warn", !!warn);
     el.classList.remove("on"); void el.offsetWidth; el.classList.add("on"); clearTimeout(tt); tt = setTimeout(function(){ el.classList.remove("on"); }, 3200); };
-  function paint(){
+  var paint = function(){
     var a = ibkr && ibkr.at ? Date.parse(ibkr.at) : 0;
     $("saStT").textContent = a ? "Updated " + tm(a) : "Not updated yet";
     $("saKey").hidden = !!key; $("saSt").hidden = !key;
@@ -20,8 +20,8 @@
     else if (meta && meta.lastRunAt) $("saGmT").textContent = "Last updated " + tm(meta.lastRunAt);
     else if (meta && meta.lastSync) $("saGmT").textContent = "Last updated " + new Date(meta.lastSync + "T12:00").toLocaleDateString("en-US", { month: "short", day: "numeric" });
     else $("saGmT").textContent = "Not updated yet";
-    $("saGm").disabled = !!(req && (req.status === "pending" || req.status === "running"));
-  }
+    $("saGm").disabled = false;
+  };
   async function quote(sym){
     var r = await fetch("https://finnhub.io/api/v1/quote?symbol=" + encodeURIComponent(sym) + "&token=" + encodeURIComponent(key), { cache: "no-store" });
     if (r.status === 401 || r.status === 403) throw new Error("key");
@@ -75,11 +75,26 @@
     try { await db.doc("prefs/keys").set({ finnhub: k, at: Date.now() }); } catch (e) {}
     paint(); refresh();
   };
+  // Nov 25: Refresh reads the bank emails right now through the Gmail watcher (pato-mail), no Claude sync needed
+  var MAIL = "https://pato-mail.marcoferrando.workers.dev", watchAt = 0, working = false;
+  async function mail(path){
+    var tok = window.mpIdToken ? await window.mpIdToken() : ""; if (!tok) throw new Error("sign_in");
+    var r = await fetch(MAIL + path, { method: "POST", headers: { "content-type": "application/json", authorization: "Bearer " + tok }, body: "{}" });
+    var j = await r.json().catch(function(){ return {}; }); if (!r.ok) throw new Error(j.error || ("http " + r.status)); return j;
+  }
+  function stamp(ms){ if (!ms || !db) return; watchAt = ms;
+    var d = { lastRunAt: ms, lastSync: new Date(ms - 4 * 36e5).toISOString().slice(0, 10) };
+    db.doc("spendMeta/sync").update(d).catch(function(){}); paint(); }
+  var paint0 = paint; paint = function(){ paint0();
+    if (working) { $("saGmT").textContent = "Reading bank emails…"; $("saGm").disabled = true; return; }
+    if (watchAt) { $("saGmT").textContent = "Last updated " + tm(watchAt); $("saGm").disabled = false; } };
   $("saGm").onclick = async function(){
-    req = { status: "pending", at: Date.now() }; paint();
-    try { await db.doc("spendMeta/syncReq").set(req); toast("Refresh asked", "It runs within the hour"); }
-    catch (e) { req = null; paint(); toast("Couldn’t ask for an update", "Try again", true); }
+    if (working) return; working = true; paint();
+    try { var j = await mail("/refresh"); working = false; stamp(j.watchAt || Date.now());
+      toast(/^[1-9]\d* alert/.test(j.result || "") ? "New bank activity logged" : j.result === "gmail not connected" ? "Gmail isn’t connected" : "Up to date", "", /not connected/.test(j.result || "")); }
+    catch (e) { working = false; paint(); toast("Couldn’t refresh", "Try again in a minute", true); }
   };
+  setTimeout(function(){ mail("/status").then(function(j){ if (j && j.watchAt) stamp(j.watchAt); }).catch(function(){}); }, 2500);
   (async function(){
     if (!window.claude) return;
     db = await window.claude.use("db"); if (!db) return;

@@ -234,6 +234,7 @@ async function watch(env) {
   const G = "https://gmail.googleapis.com/gmail/v1/users/me/messages";
   let l; try { l = await google(G + "?maxResults=15&q=" + encodeURIComponent(WATCH_Q + " after:" + Math.max(st.since, now - 48 * 3600)), at); }
   catch (e) { if (e.status === 401) await env.LIMITS.delete("gm:at:" + uid); throw e; }
+  await env.LIMITS.put("gm:watch:ok", String(Date.now()));   // Nov 25: the app shows this as "Last updated"
   const fresh = (l.messages || []).map(m => m.id).filter(id => !st.seen.includes(id)).slice(0, 4);   // a few per run keeps each run light; the rest comes next run
   if (!fresh.length) return "nothing new";
   const log = JSON.parse((await env.LIMITS.get("gm:alerts:" + uid)) || "[]"); let sent = 0;
@@ -295,7 +296,13 @@ export default {
         let k = await env.LIMITS.get("pay:token"); if (!k || body.reset) { k = b64(crypto.getRandomValues(new Uint8Array(24))).replace(/[+/=]/g, ""); await env.LIMITS.put("pay:token", k); }
         return json({ url: "https://pato-cron.marcoferrando.workers.dev/pay?t=" + k }, 200, origin);
       }
-      if (url.pathname === "/status") { const t = await getTok(env, uid); return json(t ? { connected: true, email: t.email, months: t.months, lastRunAt: t.lastRunAt || 0 } : { connected: false }, 200, origin); }
+      if (url.pathname === "/refresh") {   // Nov 25: Marco's Refresh button reads his bank emails right now (plain code, no Claude)
+        if (uid !== OWNER_UID) return json({ error: "forbidden" }, 403, origin);
+        let r = "";
+        for (let i = 0; i < 3; i++) { await env.LIMITS.delete("gm:watch:last"); r = await watch(env).catch(e => "error " + String(e.message || e).slice(0, 80)); if (!/^[1-9]\d* alert/.test(r)) break; }
+        return json({ result: r, watchAt: Number(await env.LIMITS.get("gm:watch:ok")) || 0 }, 200, origin);
+      }
+      if (url.pathname === "/status") { const t = await getTok(env, uid); return json(t ? { connected: true, email: t.email, months: t.months, lastRunAt: t.lastRunAt || 0, watchAt: Number(await env.LIMITS.get("gm:watch:ok")) || 0 } : { connected: false }, 200, origin); }
       if (url.pathname === "/sync") return json(await sync(env, uid, body), 200, origin);
       if (url.pathname === "/disconnect") {
         const t = await getTok(env, uid);
