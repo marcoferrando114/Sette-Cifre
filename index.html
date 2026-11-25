@@ -5900,7 +5900,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
     const subs = [];
     Object.values(G).forEach(g=>{
       g.sort((a,b)=>a.date.localeCompare(b.date) || (a.ts||0)-(b.ts||0));
-      const last = g[g.length-1], tagged = spKey(last.cat)==="subs";
+      const last = g[g.length-1], tagged = spKey(last.cat)==="subs" || g.some(t=>t.sub);   /* sub:true = a subscription that keeps its own category (gym, Marco Nov 25) */
       if(!tagged && NOT.includes(spKey(last.cat))) return;
       let regular = false;
       if(g.length >= 2){ const per = {}; g.forEach(t=>{ const m = spMKey(t.date); per[m] = (per[m]||0)+1; });
