@@ -4558,7 +4558,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
       // a payment tagged with its league week (late payments) belongs to that Monday only, never to a later one
       const got = entries.filter(e=>e.type!=="out" && !e.extra && norm(e.source)===k) /* extra:true = separate payment, never fills an expected date (Marco, Nov 11) */.map(e=>({d:e.date||t, v:Number(e.amount)||0, s:e.semana||null}));
       pokerOtra.filter(x=>norm(x.source)===k && x.monto>0).forEach(x=>got.push({d:x.fecha, v:x.monto, s:x.semana||null}));
-      pagos.filter(x=>norm(x.nombre)===k).forEach(x=>got.push({d:x.fecha||t, v:Number(x.monto)||0}));
+      pagos.filter(x=>norm(x.nombre)===k && !x.extra).forEach(x=>got.push({d:x.fecha||t, v:Number(x.monto)||0}));
       got.sort((a,b)=>a.d.localeCompare(b.d)).forEach(g => {
         let best = null, bd = Infinity;
         if(g.s){ const o = occ.find(o=>o.date===g.s); if(!o || o.received) return; best = o; }
