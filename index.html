@@ -2190,7 +2190,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261125162000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261125172000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -5689,7 +5689,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
         <b>${fmt(owed)}</b><small>outstanding${oldest ? ` · oldest: ${spEsc(oldest.n)} · ${fmt(oldest.v)}${oldest.d?` since ${fmtDate(oldest.d,false)}`:""}` : ""}</small></button>`;
     $("hTiles").querySelectorAll("[data-go]").forEach(b => b.onclick = () => go(b.dataset.go, b.dataset.to));
     { const bd = $("hBoard"), D = window.__pdBoardData ? window.__pdBoardData() : null; bd.hidden = !D;
-      if(D){ bd.innerHTML = (D.g.length ? `<div class="hb-t">Today in sports</div>` + D.g.map(g => `<div class="hb-r"><span>${spEsc(g.lg)}</span><b>${spEsc(g.nm)}</b><small>${spEsc([g.tm, g.od].filter(Boolean).join(" · "))}</small></div>`).join("") : "") + (D.p.length ? `<div class="hb-t">What the market thinks</div>` + D.p.map(m => `<div class="hb-r"><b>${spEsc(m.q)}</b><em>${m.p}%</em></div>`).join("") : ""); } }
+      if(D){ bd.innerHTML = (D.k ? `<div class="hb-t">Pato's pick</div><div class="hb-r"><b>${spEsc(D.k.txt)}</b></div><div class="hb-r"><small style="white-space:normal">${D.k.sub.indexOf("<b") >= 0 ? D.k.sub : spEsc(D.k.sub)}</small></div>` : "") + (D.g.length ? `<div class="hb-t">Today in sports</div>` + D.g.map(g => `<div class="hb-r"><span>${spEsc(g.lg)}</span><b>${spEsc(g.nm)}</b><small>${spEsc([g.tm, g.od].filter(Boolean).join(" · "))}</small></div>`).join("") : "") + (D.p.length ? `<div class="hb-t">What the market thinks</div>` + D.p.map(m => `<div class="hb-r"><b>${spEsc(m.q)}</b><em>${m.p}%</em></div>`).join("") : ""); } }
     // 4) net worth, small, at the bottom
     const ccE = ccEstimate(), cc = ccE.last ? Math.max(0, ccE.est) : 0, cash = spWallet() || 0;
     $("hNw").innerHTML = `<span>Net worth</span><b>${fmt(sav + cc + cash + owed)}</b>`;
@@ -7959,7 +7959,8 @@ TRACKER DATA:
       var G = (E.games || []).filter(function(g){ return g && g.name; }).slice(0, 3).map(function(g){ var o = g.odds || {}, ml = (o.ml || []).filter(Boolean).join(" / ");
         return {lg: g.league, nm: String(g.name).replace(" at ", " vs "), tm: g.live ? "LIVE" : g.t ? hr(g.t) : "", od: ml || o.line || "", u: ""}; });
       var BADP = /\b(tweets?|posts? on X|how many|followers|views|box office|esports?|League of Legends|Counter-Strike|Valorant|Dota)\b/i; var P = (E.preds || []).filter(function(m){ return !BADP.test(m.t + " " + m.q); }).slice(0, 2).map(function(m){ return {q: m.multi ? m.t : m.q, p: m.p, u: m.u || ""}; });
-      return (G.length || P.length) ? {g: G, p: P} : null; }catch(e){ return null; } };
+      var K = null; try{ var pk0 = pickText(E.pick); if(pk0 && pk0.T){ K = {txt: pk0.txt, sub: pk0.sub + pickMoved(pk0, E.games)}; } }catch(e2){}
+      return (G.length || P.length || K) ? {g: G, p: P, k: K} : null; }catch(e){ return null; } };
   window.ND_OK = function(){ try{ return !!(ND() && MG()); }catch(e){ return false; } };
   window.__pdMakeBoard = function(){ try{ if(ND() && MG()) stories(); }catch(e){} return window.__pdBoard || []; };
 
@@ -8074,10 +8075,12 @@ TRACKER DATA:
   }
   // Pato's pick (Marco Nov 12: "a sports bets pick, do some deep data research"): where ESPN's win model and the betting odds disagree most = value
   // the locked, graded pick from the server (one per day, same for everyone) + Pato's running record
-  function pickCard(PK, G){ var pk = pickText(PK) || (!PK ? pickOf(G) : null); return pk ? '<div class="pd-tip pd-pick"><i>PATO\'S PICK · ' + esc(pk.lg.toUpperCase()) + '</i><p>' + bold(pk.txt) + '</p><small>' + esc(pk.sub) + '</small>' + (pk.rec ? '<div class="pd-rec">' + pk.rec + '</div>' : '') + '</div>' : ''; }
+  function pickMoved(pk, G){ try{ var T = pk && pk.T; if(!T || !T.min) return ""; var g = (G || []).filter(function(x){ return x.ref === T.ref; })[0], cur = g && g.odds && g.odds.ml && g.odds.ml[T.side]; if(cur && impl(cur) != null && impl(T.min) != null && impl(cur) > impl(T.min) + 0.002) return ' <b style="color:#FF9C8F">Line moved to ' + esc(cur) + ', below Pato\'s minimum ' + esc(T.min) + ': skip it.</b>'; }catch(e){} return ""; }
+  function pickCard(PK, G){ var pk = pickText(PK) || (!PK ? pickOf(G) : null); if(pk) pk.sub = (pk.sub || "") + pickMoved(pk, G); return pk ? '<div class="pd-tip pd-pick"><i>PATO\'S PICK · ' + esc(pk.lg.toUpperCase()) + '</i><p>' + bold(pk.txt) + '</p><small>' + (pk.T ? pk.sub : esc(pk.sub)) + '</small>' + (pk.rec ? '<div class="pd-rec">' + pk.rec + '</div>' : '') + '</div>' : ''; }
   function pickText(PK){ if(!PK) return null; var r = PK.rec || {}, T = PK.today, L = PK.last, rec = "";
     if(r.n) rec = '<b>Pato\'s record: ' + r.won + '-' + (r.n - r.won) + ' (' + Math.round(r.won/r.n*100) + '%)</b> · ' + (r.units >= 0 ? "+" : "") + r.units.toFixed(1) + ' units' + (L ? ' · Last: ' + esc(L.team) + ' ' + (L.res === "won" ? "✅" : L.res === "push" ? "➖" : "❌") + (L.score ? ' ' + esc(L.score) : '') : '');
     else rec = 'Pato\'s record starts with this pick. Every pick gets graded.';
+    if(T && !T.none && T.src === "pato") return {lg: T.league || "Sports", txt: T.team + " (" + T.ml + "). " + (T.why || ""), sub: T.game + " · Pato gives them " + T.w + "% against " + T.p + "% in the odds. Worth taking at " + (T.min || T.ml) + " or better; pass if the line is worse. Keep the stake small.", rec: rec, T: T};
     if(T && !T.none) return {lg: T.league || "Sports", txt: "Data lean: " + T.team + " (" + T.ml + "). ESPN's model gives them " + T.w + "%, but the odds only price them at " + T.p + "%. A gap of " + T.edge + " points is what sharp bettors call value." + (T.form ? " They've won " + (T.form.match(/W/g) || []).length + " of their last " + T.form.length + "." : ""), sub: T.game + " · A lean, not a lock: keep the stake small.", rec: rec};
     if(T && T.none) return {lg: "Sports", txt: "No value on today's board: in " + T.seen + (T.seen === 1 ? " game" : " games") + " the odds match what the data says. The best bet on a day like this is no bet.", sub: "Pato checks win models, odds and recent form every drop.", rec: rec};
     return r.n ? {lg: "Sports", txt: "No pick yet today. Pato only picks when the data and the odds disagree.", sub: "Checked every drop.", rec: rec} : null; }

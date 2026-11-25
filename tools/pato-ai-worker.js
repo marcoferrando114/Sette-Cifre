@@ -274,10 +274,32 @@ function choosePick(G) {
   });
   return { best, seen };
 }
-async function patoPick(env, G) {
+// Marco Nov 25: "your sports picks have been bad: a pick valued at +650 that you show at +500 will not hit, and 'based on ESPN's model' is not research". New method: Pato researches the day's games on the web (injuries, rest, matchup, news), writes its OWN win probability, and only picks when that beats the market's no-vig price by a real margin. It also gives the lowest price worth taking, and the app tells you to pass if the line has moved below it.
+const ML_OK = /^(NBA|NFL|MLB|NHL)$/;   // leagues whose results the app can grade
+const amer = p => p <= 0 || p >= 1 ? null : p >= 0.5 ? Math.round(-100 * p / (1 - p)) : Math.round(100 * (1 - p) / p);
+const amStr = n => n == null ? "" : (n > 0 ? "+" : "") + n;
+async function researchPick(env, G, log) {
+  if (!env.ANTHROPIC_KEY) return { best: null, seen: 0 };
+  const C = (G || []).filter(g => g && g.ref && ML_OK.test(g.league || "") && !g.live && g.t && g.t > Date.now() + 45 * 6e4 && g.t < Date.now() + 30 * 36e5 && g.odds && g.odds.ml && impl(g.odds.ml[0]) != null && impl(g.odds.ml[1]) != null && (g.teams || []).length === 2).slice(0, 6);
+  if (!C.length) return { best: null, seen: 0 };
+  const done = (log || []).filter(x => x.res === "won" || x.res === "lost"), hit = done.length >= 10 ? done.filter(x => x.res === "won").length / done.length : null, need = hit != null && hit < 0.45 ? 8 : 5;   // a cold record asks for a bigger edge
+  const rows = C.map((g, i) => { const a = impl(g.odds.ml[0]), b = impl(g.odds.ml[1]), v = a + b, T = g.teams;
+    return i + ". " + g.league + ": " + T[0].n + " (away, " + g.odds.ml[0] + ", market " + Math.round(a / v * 100) + "%) at " + T[1].n + " (home, " + g.odds.ml[1] + ", market " + Math.round(b / v * 100) + "%), tipoff " + new Date(g.t).toISOString().slice(0, 16) + "Z" + (g.inj && g.inj.length ? "; injury report: " + g.inj.map(t => t.team + " out: " + t.out.map(o => o.n + " (" + o.st + ")").join(", ")).join(" | ") : "") + ((g.form || []).length ? "; last five: " + g.form.map(f => f.team + " " + f.r).join(", ") : ""); }).join("\n");
+  const PROMPT = "You are a careful, skeptical sports analyst. Research today's games with web search (injuries and who is actually playing, rest and back-to-backs, travel, matchups, recent form, motivation, credible previews) and estimate YOUR OWN win probability for each side. The betting market is usually right: only disagree when you found a concrete, checkable reason, and never lean on a generic 'model says'. Use the market percentages shown as the baseline. Return ONLY JSON: {\"games\":[{\"i\":<index>,\"away\":<your win % for the away side, integer>,\"home\":<your win % for the home side, integer, away+home=100>,\"conf\":\"low\"|\"med\"|\"high\",\"why\":\"1 or 2 plain sentences naming the specific facts behind your number (who is out, rest, matchup), max 40 words\"}]}\nGAMES (American odds):\n" + rows;
+  const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "content-type": "application/json", "x-api-key": env.ANTHROPIC_KEY, "anthropic-version": "2023-06-01" },
+    body: JSON.stringify({ model: "claude-sonnet-5-5", max_tokens: 3000, tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 4 }], messages: [{ role: "user", content: PROMPT }] }) }).catch(() => null);
+  if (!r || !r.ok) return { best: null, seen: C.length, err: r ? "http " + r.status : "fetch" };
+  const j = await r.json().catch(() => ({})), txt = (j.content || []).filter(c => c.type === "text").map(c => c.text).join("\n"), m = txt.match(/\{[\s\S]*\}/); let o = null; try { o = JSON.parse(m[0]); } catch (e) { return { best: null, seen: C.length, err: "parse" }; }
+  let best = null;
+  (o.games || []).forEach(x => { const g = C[x.i]; if (!g || !x || x.conf === "low") return; const a = impl(g.odds.ml[0]), b = impl(g.odds.ml[1]), v = a + b, mk = [a / v * 100, b / v * 100], est = [Number(x.away), Number(x.home)]; if (!est.every(isFinite) || Math.abs(est[0] + est[1] - 100) > 2) return;
+    [0, 1].forEach(i => { const ml = parseFloat(g.odds.ml[i]), e = est[i] - mk[i]; if (!(e >= need) || est[i] < 45 || ml < -250 || ml > 260) return; const sc = e * (x.conf === "high" ? 1.25 : 1);
+      if (!best || sc > best.sc) { const T = g.teams[i], minP = (est[i] - 2) / 100; best = { sc, side: i, team: T.n || "", ab: T.ab || "", ml: String(g.odds.ml[i]), w: Math.round(est[i]), p: Math.round(mk[i]), edge: Math.round(e), why: String(x.why || "").slice(0, 260), conf: x.conf || "med", fair: amStr(amer(est[i] / 100)), min: amStr(amer(minP)), game: g.name || g.short || "", league: g.league, t: g.t, ref: g.ref, src: "pato" }; } }); });
+  return { best, seen: C.length };
+}
+async function patoPick(env, G, research) {   // research=true only from its own build step: the web research takes a while, so it never runs inside the main build
   if (!env.LIMITS) return null;
   const day = drDay(), k = "pk1:" + day; let log = JSON.parse((await env.LIMITS.get("pklog1")) || "[]"), today = JSON.parse((await env.LIMITS.get(k)) || "null"), dirty = false;
-  if (!today) { const c = choosePick(G); if (c.best) { today = Object.assign({ day }, c.best); delete today.sc; await env.LIMITS.put(k, JSON.stringify(today), { expirationTtl: 172800 }); log = log.filter(x => x.day !== day).concat([today]).slice(-120); dirty = true; } else if (c.seen) today = { day, none: true, seen: c.seen }; }
+  if (!today) { const lk = await env.LIMITS.get("pkn:" + day).catch(() => null); const c = !research ? { best: null, seen: lk ? Number(lk) || 0 : 0 } : lk ? { best: null, seen: Number(lk) || 0 } : await researchPick(env, G, log); if (research && !c.err && !lk && !c.best) await env.LIMITS.put("pkn:" + day, String(c.seen || 0), { expirationTtl: 6 * 3600 }).catch(() => 0); if (c.best) { today = Object.assign({ day }, c.best); delete today.sc; await env.LIMITS.put(k, JSON.stringify(today), { expirationTtl: 172800 }); log = log.filter(x => x.day !== day).concat([today]).slice(-120); dirty = true; } else if (c.seen) today = { day, none: true, seen: c.seen }; }
   let n = 0; for (const x of log) {   // grade finished games (a few per call)
     if (x.res || !x.ref || !x.t || Date.now() - x.t < 2.5 * 3600e3 || n >= 4) continue; n++;
     const [path, id] = x.ref.split("|"), f = await cached("https://site.api.espn.com/apis/site/v2/sports/" + path + "/summary?event=" + id, 1800, "json").catch(() => null);
@@ -888,6 +910,7 @@ async function imagesFor(env, b, cap) {   // each story's own full-size photo an
 async function finishSteps(env, E, key) {
   const x = E.x || (E.x = {}), save = () => env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }).catch(() => 0);
   if (!x.img) { FN = 0; await imagesFor(env, E.b, 12); x.img = imgList(E.b).length ? 0 : 1; await save(); if (!x.img) return; }
+  if (!x.pk) { x.pk = 1; await save(); try { const pk2 = await patoPick(env, E.b.games, true); if (pk2) { E.b.pick = pk2; await save(); } } catch (e) {} }   // Pato's own researched pick, in its own step
   if (!x.st) { x.st = 1; for (const kd of ["mistake", "playbook", "model"]) { if (!E.b[kd]) { try { E.b[kd] = await storyOf(env, kd, Date.now()); } catch (e) {} } } await save(); }   // the three story tabs
   if (!x.logo) { x.logo = 1; if (E.b.cotd && !E.b.cotd.logo) E.b.cotd.logo = await logoFor(E.b.cotd).catch(() => ""); await save(); }   // the logo travels inside the edition, so it is never half-loaded
   if (!x.wk) { for (const it of [E.b.cotd, E.b.ceo]) { if (it && !it.img) { const w = await wikiImg(env, it.name || "").catch(() => ""); if (w) it.img = w; } } x.wk = 1; await save(); }   // Company of the day and the founder always get a real photo from Wikipedia/Commons (Marco Nov 17)
@@ -996,7 +1019,7 @@ async function repairEd(env, E, q) {   // one repair round: swap in the next bes
   x.done = 0; x.hd = 0; E.st = "built"; return acts;
 }
 async function advance(env, idx) {   // one step per call (every cron tick, or every phone request while no cron has done it): build, finish, check, repair, publish or hold
-  const key = "ed9v:" + idx; let E = await env.LIMITS.get(key, "json").catch(() => null); if (E && E.pub !== undefined) return E;
+  const key = "ed9w:" + idx; let E = await env.LIMITS.get(key, "json").catch(() => null); if (E && E.pub !== undefined) return E;
   await loadHL(env);
   if (!E || !E.b) { const b = await buildEdition(env, idx); if (Object.keys(b.cats).length < 2) { await env.LIMITS.put("edh:" + idx, JSON.stringify({ at: Date.now(), level: "hard", reasons: ["could not build: too few stories"], pub: false }), { expirationTtl: 172800 }).catch(() => 0); return null; }
     E = { at: Date.now(), bat: Date.now(), st: "built", b, x: {}, tries: 0 }; await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }); await saveHL(env).catch(() => 0); return E; }
@@ -1019,7 +1042,7 @@ async function advance(env, idx) {   // one step per call (every cron tick, or e
   await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }); return E;
 }
 async function getEdition(env, force, dbg, ctx) {   // what a phone gets: this drop's edition once it has passed the check, otherwise the last good one (never a broken one)
-  const idx = dropIdx(Date.now()), key = "ed9v:" + idx, kv = env.LIMITS; let E = kv ? await kv.get(key, "json").catch(() => null) : null;
+  const idx = dropIdx(Date.now()), key = "ed9w:" + idx, kv = env.LIMITS; let E = kv ? await kv.get(key, "json").catch(() => null) : null;
   if (E && E.pub) { if (kv && E.b && !E.fx3) { E.fx3 = 1; try { const c = E.b.ceo; if (c && c.founder && c.name) { const w = await wikiImg(env, c.name, true).catch(() => ""); if (w) { c.img = w; c.vf = 4; } } await clearHeads(env, E.b); await kv.put(key, JSON.stringify(E), { expirationTtl: 172800 }); } catch (e) {} }   // one-time repair of an edition published before these rules: the founder's own photo, clearer headlines
     const o = finalize(E.b); o.fin = 1; if (dbg) { o._dbg = E.b._dbg; o._q = E.q; o._log = E.log; } return o; }
   let L = null; try { const pt = kv && await kv.get("edpub", "json"); if (pt) L = await kv.get(pt.key, "json"); } catch (e) { L = null; }
