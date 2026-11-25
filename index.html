@@ -2190,7 +2190,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261125203000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261125210000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -7902,14 +7902,14 @@ TRACKER DATA:
         (autoSet.indexOf(k) >= 0 && why[k] ? '<div class="pd-m" style="font-style:italic">Added by Pato because ' + why[k] + '.</div>' : '') + (kfBox(it) || plain(it) || know(k)) + jgBox(it) + fyBox(notes[k] || (ownT(it) + (it.fy || "")))}); });
     TK.body = takeBody(tk, big, E.games || [], MV && MV.t.replace("Big move · ", ""), E.pick);
     // 5. Company of the day (+ the startups rising today), anywhere in the world (Marco Nov 14)
-    var CD = E.cotd;
+    var CD = E.cotd, CD1 = function(t){ t = String(t || "").trim(); var m = t.match(/^[^.!?]+[.!?]/); return m && m[0].length >= 30 ? m[0].trim() : t; };   // Marco Nov 25: Company of the day was too many lines; one sentence per box
     if(CD && CD.name){ var lg = CD.logo ? CD.logo : CD.tk ? "https://assets.parqet.com/logos/symbol/" + encodeURIComponent(CD.tk) + "?format=png" : CD.dom ? "https://www.google.com/s2/favicons?domain=" + encodeURIComponent(CD.dom) + "&sz=128" : "", RIS = (E.rising || []).slice(0, 2);
       L.push({id: ed + ":cotd:" + CD.name, cls: "cotd", news: 1, t: MG() ? "Startups" : "Company of the day", w: "today", nav: MG() ? "🚀 Startups" : "⭐ Company of the day", ord: MG() ? 4 : 0, fk: "cotd", u: CD.u, pic: CD.u, ph: CD.h, ps: CD.s, logo: lg, sh: {k: "Company of the day", h: CD.name + ": " + CD.does, s: CD.s || "Pato", u: CD.u || ""},
         body: '<div class="pd-k">⭐ COMPANY OF THE DAY</div><div class="pd-co">' + (lg ? '<span class="pd-colg"><img src="' + esc(lg) + '" alt="" onerror="this.parentNode.innerHTML=\'<b>' + esc(CD.name.slice(0, 2).toUpperCase()) + '</b>\'"></span>' : '') + '<div><div class="pd-h1" style="margin:0">' + esc(CD.name) + '</div><div class="pd-m" style="margin-top:4px">' + esc([CD.tk, CD.country, CD.kind === "private" ? "Private company" : "Public company"].filter(Boolean).join(" · ")) + '</div></div></div>' +
-          '<div class="pd-m" style="margin-top:12px;font-size:1rem;color:#fff">' + esc(CD.does) + '</div>' + (CD.num && CD.num.length ? '<div class="pd-know"><i>BY THE NUMBERS</i><ul>' + CD.num.map(function(t){ return '<li>' + bold(t) + '</li>'; }).join("") + '</ul></div>' : '') +
-          '<div class="pd-know"><i>WHY BULLISH</i><ul>' + CD.bull.map(function(t){ return '<li>' + esc(t) + '</li>'; }).join("") + '</ul></div>' +
-          '<div class="pd-know"><i>WHY PATO PICKED IT TODAY</i>' + kp(CD.why) + '</div><div class="pd-know"><i>NOT PRICED IN YET</i>' + kp(CD.unp) + '</div>' + (CD.risk ? '<div class="pd-know"><i>MAIN RISK</i>' + kp(CD.risk) + '</div>' : '') +
-          (RIS.length ? '<div class="pd-h1" style="font-size:1.1rem;margin-top:22px">Also rising today</div>' + RIS.map(function(it){ return '<a class="pd-r2 pd-pm pd-lr" data-u="' + esc(it.u) + '"><div class="pd-pmq">' + esc(it.h) + '</div>' + ((it.pills || []).length ? '<div class="pd-chips">' + it.pills.map(function(p){ return '<span>' + esc(p) + '</span>'; }).join("") + '</div>' : '') + '<div class="pd-lrm">' + esc(it.s) + ' · ' + ago(it.t) + ' ago</div></a>'; }).join("") : '') +
+          '<div class="pd-m" style="margin-top:12px;font-size:1rem;color:#fff">' + esc(CD.does) + '</div>' + (CD.num && CD.num.length ? '<div class="pd-know"><i>BY THE NUMBERS</i><ul>' + CD.num.slice(0, 3).map(function(t){ return '<li>' + bold(t) + '</li>'; }).join("") + '</ul></div>' : '') +
+          '<div class="pd-know"><i>WHY BULLISH</i><ul>' + CD.bull.slice(0, 2).map(function(t){ return '<li>' + esc(t) + '</li>'; }).join("") + '</ul></div>' +
+          '<div class="pd-know"><i>NOT PRICED IN YET</i>' + kp(CD1(CD.unp)) + '</div>' + (CD.risk ? '<div class="pd-know"><i>MAIN RISK</i>' + kp(CD1(CD.risk)) + '</div>' : '') +
+          (RIS.length && !MG() ? '<div class="pd-h1" style="font-size:1.1rem;margin-top:22px">Also rising today</div>' + RIS.map(function(it){ return '<a class="pd-r2 pd-pm pd-lr" data-u="' + esc(it.u) + '"><div class="pd-pmq">' + esc(it.h) + '</div>' + ((it.pills || []).length ? '<div class="pd-chips">' + it.pills.map(function(p){ return '<span>' + esc(p) + '</span>'; }).join("") + '</div>' : '') + '<div class="pd-lrm">' + esc(it.s) + ' · ' + ago(it.t) + ' ago</div></a>'; }).join("") : '') +
           '<div class="pd-m" style="margin-top:14px">Pato\'s view, not financial advice.</div>'}); }
     // 6. Predictions: ONE poll
     var GAMEP = /\b(esports?|e-sports?|League of Legends|LoL|Dota ?2?|CS ?2|CS:GO|Counter-Strike|Valorant|Overwatch|Fortnite|Call of Duty|Rocket League|StarCraft|Hearthstone|Mobile Legends|MLBB|Apex Legends|Rainbow Six|Twitch|Minecraft|Roblox|gamers?|LCK|LPL|LEC|BLAST|ESL|IEM|VCT)\b/i;
