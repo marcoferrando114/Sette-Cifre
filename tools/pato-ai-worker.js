@@ -219,6 +219,7 @@ async function games() {
         score: w + SPRIO(path) + (nat ? 2 : 0) + ranked + (/final|championship|playoff|semifinal|title|main event|derby|clasico|clásico/i.test(note + " " + e.name) ? 4 : 0) + bigExtra(path, e, note) });
     });
   }).catch(() => null)));
+  out.forEach(g => { g.grp = /^tennis/.test(g.path) ? "tennis" : /^soccer/.test(g.path) ? "soccer" : /^mma/.test(g.path) ? "ufc" : /^(football\/nfl|basketball\/nba|baseball\/mlb)/.test(g.path) ? "us" : ""; });   // which kind of pick this game can be (Marco Nov 25: picks for soccer, UFC and tennis too; no NHL)
   const srt = out.sort((a, b) => b.score - a.score), seenL = new Set(), one = [], more = [];   // best game of each league first, so the day mixes sports (Marco Nov 11)
   srt.forEach(g => { if (seenL.has(g.league)) more.push(g); else { seenL.add(g.league); one.push(g); } });
   const tnm = srt.filter(g => g.tn).slice(0, 4), top = Array.from(new Set(one.concat(tnm, more))).slice(0, 10);   // Marco Nov 20: the best tennis matches always make the list
@@ -248,8 +249,8 @@ async function gameInfo(g) {
     // away team first everywhere, like g.teams
     const nm = x => ((x || {}).shortDisplayName || (x || {}).displayName || (x || {}).abbreviation || "");
     const ord = g.teams.map(t => t.n), side = n => { const i = ord.indexOf(n); return i < 0 ? 9 : i; };
-    const pc = (b.pickcenter || [])[0], o = pc ? { line: pc.details || "", ou: pc.overUnder || "", ml: [(pc.awayTeamOdds || {}).moneyLine, (pc.homeTeamOdds || {}).moneyLine], by: (pc.provider || {}).name || "" } : g.odds0;
-    if (o && (o.line || o.ou || o.ml.some(v => v != null))) g.odds = { line: String(o.line || ""), ou: o.ou ? String(o.ou) : "", ml: o.ml.map(v => v == null ? "" : (Number(v) > 0 ? "+" : "") + v), by: o.by };
+    const pc = (b.pickcenter || [])[0], o = pc ? { line: pc.details || "", ou: pc.overUnder || "", ml: [(pc.awayTeamOdds || {}).moneyLine, (pc.homeTeamOdds || {}).moneyLine], dr: (pc.drawOdds || {}).moneyLine, by: (pc.provider || {}).name || "" } : g.odds0;
+    if (o && (o.line || o.ou || o.ml.some(v => v != null))) g.odds = { line: String(o.line || ""), ou: o.ou ? String(o.ou) : "", ml: o.ml.map(v => v == null ? "" : (Number(v) > 0 ? "+" : "") + v), dr: o.dr != null && o.dr !== "" ? (Number(o.dr) > 0 ? "+" : "") + o.dr : "", by: o.by };
     const pr = b.predictor || {}, pa = parseFloat((pr.awayTeam || {}).gameProjection), ph = parseFloat((pr.homeTeam || {}).gameProjection);
     if (isFinite(pa) && isFinite(ph) && pa + ph > 50) g.win = [Math.round(pa), Math.round(ph)];
     const form = (b.lastFiveGames || []).map(t => ({ team: nm(t.team), r: (t.events || []).slice(0, 5).map(e => (e.gameResult || "").charAt(0)).filter(Boolean).join("") })).filter(t => t.team && t.r).sort((x, y) => side(x.team) - side(y.team));
@@ -275,45 +276,66 @@ function choosePick(G) {
   return { best, seen };
 }
 // Marco Nov 25: "your sports picks have been bad: a pick valued at +650 that you show at +500 will not hit, and 'based on ESPN's model' is not research". New method: Pato researches the day's games on the web (injuries, rest, matchup, news), writes its OWN win probability, and only picks when that beats the market's no-vig price by a real margin. It also gives the lowest price worth taking, and the app tells you to pass if the line has moved below it.
-const ML_OK = /^(NBA|NFL|MLB)$/;   // leagues whose results the app can grade
+const GRPS = ["us", "soccer", "ufc", "tennis"];
 const amer = p => p <= 0 || p >= 1 ? null : p >= 0.5 ? Math.round(-100 * p / (1 - p)) : Math.round(100 * (1 - p) / p);
 const amStr = n => n == null ? "" : (n > 0 ? "+" : "") + n;
-async function researchPick(env, G, log) {
-  if (!env.ANTHROPIC_KEY) return { best: null, seen: 0 };
-  const C = (G || []).filter(g => g && g.ref && ML_OK.test(g.league || "") && !g.live && g.t && g.t > Date.now() + 45 * 6e4 && g.t < Date.now() + 30 * 36e5 && g.odds && g.odds.ml && impl(g.odds.ml[0]) != null && impl(g.odds.ml[1]) != null && (g.teams || []).length === 2).slice(0, 6);
-  if (!C.length) return { best: null, seen: 0 };
+async function researchPick(env, G, log, have) {   // have = kinds already picked today; returns the best pick of each missing kind
+  if (!env.ANTHROPIC_KEY) return { picks: [], seen: 0 };
+  const now = Date.now(), per = { us: 3, soccer: 3, ufc: 2, tennis: 3 }, cnt = {}, taken = new Set((log || []).filter(x => x.day === drDay()).map(x => x.ref));
+  const C = (G || []).filter(g => g && g.ref && g.grp && !have.includes(g.grp) && !taken.has(g.ref) && !g.live && g.t && g.t > now + 45 * 6e4 && g.t < now + 30 * 36e5 && g.odds && g.odds.ml && impl(g.odds.ml[0]) != null && impl(g.odds.ml[1]) != null && (g.grp !== "soccer" || impl(g.odds.dr) != null) && (g.teams || []).length === 2 && (cnt[g.grp] = (cnt[g.grp] || 0) + 1) <= per[g.grp]).slice(0, 10);
+  if (!C.length) return { picks: [], seen: 0 };
   const done = (log || []).filter(x => x.res === "won" || x.res === "lost"), hit = done.length >= 10 ? done.filter(x => x.res === "won").length / done.length : null, need = hit != null && hit < 0.45 ? 8 : 5;   // a cold record asks for a bigger edge
-  const rows = C.map((g, i) => { const a = impl(g.odds.ml[0]), b = impl(g.odds.ml[1]), v = a + b, T = g.teams;
-    return i + ". " + g.league + ": " + T[0].n + " (away, " + g.odds.ml[0] + ", market " + Math.round(a / v * 100) + "%) at " + T[1].n + " (home, " + g.odds.ml[1] + ", market " + Math.round(b / v * 100) + "%), tipoff " + new Date(g.t).toISOString().slice(0, 16) + "Z" + (g.inj && g.inj.length ? "; injury report: " + g.inj.map(t => t.team + " out: " + t.out.map(o => o.n + " (" + o.st + ")").join(", ")).join(" | ") : "") + ((g.form || []).length ? "; last five: " + g.form.map(f => f.team + " " + f.r).join(", ") : ""); }).join("\n");
-  const PROMPT = "You are a careful, skeptical sports analyst. Research today's games with web search (injuries and who is actually playing, rest and back-to-backs, travel, matchups, recent form, motivation, credible previews) and estimate YOUR OWN win probability for each side. The betting market is usually right: only disagree when you found a concrete, checkable reason, and never lean on a generic 'model says'. Use the market percentages shown as the baseline. Return ONLY JSON: {\"games\":[{\"i\":<index>,\"away\":<your win % for the away side, integer>,\"home\":<your win % for the home side, integer, away+home=100>,\"conf\":\"low\"|\"med\"|\"high\",\"why\":\"1 or 2 plain sentences naming the specific facts behind your number (who is out, rest, matchup), max 40 words\"}]}\nGAMES (American odds):\n" + rows;
+  const mk3 = g => { const a = impl(g.odds.ml[0]), b = impl(g.odds.ml[1]), d = g.grp === "soccer" ? impl(g.odds.dr) : 0, v = a + b + d; return [a / v * 100, b / v * 100, d / v * 100]; };
+  const rows = C.map((g, i) => { const m = mk3(g), T = g.teams, soc = g.grp === "soccer";
+    return i + ". [" + g.grp + "] " + g.league + ": " + T[0].n + " (" + (soc || g.grp === "us" ? "away, " : "") + g.odds.ml[0] + ", market " + Math.round(m[0]) + "%) vs " + T[1].n + " (" + (soc || g.grp === "us" ? "home, " : "") + g.odds.ml[1] + ", market " + Math.round(m[1]) + "%)" + (soc ? ", draw " + g.odds.dr + " (market " + Math.round(m[2]) + "%)" : "") + ", start " + new Date(g.t).toISOString().slice(0, 16) + "Z" + (g.inj && g.inj.length ? "; injury report: " + g.inj.map(t => t.team + " out: " + t.out.map(o => o.n + " (" + o.st + ")").join(", ")).join(" | ") : "") + ((g.form || []).length ? "; last five: " + g.form.map(f => f.team + " " + f.r).join(", ") : ""); }).join("\n");
+  const PROMPT = "You are a careful, skeptical sports analyst. Research these games with web search (injuries and who is actually playing, rest and congestion, travel, surface or style matchups, recent form, motivation, credible previews) and estimate YOUR OWN win probability for each side. The betting market is usually right: only disagree when you found a concrete, checkable reason, and never lean on a generic 'model says'. Use the market percentages shown as the baseline. For [soccer] games give three numbers that add to 100 (first team, draw, second team); for all others draw is 0. Return ONLY JSON: {\"games\":[{\"i\":<index>,\"a\":<win % first team, integer>,\"d\":<draw %, integer>,\"b\":<win % second team, integer>,\"conf\":\"low\"|\"med\"|\"high\",\"why\":\"1 or 2 plain sentences naming the specific facts behind your number, max 40 words\"}]}\nGAMES (American odds):\n" + rows;
   const r = await fetch("https://api.anthropic.com/v1/messages", { method: "POST", headers: { "content-type": "application/json", "x-api-key": env.ANTHROPIC_KEY, "anthropic-version": "2023-06-01" },
-    body: JSON.stringify({ model: "claude-sonnet-5-5", max_tokens: 3000, tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 4 }], messages: [{ role: "user", content: PROMPT }] }) }).catch(() => null);
-  if (!r || !r.ok) return { best: null, seen: C.length, err: r ? "http " + r.status : "fetch" };
-  const j = await r.json().catch(() => ({})), txt = (j.content || []).filter(c => c.type === "text").map(c => c.text).join("\n"), m = txt.match(/\{[\s\S]*\}/); let o = null; try { o = JSON.parse(m[0]); } catch (e) { return { best: null, seen: C.length, err: "parse" }; }
-  let best = null;
-  (o.games || []).forEach(x => { const g = C[x.i]; if (!g || !x || x.conf === "low") return; const a = impl(g.odds.ml[0]), b = impl(g.odds.ml[1]), v = a + b, mk = [a / v * 100, b / v * 100], est = [Number(x.away), Number(x.home)]; if (!est.every(isFinite) || Math.abs(est[0] + est[1] - 100) > 2) return;
-    [0, 1].forEach(i => { const ml = parseFloat(g.odds.ml[i]), e = est[i] - mk[i]; if (!(e >= need) || est[i] < 45 || ml < -250 || ml > 260) return; const sc = e * (x.conf === "high" ? 1.25 : 1);
-      if (!best || sc > best.sc) { const T = g.teams[i], minP = (est[i] - 2) / 100; best = { sc, side: i, team: T.n || "", ab: T.ab || "", ml: String(g.odds.ml[i]), w: Math.round(est[i]), p: Math.round(mk[i]), edge: Math.round(e), why: String(x.why || "").slice(0, 260), conf: x.conf || "med", fair: amStr(amer(est[i] / 100)), min: amStr(amer(minP)), game: g.name || g.short || "", league: g.league, t: g.t, ref: g.ref, src: "pato" }; } }); });
-  return { best, seen: C.length };
+    body: JSON.stringify({ model: "claude-sonnet-5-5", max_tokens: 4500, tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 6 }], messages: [{ role: "user", content: PROMPT }] }) }).catch(() => null);
+  if (!r || !r.ok) return { picks: [], seen: C.length, err: r ? "http " + r.status : "fetch" };
+  const j = await r.json().catch(() => ({})), txt = (j.content || []).filter(c => c.type === "text").map(c => c.text).join("\n"), m = txt.match(/\{[\s\S]*\}/); let o = null; try { o = JSON.parse(m[0]); } catch (e) { return { picks: [], seen: C.length, err: "parse" }; }
+  const best = {};
+  (o.games || []).forEach(x => { const g = C[x.i]; if (!g || !x || x.conf === "low") return; const mk = mk3(g), est = [Number(x.a), Number(x.b)], dd = g.grp === "soccer" ? Number(x.d) : 0; if (!est.every(isFinite) || !isFinite(dd) || Math.abs(est[0] + est[1] + dd - 100) > 2) return;
+    [0, 1].forEach(i => { const ml = parseFloat(g.odds.ml[i]), e = est[i] - mk[i], soc = g.grp === "soccer"; if (!(e >= need) || est[i] < (soc ? 33 : 45) || ml < -300 || ml > (soc ? 420 : 260)) return; const sc = e * (x.conf === "high" ? 1.25 : 1);
+      if (!best[g.grp] || sc > best[g.grp].sc) { const T = g.teams[i], minP = (est[i] - 2) / 100; best[g.grp] = { sc, side: i, grp: g.grp, team: T.n || "", ab: T.ab || "", ml: String(g.odds.ml[i]), w: Math.round(est[i]), p: Math.round(mk[i]), edge: Math.round(e), why: String(x.why || "").slice(0, 260), conf: x.conf || "med", fair: amStr(amer(est[i] / 100)), min: amStr(amer(minP)), game: g.name || g.short || "", league: g.league, t: g.t, ref: g.ref, src: "pato" }; } }); });
+  return { picks: Object.values(best), seen: C.length };
 }
 async function patoPick(env, G, research) {   // research=true only from its own build step: the web research takes a while, so it never runs inside the main build
   if (!env.LIMITS) return null;
-  const day = drDay(), k = "pk1:" + day; let log = JSON.parse((await env.LIMITS.get("pklog1")) || "[]"), today = JSON.parse((await env.LIMITS.get(k)) || "null"), dirty = false;
-  if (!today) { const lk = await env.LIMITS.get("pkn:" + day).catch(() => null); const c = !research ? { best: null, seen: lk ? Number(lk) || 0 : 0 } : lk ? { best: null, seen: Number(lk) || 0 } : await researchPick(env, G, log); if (research && !c.err && !lk && !c.best) await env.LIMITS.put("pkn:" + day, String(c.seen || 0), { expirationTtl: 6 * 3600 }).catch(() => 0); if (c.best) { today = Object.assign({ day }, c.best); delete today.sc; await env.LIMITS.put(k, JSON.stringify(today), { expirationTtl: 172800 }); log = log.filter(x => x.day !== day).concat([today]).slice(-120); dirty = true; } else if (c.seen) today = { day, none: true, seen: c.seen }; }
+  const day = drDay(); let log = JSON.parse((await env.LIMITS.get("pklog1")) || "[]"), dirty = false;
+  let todays = log.filter(x => x.day === day && x.src === "pato");
+  const have = todays.map(x => x.grp || "us"), h = new Date().getUTCHours(), blk = day + ":" + (h < 16 ? 0 : h < 22 ? 1 : 2), lk = research ? await env.LIMITS.get("pkn:" + blk).catch(() => null) : null;
+  if (research && !lk && GRPS.some(k => !have.includes(k))) {   // once per drop, only for the kinds still missing; a kind already picked today stays locked
+    const c = await researchPick(env, G, log, have).catch(() => ({ picks: [], err: "x" }));
+    if (!c.err) await env.LIMITS.put("pkn:" + blk, "1", { expirationTtl: 6 * 3600 }).catch(() => 0);
+    c.picks.forEach(pk => { delete pk.sc; const t = Object.assign({ day }, pk); log.push(t); todays.push(t); dirty = true; }); log = log.slice(-150);
+  }
+  let today = todays.slice().sort((a, b) => (b.edge || 0) - (a.edge || 0))[0] || null;
+  if (!today) today = { day, none: true, seen: (G || []).length };
   let n = 0; for (const x of log) {   // grade finished games (a few per call)
-    if (x.res || !x.ref || !x.t || Date.now() - x.t < 2.5 * 3600e3 || n >= 4) continue; n++;
-    const [path, id] = x.ref.split("|"), f = await cached("https://site.api.espn.com/apis/site/v2/sports/" + path + "/summary?event=" + id, 1800, "json").catch(() => null);
-    const c = (((f && f.body && f.body.header) || {}).competitions || [])[0] || {}, done = c.status && c.status.type && c.status.type.completed;
+    const gp = x.grp || "us"; if (x.res || !x.ref || !x.t || Date.now() - x.t < (gp === "ufc" ? 6 : 2.5) * 3600e3 || n >= 4) continue; n++;
+    const [path, id] = x.ref.split("|"); let c = null, me = null, them = null;
+    if (gp === "tennis" || gp === "ufc") {   // fights and matches are graded from the day's scoreboard (the summary page is for team games)
+      const d0 = String(x.day || "").replace(/-/g, ""), d1 = new Date(x.t + 864e5).toISOString().slice(0, 10).replace(/-/g, "");
+      for (const d of [d0, d1]) { if (c) break; const sb = await cached("https://site.api.espn.com/apis/site/v2/sports/" + path + "/scoreboard?dates=" + d, 600, "json").catch(() => null);
+        for (const e of ((sb && sb.body && sb.body.events) || [])) { const all = gp === "ufc" ? (String(e.id) === id ? [(e.competitions || [])[0]] : []) : (e.competitions || []).concat((e.groupings || []).flatMap(g2 => g2.competitions || [])).filter(m => String(m.id) === id); if (all[0]) { c = all[0]; break; } } }
+      if (c) { const cs = (c.competitors || []).slice(); if (gp === "ufc") cs.sort((a, b) => (a.homeAway === "away" ? -1 : 0) - (b.homeAway === "away" ? -1 : 0)); me = cs[x.side]; them = cs.find(t => t !== me); }
+    } else {
+      const f = await cached("https://site.api.espn.com/apis/site/v2/sports/" + path + "/summary?event=" + id, 1800, "json").catch(() => null);
+      c = (((f && f.body && f.body.header) || {}).competitions || [])[0] || null;
+      if (c) { me = (c.competitors || []).find(t => t.homeAway === (x.side === 0 ? "away" : "home")); them = (c.competitors || []).find(t => t !== me); }
+    }
+    const done = c && c.status && c.status.type && c.status.type.completed;
     if (!done) { if (Date.now() - x.t > 4 * 864e5) { x.res = "void"; dirty = true; } continue; }
-    const me = (c.competitors || []).find(t => t.homeAway === (x.side === 0 ? "away" : "home")), them = (c.competitors || []).find(t => t !== me);
     if (!me || !them) continue; const a = Number(me.score), b = Number(them.score);
-    x.res = me.winner === true || a > b ? "won" : a === b ? "push" : "lost"; x.score = me.score + "-" + them.score; dirty = true;
+    if (gp === "tennis" || gp === "ufc") { if (me.winner !== true && them.winner !== true) continue; x.res = me.winner === true ? "won" : "lost"; x.score = gp === "tennis" ? (me.linescores || []).map((l, i) => l.value + "-" + (((them.linescores || [])[i] || {}).value)).join(" ") : (me.winner ? "W" : "L"); }
+    else { x.res = me.winner === true || a > b ? "won" : a === b ? (gp === "soccer" ? "lost" : "push") : "lost"; x.score = me.score + "-" + them.score; }   // a draw loses a bet on a soccer team to win
+    dirty = true;
   }
   if (dirty) await env.LIMITS.put("pklog1", JSON.stringify(log));
   const g = log.filter(x => x.res === "won" || x.res === "lost"), won = g.filter(x => x.res === "won").length;
   const units = g.reduce((u, x) => { const m = parseFloat(x.ml); return u + (x.res === "won" ? (m > 0 ? m / 100 : 100 / -m) : -1); }, 0);
   const last = log.filter(x => x.res && x.res !== "void" && x.day !== day).slice(-1)[0] || null;
-  return { today, rec: { n: g.length, won, units: Math.round(units * 100) / 100 }, last: last ? { team: last.team, res: last.res, score: last.score || "", game: last.game } : null };
+  return { today, picks: todays, rec: { n: g.length, won, units: Math.round(units * 100) / 100 }, last: last ? { team: last.team, res: last.res, score: last.score || "", game: last.game } : null };
 }
 // Predictions (Marco Nov 12, picked "Predictions + odds in stories"): Polymarket's public market data, no key. Top markets for your world + the market line inside matching stories.
 const PJ = s => { try { return Array.isArray(s) ? s : JSON.parse(s || "[]"); } catch (e) { return []; } };
