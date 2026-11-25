@@ -4786,9 +4786,13 @@ html:not(.mp-guest) #s-gst{display:none!important}
     const upWho = f => String(lbl(f)).replace(/^Loan · /,"");
     // Marco Nov 25: same person on the same day, or right after on a nearby day (≤3 days): one box, first date, each amount on its own line
     const upKind = o => /^Loan · /.test(String(lbl(o.fuente))) ? "Loan" : o.tope==="deuda" ? "Debt" : "Payment";
-    const schV = []; sch.forEach(o => { const ok = x => !x.aprox && !x.late && upWho(x.fuente)===upWho(o.fuente);
-      const last = schV[schV.length-1], m = !o.aprox && !o.late && (schV.find(x => ok(x) && x.date===o.date) || (last && ok(last) && daysBetween(last.date, o.date) <= 3 ? last : null));
-      if(m){ if(!m.parts) m.parts = [{monto: Number(m.monto||0), k: upKind(m), date: m.date}]; m.parts.push({monto: Number(o.monto||0), k: upKind(o), date: o.date}); m.fuente = upWho(o.fuente); m.monto = Number(m.monto||0) + Number(o.monto||0); m.paid = (m.paid||0) + (o.paid||0); if(o.tope==="deuda") m.tope = "deuda"; } else schV.push({...o}); });
+    // Marco Nov 25: one box per person, even when one amount is an estimate; same kind on the same day (two loans) = one amount
+    const schV = []; sch.forEach(o => { const ok = x => !x.late && upWho(x.fuente)===upWho(o.fuente);
+      const last = schV[schV.length-1], m = !o.late && (schV.find(x => ok(x) && x.date===o.date) || (last && ok(last) && daysBetween(last.date, o.date) <= 3 ? last : null));
+      if(m){ if(!m.parts) m.parts = [{monto: Number(m.monto||0), k: upKind(m), date: m.date, a: !!m.aprox}];
+        const k = upKind(o), same = m.parts.find(p => p.k===k && p.date===o.date);
+        if(same){ same.monto += Number(o.monto||0); same.a = same.a || !!o.aprox; } else m.parts.push({monto: Number(o.monto||0), k, date: o.date, a: !!o.aprox});
+        m.fuente = upWho(o.fuente); m.monto = Number(m.monto||0) + Number(o.monto||0); m.paid = (m.paid||0) + (o.paid||0); if(o.tope==="deuda") m.tope = "deuda"; if(o.aprox) m.aprox = true; } else schV.push({...o}); });
     const UPN = 6, allN = Math.min(schV.length, 12);
     const next = schV.slice(0, upAll ? allN : UPN);
     const lgAvg = ligaAvg().avg;
@@ -4804,7 +4808,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
       // league Mondays: estimated at the weekly average
       const lgRow = o.aprox && o.fuente==="Rakeback de la liga" && lgAvg>0 && !o.late;
       li.querySelector(".amt").textContent = lgRow ? "~" + fmt(lgAvg) : o.aprox ? (Number(o.monto)>0 ? "~" + fmt(o.monto) : "Varies") : fmt(o.monto);
-      if(o.parts && o.parts.length > 1){ const a = li.querySelector(".amt"), kinds = new Set(o.parts.map(p=>p.k)).size > 1; a.classList.add("up-parts"); a.innerHTML = o.parts.map(p => `<span>${kinds ? `<small>${p.k}${p.date!==o.date?" · "+fmtDate(p.date,false):""}</small>` : p.date!==o.date ? `<small>${fmtDate(p.date,false)}</small>` : ""}${fmt(p.monto)}</span>`).join(""); }
+      if(o.parts && o.parts.length > 1){ const a = li.querySelector(".amt"), kinds = new Set(o.parts.map(p=>p.k)).size > 1; a.classList.add("up-parts"); a.innerHTML = o.parts.map(p => `<span>${kinds ? `<small>${p.k}${p.date!==o.date?" · "+fmtDate(p.date,false):""}</small>` : p.date!==o.date ? `<small>${fmtDate(p.date,false)}</small>` : ""}${p.a?"~":""}${fmt(p.monto)}</span>`).join(""); }
       up.appendChild(li);
     });
     { let mb = $("upMore"); if(!mb){ mb = document.createElement("button"); mb.type="button"; mb.id="upMore"; mb.className="mini upmore"; up.after(mb); mb.onclick = () => { upAll = !upAll; render(); }; }
