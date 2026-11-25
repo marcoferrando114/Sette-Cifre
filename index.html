@@ -2190,7 +2190,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261125190000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261125200000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -7680,15 +7680,21 @@ TRACKER DATA:
     if(pf.saved != null){ money = {savedRD: pf.saved, goalRD: pf.goal, goalPct: pf.goal ? Math.round(pf.saved/pf.goal*1000)/10 : null}; if(pf.limit){ money.spentThisMonthRD = pf.spentMonth; money.monthLimitRD = pf.limit; money.leftPerDayRD = pf.perDayLeft; money.daysLeftInMonth = pf.daysLeft; money.limitUsedPct = Math.round(pf.spentMonth/pf.limit*100); } }
     if(pf.loansOpen){ money = money || {}; money.lentOutRD = pf.lentOut; money.backOwedRD = pf.backOwed; money.loansOpen = pf.loansOpen; money.lateLoans = pf.lateLoans; if(pf.nextDueDays != null) money.nextLoanDueInDays = pf.nextDueDays; }
     var bw = bets.filter(function(b){ return b.result === "won"; }).length, bl = bets.filter(function(b){ return b.result === "lost"; }).length; if(bw + bl >= 3){ money = money || {}; money.betsWon = bw; money.betsLost = bl; }
-    return {angle: angleOf(), money: money, stocks: st, total: tot, bets: open.map(function(b){ b.open = true; return b; }).concat(done)};
+    // Marco Nov 25: "you only give me the same stat, the 70k limit". Pato's take only gets the data of TODAY'S angle, so each day is about one thing
+    var an = angleOf(), mo = money || {};
+    if(an !== "spending"){ delete mo.spentThisMonthRD; delete mo.monthLimitRD; delete mo.leftPerDayRD; delete mo.daysLeftInMonth; delete mo.limitUsedPct; }
+    if(an !== "goal"){ delete mo.savedRD; delete mo.goalRD; delete mo.goalPct; }
+    if(an !== "loans"){ delete mo.lentOutRD; delete mo.backOwedRD; delete mo.loansOpen; delete mo.lateLoans; delete mo.nextLoanDueInDays; }
+    if(an !== "bets"){ delete mo.betsWon; delete mo.betsLost; }
+    return {angle: an, money: Object.keys(mo).length ? mo : null, stocks: an === "stocks" ? st : [], total: an === "stocks" ? tot : null, bets: an === "bets" ? open.map(function(b){ b.open = true; return b; }).concat(done) : []};
   }
   function getDaily(force){ if(DEMO) return;
     if(!base() || (busy && Date.now() - busy < 9e4) || !window.mpIdToken) return;   // a request stuck while the phone slept never blocks the next one
-    var st = ls("pd-daily7"); if(!force && st && st.day === day() && st.sig === sig() && st.data && ((st.data.take && Object.keys(st.data.cats || {}).length >= 2) || Date.now() - (st.at||0) < 15*6e4)){ daily = st.data; return render(); }
+    var st = ls("pd-daily8"); if(!force && st && st.day === day() && st.sig === sig() && st.data && ((st.data.take && Object.keys(st.data.cats || {}).length >= 2) || Date.now() - (st.at||0) < 15*6e4)){ daily = st.data; return render(); }
     busy = Date.now();
     window.mpIdToken().then(function(tok){ return fetch(base() + (ND() ? "/daily2" : "/daily?" + q() + lwq()), {method: "POST", headers: {"content-type": "application/json", authorization: "Bearer " + tok}, body: JSON.stringify(facts())}); })
       .then(function(r){ return r.ok ? r.json() : null; }).then(function(d){ busy = 0; if(!d) return render(); daily = d; tick = {at: d.at, ticker: d.ticker, big: d.big};
-        ls("pd-daily7", {day: day(), sig: sig(), at: Date.now(), data: d}); render(); }).catch(function(){ busy = 0; render(); });
+        ls("pd-daily8", {day: day(), sig: sig(), at: Date.now(), data: d}); render(); }).catch(function(){ busy = 0; render(); });
   }
   // Drops (Marco Nov 11): 7am full edition (AI take), then 12pm and 6pm each topic swaps to the best story you haven't seen. Free: /news, no AI.
   var FR = {}, drop = ls("pd-drop4");
@@ -8030,6 +8036,8 @@ TRACKER DATA:
     else line = "Being rich isn't a number. It's the gap between what you earn and what you spend, and Pato's job is to help you widen it a little every month.";
     var pf = window.__patoFacts || {}, tip = "";
     if(tk.pato && tk.pato.line){ line = tk.pato.line; tip = tk.pato.tip || ""; }   // the 7am AI take: Pato talking to you with your real numbers (checked on the server)
+    var ang2 = angleOf(), TIPS = {stocks: "Before your next buy, write the price you'd be happy with and the most you'll put in. Then place it as a limit order and walk away.", loans: "If anyone is late paying you back, message them today. A friendly reminder works best when it comes early.", bets: "Pick a stake you could lose without thinking twice and keep it fixed. Never raise it to win a loss back.", "news lesson": "Pick one story today and ask how it could touch your money. That habit is what turns news into an edge."};
+    if(!tip && TIPS[ang2]) tip = TIPS[ang2];
     if(!tip && pf.limit > 0 && pf.daysLeft > 0){ var lft = pf.limit - pf.spentMonth; tip = lft > 0 ? "Keep spending under RD$" + Math.max(0, pf.perDayLeft).toLocaleString("en-US") + " a day and you finish the month inside your RD$" + pf.limit.toLocaleString("en-US") + " limit." : "You're past your monthly limit; every peso you don't spend now goes straight back to your goal."; }
     else if(!tip && pf.goal > 0 && pf.saved > 0) tip = "You're " + (Math.floor(pf.saved/pf.goal*1000)/10) + "% of the way to RD$" + pf.goal.toLocaleString("en-US") + ". One small transfer to savings today keeps the streak going.";
     function capT(s, mw, ms){ s = String(s || "").trim(); var parts = s.match(/[^.!?]+[.!?]+(\s|$)|[^.!?]+$/g) || [s], o = ""; for(var i = 0; i < parts.length && i < ms; i++){ var n = (o + parts[i]).trim(); if(i > 0 && n.split(/\s+/).length > mw) break; o = n + " "; } o = o.trim(); return o || s; }   // short copy only: Pato's take must fit one frame at normal size (Marco Nov 14)
@@ -8246,10 +8254,10 @@ TRACKER DATA:
   function topicsRow0(){ var sh = $("palSheet"); if(!sh) return; var w = $("pdTopics");
     if(!w){ w = document.createElement("div"); w.id = "pdTopics"; var t = $("sgTabs"); if(t) sh.insertBefore(w, t); else sh.appendChild(w);
       w.addEventListener("click", function(e){ e.stopPropagation(); var b = e.target.closest && e.target.closest("button[data-mv]"); if(!b) return; e.preventDefault();   // stopPropagation: the list redraws under the tap, and the sheet's outside-tap handler then thought the tap was outside and closed the screen (Marco Nov 14)
-        var pr = b.dataset.mv.split(":"), o = on().slice(), i = o.indexOf(pr[0]), j = i + Number(pr[1]); if(i < 0 || j < 0 || j >= o.length) return; var t = o[i]; o[i] = o[j]; o[j] = t; save(o); ls("pd-daily7", null); topicsRow(); $("pdTopM").textContent = "Order saved."; });
+        var pr = b.dataset.mv.split(":"), o = on().slice(), i = o.indexOf(pr[0]), j = i + Number(pr[1]); if(i < 0 || j < 0 || j >= o.length) return; var t = o[i]; o[i] = o[j]; o[j] = t; save(o); ls("pd-daily8", null); topicsRow(); $("pdTopM").textContent = "Order saved."; });
       w.addEventListener("change", function(e){ var c = e.target; if(!c.dataset || !c.dataset.k) return; var o = on().slice(), k = c.dataset.k, i = o.indexOf(k);
         if(c.checked && o.length >= TOP){ c.checked = false; $("pdTopM").textContent = "Max " + TOP + ". Turn one off first."; return; }
-        if(c.checked && i < 0) o.push(k); if(!c.checked && i >= 0) o.splice(i, 1); save(o); ls("pd-daily7", null); $("pdTopM").textContent = "Saved. Your next stories use these."; }); }
+        if(c.checked && i < 0) o.push(k); if(!c.checked && i >= 0) o.splice(i, 1); save(o); ls("pd-daily8", null); $("pdTopM").textContent = "Saved. Your next stories use these."; }); }
     var o = on(), all = CATS.filter(function(c){ return FIX.indexOf(c[0]) < 0; }), nm = function(k){ return all.filter(function(c){ return c[0] === k; })[0]; };   // Marco Nov 12: you set the order of your topics
     w.innerHTML = '<span>Pato Daily topics</span>' + o.map(function(k, i){ var c = nm(k); return c ? '<label class="tg"><span>' + c[2] + ' ' + c[1] + '</span><span class="pd-ord"><button type="button" aria-label="Move up" data-mv="' + k + ':-1"' + (i === 0 ? ' disabled' : '') + '>↑</button><button type="button" aria-label="Move down" data-mv="' + k + ':1"' + (i === o.length - 1 ? ' disabled' : '') + '>↓</button><input type="checkbox" data-k="' + k + '" checked></span></label>' : ''; }).join("") + all.filter(function(c){ return o.indexOf(c[0]) < 0; }).map(function(c){ return '<label class="tg"><span>' + c[2] + ' ' + c[1] + '</span><input type="checkbox" data-k="' + c[0] + '"></label>'; }).join("") + '<div class="pd-tm" id="pdTopM">' + (ND() ? (MG() ? 'Pick up to ' + TOP + ' topics: 4 show each drop, top of your list most. Breaking, Predictions, Sports and Founders always come.' : 'Pick up to ' + TOP + ' topics. If you pick fewer, Pato fills in. Breaking, Predictions and the Company of the day always come.') : 'Up to ' + TOP + '. Top story and DR come every day.') + '</div>'; }
   function save(o, au){ var fb = (prefs && prefs.fb) || {}, co = (prefs && prefs.co) || {}, lw = (prefs && prefs.lw) || {}, nv = ND(); au = au || ((prefs && prefs.auto) || []).filter(function(k){ return o.indexOf(k) >= 0; }); prefs = nv ? {on: o, picked: true, v2: true, auto: au, fb: fb, co: co, lw: lw} : {on: o, picked: true, fb: fb, co: co, lw: lw}; try{ db.doc("prefs/news").set(Object.assign({}, prefs, {at: Date.now()})); }catch(_){} }
