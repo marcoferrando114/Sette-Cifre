@@ -275,7 +275,7 @@ function choosePick(G) {
   return { best, seen };
 }
 // Marco Nov 25: "your sports picks have been bad: a pick valued at +650 that you show at +500 will not hit, and 'based on ESPN's model' is not research". New method: Pato researches the day's games on the web (injuries, rest, matchup, news), writes its OWN win probability, and only picks when that beats the market's no-vig price by a real margin. It also gives the lowest price worth taking, and the app tells you to pass if the line has moved below it.
-const ML_OK = /^(NBA|NFL|MLB|NHL)$/;   // leagues whose results the app can grade
+const ML_OK = /^(NBA|NFL|MLB)$/;   // leagues whose results the app can grade
 const amer = p => p <= 0 || p >= 1 ? null : p >= 0.5 ? Math.round(-100 * p / (1 - p)) : Math.round(100 * (1 - p) / p);
 const amStr = n => n == null ? "" : (n > 0 ? "+" : "") + n;
 async function researchPick(env, G, log) {
