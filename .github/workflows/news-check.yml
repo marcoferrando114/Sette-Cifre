@@ -1,0 +1,24 @@
+name: news-check
+on: { push: { branches: [claude/project-thread-kymne3] } }
+jobs:
+  c:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          cp tools/pato-ai-worker.js /tmp/w.mjs
+          echo 'export { storyOf, founderOf, wikiImg, logoFor, MISTAKES, PLAYBOOKS, BIZMODELS, FOUNDERS };' >> /tmp/w.mjs
+          cat > /tmp/run.mjs <<'EOF'
+          globalThis.caches = { default: { match: async () => null, put: async () => {} } };
+          const m = await import("/tmp/w.mjs");
+          const M = new Map(); const kv = { get: async (k, t) => { const v = M.get(k); return v == null ? null : (t === "json" ? JSON.parse(v) : v); }, put: async (k, v) => { M.set(k, v); }, delete: async k => { M.delete(k); } };
+          const env = { LIMITS: kv };
+          for (const [kind, pool] of [["mistake", m.MISTAKES], ["playbook", m.PLAYBOOKS], ["model", m.BIZMODELS]]) {
+            for (const f of pool) { let got = ""; for (const w of f.w) { const im = await m.wikiImg(env, w.replace(/_/g, " "), false).catch(() => ""); if (im) { got = w + " " + im.slice(-40); break; } } console.log(kind, f.n, got ? "OK " + got : "NO IMAGE"); }
+          }
+          const L = await m.logoFor({ dom: "nvidia.com", tk: "NVDA" }); console.log("logo", L.slice(0, 40), L.length);
+          const L2 = await m.logoFor({ dom: "kalshi.com", tk: "" }); console.log("logo2", L2.slice(0, 40), L2.length);
+          const names = []; for (let d = 0; d < 24; d++) { const now = Date.now() + d * 864e5; const it = await m.founderOf(env, now - 0); names.push(it && it.name + (it.img ? "" : "(noimg)")); M.set("shift", 1); }
+          console.log("founders", names.join(" | "));
+          EOF
+          node /tmp/run.mjs 2>&1 | head -80
