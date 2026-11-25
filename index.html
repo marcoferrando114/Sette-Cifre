@@ -1400,6 +1400,7 @@ html.mp-guest #p-stocks > #pnTick:not([hidden]){display:flex!important}
 .pd-bd .pd-img{margin:-28px -24px 18px;border-radius:0;aspect-ratio:4/3}.pd-bd .pd-img::after{content:"";position:absolute;inset:auto 0 0 0;height:45%;background:linear-gradient(to top,rgba(10,18,14,.85),transparent);pointer-events:none}
 .pd-s.brk .pd-bd .pd-img{aspect-ratio:4/3;margin-bottom:-44px}.pd-s.brk .pd-bd .pd-img::after{height:70%;background:linear-gradient(to top,#1E100D,transparent)}.pd-s.brk .pd-brkrow,.pd-s.brk .pd-bigh{position:relative;z-index:1}.pd-s.brk .pd-img>span{display:none}
 .pd-img>span{z-index:1}
+.home-board{margin:12px 0 4px;padding:12px 14px;border-radius:16px;background:color-mix(in srgb,var(--card) 80%,#000);outline:1px dashed color-mix(in srgb,var(--ink) 35%,transparent);outline-offset:-4px}.hb-t{font-size:.68rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);font-weight:700;margin:6px 0 4px}.hb-t:first-child{margin-top:0}.hb-r{display:flex;align-items:baseline;gap:8px;padding:5px 0;font-size:.88rem;line-height:1.3}.hb-r span{font-size:.66rem;font-weight:700;color:var(--muted);min-width:46px}.hb-r b{flex:1;font-weight:600}.hb-r small{color:var(--muted);font-size:.74rem;white-space:nowrap}.hb-r em{font-style:normal;font-weight:800}
 .pd-bdcard{height:auto!important;width:100%!important;margin:0 0 14px!important;display:block!important;opacity:1!important;transform:none!important}.pd-bdcard .pd-bd{overflow:visible;padding:20px 18px}
 .pd-bd .pd-img.pd-fd,.pd-bd>.pd-img.pd-fd:has(+ .pd-k){aspect-ratio:5/4}.pd-fd img{object-fit:contain!important;position:relative}.pd-fd .pd-bk{position:absolute;inset:0}.pd-bio{font-size:.82rem;opacity:.8;margin:-2px 0 10px;line-height:1.4}
 .pd-s.launch{background:linear-gradient(170deg,#3A2412 0%,#140B05 80%);border-color:#A8662E}.pd-s.rise{background:linear-gradient(170deg,#0F3A3A 0%,#06171A 80%);border-color:#2E9A8E}.pd-lr{padding:12px 14px}.pd-lr .pd-pmq{font-size:.98rem}.pd-lrm{margin-top:6px;font-size:.78rem;color:#CFE0D6}.pd-lrm b{color:#E3BC6A;font-weight:800}.pd-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.pd-chips span{padding:4px 10px;border-radius:999px;background:rgba(80,220,200,.14);border:1px solid rgba(80,220,200,.35);color:#9FF0E2;font-weight:800;font-size:.8rem}
@@ -2189,7 +2190,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261125150500";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261125162000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -2364,6 +2365,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
       <small class="num" id="hPace"></small>
     </button>
     <div class="home-tiles num" id="hTiles"></div>
+    <div class="home-board" id="hBoard" hidden></div>
     <button type="button" class="home-nwline num" id="hNw"></button>
   </section>
   </div>
@@ -2662,11 +2664,10 @@ html:not(.mp-guest) #s-gst{display:none!important}
     </div>
     <div class="hint num" id="pkInvNote" hidden></div>
     <div id="pkNew">
-      <div class="pk-seg" id="pkSeg"><button type="button" data-v="league" class="on">League</button><button type="button" data-v="ot">Tables</button><button type="button" data-v="ar">Arcade</button><button type="button" data-v="sb">Sports</button><button type="button" data-v="bd" id="pkBdBtn" hidden>Board</button></div>
+      <div class="pk-seg" id="pkSeg"><button type="button" data-v="league" class="on">League</button><button type="button" data-v="ot">Tables</button><button type="button" data-v="ar">Arcade</button><button type="button" data-v="sb">Sports</button></div>
       <div id="pkVLeague"><div class="pk-three num" id="pkThree"></div><div class="pk-chips-t">By Monday · rake + action</div><div class="pk-chips num" id="pkWkChips"></div><div class="pk-det num" id="pkWkDet"></div></div>
       <div id="pkVOther" hidden><div class="rc" id="rcPoker" hidden></div><div class="pk-ototal num" id="pkOTot"></div><div class="sb-stats num" id="pkWeeksSum"></div><details class="pk-more"><summary>See sessions</summary><ul class="hist pweeks" id="pkWeeks"></ul></details><div class="pk-ototal pk-hg num" id="pkHTot"></div><div class="sb-stats num" id="pkWeeksHSum"></div><details class="pk-more"><summary>See sessions</summary><ul class="hist pweeks" id="pkWeeksH"></ul></details></div>
       <div id="pkVArcade" hidden><div class="pk-ototal num" id="pkATot"></div><div class="sb-stats num" id="pkASum"></div><details class="pk-more"><summary>See all</summary><ul class="hist pweeks" id="pkAList"></ul></details></div>
-      <div id="pkVBoard" hidden></div>
       <div id="pkVSports" hidden><div class="rc" id="rcSports" hidden></div><div class="pk-ototal num" id="pkSTot"></div><div class="sb-stats num" id="sbStats"></div><div class="sb-h" id="sbBetsH">Bets</div><div id="sbBets"></div><div class="sb-h">Deposits &amp; cashouts</div><div class="sb-stats num" id="pkSSum"></div><details class="pk-more"><summary>See all</summary><ul class="hist pweeks" id="pkSList"></ul></details></div>
     </div>
     <div class="pk-stats num" id="pkStats" hidden style="display:none!important">
@@ -5248,7 +5249,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
     // ---- layout: switch League / Outside Tables / Home games ----
     { const sw = $("pkSeg");
       sw.querySelectorAll("button").forEach(b => { b.classList.toggle("on", b.dataset.v===pkV); b.onclick = () => { window.pkView = b.dataset.v; render(); }; });
-      $("pkVLeague").hidden = pkV!=="league"; $("pkVOther").hidden = pkV!=="ot"; $("pkVSports").hidden = pkV!=="sb"; $("pkVArcade").hidden = pkV!=="ar"; { const bb = $("pkBdBtn"), ok = !!(window.__pdMakeBoard && window.ND_OK && window.ND_OK()); bb.hidden = !ok; $("pkVBoard").hidden = pkV!=="bd" || !ok; if(pkV==="bd" && ok){ const bd = window.__pdMakeBoard(); $("pkVBoard").innerHTML = bd.length ? bd.map(x => `<div class="pd-s ${x.cls||""} pd-bdcard"><div class="pd-bd"><div class="pd-k" style="margin-bottom:8px">${x.t==="Sports" ? "🏆 SPORTS" : "🔮 PREDICTIONS"}</div>${x.body}</div></div>`).join("") : `<div class="hint">Nothing on the board yet.</div>`; } }
+      $("pkVLeague").hidden = pkV!=="league"; $("pkVOther").hidden = pkV!=="ot"; $("pkVSports").hidden = pkV!=="sb"; $("pkVArcade").hidden = pkV!=="ar";
       const owRk = ligaWeeks(ligaDebt()).reduce((t,w)=>t+Number(w.monto||0),0), owAc = ligaWeeks(ligaDebt()).reduce((t,w)=>t+Number(w.accion||0),0);
       $("pkThree").innerHTML = `<div><span>Rake per week</span><b>${fmt(Math.round(pkAvgV))}</b></div><div><span>Action per week</span><b class="${cls(actAvgV)}">${sgn(actAvgV)}</b></div>`+(owRk+owAc>0 ? `<div class="pk-owed"><span>League owes you</span><b>${fmt(owRk+owAc)}</b></div>` : "");
       const ks = [...new Set([...avgKeys, ...actKeys])].sort().slice(-8);
@@ -5687,6 +5688,8 @@ html:not(.mp-guest) #s-gst{display:none!important}
       <button type="button" class="wide" data-go="loans" data-to="s-cobrar"><span>Money owed to you</span>
         <b>${fmt(owed)}</b><small>outstanding${oldest ? ` · oldest: ${spEsc(oldest.n)} · ${fmt(oldest.v)}${oldest.d?` since ${fmtDate(oldest.d,false)}`:""}` : ""}</small></button>`;
     $("hTiles").querySelectorAll("[data-go]").forEach(b => b.onclick = () => go(b.dataset.go, b.dataset.to));
+    { const bd = $("hBoard"), D = window.__pdBoardData ? window.__pdBoardData() : null; bd.hidden = !D;
+      if(D){ bd.innerHTML = (D.g.length ? `<div class="hb-t">Today in sports</div>` + D.g.map(g => `<div class="hb-r"><span>${spEsc(g.lg)}</span><b>${spEsc(g.nm)}</b><small>${spEsc([g.tm, g.od].filter(Boolean).join(" · "))}</small></div>`).join("") : "") + (D.p.length ? `<div class="hb-t">What the market thinks</div>` + D.p.map(m => `<div class="hb-r"><b>${spEsc(m.q)}</b><em>${m.p}%</em></div>`).join("") : ""); } }
     // 4) net worth, small, at the bottom
     const ccE = ccEstimate(), cc = ccE.last ? Math.max(0, ccE.est) : 0, cash = spWallet() || 0;
     $("hNw").innerHTML = `<span>Net worth</span><b>${fmt(sav + cc + cash + owed)}</b>`;
@@ -7951,6 +7954,12 @@ TRACKER DATA:
     if(MG()){ window.__pdBoard = L.filter(function(x){ return x.fk === "preds" || x.fk === "game"; }); L = L.filter(function(x){ return x.fk !== "preds" && x.fk !== "game"; }); }
     return L;
   }
+  window.__pdBoardData = function(){   // Marco Nov 25: short, simple sports and predictions on the main page
+    try{ if(!(ND() && MG())) return null; var E = edOf(); if(!E) return null;
+      var G = (E.games || []).filter(function(g){ return g && g.name; }).slice(0, 3).map(function(g){ var o = g.odds || {}, ml = (o.ml || []).filter(Boolean).join(" / ");
+        return {lg: g.league, nm: String(g.name).replace(" at ", " vs "), tm: g.live ? "LIVE" : g.t ? hr(g.t) : "", od: ml || o.line || "", u: ""}; });
+      var BADP = /\b(tweets?|posts? on X|how many|followers|views|box office|esports?|League of Legends|Counter-Strike|Valorant|Dota)\b/i; var P = (E.preds || []).filter(function(m){ return !BADP.test(m.t + " " + m.q); }).slice(0, 2).map(function(m){ return {q: m.multi ? m.t : m.q, p: m.p, u: m.u || ""}; });
+      return (G.length || P.length) ? {g: G, p: P} : null; }catch(e){ return null; } };
   window.ND_OK = function(){ try{ return !!(ND() && MG()); }catch(e){ return false; } };
   window.__pdMakeBoard = function(){ try{ if(ND() && MG()) stories(); }catch(e){} return window.__pdBoard || []; };
 
