@@ -840,6 +840,22 @@ async function founderOf(env, now) {   // one per day; the real Wikipedia photo 
 }
 // Marco Nov 25: three more daily story tabs, written as stories with surprising facts (Big mistake, Investor playbook, How they make money). Pure facts from public record, rotated so none repeats until the whole list is used. w = Wikipedia pages tried in order for the real photo.
 const MK = (n, w, h, pl, s, fy) => ({ n, w, h, pl, s, fy });
+const MC = {   // Marco Nov 25: "I wasn't able to understand what the mistake was or how big it was": every mistake story opens with the mistake in one plain sentence and its size
+  "Kodak": ["It built the first digital camera, then buried it to protect film sales.", "A company that sold most of the world's film went bankrupt in 2012."],
+  "Blockbuster": ["It said no to buying Netflix for about $50 million.", "Netflix grew into a company worth hundreds of billions. Blockbuster went bankrupt in 2010."],
+  "Long-Term Capital Management": ["It borrowed over $25 for every $1 of its own, then Russia defaulted.", "$4.6 billion lost in weeks, and a $3.6 billion rescue by banks."],
+  "Theranos": ["It sold a blood-testing machine that did not work.", "A $9 billion valuation wiped out, and the founder got more than 11 years in prison."],
+  "Pets.com": ["It sold heavy dog food for less than the shipping cost and spent big on ads.", "Every sale lost money. The company was liquidated less than a year after its IPO."],
+  "FTX": ["Customers' money was tied up in a sister trading firm, so it was not there when they asked for it.", "A $32 billion company went bankrupt in nine days. Its founder got 25 years."],
+  "Tulip mania": ["People paid more and more for bulbs only because the price kept rising.", "One rare bulb cost more than a skilled worker earned in years. Prices crashed in weeks."],
+  "Excite": ["It turned down buying Google for around $1 million.", "Google became one of the most valuable companies on earth. Excite's parent went bankrupt in 2001."],
+  "Quibi": ["It spent about $1.75 billion on short phone shows nobody had asked for.", "$1.75 billion raised, and the app shut down six months after launch."],
+  "Knight Capital": ["A software update left old code running on one of its eight servers.", "$440 million lost in 45 minutes, more than the firm's cash."],
+  "New Coke": ["It replaced a 99-year-old recipe without asking its customers.", "Reversed in 79 days after a nationwide revolt."],
+  "Juicero": ["It sold a $699 machine that squeezed packs you could squeeze by hand.", "About $120 million raised, and the company shut down in 2017."],
+  "WeWork": ["It priced an office-rental company like a tech giant.", "A $47 billion valuation collapsed in weeks, and the company went bankrupt in 2023."],
+  "Barings Bank": ["A trader hid a small loss, then bet bigger to win it back.", "A bank that had survived 233 years collapsed in 1995."]
+};
 const MISTAKES = [
   MK("Kodak", ["Steven_Sasson", "Kodak"], "Kodak built the first digital camera in 1975, then hid it in a drawer", "A young engineer showed management the future. They worried it would hurt film sales.",
     [["THE SETUP", "In 1975 Kodak engineer Steven Sasson built the first digital camera: a toaster-sized box that took 23 seconds to save one black-and-white photo. Kodak sold most of the world's film, and film was where the money was."], ["THE MISTAKE", "Managers reportedly told him it was cute but to keep it quiet. Kodak kept selling film while rivals built digital cameras, and then phones put a camera in every pocket."], ["THE ENDING", "Kodak filed for bankruptcy in January 2012. The company that invented the thing that killed it died protecting the old business."]], "The biggest threat is often something you invented and were too comfortable to use."),
@@ -917,7 +933,7 @@ const BIZMODELS = [
 
 const STORY_POOLS = { mistake: MISTAKES, playbook: PLAYBOOKS, model: BIZMODELS };
 async function storyOf(env, kind, now) {   // Big mistake, Investor playbook, How they make money: a real photo from the story's own Wikipedia page, in order of the pages listed
-  return rosterPick(env, kind, STORY_POOLS[kind], now, async f => { const it = { h: f.h, s: "Pato · Wikipedia", u: "https://en.wikipedia.org/wiki/" + f.w[0], t: now - 36e5, name: f.n, kind, pl: f.pl, sec: f.s, fy: f.fy };
+  return rosterPick(env, kind, STORY_POOLS[kind], now, async f => { const it = { h: f.h, s: "Pato · Wikipedia", u: "https://en.wikipedia.org/wiki/" + f.w[0], t: now - 36e5, name: f.n, kind, pl: f.pl, sec: kind === "mistake" && MC[f.n] ? f.s.map(x => [x[0] === "THE MISTAKE" ? "WHAT HAPPENED" : x[0], x[1]]) : f.s, fy: f.fy }; if (kind === "mistake" && MC[f.n]) { it.mt = MC[f.n][0]; it.cost = MC[f.n][1]; }
     for (const w of f.w) { const im = await wikiImg(env, w.replace(/_/g, " "), false).catch(() => ""); if (im) { it.img = im; it.u = "https://en.wikipedia.org/wiki/" + w; break; } } return it; });
 }
 // The prebuilt edition (Marco Nov 14: "ready when the user opens the app"): built and image-resolved in the hour before each drop (7am, 1pm, 7pm DR), then served from KV in one fast call.
@@ -1050,7 +1066,7 @@ async function repairEd(env, E, q) {   // one repair round: swap in the next bes
   x.done = 0; x.hd = 0; E.st = "built"; return acts;
 }
 async function advance(env, idx) {   // one step per call (every cron tick, or every phone request while no cron has done it): build, finish, check, repair, publish or hold
-  const key = "ed9w:" + idx; let E = await env.LIMITS.get(key, "json").catch(() => null); if (E && E.pub !== undefined) return E;
+  const key = "ed9x:" + idx; let E = await env.LIMITS.get(key, "json").catch(() => null); if (E && E.pub !== undefined) return E;
   await loadHL(env);
   if (!E || !E.b) { const b = await buildEdition(env, idx); if (Object.keys(b.cats).length < 2) { await env.LIMITS.put("edh:" + idx, JSON.stringify({ at: Date.now(), level: "hard", reasons: ["could not build: too few stories"], pub: false }), { expirationTtl: 172800 }).catch(() => 0); return null; }
     E = { at: Date.now(), bat: Date.now(), st: "built", b, x: {}, tries: 0 }; await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }); await saveHL(env).catch(() => 0); return E; }
@@ -1073,7 +1089,7 @@ async function advance(env, idx) {   // one step per call (every cron tick, or e
   await env.LIMITS.put(key, JSON.stringify(E), { expirationTtl: 172800 }); return E;
 }
 async function getEdition(env, force, dbg, ctx) {   // what a phone gets: this drop's edition once it has passed the check, otherwise the last good one (never a broken one)
-  const idx = dropIdx(Date.now()), key = "ed9w:" + idx, kv = env.LIMITS; let E = kv ? await kv.get(key, "json").catch(() => null) : null;
+  const idx = dropIdx(Date.now()), key = "ed9x:" + idx, kv = env.LIMITS; let E = kv ? await kv.get(key, "json").catch(() => null) : null;
   if (E && E.pub) { if (kv && E.b && !E.fx3) { E.fx3 = 1; try { const c = E.b.ceo; if (c && c.founder && c.name) { const w = await wikiImg(env, c.name, true).catch(() => ""); if (w) { c.img = w; c.vf = 4; } } await clearHeads(env, E.b); await kv.put(key, JSON.stringify(E), { expirationTtl: 172800 }); } catch (e) {} }   // one-time repair of an edition published before these rules: the founder's own photo, clearer headlines
     const o = finalize(E.b); o.fin = 1; if (dbg) { o._dbg = E.b._dbg; o._q = E.q; o._log = E.log; } return o; }
   let L = null; try { const pt = kv && await kv.get("edpub", "json"); if (pt) L = await kv.get(pt.key, "json"); } catch (e) { L = null; }

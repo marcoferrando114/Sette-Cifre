@@ -2190,7 +2190,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261125200000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261125203000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -7946,7 +7946,7 @@ TRACKER DATA:
       [["mistake", "💥 BIG MISTAKE", "Big mistake", "💥 Mistake", 4.4], ["playbook", "🧠 INVESTOR PLAYBOOK", "Investor playbook", "🧠 Playbook", 4.6], ["model", "🏗️ HOW THEY MAKE MONEY", "How they make money", "🏗️ Models", 4.8]].forEach(function(d3){
         var SI = E[d3[0]]; if(!SI || !SI.h) return;
         L.push({id: ed + ":" + d3[0] + ":" + SI.name, ord: d3[4], cls: "", news: 1, t: d3[2], w: "today", u: SI.u, pic: SI.u, ph: SI.h, ps: SI.s, fk: d3[0], nav: d3[3], sh: {k: d3[2], h: SI.h, s: SI.s, u: SI.u},
-          body: '<div class="pd-k">' + d3[1] + '</div><div class="pd-h1">' + esc(SI.h) + '</div>' + (SI.pl ? kp(SI.pl) : '') + (SI.sec || []).map(function(x){ return '<div class="pd-know"><i>' + esc(x[0]) + '</i>' + kp(x[1]) + '</div>'; }).join("") + fyBox(SI.fy || "")}); });
+          body: '<div class="pd-k">' + d3[1] + '</div><div class="pd-h1">' + esc(SI.h) + '</div>' + (SI.mt ? '<div class="pd-know"><i>THE MISTAKE</i>' + kp(SI.mt) + '</div><div class="pd-know"><i>HOW BIG</i>' + kp(SI.cost || "") + '</div>' : (SI.pl ? kp(SI.pl) : '')) + (SI.sec || []).map(function(x){ return '<div class="pd-know"><i>' + esc(x[0]) + '</i>' + kp(x[1]) + '</div>'; }).join("") + fyBox(SI.fy || "")}); });
     }
     // no Daily Duel (Marco Nov 14)
     var cq = null, cs = callSt(); if(cq && !(cs && cs.q === cq.id && $("pdV").hidden)) L.push({id: ed + ":call:" + cq.id, cls: "call", t: CALL, w: "today's money question", call: cq, body: ""});
