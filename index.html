@@ -2190,7 +2190,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261125172000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261125183000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -5689,7 +5689,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
         <b>${fmt(owed)}</b><small>outstanding${oldest ? ` · oldest: ${spEsc(oldest.n)} · ${fmt(oldest.v)}${oldest.d?` since ${fmtDate(oldest.d,false)}`:""}` : ""}</small></button>`;
     $("hTiles").querySelectorAll("[data-go]").forEach(b => b.onclick = () => go(b.dataset.go, b.dataset.to));
     { const bd = $("hBoard"), D = window.__pdBoardData ? window.__pdBoardData() : null; bd.hidden = !D;
-      if(D){ bd.innerHTML = (D.k ? `<div class="hb-t">Pato's pick</div><div class="hb-r"><b>${spEsc(D.k.txt)}</b></div><div class="hb-r"><small style="white-space:normal">${D.k.sub.indexOf("<b") >= 0 ? D.k.sub : spEsc(D.k.sub)}</small></div>` : "") + (D.g.length ? `<div class="hb-t">Today in sports</div>` + D.g.map(g => `<div class="hb-r"><span>${spEsc(g.lg)}</span><b>${spEsc(g.nm)}</b><small>${spEsc([g.tm, g.od].filter(Boolean).join(" · "))}</small></div>`).join("") : "") + (D.p.length ? `<div class="hb-t">What the market thinks</div>` + D.p.map(m => `<div class="hb-r"><b>${spEsc(m.q)}</b><em>${m.p}%</em></div>`).join("") : ""); } }
+      if(D){ bd.innerHTML = (D.k && D.k.length ? `<div class="hb-t">Pato's picks</div>` + D.k.map(k => `<div class="hb-r"><span>${spEsc(k.lg)}</span><b>${spEsc(k.txt)}</b></div><div class="hb-r"><small style="white-space:normal">${k.sub.indexOf("<b") >= 0 ? k.sub : spEsc(k.sub)}</small></div>`).join("") : "") + (D.g.length ? `<div class="hb-t">Today in sports</div>` + D.g.map(g => `<div class="hb-r"><span>${spEsc(g.lg)}</span><b>${spEsc(g.nm)}</b><small>${spEsc([g.tm, g.od].filter(Boolean).join(" · "))}</small></div>`).join("") : "") + (D.p.length ? `<div class="hb-t">What the market thinks</div>` + D.p.map(m => `<div class="hb-r"><b>${spEsc(m.q)}</b><em>${m.p}%</em></div>`).join("") : ""); } }
     // 4) net worth, small, at the bottom
     const ccE = ccEstimate(), cc = ccE.last ? Math.max(0, ccE.est) : 0, cash = spWallet() || 0;
     $("hNw").innerHTML = `<span>Net worth</span><b>${fmt(sav + cc + cash + owed)}</b>`;
@@ -7959,8 +7959,8 @@ TRACKER DATA:
       var G = (E.games || []).filter(function(g){ return g && g.name; }).slice(0, 3).map(function(g){ var o = g.odds || {}, ml = (o.ml || []).filter(Boolean).join(" / ");
         return {lg: g.league, nm: String(g.name).replace(" at ", " vs "), tm: g.live ? "LIVE" : g.t ? hr(g.t) : "", od: ml || o.line || "", u: ""}; });
       var BADP = /\b(tweets?|posts? on X|how many|followers|views|box office|esports?|League of Legends|Counter-Strike|Valorant|Dota)\b/i; var P = (E.preds || []).filter(function(m){ return !BADP.test(m.t + " " + m.q); }).slice(0, 2).map(function(m){ return {q: m.multi ? m.t : m.q, p: m.p, u: m.u || ""}; });
-      var K = null; try{ var pk0 = pickText(E.pick); if(pk0 && pk0.T){ K = {txt: pk0.txt, sub: pk0.sub + pickMoved(pk0, E.games)}; } }catch(e2){}
-      return (G.length || P.length || K) ? {g: G, p: P, k: K} : null; }catch(e){ return null; } };
+      var K = []; try{ ((E.pick && E.pick.picks) || []).forEach(function(t){ var p0 = pickText({today: t, rec: E.pick.rec, last: E.pick.last}); if(p0 && p0.T) K.push({lg: p0.lg, txt: p0.txt, sub: p0.sub + pickMoved(p0, E.games)}); }); }catch(e2){}
+      return (G.length || P.length || K.length) ? {g: G, p: P, k: K} : null; }catch(e){ return null; } };
   window.ND_OK = function(){ try{ return !!(ND() && MG()); }catch(e){ return false; } };
   window.__pdMakeBoard = function(){ try{ if(ND() && MG()) stories(); }catch(e){} return window.__pdBoard || []; };
 
