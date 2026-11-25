@@ -2116,6 +2116,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 <style id="stakd-setpage">
 #palSheet.full[hidden]{display:none!important}
+#palSheet.full:not(.pk-in){animation:none!important}   /* Nov 25: two open animations (the old pop-up one and the push-in) fought each other, so Settings flashed and vanished */
 #palSheet.full:not([hidden]){display:block!important;text-align:left!important;position:fixed!important;inset:0!important;bottom:0!important;max-width:none!important;border-radius:0!important;border:0!important;margin:0!important;z-index:95!important;overflow-y:auto;-webkit-overflow-scrolling:touch;
  padding:calc(14px + env(safe-area-inset-top,0px)) 16px calc(24px + env(safe-area-inset-bottom,0px))!important;box-shadow:none!important;background:var(--paper)!important}
 #palSheet.full > *:not(.sp-hd):not(.sp-list){display:none!important}
@@ -2191,7 +2192,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261125233000";try{ if("serviceWorker" in navigator) window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); }); }catch(e){}window.NW=function(s){ s = String(s || "").replace(/\s*·?\s*Wikipedia/i, "").trim(); return s || "Pato"; };(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261126000500";try{ if("serviceWorker" in navigator) window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); }); }catch(e){}window.NW=function(s){ s = String(s || "").replace(/\s*·?\s*Wikipedia/i, "").trim(); return s || "Pato"; };(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
