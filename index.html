@@ -2194,7 +2194,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261126050000";try{ if("serviceWorker" in navigator) window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); }); }catch(e){}window.NW=function(s){ s = String(s || "").replace(/\s*·?\s*Wikipedia/i, "").trim(); return s || "Pato"; };(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261126073000";try{ if("serviceWorker" in navigator) window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); }); }catch(e){}window.NW=function(s){ s = String(s || "").replace(/\s*·?\s*Wikipedia/i, "").trim(); return s || "Pato"; };(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -2648,20 +2648,13 @@ html:not(.mp-guest) #s-gst{display:none!important}
         <path d="M32 22.5C29.2 27 24.5 29 24.5 33.4c0 2.9 3 4.4 5.3 3.1-.5 2.3-1.5 3.8-3 4.8h10.4c-1.5-1-2.5-2.5-3-4.8 2.3 1.3 5.3-.2 5.3-3.1 0-4.4-4.7-6.4-7.5-10.9z" fill="var(--green)"/>
       </svg>
     </div>
-    <div class="be" id="beDone" style="display:none">
-      <div class="be-done num"><span>Total P&amp;L</span><b id="bdProfit"></b></div>
-    </div>
-    <div class="be" id="be">
-      <div class="debt-head"><span id="beTitle">Recovering the investment</span><span class="num" id="beRight"></span></div>
-      <div class="minibar"><i id="beFill" style="width:0"></i></div>
-      <div class="debt-sub num"><span id="beLeft"></span><span id="beOf"></span></div>
-    </div>
     <div class="pk-table">
     <div class="pk-suits" aria-hidden="true">♠ ♥ ♣ ♦</div>
     <div class="pk-top">
       <div class="pk-hero"><span id="pkAllLbl">Poker total</span><b class="num" id="pkAll">RD$0</b>
         <div class="hint" id="pkAvg"></div>
       </div>
+      <div class="pk-sum num" id="pkSum"></div>
       <dl class="pk-math num" style="display:none">
         <div class="pk-liga"><dt>League rakeback</dt><dd id="pkLiga">RD$0</dd><span class="pk-split" id="pkLigaSplit" hidden><span><small>Received</small><b id="pkLigaRec"></b></span><span class="ow"><small>Still owed</small><b id="pkLigaOw"></b></span><span class="pk-sbar"><span id="pkLigaBar"></span></span></span></div>
         <div><dt>League Action</dt><dd id="pkPlay">RD$0</dd></div>
@@ -2672,20 +2665,30 @@ html:not(.mp-guest) #s-gst{display:none!important}
     </div>
     <div class="hint num" id="pkInvNote" hidden></div>
     <div id="pkNew">
-      <div class="pk-seg" id="pkSeg"><button type="button" data-v="league" class="on">League</button><button type="button" data-v="ot">Tables</button><button type="button" data-v="ar">Arcade</button><button type="button" data-v="sb">Sports</button></div>
-      <div id="pkVLeague"><div class="pk-three num" id="pkThree"></div><div class="pk-chips-t">By Monday · rake + action</div><div class="pk-chips num" id="pkWkChips"></div><div class="pk-det num" id="pkWkDet"></div></div>
+      <div class="pk-seg" id="pkSeg"><button type="button" data-v="ot" class="on">Tables</button><button type="button" data-v="ar">Arcade</button><button type="button" data-v="sb">Sports</button><button type="button" data-v="league" hidden>League</button></div>
       <div id="pkVOther" hidden><div class="rc" id="rcPoker" hidden></div><div class="pk-ototal num" id="pkOTot"></div><div class="sb-stats num" id="pkWeeksSum"></div><details class="pk-more"><summary>See sessions</summary><ul class="hist pweeks" id="pkWeeks"></ul></details><div class="pk-ototal pk-hg num" id="pkHTot"></div><div class="sb-stats num" id="pkWeeksHSum"></div><details class="pk-more"><summary>See sessions</summary><ul class="hist pweeks" id="pkWeeksH"></ul></details></div>
       <div id="pkVArcade" hidden><div class="pk-ototal num" id="pkATot"></div><div class="sb-stats num" id="pkASum"></div><details class="pk-more"><summary>See all</summary><ul class="hist pweeks" id="pkAList"></ul></details></div>
-      <div id="pkVSports" hidden><div class="rc" id="rcSports" hidden></div><div class="pk-ototal num" id="pkSTot"></div><div class="sb-stats num" id="sbStats"></div><div class="sb-h" id="sbBetsH">Bets</div><div id="sbBets"></div><div class="sb-h">Deposits &amp; cashouts</div><div class="sb-stats num" id="pkSSum"></div><details class="pk-more"><summary>See all</summary><ul class="hist pweeks" id="pkSList"></ul></details></div>
+      <div id="pkVSports" hidden><div class="rc" id="rcSports" hidden></div><div class="pk-ototal num" id="pkSTot"></div><div class="sb-stats num" id="sbStats"></div><div class="sb-h" id="sbBetsH">Bets</div><div id="sbBets"></div><details class="pk-more sb-dc"><summary>Deposits &amp; cashouts</summary><div class="sb-stats num" id="pkSSum"></div><div><ul class="hist pweeks" id="pkSList"></ul></div></details></div>
     </div>
     <div class="pk-stats num" id="pkStats" hidden style="display:none!important">
       <div class="pk-st"><div class="pk-st-t">League</div><div id="pkStLiga"></div><div id="pkChipsBox" hidden><div class="pk-chips-t">Rakeback by Monday</div><div class="pk-chips num" id="pkChips"></div><div class="pk-leg"><span><i class="up"></i>Above avg</span><span><i></i>Below avg</span><span><i class="owed"></i>Owed</span></div></div></div>
       <div class="pk-st"><div class="pk-st-t">League Action</div><div id="pkStAct"></div><div id="pkActChipsBox" hidden><div class="pk-chips-t">League Action by Monday</div><div class="pk-chips num" id="pkActChips"></div><div class="pk-leg"><span><i class="up"></i>Won</span><span><i class="down"></i>Lost</span></div></div></div>
       <div class="pk-st pk-kept" id="pkStKept" style="display:none"></div>
     </div>
+    <details class="pk-ended" id="pkEnded"><summary><span>League <em>Ended</em></span><b class="num" id="pkEndTot"></b></summary>
+    <div class="be" id="beDone" style="display:none">
+      <div class="be-done num"><span>Total P&amp;L</span><b id="bdProfit"></b></div>
     </div>
+    <div class="be" id="be">
+      <div class="debt-head"><span id="beTitle">Recovering the investment</span><span class="num" id="beRight"></span></div>
+      <div class="minibar"><i id="beFill" style="width:0"></i></div>
+      <div class="debt-sub num"><span id="beLeft"></span><span id="beOf"></span></div>
+    </div>
+      <div id="pkVLeague"><div class="pk-three num" id="pkThree"></div><div class="pk-chips-t">By Monday · rake + action</div><div class="pk-chips num" id="pkWkChips"></div><div class="pk-det num" id="pkWkDet"></div></div>
     <div class="hint" id="beHint">The investment is recovered only through league rakeback.</div>
-  </section>
+    </details>
+    </div>
+      </section>
   </div>
 
   <div class="tabp" role="tabpanel" id="p-stocks" aria-labelledby="tab-stocks" hidden>
@@ -2898,6 +2901,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
   const mondayOf = ds => { const d=new Date((ds||today())+"T12:00"); d.setDate(d.getDate()-((d.getDay()+6)%7)); return iso(d); };
   // league week of a payment: the week picked when logging it, otherwise the Monday of the day it was logged
   const ligaWeek = (date, semana) => semana ? mondayOf(semana) : mondayOf(date);
+  const MON = () => new Date().toLocaleDateString("en-US", {month: "long"});   // Marco Nov 25: name the month, "This month" was unclear
   const PK_STOP = "2026-11-16";   // Marco Nov 25: league went quiet from the week of Nov 16 (only one day played), so that week and later stay out of every poker average
 
   let config = {meta:1000000, deudas:[], inversionPoker:0, hitos:[500000,650000,800000,1000000], fijos:[], recordarDias:2};
@@ -4521,6 +4525,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
     const now = new Date();
     (config.fijos||[]).forEach(f => {
       if(f.pausado) return; // paused: the payer isn't paying for now (what they owe stays the same)
+      if(f.fuente==="Rakeback de la liga") return; // Marco Nov 25: the league ended for now, so no league rakeback is expected (see PK_STOP)
       if(f.semanal){
         // every Monday from last week until the end date (last week kept only for matching)
         const d = new Date(t+"T12:00"); d.setDate(d.getDate() + ((8 - d.getDay()) % 7) - 7);
@@ -4779,8 +4784,11 @@ html:not(.mp-guest) #s-gst{display:none!important}
     const up = $("up"); up.innerHTML = "";
     // same person, same day (e.g. a loan and a debt): one row with the combined amount
     const upWho = f => String(lbl(f)).replace(/^Loan · /,"");
-    const schV = []; sch.forEach(o => { const m = !o.aprox && !o.late && schV.find(x => !x.aprox && !x.late && x.date===o.date && upWho(x.fuente)===upWho(o.fuente));
-      if(m){ m.fuente = upWho(o.fuente); m.monto = Number(m.monto||0) + Number(o.monto||0); m.paid = (m.paid||0) + (o.paid||0); if(o.tope==="deuda") m.tope = "deuda"; } else schV.push({...o}); });
+    // Marco Nov 25: same person on the same day, or right after on a nearby day (≤3 days): one box, first date, each amount on its own line
+    const upKind = o => /^Loan · /.test(String(lbl(o.fuente))) ? "Loan" : o.tope==="deuda" ? "Debt" : "Payment";
+    const schV = []; sch.forEach(o => { const ok = x => !x.aprox && !x.late && upWho(x.fuente)===upWho(o.fuente);
+      const last = schV[schV.length-1], m = !o.aprox && !o.late && (schV.find(x => ok(x) && x.date===o.date) || (last && ok(last) && daysBetween(last.date, o.date) <= 3 ? last : null));
+      if(m){ if(!m.parts) m.parts = [{monto: Number(m.monto||0), k: upKind(m), date: m.date}]; m.parts.push({monto: Number(o.monto||0), k: upKind(o), date: o.date}); m.fuente = upWho(o.fuente); m.monto = Number(m.monto||0) + Number(o.monto||0); m.paid = (m.paid||0) + (o.paid||0); if(o.tope==="deuda") m.tope = "deuda"; } else schV.push({...o}); });
     const UPN = 6, allN = Math.min(schV.length, 12);
     const next = schV.slice(0, upAll ? allN : UPN);
     const lgAvg = ligaAvg().avg;
@@ -4796,6 +4804,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
       // league Mondays: estimated at the weekly average
       const lgRow = o.aprox && o.fuente==="Rakeback de la liga" && lgAvg>0 && !o.late;
       li.querySelector(".amt").textContent = lgRow ? "~" + fmt(lgAvg) : o.aprox ? (Number(o.monto)>0 ? "~" + fmt(o.monto) : "Varies") : fmt(o.monto);
+      if(o.parts && o.parts.length > 1){ const a = li.querySelector(".amt"), kinds = new Set(o.parts.map(p=>p.k)).size > 1; a.classList.add("up-parts"); a.innerHTML = o.parts.map(p => `<span>${kinds ? `<small>${p.k}${p.date!==o.date?" · "+fmtDate(p.date,false):""}</small>` : p.date!==o.date ? `<small>${fmtDate(p.date,false)}</small>` : ""}${fmt(p.monto)}</span>`).join(""); }
       up.appendChild(li);
     });
     { let mb = $("upMore"); if(!mb){ mb = document.createElement("button"); mb.type="button"; mb.id="upMore"; mb.className="mini upmore"; up.after(mb); mb.onclick = () => { upAll = !upAll; render(); }; }
@@ -5148,6 +5157,15 @@ html:not(.mp-guest) #s-gst{display:none!important}
     const sbT = sumSrc("Apuestas"), arT = sumSrc("Premio casino");
     const all = ligaNet+play+rbj+cas+home+sbT+arT;
     $("pkAll").textContent = (all<0?"−":"") + fmt(Math.abs(all));
+    { // Marco Nov 25: league ended, so the top is a summary of what's live now; League sits in an Ended card at the bottom
+      const now = new Date(), mk = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,"0");
+      const SRC = ["Rakeback de la liga","Póker jugando","Rakeback como jugador","Póker casino","Póker con amigos","Apuestas","Premio casino"];
+      const mo = entries.filter(e=>SRC.includes(e.source) && String(e.date||"").slice(0,7)===mk).reduce((t,e)=>t+(e.type==="out"?-e.amount:e.amount),0) + pokerOtra.filter(x=>SRC.includes(x.source) && String(x.fecha||"").slice(0,7)===mk).reduce((t,x)=>t+x.monto,0);
+      const S = v => `<b class="${v>0?"profit":v<0?"late":""}">${(v<0?"−":v>0?"+":"") + fmt(Math.abs(Math.round(v)))}</b>`;
+      $("pkSum").innerHTML = `<div class="pk-sm-mo"><span>${MON()}</span>${S(mo)}</div>` + [["ot","Tables",cas+home],["ar","Arcade",arT],["sb","Sports",sbT]].map(([v,l,x]) => `<button type="button" data-v="${v}"><span>${l}</span>${S(x)}<i>›</i></button>`).join("");
+      $("pkSum").querySelectorAll("button").forEach(b => b.onclick = () => { window.pkView = b.dataset.v; render(); setTimeout(() => $("pkSeg").scrollIntoView({behavior:"smooth", block:"start"}), 60); });
+      const lg = ligaNet + play; $("pkEndTot").textContent = (lg<0?"−":"+") + fmt(Math.abs(Math.round(lg))); $("pkEndTot").className = "num " + (lg>0?"profit":lg<0?"late":"");
+    }
     // ---- poker stats: League (rakeback) and League Action (own play), both per league week ----
     // League Action is logged once a week; a week counts only if it has an entry (no entry = not logged, not zero)
     const actDay = {};
@@ -5223,7 +5241,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
       if(w.monto>0){ addW(w.semana, "Rakeback de la liga", 0, 0, null, w.semana); const r = wk[ligaWeek(w.semana, w.semana)+"|Rakeback de la liga"]; if(r) r.owed = (r.owed||0) + w.monto; }
       if(w.accion>0){ addW(w.semana, "Póker jugando", 0, 0, null, w.semana); const r = wk[w.semana+"|Póker jugando"]; if(r) r.owed = (r.owed||0) + w.accion; }
     });
-    const pkV = (window.pkView==="hg" ? "ot" : window.pkView) || "league";
+    const pkV = (window.pkView==="hg" || window.pkView==="league" ? "ot" : window.pkView) || "ot";
     [["pkWeeks","Póker casino"],["pkWeeksH","Póker con amigos"]].forEach(([wid, pkOSrc]) => {
     const wl = $(wid); wl.innerHTML = "";
     const rows = Object.values(wk).filter(w=>w.src===pkOSrc).sort((a,b)=>b.d.localeCompare(a.d)).slice(0,12); // league weeks live in the Monday chips
@@ -5252,13 +5270,13 @@ html:not(.mp-guest) #s-gst{display:none!important}
       const tot = all.reduce((t,x)=>t+x.v,0), mo = all.filter(x=>(x.d||"").startsWith(ym)).reduce((t,x)=>t+x.v,0);
       const best = N ? Math.max(...all.map(x=>x.v)) : 0, worst = N ? Math.min(...all.map(x=>x.v)) : 0;
       const sg = v => (v<0?"−":v>0?"+":"") + fmt(Math.abs(Math.round(v))), cl = v => v>0 ? "profit" : v<0 ? "late" : "";
-      sm.innerHTML = N ? `<div><span>This month</span><b class="${cl(mo)}">${sg(mo)}</b></div><div><span>Sessions won</span><b>${up}–${dn}</b></div><div><span>Per session</span><b class="${cl(tot/N)}">${sg(tot/N)}</b></div><div><span>Biggest win</span><b class="${cl(best)}">${best>0?sg(best):"—"}</b></div><div><span>Biggest loss</span><b class="${cl(worst)}">${worst<0?sg(worst):"—"}</b></div><div><span>Sessions</span><b>${N}</b></div>` : "";
+      sm.innerHTML = N ? `<div><span>${MON()}</span><b class="${cl(mo)}">${sg(mo)}</b></div><div><span>Sessions won</span><b>${up}–${dn}</b></div><div><span>Per session</span><b class="${cl(tot/N)}">${sg(tot/N)}</b></div><div><span>Biggest win</span><b class="${cl(best)}">${best>0?sg(best):"—"}</b></div><div><span>Biggest loss</span><b class="${cl(worst)}">${worst<0?sg(worst):"—"}</b></div><div><span>Sessions</span><b>${N}</b></div>` : "";
       sm.hidden = !N; sm.nextElementSibling.hidden = !N; (window.__rcPk = window.__rcPk || {})[wid] = all; }
     });
     // ---- layout: switch League / Outside Tables / Home games ----
     { const sw = $("pkSeg");
       sw.querySelectorAll("button").forEach(b => { b.classList.toggle("on", b.dataset.v===pkV); b.onclick = () => { window.pkView = b.dataset.v; render(); }; });
-      $("pkVLeague").hidden = pkV!=="league"; $("pkVOther").hidden = pkV!=="ot"; $("pkVSports").hidden = pkV!=="sb"; $("pkVArcade").hidden = pkV!=="ar";
+      $("pkVLeague").hidden = false; $("pkVOther").hidden = pkV!=="ot"; $("pkVSports").hidden = pkV!=="sb"; $("pkVArcade").hidden = pkV!=="ar";
       const owRk = ligaWeeks(ligaDebt()).reduce((t,w)=>t+Number(w.monto||0),0), owAc = ligaWeeks(ligaDebt()).reduce((t,w)=>t+Number(w.accion||0),0);
       $("pkThree").innerHTML = `<div><span>Rake per week</span><b>${fmt(Math.round(pkAvgV))}</b></div><div><span>Action per week</span><b class="${cls(actAvgV)}">${sgn(actAvgV)}</b></div>`+(owRk+owAc>0 ? `<div class="pk-owed"><span>League owes you</span><b>${fmt(owRk+owAc)}</b></div>` : "");
       const ks = [...new Set([...avgKeys, ...actKeys])].sort().slice(-8);
@@ -5279,7 +5297,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
       $("pkHTot").innerHTML = `<span>Home games</span><b class="${cls(home)}">${sgn(home)}</b>`;
       { const ym = today().slice(0,7), bets = entries.filter(e=>e.source==="Apuestas").sort((a,b)=>(b.date||"").localeCompare(a.date||"")||((b.createdAt||0)-(a.createdAt||0)));
         const mo = bets.filter(e=>(e.date||"").startsWith(ym)).reduce((t,e)=>t+(e.type==="out"?-e.amount:e.amount),0);
-        $("pkSTot").innerHTML = `<span>Sports bets</span><b class="${cls(sbT)}">${sgn(sbT)}</b>` + (bets.length ? `<small class="pk-sm">This month <b class="${cls(mo)}">${sgn(mo)}</b></small>` : "");
+        const first = bets.length ? bets[bets.length-1].date : ""; $("pkSTot").innerHTML = `<span>Sports bets${first ? `<small class="pk-since">Since ${fmtDate(first,false)}</small>` : ""}</span><b class="${cls(sbT)}">${sgn(sbT)}</b>` + (bets.length ? `<small class="pk-sm">${MON()} <b class="${cls(mo)}">${sgn(mo)}</b></small>` : "");
         const ul = $("pkSList"); ul.innerHTML = bets.length ? "" : '<li class="empty">Nothing yet.</li>';
         bets.slice(0,10).forEach(e => { const li = document.createElement("li"); li.style.gridTemplateColumns = "1fr auto";
           li.innerHTML = `<div><div class="src"></div><div class="meta"></div></div><div class="amt num"></div>`;
@@ -5288,14 +5306,14 @@ html:not(.mp-guest) #s-gst{display:none!important}
       { const ym = today().slice(0,7), bk = entries.filter(e=>e.source==="Apuestas"), dep = bk.filter(e=>e.type==="out").reduce((t,e)=>t+e.amount,0), cash = bk.filter(e=>e.type!=="out").reduce((t,e)=>t+e.amount,0);
         const mo = bk.filter(e=>(e.date||"").startsWith(ym)).reduce((t,e)=>t+(e.type==="out"?-e.amount:e.amount),0);
         $("pkSSum").innerHTML = bk.length ? `<div><span>Deposited</span><b>${fmt(dep)}</b></div><div><span>Cashed out</span><b>${fmt(cash)}</b></div>` : "";
-        $("pkSSum").hidden = !bk.length; $("pkSSum").nextElementSibling.hidden = !bk.length; }
+        $("pkSSum").hidden = !bk.length; $("pkSSum").closest("details").hidden = !bk.length; }
       { const ym = today().slice(0,7), byD = {};
         entries.filter(e=>e.source==="Premio casino").forEach(e => { byD[e.date] = (byD[e.date]||0) + (e.type==="out"?-e.amount:e.amount); });
         const all = Object.entries(byD).map(([d,v])=>({d,v})).sort((a,b)=>b.d.localeCompare(a.d)), N = all.length;
         $("pkATot").innerHTML = `<span>${(window.MP_ME&&!window.MP_ME.owner)?"Casino":"Arcade"}</span><b class="${cls(arT)}">${sgn(arT)}</b>`;
         const mo = all.filter(x=>x.d.startsWith(ym)).reduce((t,x)=>t+x.v,0), up = all.filter(x=>x.v>0.5).length, dn = all.filter(x=>x.v<-0.5).length;
         const best = N ? Math.max(...all.map(x=>x.v)) : 0, worst = N ? Math.min(...all.map(x=>x.v)) : 0;
-        $("pkASum").innerHTML = N ? `<div><span>This month</span><b class="${cls(mo)}">${sgn(mo)}</b></div><div><span>Days won</span><b>${up}–${dn}</b></div><div><span>Biggest win</span><b class="${cls(best)}">${best>0?sgn(best):"—"}</b></div><div><span>Biggest loss</span><b class="${cls(worst)}">${worst<0?sgn(worst):"—"}</b></div>` : "";
+        $("pkASum").innerHTML = N ? `<div><span>${MON()}</span><b class="${cls(mo)}">${sgn(mo)}</b></div><div><span>Days won</span><b>${up}–${dn}</b></div><div><span>Biggest win</span><b class="${cls(best)}">${best>0?sgn(best):"—"}</b></div><div><span>Biggest loss</span><b class="${cls(worst)}">${worst<0?sgn(worst):"—"}</b></div>` : "";
         $("pkASum").hidden = !N; $("pkASum").nextElementSibling.hidden = !N;
         const ul = $("pkAList"); ul.innerHTML = "";
         all.slice(0,20).forEach(x => { const li = document.createElement("li"); li.style.gridTemplateColumns = "1fr auto";
@@ -5308,8 +5326,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
         const roi = staked ? net/staked*100 : 0, open = pend.reduce((t,b)=>t+(Number(b.stake)||0),0);
         const legsAll = B.flatMap(b=>b.legs||[]), lw = legsAll.filter(l=>l.result==="won").length, ll = legsAll.filter(l=>l.result==="lost").length;
         const od = v => v==null||v==="" ? "" : (Number(v)>0?"+":"")+Number(v);
-        $("sbStats").innerHTML = B.length ? `<div><span>Record</span><b>${W}–${L}${pend.length?` <small>· ${pend.length} open</small>`:""}</b></div><div><span>Staked</span><b>${fmt(staked)}</b></div><div><span>Profit</span><b class="${cls(net)}">${sgn(net)}</b></div><div><span>ROI</span><b class="${cls(roi)}">${roi>0?"+":""}${roi.toFixed(0)}%</b></div>`
-          + (legsAll.length ? `<div><span>Picks hit</span><b>${lw}/${lw+ll}${lw+ll?` <small>· ${Math.round(lw/(lw+ll)*100)}%</small>`:""}</b></div>` : "") + (open ? `<div><span>In play</span><b>${fmt(open)}</b></div>` : "") : "";
+        $("sbStats").innerHTML = B.length ? `<div><span>Won – lost</span><b>${W}–${L}</b></div><div><span>Return</span><b class="${cls(roi)}">${roi>0?"+":""}${roi.toFixed(0)}%</b></div>` + (open ? `<div><span>In play</span><b>${fmt(open)}</b></div>` : "") : "";   // Marco Nov 25: fewer numbers
         $("sbStats").hidden = !B.length; $("sbBetsH").hidden = !B.length;
     // ---- Reality check ----
     try{ (()=>{
@@ -5319,16 +5336,16 @@ html:not(.mp-guest) #s-gst{display:none!important}
       // SPORTS
       { const rows = [], bk = entries.filter(e=>e.source==="Apuestas");
         const net = bk.reduce((s,e)=>s+(e.type==="out"?-e.amount:e.amount),0), mo = bk.filter(e=>(e.date||"").startsWith(ym)).reduce((s,e)=>s+(e.type==="out"?-e.amount:e.amount),0);
-        if(bk.length){ rows.push(["This month", sg(mo), cl(mo)]); rows.push(["All time", sg(net), cl(net)]); }
+        // Marco Nov 25: totals live in the header; the check keeps only what tells him something new
         const done = bets.filter(b=>b.result==="won"||b.result==="lost"||b.result==="push"), st = done.reduce((s,b)=>s+(Number(b.stake)||0),0), bn = done.reduce((s,b)=>s+(Number(b.payout)||0)-(Number(b.stake)||0),0);
-        if(st>0){ const per = bn/st*100; rows.push(["Per RD$100 you bet", `${sg(per)} ${per>=0?"profit":"loss"}`, cl(per)]); }
+
         { const R = bets.filter(b=>b.result==="won"||b.result==="lost").sort((a,b)=>(b.fecha||"").localeCompare(a.fecha||"")); if(R.length){ const r0 = R[0].result; let k = 0; while(k<R.length && R[k].result===r0) k++; rows.push(["Current streak", k===1 ? (r0==="won"?"Won last bet":"Lost last bet") : `${k} ${r0==="won"?"wins":"losses"} in a row`, r0==="won"?"profit":"late"]); } }
         const grp = k => { const g = {}; done.forEach(b=>{ const x = k(b); if(!x) return; g[x] = g[x] || {n:0, net:0}; g[x].n++; g[x].net += (Number(b.payout)||0)-(Number(b.stake)||0); }); return g; };
         const ty = grp(b=>b.tipo==="parlay"?"Parlays":"Singles");
-        ["Parlays","Singles"].forEach(k => { if(ty[k]) rows.push([k, sg(ty[k].net), cl(ty[k].net)]); });
+
         const sp = grp(b=>{ const s = [...new Set((b.legs||[]).map(l=>String(l.sport||"").trim()).filter(Boolean))]; return s.length===1 ? s[0] : null; });
         const spk = Object.keys(sp).sort((a,b)=>sp[b].net-sp[a].net);
-        if(spk.length>=2){ rows.push([`Best sport · ${spEsc(spk[0])}`, sg(sp[spk[0]].net), cl(sp[spk[0]].net)]); rows.push([`Worst sport · ${spEsc(spk[spk.length-1])}`, sg(sp[spk[spk.length-1]].net), cl(sp[spk[spk.length-1]].net)]); }
+        if(spk.length>=2) rows.push([`Best sport · ${spEsc(spk[0])}`, sg(sp[spk[0]].net), cl(sp[spk[0]].net)]);
         else if(spk.length===1) rows.push([spEsc(spk[0]), sg(sp[spk[0]].net), cl(sp[spk[0]].net)]);
         const NOT = ["Saldo inicial","Préstamo","Reposición","Retiro","Apuestas","Premio casino","Póker casino","Póker con amigos","Póker jugando"];
         const earned = entries.filter(e=>e.type!=="out" && e.date>=from && !NOT.includes(e.source)).reduce((s,e)=>s+e.amount,0);
@@ -5346,7 +5363,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
       // POKER (Outside Tables + Home games)
       { const all = [...((window.__rcPk||{}).pkWeeks||[]), ...((window.__rcPk||{}).pkWeeksH||[])], rows = [];
         if(all.length){ const N = all.length, up = all.filter(x=>x.v>0.5).length, tot = all.reduce((s,x)=>s+x.v,0), mo = all.filter(x=>(x.d||"").startsWith(ym)).reduce((s,x)=>s+x.v,0);
-          rows.push(["This month", sg(mo), cl(mo)]); rows.push(["All time", sg(tot), cl(tot)]);
+          rows.push([MON(), sg(mo), cl(mo)]); rows.push(["All time", sg(tot), cl(tot)]);
           rows.push(["Average session", sg(tot/N), cl(tot/N)]);
           rows.push(["Sessions you win", `${Math.round(up/N*100)}% <small>· ${up} of ${N}</small>`, up/N>=0.5?"profit":"late"]); }
         card("rcPoker", rows); }
@@ -5368,7 +5385,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
             li.innerHTML = `<i></i><div><b></b><small></small></div><span></span>`;
             li.querySelector("i").textContent = ic(l.result); li.querySelector("b").textContent = l.pick||"";
             li.querySelector("small").textContent = [l.game, l.sport].filter(Boolean).join(" · "); li.querySelector("span").textContent = od(l.odds); ul2.appendChild(li); });
-          box.appendChild(d); });
+          if(box.children.length < 5) box.appendChild(d); else { let m = box.querySelector(".sb-all"); if(!m){ m = document.createElement("details"); m.className = "pk-more sb-all"; m.innerHTML = "<summary>See all bets</summary>"; box.appendChild(m); } m.appendChild(d); } });
       }
     }
     const inv = config.inversionPoker;
@@ -8550,6 +8567,23 @@ button,summary,[role="button"],.tabs{-webkit-touch-callout:none;-webkit-user-sel
 .pd-sep{font-size:.6rem;letter-spacing:.08em;opacity:.7}
 .pd-bars .pd-cnt{color:#E8C06A;font-size:.68rem}
 .pd-bars i.d{background:#E8C06A}.pd-bars i.r{background:rgba(255,255,255,.16)}
+
+.pk-sum{margin:14px 0 2px;display:grid;gap:6px}
+.pk-sum>div,.pk-sum>button{display:flex;align-items:center;gap:8px;width:100%;padding:11px 14px;border-radius:14px;background:var(--green-soft);border:0;font:inherit;color:inherit;text-align:left}
+.pk-sum>div{background:transparent;padding:4px 2px 6px;font-weight:700}
+.pk-sum span{flex:1}.pk-sum b{font-weight:800}.pk-sum i{font-style:normal;opacity:.4;font-size:1.1em}
+.pk-ended{margin:22px 0 4px;border-radius:16px;background:var(--green-soft);padding:0 14px}
+.pk-ended>summary{list-style:none;display:flex;align-items:center;gap:8px;padding:14px 0;cursor:pointer;font-weight:700}
+.pk-ended>summary::-webkit-details-marker{display:none}
+.pk-ended>summary span{flex:1}.pk-ended>summary em{font-style:normal;font-size:.68rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;opacity:.55;margin-left:6px}
+.pk-ended>summary::after{content:"›";opacity:.4;transition:transform .2s}.pk-ended[open]>summary::after{transform:rotate(90deg)}
+.pk-ended .be{margin:0 0 12px}
+html.mp-guest .pk-ended,html.mp-guest:not(.tr-casino) #pkSum [data-v="ar"],html.mp-guest:not(.tr-poker) #pkSum [data-v="ot"],html.mp-guest:not(.tr-bets) #pkSum [data-v="sb"]{display:none!important}
+.pk-since{display:block;font-size:.7rem;font-weight:600;opacity:.55;margin-top:2px}
+.sb-all>summary,.sb-dc>summary{margin-top:6px}
+.up-parts{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.up-parts span{display:flex;align-items:baseline;gap:6px;white-space:nowrap}
+.up-parts small{font-size:.66rem;font-weight:600;opacity:.55}
 #pkPull{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 6px);z-index:40;width:44px;height:44px;margin-left:-22px;border-radius:50%;background:var(--card);box-shadow:0 6px 18px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;transform:translateY(-70px);opacity:0;pointer-events:none}
 #pkPull img{width:30px;height:30px;border-radius:8px}
 #pkPull.go{transition:transform .3s cubic-bezier(.22,1,.36,1),opacity .3s}#pkPull.spin img{animation:pkDuckBob .6s ease-in-out infinite}
