@@ -1400,6 +1400,7 @@ html.mp-guest #p-stocks > #pnTick:not([hidden]){display:flex!important}
 .pd-bd .pd-img{margin:-28px -24px 18px;border-radius:0;aspect-ratio:4/3}.pd-bd .pd-img::after{content:"";position:absolute;inset:auto 0 0 0;height:45%;background:linear-gradient(to top,rgba(10,18,14,.85),transparent);pointer-events:none}
 .pd-s.brk .pd-bd .pd-img{aspect-ratio:4/3;margin-bottom:-44px}.pd-s.brk .pd-bd .pd-img::after{height:70%;background:linear-gradient(to top,#1E100D,transparent)}.pd-s.brk .pd-brkrow,.pd-s.brk .pd-bigh{position:relative;z-index:1}.pd-s.brk .pd-img>span{display:none}
 .pd-img>span{z-index:1}
+.pd-bdcard{height:auto!important;width:100%!important;margin:0 0 14px!important;display:block!important;opacity:1!important;transform:none!important}.pd-bdcard .pd-bd{overflow:visible;padding:20px 18px}
 .pd-bd .pd-img.pd-fd,.pd-bd>.pd-img.pd-fd:has(+ .pd-k){aspect-ratio:5/4}.pd-fd img{object-fit:contain!important;position:relative}.pd-fd .pd-bk{position:absolute;inset:0}.pd-bio{font-size:.82rem;opacity:.8;margin:-2px 0 10px;line-height:1.4}
 .pd-s.launch{background:linear-gradient(170deg,#3A2412 0%,#140B05 80%);border-color:#A8662E}.pd-s.rise{background:linear-gradient(170deg,#0F3A3A 0%,#06171A 80%);border-color:#2E9A8E}.pd-lr{padding:12px 14px}.pd-lr .pd-pmq{font-size:.98rem}.pd-lrm{margin-top:6px;font-size:.78rem;color:#CFE0D6}.pd-lrm b{color:#E3BC6A;font-weight:800}.pd-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}.pd-chips span{padding:4px 10px;border-radius:999px;background:rgba(80,220,200,.14);border:1px solid rgba(80,220,200,.35);color:#9FF0E2;font-weight:800;font-size:.8rem}
 .pd-s.preds{background:linear-gradient(170deg,#2A2350 0%,#0F0C1F 80%);border-color:#5B4FA8}.pd-pm{display:block;cursor:pointer;margin-top:14px;padding:13px 14px;border-radius:16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);color:inherit;text-decoration:none}.pd-pmq{font-weight:700;font-size:1rem;line-height:1.3}.pd-pmq small{display:block;font-weight:500;color:#B8B0E6;margin-top:3px;font-size:.82rem}.pd-pmr{display:grid;grid-template-columns:auto 1fr;align-items:center;gap:6px 12px;margin-top:9px}.pd-pmr b{font-size:1.6rem;font-weight:900;color:#B9A8FF}.pd-pmr i{height:8px;border-radius:8px;background:rgba(255,255,255,.12);overflow:hidden}.pd-pmr i u{display:block;height:100%;background:linear-gradient(90deg,#8C7BFF,#B9A8FF);border-radius:8px}.pd-pmr small{grid-column:1/-1;font-size:.76rem;color:#9C95C6}.pd-pmr em{font-style:normal;font-weight:700}.pd-pmr em.up{color:#7BE0A6}.pd-pmr em.dn{color:#FF8A80}.pd-mk{display:block;cursor:pointer;margin-top:16px;padding:11px 13px;border-radius:14px;background:rgba(140,123,255,.14);border:1px solid rgba(140,123,255,.35);color:#E6E1FF;font-size:.9rem;line-height:1.35;text-decoration:none}.pd-mk span{display:block;font-size:.66rem;font-weight:800;letter-spacing:.12em;color:#B9A8FF;margin-bottom:4px}.pd-mk b{font-size:1.05rem;color:#fff;margin-right:4px}.pd-mk small{color:#B8B0E6}
@@ -2661,10 +2662,11 @@ html:not(.mp-guest) #s-gst{display:none!important}
     </div>
     <div class="hint num" id="pkInvNote" hidden></div>
     <div id="pkNew">
-      <div class="pk-seg" id="pkSeg"><button type="button" data-v="league" class="on">League</button><button type="button" data-v="ot">Tables</button><button type="button" data-v="ar">Arcade</button><button type="button" data-v="sb">Sports</button></div>
+      <div class="pk-seg" id="pkSeg"><button type="button" data-v="league" class="on">League</button><button type="button" data-v="ot">Tables</button><button type="button" data-v="ar">Arcade</button><button type="button" data-v="sb">Sports</button><button type="button" data-v="bd" id="pkBdBtn" hidden>Board</button></div>
       <div id="pkVLeague"><div class="pk-three num" id="pkThree"></div><div class="pk-chips-t">By Monday · rake + action</div><div class="pk-chips num" id="pkWkChips"></div><div class="pk-det num" id="pkWkDet"></div></div>
       <div id="pkVOther" hidden><div class="rc" id="rcPoker" hidden></div><div class="pk-ototal num" id="pkOTot"></div><div class="sb-stats num" id="pkWeeksSum"></div><details class="pk-more"><summary>See sessions</summary><ul class="hist pweeks" id="pkWeeks"></ul></details><div class="pk-ototal pk-hg num" id="pkHTot"></div><div class="sb-stats num" id="pkWeeksHSum"></div><details class="pk-more"><summary>See sessions</summary><ul class="hist pweeks" id="pkWeeksH"></ul></details></div>
       <div id="pkVArcade" hidden><div class="pk-ototal num" id="pkATot"></div><div class="sb-stats num" id="pkASum"></div><details class="pk-more"><summary>See all</summary><ul class="hist pweeks" id="pkAList"></ul></details></div>
+      <div id="pkVBoard" hidden></div>
       <div id="pkVSports" hidden><div class="rc" id="rcSports" hidden></div><div class="pk-ototal num" id="pkSTot"></div><div class="sb-stats num" id="sbStats"></div><div class="sb-h" id="sbBetsH">Bets</div><div id="sbBets"></div><div class="sb-h">Deposits &amp; cashouts</div><div class="sb-stats num" id="pkSSum"></div><details class="pk-more"><summary>See all</summary><ul class="hist pweeks" id="pkSList"></ul></details></div>
     </div>
     <div class="pk-stats num" id="pkStats" hidden style="display:none!important">
@@ -5246,7 +5248,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
     // ---- layout: switch League / Outside Tables / Home games ----
     { const sw = $("pkSeg");
       sw.querySelectorAll("button").forEach(b => { b.classList.toggle("on", b.dataset.v===pkV); b.onclick = () => { window.pkView = b.dataset.v; render(); }; });
-      $("pkVLeague").hidden = pkV!=="league"; $("pkVOther").hidden = pkV!=="ot"; $("pkVSports").hidden = pkV!=="sb"; $("pkVArcade").hidden = pkV!=="ar";
+      $("pkVLeague").hidden = pkV!=="league"; $("pkVOther").hidden = pkV!=="ot"; $("pkVSports").hidden = pkV!=="sb"; $("pkVArcade").hidden = pkV!=="ar"; { const bb = $("pkBdBtn"), ok = !!(window.__pdMakeBoard && window.ND_OK && window.ND_OK()); bb.hidden = !ok; $("pkVBoard").hidden = pkV!=="bd" || !ok; if(pkV==="bd" && ok){ const bd = window.__pdMakeBoard(); $("pkVBoard").innerHTML = bd.length ? bd.map(x => `<div class="pd-s ${x.cls||""} pd-bdcard"><div class="pd-bd"><div class="pd-k" style="margin-bottom:8px">${x.t==="Sports" ? "🏆 SPORTS" : "🔮 PREDICTIONS"}</div>${x.body}</div></div>`).join("") : `<div class="hint">Nothing on the board yet.</div>`; } }
       const owRk = ligaWeeks(ligaDebt()).reduce((t,w)=>t+Number(w.monto||0),0), owAc = ligaWeeks(ligaDebt()).reduce((t,w)=>t+Number(w.accion||0),0);
       $("pkThree").innerHTML = `<div><span>Rake per week</span><b>${fmt(Math.round(pkAvgV))}</b></div><div><span>Action per week</span><b class="${cls(actAvgV)}">${sgn(actAvgV)}</b></div>`+(owRk+owAc>0 ? `<div class="pk-owed"><span>League owes you</span><b>${fmt(owRk+owAc)}</b></div>` : "");
       const ks = [...new Set([...avgKeys, ...actKeys])].sort().slice(-8);
@@ -7945,8 +7947,12 @@ TRACKER DATA:
       x.body += '<a class="pd-r2 pd-mk" data-u="' + esc(mk.u) + '"><span>🔮 MARKET ODDS</span><b>' + mk.p + '%</b> ' + esc(mk.q) + (mk.end ? ' <small>· by ' + esc(dlabel(mk.end)) + '</small>' : '') + '</a>'; });
     L.forEach(function(x){ var k = x.fk, c = k && CATS[ix(k)];
       x.nav = x.nav ? x.nav : x.call ? "⚔️ Duel" : k === "game" ? "⚽ Sports" : k === "big" ? "🚨 Breaking" : k === "rd" ? "🇩🇴 DR" : c ? c[2] + " " + c[1] : "🦆 Pato"; });
+    // Marco Nov 25: Predictions and Sports live only in the Games section now ("Board"), not in Pato Daily
+    if(MG()){ window.__pdBoard = L.filter(function(x){ return x.fk === "preds" || x.fk === "game"; }); L = L.filter(function(x){ return x.fk !== "preds" && x.fk !== "game"; }); }
     return L;
   }
+  window.ND_OK = function(){ try{ return !!(ND() && MG()); }catch(e){ return false; } };
+  window.__pdMakeBoard = function(){ try{ if(ND() && MG()) stories(); }catch(e){} return window.__pdBoard || []; };
 
   function stories(){ if(!ND()) return storiesOld(); try{ return stories2(); }catch(err){ if(MG() && !window.__mgOff){ window.__mgOff = 1; return stories2(); } throw err; } }   // automatic fallback: if the merged structure ever throws, the previous structure is used
   // ---------- This or that: one money question a day, then what % of Pato users got it right + why ----------
