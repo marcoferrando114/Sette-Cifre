@@ -2190,7 +2190,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261125183000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261125190000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -8075,12 +8075,12 @@ TRACKER DATA:
   }
   // Pato's pick (Marco Nov 12: "a sports bets pick, do some deep data research"): where ESPN's win model and the betting odds disagree most = value
   // the locked, graded pick from the server (one per day, same for everyone) + Pato's running record
-  function pickMoved(pk, G){ try{ var T = pk && pk.T; if(!T || !T.min) return ""; var g = (G || []).filter(function(x){ return x.ref === T.ref; })[0], cur = g && g.odds && g.odds.ml && g.odds.ml[T.side]; if(cur && impl(cur) != null && impl(T.min) != null && impl(cur) > impl(T.min) + 0.002) return ' <b style="color:#FF9C8F">Line moved to ' + esc(cur) + ', below Pato\'s minimum ' + esc(T.min) + ': skip it.</b>'; }catch(e){} return ""; }
+  function pickMoved(pk, G){ try{ var T = pk && pk.T; if(!T || !T.min || T.lbl) return ""; var g = (G || []).filter(function(x){ return x.ref === T.ref; })[0], cur = g && g.odds && g.odds.ml && g.odds.ml[T.side]; if(cur && impl(cur) != null && impl(T.min) != null && impl(cur) > impl(T.min) + 0.002) return ' <b style="color:#FF9C8F">Line moved to ' + esc(cur) + ', below Pato\'s minimum ' + esc(T.min) + ': skip it.</b>'; }catch(e){} return ""; }
   function pickCard(PK, G){ var pk = pickText(PK) || (!PK ? pickOf(G) : null); if(pk) pk.sub = (pk.sub || "") + pickMoved(pk, G); return pk ? '<div class="pd-tip pd-pick"><i>PATO\'S PICK · ' + esc(pk.lg.toUpperCase()) + '</i><p>' + bold(pk.txt) + '</p><small>' + (pk.T ? pk.sub : esc(pk.sub)) + '</small>' + (pk.rec ? '<div class="pd-rec">' + pk.rec + '</div>' : '') + '</div>' : ''; }
   function pickText(PK){ if(!PK) return null; var r = PK.rec || {}, T = PK.today, L = PK.last, rec = "";
     if(r.n) rec = '<b>Pato\'s record: ' + r.won + '-' + (r.n - r.won) + ' (' + Math.round(r.won/r.n*100) + '%)</b> · ' + (r.units >= 0 ? "+" : "") + r.units.toFixed(1) + ' units' + (L ? ' · Last: ' + esc(L.team) + ' ' + (L.res === "won" ? "✅" : L.res === "push" ? "➖" : "❌") + (L.score ? ' ' + esc(L.score) : '') : '');
     else rec = 'Pato\'s record starts with this pick. Every pick gets graded.';
-    if(T && !T.none && T.src === "pato") return {lg: T.league || "Sports", txt: T.team + " (" + T.ml + "). " + (T.why || ""), sub: T.game + " · Pato gives them " + T.w + "% against " + T.p + "% in the odds. Worth taking at " + (T.min || T.ml) + " or better; pass if the line is worse. Keep the stake small.", rec: rec, T: T};
+    if(T && !T.none && T.src === "pato") return {lg: T.league || "Sports", txt: (T.lbl ? T.lbl : T.team + " (" + T.ml + ")") + ". " + (T.why || ""), sub: T.game + " · Pato gives it " + T.w + "% against " + T.p + "% in the odds. Worth taking at " + (T.min || T.ml) + " or better" + (T.lbl ? " (usual price is about -110, check your book)" : "") + "; pass if it is worse. Keep the stake small.", rec: rec, T: T};
     if(T && !T.none) return {lg: T.league || "Sports", txt: "Data lean: " + T.team + " (" + T.ml + "). ESPN's model gives them " + T.w + "%, but the odds only price them at " + T.p + "%. A gap of " + T.edge + " points is what sharp bettors call value." + (T.form ? " They've won " + (T.form.match(/W/g) || []).length + " of their last " + T.form.length + "." : ""), sub: T.game + " · A lean, not a lock: keep the stake small.", rec: rec};
     if(T && T.none) return {lg: "Sports", txt: "No value on today's board: in " + T.seen + (T.seen === 1 ? " game" : " games") + " the odds match what the data says. The best bet on a day like this is no bet.", sub: "Pato checks win models, odds and recent form every drop.", rec: rec};
     return r.n ? {lg: "Sports", txt: "No pick yet today. Pato only picks when the data and the odds disagree.", sub: "Checked every drop.", rec: rec} : null; }
