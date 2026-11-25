@@ -2194,7 +2194,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261126013000";try{ if("serviceWorker" in navigator) window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); }); }catch(e){}window.NW=function(s){ s = String(s || "").replace(/\s*·?\s*Wikipedia/i, "").trim(); return s || "Pato"; };(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261126020000";try{ if("serviceWorker" in navigator) window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); }); }catch(e){}window.NW=function(s){ s = String(s || "").replace(/\s*·?\s*Wikipedia/i, "").trim(); return s || "Pato"; };(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -2305,7 +2305,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 <script id="stakd-dockfix">(function(){
   var st = navigator.standalone || (window.matchMedia && matchMedia("(display-mode: standalone)").matches);
   if (!st) return;
-  var lastScroll = 0;
+  var lastScroll = 0, applied = 0, seen = null, again = 0;
   function fix(){
     // never measure while the page is moving or rubber-banding: that read a wrong gap and left the bar floating mid-screen (Nov 20)
     if (Date.now() - lastScroll < 350) return;
@@ -2313,7 +2313,11 @@ html:not(.mp-guest) #s-gst{display:none!important}
     if (window.scrollY < 0 || window.scrollY > maxY + 1) return;
     var bar = document.querySelector(".tabs"), pr = document.getElementById("sdProbe"); if (!bar || !pr) return;
     var land = innerWidth > innerHeight, full = land ? Math.min(screen.width, screen.height) : Math.max(screen.width, screen.height);
-    var gap = Math.round(full - pr.getBoundingClientRect().bottom);
+    var gap = Math.round(full - pr.getBoundingClientRect().bottom); if (!(gap > 2 && gap < 260)) gap = 0;
+    // Nov 25 (Marco: "the tab bar is not stable"): only move the bar when the gap really changed, and only after two equal readings, so it no longer hops after every scroll or app switch
+    if (Math.abs(gap - applied) < 4) { seen = null; return; }
+    if (seen !== gap) { seen = gap; clearTimeout(again); again = setTimeout(fix, 250); return; }
+    seen = null; applied = gap;
     if (gap > 2 && gap < 260) {
       bar.style.setProperty("bottom", (-gap) + "px", "important");
       bar.style.setProperty("padding-bottom", "calc(6px + max(env(safe-area-inset-bottom,0px), 22px))", "important");
