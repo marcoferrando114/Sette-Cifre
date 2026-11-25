@@ -2194,7 +2194,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261126043000";try{ if("serviceWorker" in navigator) window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); }); }catch(e){}window.NW=function(s){ s = String(s || "").replace(/\s*·?\s*Wikipedia/i, "").trim(); return s || "Pato"; };(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261126050000";try{ if("serviceWorker" in navigator) window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); }); }catch(e){}window.NW=function(s){ s = String(s || "").replace(/\s*·?\s*Wikipedia/i, "").trim(); return s || "Pato"; };(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -2898,6 +2898,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
   const mondayOf = ds => { const d=new Date((ds||today())+"T12:00"); d.setDate(d.getDate()-((d.getDay()+6)%7)); return iso(d); };
   // league week of a payment: the week picked when logging it, otherwise the Monday of the day it was logged
   const ligaWeek = (date, semana) => semana ? mondayOf(semana) : mondayOf(date);
+  const PK_STOP = "2026-11-16";   // Marco Nov 25: league went quiet from the week of Nov 16 (only one day played), so that week and later stay out of every poker average
 
   let config = {meta:1000000, deudas:[], inversionPoker:0, hitos:[500000,650000,800000,1000000], fijos:[], recordarDias:2};
   let entries = [], loans = [], corriente = [], entriesRaw = [];
@@ -5132,7 +5133,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
     // rakeback the league still owes was earned that week, just not paid yet, so it counts toward the weekly average
     const earnedDay = {...byDay}, owedDay = {};
     ligaWeeks(ligaDebt()).forEach(w => { const k=ligaWeek(w.semana, w.semana); earnedDay[k]=(earnedDay[k]||0)+Number(w.monto||0); owedDay[k]=(owedDay[k]||0)+Number(w.monto||0); });
-    const pkKeys = Object.keys(earnedDay).sort(), avgKeys = pkKeys.length>1 ? pkKeys.slice(1) : pkKeys;
+    const pkKeys = Object.keys(earnedDay).sort(), avgKeys = (pkKeys.length>1 ? pkKeys.slice(1) : pkKeys).filter(k=>k<PK_STOP);
     const pkAvgV = avgKeys.length ? avgKeys.reduce((t,k)=>t+earnedDay[k],0)/avgKeys.length : 0;
     const play = sumSrc("Póker jugando") + sumSrc("Rakeback como jugador"), rbj = 0, ligaNet = sumSrc("Rakeback de la liga");
     $("pkLiga").textContent = fmt(ligaNet);
@@ -5157,7 +5158,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
     ligaWeeks(ligaDebt()).forEach(w => { if(w.accion>0) addAct(w.semana, w.accion, w.semana); });
     // same weeks as the league average: the first (half) league week stays out once there are full weeks
     const halfWk = pkKeys.length>1 ? pkKeys[0] : null;
-    const actKeys = Object.keys(actDay).filter(k=>k!==halfWk).sort();
+    const actKeys = Object.keys(actDay).filter(k=>k!==halfWk && k<PK_STOP).sort();
     const avgOf = ks => ks.length ? ks.reduce((t,k)=>t+(actDay[k]||0),0)/ks.length : 0;
     const actAvgV = avgOf(actKeys);
     const sgn = v => (v<0?"−":v>0?"+":"") + fmt(Math.abs(Math.round(v)));
@@ -5623,7 +5624,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
     entries.filter(e=>e.source==="Rakeback de la liga" && e.type!=="out").forEach(e => { const k=ligaWeek(e.date, e.semana); lw[k]=(lw[k]||0)+e.amount; });
     pokerOtra.filter(x=>x.source==="Rakeback de la liga").forEach(x => { const k=ligaWeek(x.fecha, x.semana); lw[k]=(lw[k]||0)+x.monto; });
     ligaWeeks(ligaDebt()).forEach(w => { const k=ligaWeek(w.semana, w.semana); lw[k]=(lw[k]||0)+Number(w.monto||0); });
-    const ks = Object.keys(lw).sort(), useK = ks.length>1 ? ks.slice(1) : ks;
+    const ks = Object.keys(lw).sort(), useK = (ks.length>1 ? ks.slice(1) : ks).filter(k=>k<PK_STOP);
     return {avg: useK.length ? useK.reduce((a,k)=>a+lw[k],0)/useK.length : 0, useK};
   }
   // home dashboard: net worth on top, one tile per area, each opening its tab
