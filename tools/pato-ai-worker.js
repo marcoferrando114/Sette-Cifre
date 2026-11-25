@@ -836,7 +836,7 @@ async function founderOf(env, now) {   // one per day; the real Wikipedia photo 
   const day = Math.floor((now - 11 * 3600e3) / 864e5);
   // Marco Nov 15: about 70% of founders are people he has not mentioned (my picks), about 30% are names he suggested (by: "marco"). His names take 3 days in 10, each name at most once per 10 of his slots, so the roster never repeats; his slot falls back to my picks when his list has run out.
   const HIS = FOUNDERS.filter(f => f.by === "marco"), sl = [2, 5, 8].indexOf(day % 10), use = sl >= 0 ? (Math.floor(day / 10) * 3 + sl) % 10 : -1, pref = use >= 0 && use < HIS.length ? [HIS[use]] : [];
-  return rosterPick(env, "founder", FOUNDERS, now, async f => { const it = { h: f.h, s: "Pato · Wikipedia", u: "https://en.wikipedia.org/wiki/" + f.w, t: now - 36e5, ceo: 1, founder: 1, pl: f.pl, bio: BIO[f.n] || "", sec: f.s, fy: f.fy, nav: "👤 CEOs & founders", name: f.n }; it.img = await wikiImg(env, f.w.replace(/_/g, " "), true).catch(() => ""); return it; }, pref);
+  return rosterPick(env, "founder", FOUNDERS, now, async f => { const it = { h: f.h, s: "Pato", u: "https://en.wikipedia.org/wiki/" + f.w, t: now - 36e5, ceo: 1, founder: 1, pl: f.pl, bio: BIO[f.n] || "", sec: f.s, fy: f.fy, nav: "👤 CEOs & founders", name: f.n }; it.img = await wikiImg(env, f.w.replace(/_/g, " "), true).catch(() => ""); return it; }, pref);
 }
 // Marco Nov 25: three more daily story tabs, written as stories with surprising facts (Big mistake, Investor playbook, How they make money). Pure facts from public record, rotated so none repeats until the whole list is used. w = Wikipedia pages tried in order for the real photo.
 const MK = (n, w, h, pl, s, fy) => ({ n, w, h, pl, s, fy });
@@ -933,7 +933,7 @@ const BIZMODELS = [
 
 const STORY_POOLS = { mistake: MISTAKES, playbook: PLAYBOOKS, model: BIZMODELS };
 async function storyOf(env, kind, now) {   // Big mistake, Investor playbook, How they make money: a real photo from the story's own Wikipedia page, in order of the pages listed
-  return rosterPick(env, kind, STORY_POOLS[kind], now, async f => { const it = { h: f.h, s: "Pato · Wikipedia", u: "https://en.wikipedia.org/wiki/" + f.w[0], t: now - 36e5, name: f.n, kind, pl: f.pl, sec: kind === "mistake" && MC[f.n] ? f.s.map(x => [x[0] === "THE MISTAKE" ? "WHAT HAPPENED" : x[0], x[1]]) : f.s, fy: f.fy }; if (kind === "mistake" && MC[f.n]) { it.mt = MC[f.n][0]; it.cost = MC[f.n][1]; }
+  return rosterPick(env, kind, STORY_POOLS[kind], now, async f => { const it = { h: f.h, s: "Pato", u: "https://en.wikipedia.org/wiki/" + f.w[0], t: now - 36e5, name: f.n, kind, pl: f.pl, sec: kind === "mistake" && MC[f.n] ? f.s.map(x => [x[0] === "THE MISTAKE" ? "WHAT HAPPENED" : x[0], x[1]]) : f.s, fy: f.fy }; if (kind === "mistake" && MC[f.n]) { it.mt = MC[f.n][0]; it.cost = MC[f.n][1]; }
     for (const w of f.w) { const im = await wikiImg(env, w.replace(/_/g, " "), false).catch(() => ""); if (im) { it.img = im; it.u = "https://en.wikipedia.org/wiki/" + w; break; } } return it; });
 }
 // The prebuilt edition (Marco Nov 14: "ready when the user opens the app"): built and image-resolved in the hour before each drop (7am, 1pm, 7pm DR), then served from KV in one fast call.
