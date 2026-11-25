@@ -2194,7 +2194,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261126070000";try{ if("serviceWorker" in navigator) window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); }); }catch(e){}window.NW=function(s){ s = String(s || "").replace(/\s*·?\s*Wikipedia/i, "").trim(); return s || "Pato"; };(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261126073000";try{ if("serviceWorker" in navigator) window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); }); }catch(e){}window.NW=function(s){ s = String(s || "").replace(/\s*·?\s*Wikipedia/i, "").trim(); return s || "Pato"; };(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -4784,8 +4784,11 @@ html:not(.mp-guest) #s-gst{display:none!important}
     const up = $("up"); up.innerHTML = "";
     // same person, same day (e.g. a loan and a debt): one row with the combined amount
     const upWho = f => String(lbl(f)).replace(/^Loan · /,"");
-    const schV = []; sch.forEach(o => { const m = !o.aprox && !o.late && schV.find(x => !x.aprox && !x.late && x.date===o.date && upWho(x.fuente)===upWho(o.fuente));
-      if(m){ m.fuente = upWho(o.fuente); m.monto = Number(m.monto||0) + Number(o.monto||0); m.paid = (m.paid||0) + (o.paid||0); if(o.tope==="deuda") m.tope = "deuda"; } else schV.push({...o}); });
+    // Marco Nov 25: same person on the same day, or right after on a nearby day (≤3 days): one box, first date, each amount on its own line
+    const upKind = o => /^Loan · /.test(String(lbl(o.fuente))) ? "Loan" : o.tope==="deuda" ? "Debt" : "Payment";
+    const schV = []; sch.forEach(o => { const ok = x => !x.aprox && !x.late && upWho(x.fuente)===upWho(o.fuente);
+      const last = schV[schV.length-1], m = !o.aprox && !o.late && (schV.find(x => ok(x) && x.date===o.date) || (last && ok(last) && daysBetween(last.date, o.date) <= 3 ? last : null));
+      if(m){ if(!m.parts) m.parts = [{monto: Number(m.monto||0), k: upKind(m), date: m.date}]; m.parts.push({monto: Number(o.monto||0), k: upKind(o), date: o.date}); m.fuente = upWho(o.fuente); m.monto = Number(m.monto||0) + Number(o.monto||0); m.paid = (m.paid||0) + (o.paid||0); if(o.tope==="deuda") m.tope = "deuda"; } else schV.push({...o}); });
     const UPN = 6, allN = Math.min(schV.length, 12);
     const next = schV.slice(0, upAll ? allN : UPN);
     const lgAvg = ligaAvg().avg;
@@ -4801,6 +4804,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
       // league Mondays: estimated at the weekly average
       const lgRow = o.aprox && o.fuente==="Rakeback de la liga" && lgAvg>0 && !o.late;
       li.querySelector(".amt").textContent = lgRow ? "~" + fmt(lgAvg) : o.aprox ? (Number(o.monto)>0 ? "~" + fmt(o.monto) : "Varies") : fmt(o.monto);
+      if(o.parts && o.parts.length > 1){ const a = li.querySelector(".amt"), kinds = new Set(o.parts.map(p=>p.k)).size > 1; a.classList.add("up-parts"); a.innerHTML = o.parts.map(p => `<span>${kinds ? `<small>${p.k}${p.date!==o.date?" · "+fmtDate(p.date,false):""}</small>` : p.date!==o.date ? `<small>${fmtDate(p.date,false)}</small>` : ""}${fmt(p.monto)}</span>`).join(""); }
       up.appendChild(li);
     });
     { let mb = $("upMore"); if(!mb){ mb = document.createElement("button"); mb.type="button"; mb.id="upMore"; mb.className="mini upmore"; up.after(mb); mb.onclick = () => { upAll = !upAll; render(); }; }
@@ -8577,6 +8581,9 @@ button,summary,[role="button"],.tabs{-webkit-touch-callout:none;-webkit-user-sel
 html.mp-guest .pk-ended,html.mp-guest:not(.tr-casino) #pkSum [data-v="ar"],html.mp-guest:not(.tr-poker) #pkSum [data-v="ot"],html.mp-guest:not(.tr-bets) #pkSum [data-v="sb"]{display:none!important}
 .pk-since{display:block;font-size:.7rem;font-weight:600;opacity:.55;margin-top:2px}
 .sb-all>summary,.sb-dc>summary{margin-top:6px}
+.up-parts{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.up-parts span{display:flex;align-items:baseline;gap:6px;white-space:nowrap}
+.up-parts small{font-size:.66rem;font-weight:600;opacity:.55}
 #pkPull{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 6px);z-index:40;width:44px;height:44px;margin-left:-22px;border-radius:50%;background:var(--card);box-shadow:0 6px 18px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;transform:translateY(-70px);opacity:0;pointer-events:none}
 #pkPull img{width:30px;height:30px;border-radius:8px}
 #pkPull.go{transition:transform .3s cubic-bezier(.22,1,.36,1),opacity .3s}#pkPull.spin img{animation:pkDuckBob .6s ease-in-out infinite}
