@@ -5910,6 +5910,10 @@ html:not(.mp-guest) #s-gst{display:none!important}
       if(gap(last.date, T) > 40) return;   // stopped: no charge for over a month
       let next = addM(last.date); subs.push({name: nice(last.merchant), amt: spAmt(last), next});
     });
+    // subscriptions paid outside his accounts (2nd Claude plan on Mom's card, Marco Nov 25): spendMeta/sync.subsExtra [{name, amt, day}]
+    ((spMeta && Array.isArray(spMeta.subsExtra)) ? spMeta.subsExtra : []).forEach(x => { const amt = Number(x && x.amt) || 0, day = Math.min(28, Math.max(1, Number(x && x.day) || 1)); if(!x || !x.name || !(amt > 0)) return;
+      let n = T.slice(0,8) + String(day).padStart(2,"0"); if(n < T) n = addM(n); subs.push({name: String(x.name), amt, next: n}); });
+    { const hide = (spMeta && Array.isArray(spMeta.subsHide) ? spMeta.subsHide : []).map(x=>String(x).toLowerCase()); for(let i=subs.length-1;i>=0;i--) if(hide.includes(subs[i].name.toLowerCase())) subs.splice(i,1); }   // subsHide: names taken off the list (Deliveroo, Marco Nov 25)
     subs.sort((a,b)=>a.next.localeCompare(b.next));
     sec.hidden = !subs.length; if(!subs.length){ box.innerHTML = ""; return; }
     const tot = subs.reduce((a,x)=>a+x.amt,0);
