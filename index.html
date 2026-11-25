@@ -2194,7 +2194,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261126020000";try{ if("serviceWorker" in navigator) window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); }); }catch(e){}window.NW=function(s){ s = String(s || "").replace(/\s*·?\s*Wikipedia/i, "").trim(); return s || "Pato"; };(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261126030000";try{ if("serviceWorker" in navigator) window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); }); }catch(e){}window.NW=function(s){ s = String(s || "").replace(/\s*·?\s*Wikipedia/i, "").trim(); return s || "Pato"; };(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -8225,6 +8225,7 @@ TRACKER DATA:
     return '<div class="pd-img pd-vis"><div class="pd-vm">' + (lg ? '<span class="pd-vlg"><img src="' + esc(lg) + '" alt="" onerror="this.parentNode.outerHTML=\'<span class=pd-vem>' + esc(em) + '</span>\'"></span>' : '<span class="pd-vem">' + esc(em) + '</span>') + '</div>' + (x.ps ? '<span>' + esc(x.ps) + '</span>' : '') + '</div>'; }
   function picHtml(x){ var raw = PHOTOS() && x.pic ? IM.m[x.pic] : "", im = raw, ix0 = S.indexOf(x), dup = false;    // never the same photo twice
     if(im) return '<div class="pd-img' + (x.fd ? ' pd-fd' : '') + '"' + (x.news || ND() ? ' data-vis="' + esc(visHtml(x)) + '"' : '') + '><div class="pd-bk"' + (x.fd ? ' style="background:url(\'' + esc(im) + '\') center/cover;filter:blur(22px) brightness(.7);transform:scale(1.2)"' : '') + '></div><img src="' + esc(im) + '" alt="" decoding="async"' + (WARM[im] && WARM[im].complete && WARM[im].naturalWidth ? ' style="opacity:1"' : ' style="opacity:0;transition:opacity .3s"') + ' referrerpolicy="no-referrer" onerror="__pdSwap(this)" onload="if(this.naturalWidth<300||this.naturalHeight<170)__pdSwap(this);else this.style.opacity=1">' + (x.ps ? '<span>' + esc(x.ps) + '</span>' : '') + '</div>';
+    if(x.pic && PHOTOS() && !(x.pic in IM.m)) return '<div class="pd-img pd-ph' + (x.fd ? ' pd-fd' : '') + '"></div>';   // Marco Nov 25: a soft placeholder holds the photo's place while it loads (no jump when it arrives)
     return x.news && (!x.pic || !PHOTOS() || raw === "" || dup) ? visHtml(x) : ''; }
   var lastBase = null, NEW = {};   // what was unread when you opened: those chips get a dot, the slide gets a NEW tag
   function show(i){
@@ -8238,9 +8239,9 @@ TRACKER DATA:
     (function(bd){ bd.scrollTop = 0; bd.onscroll = function(){ $("pdS").classList.toggle("sc", bd.scrollTop > 16); }; var m = function(){ var e = bd.querySelector(".pd-more"); if(e){ e.style.display = bd.scrollHeight > bd.clientHeight + 30 ? "" : "none"; e.classList.remove("mini"); var r = e.getBoundingClientRect(), hh = bd.querySelectorAll(".pd-bigh,.pd-h1,.pd-hh,h2,h3"); for(var q = 0; q < hh.length; q++){ var t = hh[q].getBoundingClientRect(); if(t.bottom > r.top + 8 && t.top < r.bottom - 8){ e.classList.add("mini"); break; } } } }; setTimeout(m, 60); setTimeout(m, 700); })($("pdBd"));   // Nov 12: Breaking says when there is more below
     if(x.call && callSt() && callSt().n === 0) callSync(x.call, null);
     var grp = function(y){ return /:take$/.test(y.id) ? "t" : NEW[y.id] ? "n" : "s"; }, cnt = {t: 0, n: 0, s: 0}; S.forEach(function(y){ cnt[grp(y)]++; });   // Marco Nov 12: new and seen stories must be clearly divided
-    $("pdBars").innerHTML = S.map(function(y, j){ return '<i class="' + (j === cur ? "n" : s.ids[y.id] ? "d" : "nw") + (j && grp(y) !== grp(S[j - 1]) ? " g" : "") + '"></i>'; }).join("");
+    $("pdBars").innerHTML = S.map(function(y, j){ return '<i class="' + (j === cur ? "n" : s.ids[y.id] ? "d" : "nw") + (j && grp(y) !== grp(S[j - 1]) ? " g" : "") + '"></i>'; }).join("") + '<b class="pd-cnt">' + (cur + 1) + '/' + S.length + '</b>';   // Marco Nov 25: you always see how many stories there are and where you are
     var nv = $("pdNav"); if(nv){ nv.innerHTML = S.map(function(y, j){ var sn = s.ids[y.id] && j !== cur && !NEW[y.id]; return (j > 0 && grp(y) !== grp(S[j - 1]) ? '<span class="pd-sep' + (grp(y) === "n" ? ' nw">NEW · ' : '">✓ SEEN · ') + cnt[grp(y)] + '</span>' : '') + '<button type="button" data-j="' + j + '" class="' + (j === cur ? 'on' : '') + (NEW[y.id] && j !== cur && !s.ids[y.id] ? ' nw' : '') + (sn || (NEW[y.id] && s.ids[y.id] && j !== cur) ? ' sn' : '') + '">' + esc(y.nav || y.t) + '</button>'; }).join(""); var onb = nv.querySelector(".on"); if(onb) nv.scrollLeft = Math.max(0, onb.offsetLeft - nv.clientWidth / 2 + onb.offsetWidth / 2); }
-    if(x.pic && !(x.pic in IM.m)) pic(x.pic, function(){ if(S[cur] === x && !$("pdV").hidden && !$("pdBd").querySelector(".pd-img")) $("pdBd").insertAdjacentHTML("afterbegin", picHtml(x)); }, x.ph);
+    if(x.pic && !(x.pic in IM.m)) pic(x.pic, function(){ if(S[cur] === x && !$("pdV").hidden && !$("pdBd").querySelector(".pd-img:not(.pd-ph)")){ var ph0 = $("pdBd").querySelector(".pd-ph"); if(ph0) ph0.remove(); $("pdBd").insertAdjacentHTML("afterbegin", picHtml(x)); } }, x.ph);
     var ul = unseen().length, g = grp(x), gi = S.filter(function(y){ return grp(y) === g; }).indexOf(x) + 1, nx = S[cur + 1];
     var fv = (ls("pd-fb") || {})[x.id], tb = x.fk && !x.pick && !x.call && (x.u || x.sh);   // Marco Nov 12: 👍/👎 live quietly at the bottom corners
     $("pdFt").innerHTML = (tb ? '<button type="button" class="pd-fb' + (fv === 1 ? ' on' : '') + '" data-fb="1" aria-label="More like this">👍</button>' : '<span class="pd-fsp"></span>') + '<div class="pd-fmid">' + ('<span class="pd-pos ' + g + '">' + (g === "n" ? "NEW" : g === "s" ? "✓ SEEN" : "PATO'S TAKE") + (g === "t" ? "" : " · " + gi + " of " + cnt[g]) + '</span><br>' + (nx ? "Next: " + (grp(nx) !== g ? (grp(nx) === "n" ? "new stories" : "✓ seen stories") + " · " : "") + esc(nx.nav || nx.t) : (ul ? "🕒 " + ul + " new · " + clock() : "✓ You're all caught up · next drop " + hh(DROPS[(slot() + 1) % DROPS.length])))) + '</div>' + (tb ? '<button type="button" class="pd-fb' + (fv === -1 ? ' on' : '') + '" data-fb="-1" aria-label="Less like this">👎</button>' : '<span class="pd-fsp"></span>');
@@ -8531,6 +8532,19 @@ button,summary,[role="button"],.tabs,a{-webkit-tap-highlight-color:transparent}
 button,summary,[role="button"],.tabs{-webkit-touch-callout:none;-webkit-user-select:none;user-select:none;touch-action:manipulation}
 
 @media (prefers-reduced-motion: reduce){.pduck *{animation:none!important;transition:none!important}.toast.on .tk.pk-tk{animation:none}.tabs.pk-gl-run .pk-gl{transition:none}}
+
+/* Nov 25 design pass (Marco picked 1-5): clearer story progress, loading placeholders, story opens from where you tapped, duck pull-to-refresh, consistent cards */
+.pd-bars{padding:12px 14px 0;align-items:center}.pd-bars i{height:4px;background:rgba(255,255,255,.3)}.pd-bars i.nw{background:rgba(232,192,106,.9)}
+.pd-bars .pd-cnt{flex:none;margin-left:6px;font-size:.66rem;font-weight:800;letter-spacing:.04em;color:rgba(255,255,255,.85);line-height:1}
+@keyframes pkShim{from{background-position:120% 0}to{background-position:-20% 0}}
+.pd-img,.pd-ph{background-color:rgba(255,255,255,.05);background-image:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.09) 50%,transparent 70%);background-size:220% 100%;animation:pkShim 1.3s ease-in-out infinite}
+.pd-bd .pd-ph{aspect-ratio:4/3}
+#hTiles:empty{min-height:168px;border-radius:16px;background-color:color-mix(in srgb,var(--card) 80%,transparent);background-image:linear-gradient(100deg,transparent 30%,rgba(255,255,255,.07) 50%,transparent 70%);background-size:220% 100%;animation:pkShim 1.3s ease-in-out infinite}
+.tabp > section{margin-top:14px}.tabp > section > h2:first-child{margin-top:0}
+#pkPull{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 6px);z-index:40;width:44px;height:44px;margin-left:-22px;border-radius:50%;background:var(--card);box-shadow:0 6px 18px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;transform:translateY(-70px);opacity:0;pointer-events:none}
+#pkPull img{width:30px;height:30px;border-radius:8px}
+#pkPull.go{transition:transform .3s cubic-bezier(.22,1,.36,1),opacity .3s}#pkPull.spin img{animation:pkDuckBob .6s ease-in-out infinite}
+@keyframes pkDuckBob{50%{transform:translateY(-4px) rotate(-12deg)}}
 </style>
 <script id="pk-motion-js">
 (function(){
@@ -8709,5 +8723,27 @@ button,summary,[role="button"],.tabs{-webkit-touch-callout:none;-webkit-user-sel
   if(document.readyState === "complete") boot(); else window.addEventListener("load", boot);
 })();
 </script>
+<script id="stakd-design-js">(function(){
+  // 3. a story opens by growing out of what you tapped (Marco Nov 25)
+  var lastTap = null; document.addEventListener("pointerdown", function(e){ var t = e.target.closest && e.target.closest("button, a, [role=button], .home-board, #pdPeek, #pdFab"); lastTap = t ? {r: t.getBoundingClientRect(), at: Date.now()} : null; }, true);
+  var V = document.getElementById("pdV"), S = document.getElementById("pdS");
+  if(V && S && S.animate && !(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches)){
+    new MutationObserver(function(){ if(V.hidden || !lastTap || Date.now() - lastTap.at > 1500) return; var a = lastTap.r; lastTap = null; var b = S.getBoundingClientRect(); if(!b.width || !a.width) return;
+      var sc = Math.max(.2, Math.min(1, a.width / b.width)), dx = (a.left + a.width / 2) - (b.left + b.width / 2), dy = (a.top + a.height / 2) - (b.top + b.height / 2);
+      S.animate([{transform: "translate(" + dx + "px," + dy + "px) scale(" + sc + ")", opacity: .4, borderRadius: "40px"}, {transform: "none", opacity: 1}], {duration: 420, easing: "cubic-bezier(.22,1,.36,1)"}); }).observe(V, {attributes: true, attributeFilter: ["hidden"]});
+  }
+  // 4. pull down at the top of a screen: Pato dives in and refreshes your bank activity and prices (Marco Nov 25)
+  var P = document.createElement("div"); P.id = "pkPull"; P.innerHTML = '<img src="icon-192.png?v=7" alt="">'; document.body.appendChild(P);
+  var y0 = null, d = 0, busy = false, H = 80;
+  var blocked = function(t){ return document.documentElement.classList.contains("mp-locked") || (V && !V.hidden) || (t.closest && t.closest("input,textarea,select,.pd-v,.palsheet,#palSheet,.celebrate,#snapDlg,.rpt,#sgSetup,dialog,.sheet,[role=dialog]")) || document.querySelector(".celebrate.on,#snapDlg:not([hidden]),#palSheet:not([hidden])"); };
+  document.addEventListener("touchstart", function(e){ if(busy || window.scrollY > 0 || e.touches.length !== 1 || blocked(e.target)){ y0 = null; return; } y0 = e.touches[0].clientY; d = 0; P.classList.remove("go"); }, {passive: true});
+  document.addEventListener("touchmove", function(e){ if(y0 == null) return; d = e.touches[0].clientY - y0; if(d <= 0 || window.scrollY > 0){ P.style.opacity = 0; return; } var k = Math.min(1, d / H); P.style.opacity = k; P.style.transform = "translateY(" + (-70 + Math.min(d, H * 1.4) * .9) + "px) rotate(" + (k * 200) + "deg)"; }, {passive: true});
+  document.addEventListener("touchend", function(){ if(y0 == null) return; y0 = null; P.classList.add("go");
+    if(d < H){ P.style.transform = "translateY(-70px)"; P.style.opacity = 0; return; }
+    busy = true; P.style.transform = "translateY(20px)"; P.style.opacity = 1; P.classList.add("spin");
+    try{ ["saGm", "saSt"].forEach(function(id){ var b = document.getElementById(id); if(b && !b.disabled) b.click(); }); }catch(e){}
+    try{ document.dispatchEvent(new Event("visibilitychange")); }catch(e){}
+    setTimeout(function(){ P.classList.remove("spin"); P.style.transform = "translateY(-70px)"; P.style.opacity = 0; busy = false; }, 1600); }, {passive: true});
+})();</script>
 </body>
 </html>
