@@ -2123,7 +2123,8 @@ html:not(.mp-guest) #s-gst{display:none!important}
 #palSheet.full[data-sec="look"] > [data-sk="look"],#palSheet.full[data-sec="faceid"] > [data-sk="faceid"],#palSheet.full[data-sec="alerts"] > [data-sk="alerts"],
 #palSheet.full[data-sec="camera"] > [data-sk="camera"],#palSheet.full[data-sec="daily"] > [data-sk="daily"],#palSheet.full[data-sec="tabs"] > [data-sk="tabs"],
 #palSheet.full[data-sec="currency"] > [data-sk="currency"]{display:revert!important}
-#palSheet.full[data-sec="more"] > [data-sk="more"]{display:revert!important}
+#palSheet.full[data-sec="more"] > [data-sk="more"],#palSheet.full[data-sec="acct"] > [data-sk="acct"]{display:revert!important}
+#sgOwnOut{display:block;text-align:left;color:var(--muted);font-size:.9rem;line-height:1.45}#sgOwnOut button{display:block;margin-top:14px;width:100%;padding:14px;border-radius:14px;border:1px solid var(--line);background:var(--card);color:#FF9C8F;font:inherit;font-weight:600}
 #palSheet.full[data-sec="look"] > span[data-sk="look"]{display:none!important}
 #palSheet .sp-hd{display:flex!important;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;margin:0 0 18px;min-height:36px}
 #palSheet .sp-hd h2{order:3;width:100%;margin-top:6px!important}
@@ -2190,7 +2191,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261125210000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261125213000";(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -8346,13 +8347,13 @@ TRACKER DATA:
 })();
 </script>
 <script id="stakd-setpage-js">(function(){
-  var NAMES = {look:["🎨","Look"], faceid:["🔒","Face ID"], alerts:["🔔","Alerts"], daily:["🦆","Pato Daily"], camera:["📷","Camera"], tabs:["🗂️","Tabs & account"], currency:["💱","Currency"], more:["⋯","More"]};
-  var ORDER = ["look","faceid","alerts","daily","camera","tabs","currency","more"];
+  var NAMES = {look:["🎨","Look"], faceid:["🔒","Face ID"], alerts:["🔔","Alerts"], daily:["🦆","Pato Daily"], camera:["📷","Camera"], tabs:["🗂️","Tabs & account"], currency:["💱","Currency"], more:["⋯","More"], acct:["👤","Account"]};
+  var ORDER = ["look","faceid","alerts","daily","camera","tabs","currency","more","acct"];
   var $ = function(id){ return document.getElementById(id); };
   function key(c){
     if(c.classList.contains("sp-hd") || c.classList.contains("sp-list")) return null;
     if(c.id === "sfToggle") return "faceid"; if(c.id === "alWrap") return "alerts"; if(c.id === "snapKeyRow") return "camera";
-    if(c.id === "curRow") return "currency"; if(c.id === "pdTopics") return "daily"; if(c.id === "sgTabs") return "tabs";
+    if(c.id === "curRow") return "currency"; if(c.id === "sgOwnOut") return "acct"; if(c.id === "pdTopics") return "daily"; if(c.id === "sgTabs") return "tabs";
     if(c.classList.contains("seg") || (c.tagName === "SPAN" && /look/i.test(c.textContent))) return "look";
     return "more";
   }
@@ -8371,7 +8372,9 @@ TRACKER DATA:
     var have = {};
     [].forEach.call(sh.children, function(c){ var k = key(c); if(!k) return; c.setAttribute("data-sk", k); if(!c.hidden && c.style.display !== "none") have[k] = 1; });
     var list = sh.querySelector(".sp-list");
-    list.innerHTML = ORDER.filter(function(k){ return have[k]; }).map(function(k){ var v = val(k, sh); return '<button type="button" class="sp-row" data-go="'+k+'"><i>'+NAMES[k][0]+'</i><span>'+NAMES[k][1]+'</span>'+(v?'<small>'+v+'</small>':'')+'<b>›</b></button>'; }).join("");
+    var html = ORDER.filter(function(k){ return have[k]; }).map(function(k){ var v = val(k, sh); return '<button type="button" class="sp-row" data-go="'+k+'"><i>'+NAMES[k][0]+'</i><span>'+NAMES[k][1]+'</span>'+(v?'<small>'+v+'</small>':'')+'<b>›</b></button>'; }).join("");
+    if(list._h === html && list.children.length) return;   /* Marco Nov 25: Settings flickered because every background update redrew the list; only redraw when something changed */
+    list._h = html; list.innerHTML = html;
     list.querySelectorAll("[data-go]").forEach(function(b){ b.onclick = function(e){ e.stopPropagation(); show(b.dataset.go); }; });
   }
   function show(k){
@@ -8381,8 +8384,11 @@ TRACKER DATA:
   function close(){ var sh = $("palSheet"), pb = $("palBtn"); sh.hidden = true; sh.removeAttribute("data-sec"); if(pb) pb.setAttribute("aria-expanded","false"); }
   function start(){
     var sh = $("palSheet"); if(!sh) return; sh.classList.add("full");
-    new MutationObserver(function(){ if(!sh.hidden){ if(!sh.hasAttribute("data-sec")) build(); } else sh.removeAttribute("data-sec"); }).observe(sh, {attributes:true, attributeFilter:["hidden"]});
-    new MutationObserver(function(){ if(!sh.hidden && !sh.hasAttribute("data-sec")) build(); }).observe(sh, {childList:true});
+    var raf = 0, sched = function(){ if(raf) return; raf = requestAnimationFrame(function(){ raf = 0; if(!sh.hidden && !sh.hasAttribute("data-sec")) build(); }); };
+    new MutationObserver(function(){ if(!sh.hidden){ sched(); } else sh.removeAttribute("data-sec"); }).observe(sh, {attributes:true, attributeFilter:["hidden"]});
+    new MutationObserver(sched).observe(sh, {childList:true});
+    if(!$("sgOut") && !$("sgOwnOut") && !document.documentElement.classList.contains("mp-guest")){ var ow = document.createElement("div"); ow.id = "sgOwnOut"; ow.innerHTML = 'Your data stays saved in your account. Sign back in with the same email and password.<button type="button">Sign out</button>'; sh.appendChild(ow);
+      ow.querySelector("button").onclick = function(e){ e.stopPropagation(); (window.mpSure ? window.mpSure("Sign out? Nothing is deleted. Sign back in with the same email and password.", "Sign out") : Promise.resolve(true)).then(function(ok){ if(ok && window.mpSignOut) window.mpSignOut(); }); }; }
     var cr = $("curRow"); if(cr && window.PCUR){
       var on = PCUR.usd() ? "USD" : "DOP";
       cr.querySelectorAll("[data-cur]").forEach(function(x){ x.setAttribute("aria-pressed", String(x.dataset.cur === on)); x.onclick = function(e){ e.stopPropagation(); if(x.dataset.cur !== on) PCUR.set(x.dataset.cur); }; });
