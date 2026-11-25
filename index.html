@@ -2194,7 +2194,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261126050000";try{ if("serviceWorker" in navigator) window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); }); }catch(e){}window.NW=function(s){ s = String(s || "").replace(/\s*·?\s*Wikipedia/i, "").trim(); return s || "Pato"; };(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261126060000";try{ if("serviceWorker" in navigator) window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); }); }catch(e){}window.NW=function(s){ s = String(s || "").replace(/\s*·?\s*Wikipedia/i, "").trim(); return s || "Pato"; };(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -2648,20 +2648,13 @@ html:not(.mp-guest) #s-gst{display:none!important}
         <path d="M32 22.5C29.2 27 24.5 29 24.5 33.4c0 2.9 3 4.4 5.3 3.1-.5 2.3-1.5 3.8-3 4.8h10.4c-1.5-1-2.5-2.5-3-4.8 2.3 1.3 5.3-.2 5.3-3.1 0-4.4-4.7-6.4-7.5-10.9z" fill="var(--green)"/>
       </svg>
     </div>
-    <div class="be" id="beDone" style="display:none">
-      <div class="be-done num"><span>Total P&amp;L</span><b id="bdProfit"></b></div>
-    </div>
-    <div class="be" id="be">
-      <div class="debt-head"><span id="beTitle">Recovering the investment</span><span class="num" id="beRight"></span></div>
-      <div class="minibar"><i id="beFill" style="width:0"></i></div>
-      <div class="debt-sub num"><span id="beLeft"></span><span id="beOf"></span></div>
-    </div>
     <div class="pk-table">
     <div class="pk-suits" aria-hidden="true">♠ ♥ ♣ ♦</div>
     <div class="pk-top">
       <div class="pk-hero"><span id="pkAllLbl">Poker total</span><b class="num" id="pkAll">RD$0</b>
         <div class="hint" id="pkAvg"></div>
       </div>
+      <div class="pk-sum num" id="pkSum"></div>
       <dl class="pk-math num" style="display:none">
         <div class="pk-liga"><dt>League rakeback</dt><dd id="pkLiga">RD$0</dd><span class="pk-split" id="pkLigaSplit" hidden><span><small>Received</small><b id="pkLigaRec"></b></span><span class="ow"><small>Still owed</small><b id="pkLigaOw"></b></span><span class="pk-sbar"><span id="pkLigaBar"></span></span></span></div>
         <div><dt>League Action</dt><dd id="pkPlay">RD$0</dd></div>
@@ -2672,8 +2665,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
     </div>
     <div class="hint num" id="pkInvNote" hidden></div>
     <div id="pkNew">
-      <div class="pk-seg" id="pkSeg"><button type="button" data-v="league" class="on">League</button><button type="button" data-v="ot">Tables</button><button type="button" data-v="ar">Arcade</button><button type="button" data-v="sb">Sports</button></div>
-      <div id="pkVLeague"><div class="pk-three num" id="pkThree"></div><div class="pk-chips-t">By Monday · rake + action</div><div class="pk-chips num" id="pkWkChips"></div><div class="pk-det num" id="pkWkDet"></div></div>
+      <div class="pk-seg" id="pkSeg"><button type="button" data-v="ot" class="on">Tables</button><button type="button" data-v="ar">Arcade</button><button type="button" data-v="sb">Sports</button><button type="button" data-v="league" hidden>League</button></div>
       <div id="pkVOther" hidden><div class="rc" id="rcPoker" hidden></div><div class="pk-ototal num" id="pkOTot"></div><div class="sb-stats num" id="pkWeeksSum"></div><details class="pk-more"><summary>See sessions</summary><ul class="hist pweeks" id="pkWeeks"></ul></details><div class="pk-ototal pk-hg num" id="pkHTot"></div><div class="sb-stats num" id="pkWeeksHSum"></div><details class="pk-more"><summary>See sessions</summary><ul class="hist pweeks" id="pkWeeksH"></ul></details></div>
       <div id="pkVArcade" hidden><div class="pk-ototal num" id="pkATot"></div><div class="sb-stats num" id="pkASum"></div><details class="pk-more"><summary>See all</summary><ul class="hist pweeks" id="pkAList"></ul></details></div>
       <div id="pkVSports" hidden><div class="rc" id="rcSports" hidden></div><div class="pk-ototal num" id="pkSTot"></div><div class="sb-stats num" id="sbStats"></div><div class="sb-h" id="sbBetsH">Bets</div><div id="sbBets"></div><div class="sb-h">Deposits &amp; cashouts</div><div class="sb-stats num" id="pkSSum"></div><details class="pk-more"><summary>See all</summary><ul class="hist pweeks" id="pkSList"></ul></details></div>
@@ -2683,9 +2675,20 @@ html:not(.mp-guest) #s-gst{display:none!important}
       <div class="pk-st"><div class="pk-st-t">League Action</div><div id="pkStAct"></div><div id="pkActChipsBox" hidden><div class="pk-chips-t">League Action by Monday</div><div class="pk-chips num" id="pkActChips"></div><div class="pk-leg"><span><i class="up"></i>Won</span><span><i class="down"></i>Lost</span></div></div></div>
       <div class="pk-st pk-kept" id="pkStKept" style="display:none"></div>
     </div>
+    <details class="pk-ended" id="pkEnded"><summary><span>League <em>Ended</em></span><b class="num" id="pkEndTot"></b></summary>
+    <div class="be" id="beDone" style="display:none">
+      <div class="be-done num"><span>Total P&amp;L</span><b id="bdProfit"></b></div>
     </div>
+    <div class="be" id="be">
+      <div class="debt-head"><span id="beTitle">Recovering the investment</span><span class="num" id="beRight"></span></div>
+      <div class="minibar"><i id="beFill" style="width:0"></i></div>
+      <div class="debt-sub num"><span id="beLeft"></span><span id="beOf"></span></div>
+    </div>
+      <div id="pkVLeague"><div class="pk-three num" id="pkThree"></div><div class="pk-chips-t">By Monday · rake + action</div><div class="pk-chips num" id="pkWkChips"></div><div class="pk-det num" id="pkWkDet"></div></div>
     <div class="hint" id="beHint">The investment is recovered only through league rakeback.</div>
-  </section>
+    </details>
+    </div>
+      </section>
   </div>
 
   <div class="tabp" role="tabpanel" id="p-stocks" aria-labelledby="tab-stocks" hidden>
@@ -5148,6 +5151,15 @@ html:not(.mp-guest) #s-gst{display:none!important}
     const sbT = sumSrc("Apuestas"), arT = sumSrc("Premio casino");
     const all = ligaNet+play+rbj+cas+home+sbT+arT;
     $("pkAll").textContent = (all<0?"−":"") + fmt(Math.abs(all));
+    { // Marco Nov 25: league ended, so the top is a summary of what's live now; League sits in an Ended card at the bottom
+      const now = new Date(), mk = now.getFullYear() + "-" + String(now.getMonth()+1).padStart(2,"0");
+      const SRC = ["Rakeback de la liga","Póker jugando","Rakeback como jugador","Póker casino","Póker con amigos","Apuestas","Premio casino"];
+      const mo = entries.filter(e=>SRC.includes(e.source) && String(e.date||"").slice(0,7)===mk).reduce((t,e)=>t+(e.type==="out"?-e.amount:e.amount),0) + pokerOtra.filter(x=>SRC.includes(x.source) && String(x.fecha||"").slice(0,7)===mk).reduce((t,x)=>t+x.monto,0);
+      const S = v => `<b class="${v>0?"profit":v<0?"late":""}">${(v<0?"−":v>0?"+":"") + fmt(Math.abs(Math.round(v)))}</b>`;
+      $("pkSum").innerHTML = `<div class="pk-sm-mo"><span>This month</span>${S(mo)}</div>` + [["ot","Tables",cas+home],["ar","Arcade",arT],["sb","Sports",sbT]].map(([v,l,x]) => `<button type="button" data-v="${v}"><span>${l}</span>${S(x)}<i>›</i></button>`).join("");
+      $("pkSum").querySelectorAll("button").forEach(b => b.onclick = () => { window.pkView = b.dataset.v; render(); setTimeout(() => $("pkSeg").scrollIntoView({behavior:"smooth", block:"start"}), 60); });
+      const lg = ligaNet + play; $("pkEndTot").textContent = (lg<0?"−":"+") + fmt(Math.abs(Math.round(lg))); $("pkEndTot").className = "num " + (lg>0?"profit":lg<0?"late":"");
+    }
     // ---- poker stats: League (rakeback) and League Action (own play), both per league week ----
     // League Action is logged once a week; a week counts only if it has an entry (no entry = not logged, not zero)
     const actDay = {};
@@ -5223,7 +5235,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
       if(w.monto>0){ addW(w.semana, "Rakeback de la liga", 0, 0, null, w.semana); const r = wk[ligaWeek(w.semana, w.semana)+"|Rakeback de la liga"]; if(r) r.owed = (r.owed||0) + w.monto; }
       if(w.accion>0){ addW(w.semana, "Póker jugando", 0, 0, null, w.semana); const r = wk[w.semana+"|Póker jugando"]; if(r) r.owed = (r.owed||0) + w.accion; }
     });
-    const pkV = (window.pkView==="hg" ? "ot" : window.pkView) || "league";
+    const pkV = (window.pkView==="hg" || window.pkView==="league" ? "ot" : window.pkView) || "ot";
     [["pkWeeks","Póker casino"],["pkWeeksH","Póker con amigos"]].forEach(([wid, pkOSrc]) => {
     const wl = $(wid); wl.innerHTML = "";
     const rows = Object.values(wk).filter(w=>w.src===pkOSrc).sort((a,b)=>b.d.localeCompare(a.d)).slice(0,12); // league weeks live in the Monday chips
@@ -5258,7 +5270,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
     // ---- layout: switch League / Outside Tables / Home games ----
     { const sw = $("pkSeg");
       sw.querySelectorAll("button").forEach(b => { b.classList.toggle("on", b.dataset.v===pkV); b.onclick = () => { window.pkView = b.dataset.v; render(); }; });
-      $("pkVLeague").hidden = pkV!=="league"; $("pkVOther").hidden = pkV!=="ot"; $("pkVSports").hidden = pkV!=="sb"; $("pkVArcade").hidden = pkV!=="ar";
+      $("pkVLeague").hidden = false; $("pkVOther").hidden = pkV!=="ot"; $("pkVSports").hidden = pkV!=="sb"; $("pkVArcade").hidden = pkV!=="ar";
       const owRk = ligaWeeks(ligaDebt()).reduce((t,w)=>t+Number(w.monto||0),0), owAc = ligaWeeks(ligaDebt()).reduce((t,w)=>t+Number(w.accion||0),0);
       $("pkThree").innerHTML = `<div><span>Rake per week</span><b>${fmt(Math.round(pkAvgV))}</b></div><div><span>Action per week</span><b class="${cls(actAvgV)}">${sgn(actAvgV)}</b></div>`+(owRk+owAc>0 ? `<div class="pk-owed"><span>League owes you</span><b>${fmt(owRk+owAc)}</b></div>` : "");
       const ks = [...new Set([...avgKeys, ...actKeys])].sort().slice(-8);
@@ -8550,6 +8562,18 @@ button,summary,[role="button"],.tabs{-webkit-touch-callout:none;-webkit-user-sel
 .pd-sep{font-size:.6rem;letter-spacing:.08em;opacity:.7}
 .pd-bars .pd-cnt{color:#E8C06A;font-size:.68rem}
 .pd-bars i.d{background:#E8C06A}.pd-bars i.r{background:rgba(255,255,255,.16)}
+
+.pk-sum{margin:14px 0 2px;display:grid;gap:6px}
+.pk-sum>div,.pk-sum>button{display:flex;align-items:center;gap:8px;width:100%;padding:11px 14px;border-radius:14px;background:var(--green-soft);border:0;font:inherit;color:inherit;text-align:left}
+.pk-sum>div{background:transparent;padding:4px 2px 6px;font-weight:700}
+.pk-sum span{flex:1}.pk-sum b{font-weight:800}.pk-sum i{font-style:normal;opacity:.4;font-size:1.1em}
+.pk-ended{margin:22px 0 4px;border-radius:16px;background:var(--green-soft);padding:0 14px}
+.pk-ended>summary{list-style:none;display:flex;align-items:center;gap:8px;padding:14px 0;cursor:pointer;font-weight:700}
+.pk-ended>summary::-webkit-details-marker{display:none}
+.pk-ended>summary span{flex:1}.pk-ended>summary em{font-style:normal;font-size:.68rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;opacity:.55;margin-left:6px}
+.pk-ended>summary::after{content:"›";opacity:.4;transition:transform .2s}.pk-ended[open]>summary::after{transform:rotate(90deg)}
+.pk-ended .be{margin:0 0 12px}
+html.mp-guest .pk-ended,html.mp-guest:not(.tr-casino) #pkSum [data-v="ar"],html.mp-guest:not(.tr-poker) #pkSum [data-v="ot"],html.mp-guest:not(.tr-bets) #pkSum [data-v="sb"]{display:none!important}
 #pkPull{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 6px);z-index:40;width:44px;height:44px;margin-left:-22px;border-radius:50%;background:var(--card);box-shadow:0 6px 18px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;transform:translateY(-70px);opacity:0;pointer-events:none}
 #pkPull img{width:30px;height:30px;border-radius:8px}
 #pkPull.go{transition:transform .3s cubic-bezier(.22,1,.36,1),opacity .3s}#pkPull.spin img{animation:pkDuckBob .6s ease-in-out infinite}
