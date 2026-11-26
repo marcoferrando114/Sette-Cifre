@@ -8831,16 +8831,19 @@ html.mp-guest .pk-ended,html.mp-guest:not(.tr-casino) #pkSum [data-v="ar"],html.
   // ---------- big numbers: when a save changes them, they roll to the new value and glow ----------
   var NUMS = ["pctBase", "pctFill", "left", "spTotal", "stVal", "pkAll", "pscNum"];
   function numOf(s){ var m = String(s).match(/-?\d[\d,]*(\.\d+)?/); return m ? parseFloat(m[0].replace(/,/g, "")) : null; }
+  // Nov 26: each roll has a token (a newer one stops the older), and if the "RD$" shrink splits the text node, keep animating the number part
   function roll(el, from, to, text){ var node = el.firstChild; if(!node || node.nodeType !== 3 || el.childNodes.length !== 1) return;
-    var m = text.match(/-?\d[\d,]*(\.\d+)?/), dec = (m[0].split(".")[1] || "").length, comma = m[0].indexOf(",") >= 0, t0 = performance.now(), dur = 900;
-    (function step(now){ if(node.nodeValue !== el._pkLast) return; var k = Math.max(0, Math.min(1, (now - t0) / dur)), e = 1 - Math.pow(1 - k, 4), v = from + (to - from) * e;
-      var s = comma ? v.toLocaleString("en-US", {minimumFractionDigits: dec, maximumFractionDigits: dec}) : v.toFixed(dec);
-      node.nodeValue = el._pkLast = k >= 1 ? text : text.replace(m[0], s); if(k < 1) requestAnimationFrame(step); })(t0); }
+    var m = text.match(/-?\d[\d,]*(\.\d+)?/), dec = (m[0].split(".")[1] || "").length, comma = m[0].indexOf(",") >= 0, t0 = performance.now(), dur = 900, tok = el._pkTok = (el._pkTok || 0) + 1, RX = /-?\d[\d,]*(\.\d+)?/;
+    (function step(now){ if(el._pkTok !== tok) return;
+      if(!node.isConnected){ node = null; var w = document.createTreeWalker(el, NodeFilter.SHOW_TEXT), n; while((n = w.nextNode())) if(RX.test(n.nodeValue)){ node = n; break; } if(!node) return; }
+      var k = Math.max(0, Math.min(1, (now - t0) / dur)), e = 1 - Math.pow(1 - k, 4), v = from + (to - from) * e;
+      var s = k >= 1 ? m[0] : comma ? v.toLocaleString("en-US", {minimumFractionDigits: dec, maximumFractionDigits: dec}) : v.toFixed(dec);
+      node.nodeValue = node.nodeValue.replace(RX, s); if(k < 1) requestAnimationFrame(step); })(t0); }
   NUMS.forEach(function(id){ var el = document.getElementById(id); if(!el) return; var prev = el.textContent;
     new MutationObserver(function(){ var now = el.textContent; var a = numOf(prev), b = numOf(now); prev = now;
       if(a == null || b == null || a === b || !seen(el) || !window.__patoLive) return;
       if(id !== "pctFill" && id !== "left"){ var c = b > a ? "pk-up" : "pk-dn"; if(id === "spTotal") c = b > a ? "pk-dn" : "pk-up"; el.classList.remove("pk-up", "pk-dn"); el.getBoundingClientRect(); el.classList.add(c); setTimeout(function(){ el.classList.remove(c); }, 1300); }
-      el._pkLast = el.firstChild && el.firstChild.nodeValue; roll(el, a, b, now); }).observe(el, {childList: true}); });
+      roll(el, a, b, now); }).observe(el, {childList: true}); });
 
   // ---------- dialogs and sheets: spring in, fade out (Nov 23) ----------
   var OV = [{s: ".celebrate", m: "on"}, {s: "#snapDlg"}, {s: "#sfOffer"}, {s: "#palSheet", noOut: 1}, {s: "#mpGate", noIn: 1, ms: 330}, {s: "#sfLock", noIn: 1, ms: 330}];
