@@ -2194,7 +2194,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261126073000";try{ if("serviceWorker" in navigator) window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); }); }catch(e){}window.NW=function(s){ s = String(s || "").replace(/\s*·?\s*Wikipedia/i, "").trim(); return s || "Pato"; };(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261126134215";try{ if("serviceWorker" in navigator) window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); }); }catch(e){}window.NW=function(s){ s = String(s || "").replace(/\s*·?\s*Wikipedia/i, "").trim(); return s || "Pato"; };(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -4178,6 +4178,9 @@ html.tabh.tabh-st .tabs{top:calc(100lvh - var(--tabh))!important;bottom:auto!imp
     if(d){ openDebtPay(d.nombre, date, amt, !!toSav); return true; }
     return false;
   };
+
+  window.__patoWallet = () => spWallet();
+  window.__patoMove = async (dir, amt, date) => { $("mvDir").value = dir; $("mvAmt").value = Math.round(amt).toLocaleString("en-US"); if(date) $("mvDate").value = date; $("mvSave").disabled = false; await $("mvSave").onclick(); };
 
   // ---------- trust score ----------
   const norm = x => String(x||"").trim().toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
@@ -6555,7 +6558,7 @@ TRACKER DATA:
   async function ask(){
     const q = $("aIn").value.trim();
     if(!sample || !q || aBusy) return;
-    if(window.__patoTypedLog && /\d/.test(q) && !/\?\s*$/.test(q) && /lost|lose|won\b|win\b|owe|lent|lend|loan|debt|casino|arcade|slots|receiv|paid me|pays me|sent me|got paid|deposit|salary|income|cobr|recib|me pag|me mand|me envi|perd|gan[eéó]|debe|prest|deuda|apost|bet\b/i.test(q)){
+    if(window.__patoTypedLog && /\d/.test(q) && !/\?\s*$/.test(q) && /lost|lose|won\b|win\b|owe|lent|lend|loan|debt|casino|arcade|slots|receiv|cash|wallet|the rest|moved|efectivo|cartera|resto|paid me|pays me|sent me|got paid|deposit|salary|income|cobr|recib|me pag|me mand|me envi|perd|gan[eéó]|debe|prest|deuda|apost|bet\b/i.test(q)){
       aBusy = true; $("aSend").disabled = true; let done = false;
       try{ done = await window.__patoTypedLog(q); }catch(e){ console.error(e); }
       aBusy = false; setBusy(false);
@@ -7155,7 +7158,7 @@ TRACKER DATA:
   });
   async function read(src){
     var tab = curTab(), btn = $("snapBtn"), typed = !!src.text; btn.classList.add("busy"); if(!src.chat) toast(typed ? "Got it…" : "Reading the photo…", "");
-    var P = (typed ? 'You read a short note the person typed into a personal money app in the Dominican Republic, e.g. "500 valet tip" or "sent 2000 to mom". If no payment method is said, use "cash" for tips, colmados, parking and small cash things, otherwise null. Use today unless a day is said.' : 'You read a photo for a personal money app in the Dominican Republic.') + ' Amounts are RD$ (Dominican pesos) unless shown as US$/USD. ' + (typed ? 'Decide from the note.' : 'The person is on the "' + tab.replace("tab-","") + '" tab, so it is probably ' + (HINT[tab] || "a receipt") + ', but decide from the image itself.') + ' Today is ' + today() + '.\n' +
+    var P = (typed ? 'You read a short note the person typed into a personal money app in the Dominican Republic, e.g. "500 valet tip" or "sent 2000 to mom". If no payment method is said, use "cash" for tips, colmados, parking and small cash things, otherwise null. Use today unless a day is said.' : 'You read a photo for a personal money app in the Dominican Republic.') + ' Amounts are RD$ (Dominican pesos) unless shown as US$/USD. ' + (typed ? 'Decide from the note.' + (pend && Date.now() - pend.t < 36e5 ? ' Context: the person just logged ' + rd(pend.am) + ' from ' + pend.who + ' inside a ' + rd(pend.total) + ' bank deposit on ' + pend.date + ', leaving ' + rd(pend.rest) + ' unexplained; "the rest" means that ' + rd(pend.rest) + '.' : '') : 'The person is on the "' + tab.replace("tab-","") + '" tab, so it is probably ' + (HINT[tab] || "a receipt") + ', but decide from the image itself.') + ' Today is ' + today() + '.\n' +
       'Answer with JSON only, exactly one of these shapes:\n' +
       '{"kind":"receipt","merchant":string,"amount":number,"date":"YYYY-MM-DD","cat":one of ' + JSON.stringify(Object.keys(CATS)) + ',"paid":"card"|"cash"|null}\n' +
       '{"kind":"bet","casa":string (sportsbook),"tipo":"single"|"parlay","stake":number,"odds":American odds integer for the whole ticket,"toWin":number,"payout":number (0 if lost or pending),"result":"won"|"lost"|"pending"|"void","fecha":"YYYY-MM-DD","hora":"HH:MM","legs":[{"sport":string,"game":string,"pick":string,"odds":integer,"result":"won"|"lost"|"pending"|"void","fecha":"YYYY-MM-DD HH:MM"}]}\n' +
@@ -7163,6 +7166,8 @@ TRACKER DATA:
       '{"kind":"transfer","direction":"out"|"in","amount":number,"date":"YYYY-MM-DD","person":string (the other person, no account numbers),"bank":string,"note":string,"cat":one of ' + JSON.stringify(Object.keys(CATS)) + ',"own":true if it went to their own account}\n' +
       (typed ? '{"kind":"casino","result":"loss"|"win","amount":number,"date":"YYYY-MM-DD","game":"arcade"|"poker_casino"|"poker_amigos","from":"bhd"|"popular"|"cash"|null (where the money came from or went, only if said)}  (use for money lost or won at a casino, slots, online casino or "arcade"; "casino" and "arcade" mean game "arcade"; poker at a casino is "poker_casino"; poker at home or with friends is "poker_amigos")\n' +
       '{"kind":"income","amount":number,"from":string|null (who paid, no account numbers),"to":"bhd"|"popular"|"cash"|null (only if said),"date":"YYYY-MM-DD","note":string|null}  (use for money the person received or earned: "received 5000 from Isaac", "Isaac paid me 2000", "got paid 15000"; instead of transfer)\n' +
+      '{"kind":"move","from":"cash"|"popular"|"bhd","to":"cash"|"popular"|"bhd","amount":number|null,"date":"YYYY-MM-DD","cash_left":number|null}  (money moved between the person\'s own accounts, e.g. "deposited 5000 cash at Popular", "the rest was my cash"; never income or spending; cash_left = cash still in hand if said)\n' +
+      '{"kind":"cash_set","amount":number}  (how much cash the person has in hand now, e.g. "I have 300 in my wallet")\n' +
       '{"kind":"owed","person":string,"amount":number,"as":"loan"|"debt"|null (only if the word loan/lent or debt is clear),"due":"YYYY-MM-DD"|null,"note":string|null}  (use when someone owes the person money, or the person lent money: "Miguelito owes me 3000 more", "lent Isaac 5000")\n' : '') +
       '{"kind":"other","summary":string}\n' +
       'Numbers may use a comma for decimals (RD$2.000,00 means 2000). Use null for anything you cannot see. Food includes groceries, restaurants and delivery; car is gas, tolls, parking, car wash; rides is Uber; wants is clothes, electronics and personal purchases; essentials is paperwork, repairs, utilities, insurance.';
@@ -7269,6 +7274,42 @@ TRACKER DATA:
     var acts = A.map(function(a){ return [a[0], save(a[1])]; });
     open('<h3>' + g[0] + (win ? " win" : " loss") + '</h3><p class="sub">' + (win ? "Where did it go?" : "Where did the money come from?") + '</p>' + rows([["Amount", rd(ca)], ["Date", cd]]) + buttons(acts)); wire(acts);
   }
+  // typed: moves between own accounts, cash on hand, and the rest of a bank deposit ("the rest was my cash, I have 50 left")
+  var pend = null;   // set when a typed payment sits inside a bigger bank deposit; the next line can explain the rest
+  function walletSheet(title, rowsList, am, gap, run){
+    var acts = [["Save", function(){ return run(0); }]];
+    if(gap > 0.5) acts.push(["Save and log " + rd(gap) + " as spent", function(){ return run(gap); }]);
+    open('<h3>' + title + '</h3>' + (gap > 0.5 ? '<p class="sub">' + rd(gap) + ' of your cash isn’t logged as spending.</p>' : "") + rows(rowsList) + buttons(acts)); wire(acts);
+  }
+  async function setCash(am, gap, dt){
+    if(gap > 0.5) await db.collection("spend").add({date:today(), merchant:"Cash spent", amount:gap, currency:"DOP", rd:gap, kind:"manual", status:"Aprobada", cat:"other", source:"manual", excluded:false, ts:Date.now()});
+    await db.doc("spendMeta/wallet").set({amount:am, date:today(), ts:Date.now() + 2000});
+  }
+  function cashSet(d){
+    var am = Math.round(Number(d.amount)); if(!(am >= 0) || d.amount == null){ nope("Add the amount, like “I have 3000 in cash”."); return; }
+    var w = window.__patoWallet ? window.__patoWallet() : null, gap = w !== null ? Math.round(w - am) : 0;
+    walletSheet("Cash in hand", [["Now", rd(am)], ["Pato had", w !== null ? rd(w) : null]], am, gap, async function(g){ await setCash(am, g); toast("Cash in hand: " + rd(am), "Saved"); });
+  }
+  function move(d){
+    var P = pend && Date.now() - pend.t < 36e5 ? pend : null, from = d.from, to = d.to;
+    var am = Math.round(Number(d.amount) || (P && from === "cash" ? P.rest : 0)), dt = okDate(d.date || (P && P.date));
+    var dir = {"popular>bhd":"pb", "bhd>popular":"bp", "cash>bhd":"cb", "cash>popular":"cp"}[from + ">" + to];
+    if(!isOwner() || !dir || !(am > 0)){ nope("Say it like “deposited 5000 cash at Popular”."); return; }
+    var left = d.cash_left != null && d.cash_left !== "" && isFinite(Number(d.cash_left)) ? Math.round(Number(d.cash_left)) : null;
+    var w = window.__patoWallet ? window.__patoWallet() : null, exp = from === "cash" && w !== null ? Math.max(0, w - am) : null, gap = left !== null && exp !== null ? Math.round(exp - left) : 0;
+    var row = P && dir === "cp" ? spend.filter(function(t){ return t.id === P.rowId && Number(t.rd) > am + 0.5; })[0] : null;
+    var lbl = {pb:"Popular → BHD", bp:"BHD → Popular", cb:"Cash → BHD", cp:"Cash → Popular"}[dir];
+    walletSheet(lbl, [["Amount", rd(am)], ["Date", dt], ["Cash left", left !== null ? rd(left) : null]], am, gap, async function(g){
+      if(row){
+        var now = Date.now(), b = db.batch();
+        b.update(db.collection("spend").doc(row.id), {rd:Number(row.rd) - am, amount:(Number(row.amount) || Number(row.rd)) - am});
+        b.set(db.collection("spend").doc(), {date:row.date, merchant:"Cash to Popular", amount:am, currency:"DOP", rd:am, kind:"deposito", status:"Aprobada", cat:"cash", source:"manual", excluded:false, ts:now});
+        await b.commit();
+      } else await window.__patoMove(dir, am, dt);
+      if(left !== null) await setCash(left, g);
+      pend = null; toast(rd(am) + " moved", lbl + (left !== null ? " · cash " + rd(left) : ""));
+    });
+  }
   // typed: "received 5000 from Isaac to BHD" logs money in right away (a loan payment opens that person's payment box)
   function income(d){
     var am = Math.round(Number(d.amount)||0), who = String(d.from||"").trim().slice(0, 80), dt = okDate(d.date), own = isOwner();
@@ -7276,6 +7317,8 @@ TRACKER DATA:
     Promise.all([db.collection("prestamos").get(), db.doc("config/main").get()]).then(function(r){
       var same = function(n){ var a = nrm(n), b = nrm(who); return a && b && (a === b || a.indexOf(b + " ") === 0 || b.indexOf(a + " ") === 0); };
       var owes = who && (r[0].docs.some(function(x){ var l = x.data(); return !l.pagado && same(l.nombre); }) || ((r[1].data() || {}).deudas || []).some(function(x){ return same(x.nombre); }));
+      var dep = who || own ? spend.filter(function(t){ return t.kind === "ingreso" && t.status === "Aprobada" && !t.excluded && Number(t.rd) >= am - 0.5 && days(t.date, dt) <= 2; }).sort(function(a, b){ return (Number(a.rd) - am) - (Number(b.rd) - am) || days(a.date, dt) - days(b.date, dt); })[0] : null;
+      if(!own) dep = null;
       var A = own ? [["BHD", "bhd"], ["Popular ••5935", "popular"], ["Cash", "cash"]] : [["Savings", "bhd"], ["Cash", "cash"]];
       var said = d.to === "popular" && !own ? "cash" : d.to;
       A.sort(function(x, y){ return (y[1] === said) - (x[1] === said); });
@@ -7302,9 +7345,12 @@ TRACKER DATA:
         }
         toast(rd(am) + " received" + (who ? " from " + src : ""), acct === "bhd" ? (own ? "BHD" : "Savings") : acct === "popular" ? "Popular" : "Cash");
       }; };
-      var acts = A.map(function(a){ return [owes ? "Income · " + a[0] : a[0], save(a[1])]; });
-      if(owes) acts.unshift(["Loan payment", async function(){ if(!(window.__patoPay && window.__patoPay(who, am, dt, said === "bhd"))) toast("Couldn’t find that loan", "Log it as income", true); }]);
-      open('<h3>' + (who ? esc(who) + " paid you" : "Money received") + '</h3><p class="sub">' + (owes ? "They owe you. Is it a payment?" : "Where did it go?") + '</p>' + rows([["Amount", rd(am)], ["Date", dt]]) + buttons(acts)); wire(acts);
+      var rest = dep ? Math.round(Number(dep.rd) - am) : 0;
+      var acts = dep ? [["Got it", async function(){ toast("Already in your bank rows", rd(dep.rd) + " · " + dep.date); }]] : A.map(function(a){ return [owes ? "Income · " + a[0] : a[0], save(a[1])]; });
+      if(owes) acts.unshift(["Loan payment", async function(){
+        if(dep && rest >= 1) pend = {rowId:dep.id, rest:rest, date:dep.date, t:Date.now(), who:who, am:am, total:Math.round(Number(dep.rd))};
+        if(!(window.__patoPay && window.__patoPay(who, am, dt, dep ? false : said === "bhd"))) toast("Couldn’t find that loan", "Log it as income", true); }]);
+      open('<h3>' + (who ? esc(who) + " paid you" : "Money received") + '</h3><p class="sub">' + (dep ? "Inside your " + rd(dep.rd) + " bank deposit on " + esc(dep.date) + (rest >= 1 ? ", " + rd(rest) + " left." : ".") : owes ? "They owe you. Is it a payment?" : "Where did it go?") + '</p>' + rows([["Amount", rd(am)], ["Date", dt]]) + buttons(acts)); wire(acts);
     }).catch(function(e){ console.error(e); toast("Couldn’t save", "Try again", true); });
   }
   function owed(d){
@@ -7399,6 +7445,8 @@ TRACKER DATA:
     if(k === "casino"){ casino(d); return; }
     if(k === "owed"){ owed(d); return; }
     if(k === "income"){ income(d); return; }
+    if(k === "move"){ move(d); return; }
+    if(k === "cash_set"){ cashSet(d); return; }
     open('<h3>Couldn’t tell what this is</h3><p class="sub">' + esc(d.summary || "Try a clearer photo or screenshot.") + '</p><div class="bt"><button type="button" class="secondary" id="snapOk">OK</button></div>'); $("snapOk").onclick = close;
   }
 
