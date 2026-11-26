@@ -5509,8 +5509,8 @@ html.tabh.tabh-st .tabs{top:calc(100lvh - var(--tabh))!important;bottom:auto!imp
       }catch(e){ warnMsg("Couldn’t save the deposit."); $("mvSave").disabled = false; }
       return;
     }
-    const last = [...corriente].sort((a,b)=>(b.date||"").localeCompare(a.date||"") || (b.createdAt||0)-(a.createdAt||0))[0];
-    const cc0 = last ? last.saldo : 0;
+    // Nov 26: start from today's estimated checking balance (last balance + deposits − card spending since), not the last balance typed in
+    const est0 = ccEstimate(), last = est0.last, cc0 = last ? Math.max(0, Math.round(est0.est)) : 0;
     if(toBhd && amt > cc0 + 0.5 && !await sure(`Checking only shows ${fmt(cc0)}. Move ${fmt(amt)} anyway?`)) return;
     $("mvSave").disabled = true;
     try{
