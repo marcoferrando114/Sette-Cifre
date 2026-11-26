@@ -181,7 +181,7 @@ function top2(items, tick, busy, like) {
   const w0 = a[0] ? new Set(words(a[0].h)) : new Set(), dup = i => words(i.h).filter(v => w0.has(v)).length / Math.max(w0.size, 1) >= 0.5;   // 2nd story must be a different story
   return a.slice(0, 1).concat(a.slice(1).filter(i => !dup(i) && (busy || i.n >= 5 || i.mine)).slice(0, 1));
 }
-const drDay = () => new Date(Date.now() - 4 * 3600e3).toISOString().slice(0, 10), edDay = () => new Date(Date.now() - 11 * 3600e3).toISOString().slice(0, 10); // edition starts 7am DR
+const drDay = () => new Date(Date.now() - 4 * 3600e3).toISOString().slice(0, 10), edDay = () => new Date(Date.now() - 9 * 3600e3).toISOString().slice(0, 10); // edition starts 7am DR
 // Nov 14 (Marco): "UFC main event today is clearly bigger than college football": a simple importance ranking on top of the league weight (numbered UFC cards, finals, derbies, big names)
 const STARS = /\b(Messi|Ronaldo|LeBron|James|Curry|Mbapp[eé]|Haaland|Djokovic|Alcaraz|Sinner|McGregor|Topuria|Jon Jones|Pereira|Makhachev|Verstappen|Hamilton|Mahomes|Wembanyama|Doncic|Dončić|Jokic|Jokić|Yamal|Bellingham|Vinicius|Vin[ií]cius|Swiatek|Gauff|Sabalenka)\b/i;
 function bigExtra(path, e, note) { const t = String(e.name || "") + " " + String(note || ""); let x = 0;
@@ -667,7 +667,13 @@ async function cotdPick(env, cand) {
     does: S(o.does, 200), num: (Array.isArray(o.num) ? o.num : []).map(x => S(x, 90)).filter(x => x && !/\d/.test(x) === false).slice(0, 3), bull: (Array.isArray(o.bull) ? o.bull : []).map(x => S(x, 120)).filter(Boolean).slice(0, 3), why: S(o.why, 240), unp: S(o.unpriced, 300), risk: S(o.risk, 160), u: src ? src.u : "", h: src ? src.h : "", s: src ? src.s : "" };
   { const f1 = out.name.toLowerCase().replace(/[^a-z0-9 ]/g, "").split(/\s+/)[0]; if (src && f1.length > 2 && !String(src.h || "").toLowerCase().includes(f1)) out.wkOnly = 1; }   // the story photo must be about this company, else its own Wikipedia photo is used
   if (!out.name || !out.does || !out.bull.length || !out.why || !out.unp) { DBG.cotd = "incomplete " + JSON.stringify(o).slice(0, 160); return null; }
-  await env.LIMITS.put(key, JSON.stringify(out), { expirationTtl: 172800 }); return out;
+  out.logo = await logoData(out).catch(() => ""); await env.LIMITS.put(key, JSON.stringify(out), { expirationTtl: 172800 }); return out;
+}
+async function logoData(c) {   // Marco Nov 26: the Company of the day logo is fetched once here and sent inside the edition as a picture, so the phone never waits on a logo site
+  const urls = [c.tk ? "https://assets.parqet.com/logos/symbol/" + encodeURIComponent(c.tk) + "?format=png" : "", c.dom ? "https://www.google.com/s2/favicons?domain=" + encodeURIComponent(c.dom) + "&sz=128" : "", c.dom ? "https://icons.duckduckgo.com/ip3/" + encodeURIComponent(c.dom) + ".ico" : ""].filter(Boolean);
+  for (const u of urls) { try { const r = await fetch(u, { headers: { "user-agent": "Mozilla/5.0" }, cf: { cacheTtl: 86400 } }); if (!r.ok) continue; const ct = (r.headers.get("content-type") || "").split(";")[0]; if (!/^image\//.test(ct)) continue;
+    const a = new Uint8Array(await r.arrayBuffer()); if (a.length < 300 || a.length > 90000) continue; let s = ""; for (let i = 0; i < a.length; i += 8192) s += String.fromCharCode.apply(null, a.subarray(i, i + 8192)); return "data:" + ct + ";base64," + btoa(s); } catch (e) {} }
+  return "";
 }
 // Marco Nov 14: ONE personal founder story a day (not news about unknown CEOs). Written by Pato from well-known, widely reported facts; the link goes to the person's Wikipedia page. Never explains success by ethnicity, religion or nationality.
 const BIO = {   // Marco Nov 20: a small bio under each founder story (age, origin, degree, notable). Age is left out when the birth year is not public.
@@ -793,6 +799,62 @@ const FOUNDERS = [
         ["THE HARD PART", "She joined OpenAI in 2018 and became its chief technology officer. In 2023 she briefly served as interim CEO during the board crisis."],
         ["THE TURNING POINT", "In 2024 she left OpenAI and in 2025 founded Thinking Machines Lab, which raised a record-sized seed round of about $2 billion."]],
     fy: "She moved from cars to AI by following where the hardest engineering was." },
+  // Marco Nov 26: "great and distinguished, and young and upcoming CEOs". Established leaders and young founders added.
+  { n: "Satya Nadella", w: "Satya_Nadella", h: "Satya Nadella: the engineer who woke Microsoft back up", pl: "He joined Microsoft in 1992 as an engineer and took over in 2014, when many thought its best years were gone.",
+    s: [["WHERE HE STARTED", "Born in Hyderabad, India, in 1967, he studied electrical engineering in India, then computer science in Wisconsin. He joined Microsoft in 1992 and worked his way up through its server and cloud teams."],
+        ["THE HARD PART", "When he became CEO in 2014, Microsoft had missed the smartphone and its stock had barely moved in over a decade. He had to change a culture known for internal fights."],
+        ["THE TURNING POINT", "He bet the company on cloud computing with Azure and later made a multibillion-dollar bet on OpenAI. Microsoft became one of the most valuable companies in the world."]],
+    fy: "He changed the culture first. The new products came after people stopped fighting each other." },
+  { n: "Jamie Dimon", w: "Jamie_Dimon", h: "Jamie Dimon: fired at 42, then built the biggest bank in America", pl: "His mentor fired him from Citigroup in 1998. He found a smaller bank to run and came back stronger.",
+    s: [["WHERE HE STARTED", "Born in New York in 1956, he grew up in a family of stockbrokers. After Harvard Business School he joined Sandy Weill and helped build what became Citigroup."],
+        ["THE HARD PART", "In 1998 Weill pushed him out. He spent over a year without a job before taking over Bank One in Chicago in 2000 and cleaning it up."],
+        ["THE TURNING POINT", "Bank One merged with JPMorgan Chase and he became CEO in 2005. In the 2008 crisis his bank stayed strong enough to buy Bear Stearns and Washington Mutual."]],
+    fy: "Being fired was not the end. He used the time to find a place where he could prove himself again." },
+  { n: "Indra Nooyi", w: "Indra_Nooyi", h: "Indra Nooyi: from a night receptionist job to running PepsiCo", pl: "She came to the US with little money to study at Yale and later ran one of the biggest food companies on earth.",
+    s: [["WHERE SHE STARTED", "Born in Chennai, India, in 1955, she came to the US in 1978 for a master's at Yale. She worked night shifts as a receptionist to pay her way."],
+        ["THE HARD PART", "She joined PepsiCo in 1994 as a strategy executive and pushed for big, unpopular moves, such as spinning off its restaurants like KFC and Pizza Hut."],
+        ["THE TURNING POINT", "She led the purchases of Tropicana and Quaker Oats, then became CEO in 2006. In her 12 years at the top, sales grew by about 80%."]],
+    fy: "She sold what did not fit and bought what would grow. Focus is a choice about what to drop." },
+  { n: "Phil Knight", w: "Phil_Knight", h: "Phil Knight: selling shoes from his car before Nike existed", pl: "He started with $500, a coach as a partner and Japanese running shoes sold at track meets.",
+    s: [["WHERE HE STARTED", "Born in Oregon in 1938, he ran track for coach Bill Bowerman. After Stanford, he flew to Japan and convinced Onitsuka Tiger to let him sell their shoes in the US."],
+        ["THE HARD PART", "In 1964 he and Bowerman put in $500 each and started Blue Ribbon Sports. He sold shoes from the trunk of his car, and banks kept cutting off his credit."],
+        ["THE TURNING POINT", "In 1971 they launched their own brand, Nike, with a swoosh logo a student designed for $35. Nike became the biggest sportswear company in the world."]],
+    fy: "He started by selling someone else's product. That taught him the customer before he built his own." },
+  { n: "Reed Hastings", w: "Reed_Hastings", h: "Reed Hastings: the late fee that started Netflix", pl: "He co-founded a DVD-by-mail company that Blockbuster refused to buy, then turned it into the streaming giant.",
+    s: [["WHERE HE STARTED", "Born in Boston in 1960, he taught math in Swaziland with the Peace Corps, then studied computer science at Stanford. He sold his first software company in 1997."],
+        ["THE HARD PART", "Netflix started that year with Marc Randolph, renting DVDs by mail. In 2000 they offered to sell to Blockbuster for about $50 million and were turned down."],
+        ["THE TURNING POINT", "In 2007 Netflix started streaming, and later made its own shows like House of Cards. Netflix grew into a company worth hundreds of billions, and Blockbuster went bankrupt."]],
+    fy: "He was willing to make his own DVD business obsolete before someone else did." },
+  { n: "Sara Blakely", w: "Sara_Blakely", h: "Sara Blakely: from selling fax machines to a billion-dollar brand", pl: "She started Spanx with $5,000 of savings and no fashion experience, and owned all of it.",
+    s: [["WHERE SHE STARTED", "Born in Florida in 1971, she failed the law school test twice and sold fax machines door to door for seven years."],
+        ["THE HARD PART", "In 1998 she cut the feet off her pantyhose and had the idea for Spanx. Factories turned her down, so she wrote her own patent and kept pitching."],
+        ["THE TURNING POINT", "Oprah picked Spanx as a favorite product in 2000. Spanx grew without outside investors, and Forbes later called her the youngest self-made woman billionaire at the time."]],
+    fy: "Years of hearing no in sales made her ready for every no that came later." },
+  { n: "Melanie Perkins", w: "Melanie_Perkins", h: "Melanie Perkins: rejected by over 100 investors, then built Canva", pl: "She started with a school yearbook business in her mother's living room in Perth.",
+    s: [["WHERE SHE STARTED", "Born in Perth, Australia, in 1987, she taught students to use design software and saw how hard it was. At 19 she started a yearbook design business with her partner, Cliff Obrecht."],
+        ["THE HARD PART", "To build a design tool for everyone, she needed investors. She has said more than 100 of them said no before anyone said yes."],
+        ["THE TURNING POINT", "Canva launched in 2013 and grew to hundreds of millions of users. In 2021 it was valued at about $40 billion."]],
+    fy: "She tested the idea small first, with yearbooks, before asking anyone for big money." },
+  { n: "Dylan Field", w: "Dylan_Field", h: "Dylan Field: the college dropout behind Figma", pl: "He left Brown at 20 with a Thiel Fellowship and spent years building design software that runs in a browser.",
+    s: [["WHERE HE STARTED", "Born in 1992 in California, he studied computer science at Brown. In 2012 he dropped out with a Thiel Fellowship to start Figma with Evan Wallace."],
+        ["THE HARD PART", "They spent about four years building before most people could use the product. Many doubted that serious design work could run inside a web browser."],
+        ["THE TURNING POINT", "Figma became the standard tool for product designers. Adobe agreed to buy it for $20 billion in 2022, regulators blocked it, and Figma went public in 2025."]],
+    fy: "He spent years on a product nobody could use yet, because he was sure the browser would win." },
+  { n: "Vlad Tenev", w: "Vlad_Tenev", h: "Vlad Tenev: the physics grad who made trading free with Robinhood", pl: "He and his Stanford roommate built a stock app with no commissions, and it changed the whole industry.",
+    s: [["WHERE HE STARTED", "Born in Bulgaria in 1987, he moved to the US as a kid. At Stanford he studied math and physics and met Baiju Bhatt."],
+        ["THE HARD PART", "They started Robinhood in 2013 to make trading free. In January 2021, during the GameStop frenzy, Robinhood limited trades and he had to explain it to Congress."],
+        ["THE TURNING POINT", "Robinhood went public in 2021. Its free trading pushed big brokers like Schwab and E*Trade to drop their own commissions."]],
+    fy: "Making something free can force a whole industry to follow." },
+  { n: "Lucy Guo", w: "Lucy_Guo", h: "Lucy Guo: the dropout who co-founded Scale AI", pl: "She left college at 19, co-founded Scale AI, and kept her stake after leaving the company.",
+    s: [["WHERE SHE STARTED", "Born in California in 1994 to Chinese immigrant parents, she studied at Carnegie Mellon. She dropped out to take a Thiel Fellowship."],
+        ["THE HARD PART", "In 2016 she co-founded Scale AI with Alexandr Wang, labeling data for AI companies. She left in 2018 but kept her shares."],
+        ["THE TURNING POINT", "In 2025 Meta invested about $14 billion in Scale AI. Forbes then listed her as the youngest self-made woman billionaire."]],
+    fy: "Keeping a piece of something early can matter more than staying in charge of it." },
+  { n: "Henrique Dubugras", w: "Henrique_Dubugras", h: "Henrique Dubugras: started a payments company as a teenager in Brazil", pl: "He and Pedro Franceschi built and sold a payments startup in Brazil, then founded Brex in the US.",
+    s: [["WHERE HE STARTED", "Born in Brazil in 1995, he taught himself to code. As teenagers he and Pedro Franceschi started Pagar.me, a payments company, and later sold it."],
+        ["THE HARD PART", "They moved to Stanford, then dropped out. In 2017 they joined Y Combinator and started Brex, a corporate card for startups."],
+        ["THE TURNING POINT", "Brex grew fast and by 2022 was valued at about $12 billion, built by two founders still in their twenties."]],
+    fy: "His first company was practice. The second one used everything the first taught him." },
 ];
 // A real photo for a person or company from Wikipedia and Wikimedia Commons (Marco Nov 17: "a picture of Peter Thiel should be easy to find"): the page's lead photo, then the search's best page, then Commons files; remembered for 30 days
 async function fileIsAbout(file, toks) {   // the photo's own Commons record (title, description, categories) must name the person; if the record cannot be read the photo is accepted
@@ -824,7 +886,7 @@ async function clearHeads(env, b) {   // Marco Nov 17: "the title seems confusin
     its.forEach((it, i) => { it.hc = 1; const v = typeof o[i] === "string" ? o[i].trim() : ""; if (v && v.length >= 12 && v.length <= 160 && v !== it.h) { it.h0 = it.h; it.h = v; } }); } catch (e) { b._dbg.hd = "err " + String(e.message || e).slice(0, 100); }
 }
 async function rosterPick(env, kind, pool, now, build, pref) {   // one story a day, never repeating until the whole list has been used (Marco Nov 25: Brian Chesky came back after a few days). The day's pick is saved, so every rebuild of that edition keeps the same story.
-  const kv = env.LIMITS, day = Math.floor((now - 11 * 3600e3) / 864e5), live = Math.abs(now - Date.now()) < 12 * 3600e3, dk = "rp:" + kind + ":" + day; let fb = null;
+  const kv = env.LIMITS, day = Math.floor((now - 9 * 3600e3) / 864e5), live = Math.abs(now - Date.now()) < 12 * 3600e3, dk = "rp:" + kind + ":" + day; let fb = null;
   if (kv && live) { const hit = await kv.get(dk, "json").catch(() => null), f0 = hit && pool.find(p => p.n === hit.n); if (f0) { const it = await build(f0); if (it && it.img) return it; fb = it; } }
   let hist = kv ? (await kv.get("rph:" + kind, "json").catch(() => null)) || [] : []; if (!Array.isArray(hist)) hist = [];
   const st0 = ((day % pool.length) + pool.length) % pool.length, rot = pool.map((_, i) => pool[(st0 + i) % pool.length]), all = (pref || []).concat(rot).filter((f, i, a) => a.indexOf(f) === i), fresh = all.filter(f => !hist.includes(f.n)), list = fresh.length ? fresh : all;
@@ -833,7 +895,7 @@ async function rosterPick(env, kind, pool, now, build, pref) {   // one story a 
   return fb;
 }
 async function founderOf(env, now) {   // one per day; the real Wikipedia photo is required (Marco Nov 15), and nobody repeats until the whole roster has been shown (Nov 25)
-  const day = Math.floor((now - 11 * 3600e3) / 864e5);
+  const day = Math.floor((now - 9 * 3600e3) / 864e5);   // Marco Nov 26: the day starts at 5am DR, before the 7am edition is built (at 11 UTC = 7am the morning build still saw yesterday and repeated its founder and company)
   // Marco Nov 15: about 70% of founders are people he has not mentioned (my picks), about 30% are names he suggested (by: "marco"). His names take 3 days in 10, each name at most once per 10 of his slots, so the roster never repeats; his slot falls back to my picks when his list has run out.
   const HIS = FOUNDERS.filter(f => f.by === "marco"), sl = [2, 5, 8].indexOf(day % 10), use = sl >= 0 ? (Math.floor(day / 10) * 3 + sl) % 10 : -1, pref = use >= 0 && use < HIS.length ? [HIS[use]] : [];
   return rosterPick(env, "founder", FOUNDERS, now, async f => { const it = { h: f.h, s: "Public record", u: "https://en.wikipedia.org/wiki/" + f.w, t: now - 36e5, ceo: 1, founder: 1, pl: f.pl, bio: BIO[f.n] || "", sec: f.s, fy: f.fy, nav: "👤 CEOs & founders", name: f.n }; it.img = await wikiImg(env, f.w.replace(/_/g, " "), true).catch(() => ""); return it; }, pref);
@@ -1046,7 +1108,7 @@ function qualityCheck(b, dayH) {
   const rep = []; [b.big].concat(tops.map(a => a[0])).forEach(it => { if (it && (dayH || []).some(h => simw(h, it.h) >= 0.6)) rep.push(it.h); }); if (rep.length) hard.push("repeats a story already shown today");
   return { hard, soft, rep };
 }
-async function dayList(env, idx) { const all = (await env.LIMITS.get("dayh2:" + edDay(), "json").catch(() => null)) || [], own = (await env.LIMITS.get("dayo:" + idx, "json").catch(() => null)) || []; return all.filter(h => own.indexOf(h) < 0); }   // stories shown in OTHER drops today (a rebuild of this same drop never counts against itself)
+async function dayList(env, idx) { const yd = new Date(Date.now() - 33 * 3600e3).toISOString().slice(0, 10), all = ((await env.LIMITS.get("dayh2:" + yd, "json").catch(() => null)) || []).concat((await env.LIMITS.get("dayh2:" + edDay(), "json").catch(() => null)) || []),   /* Marco Nov 26: yesterday's stories count too, so the morning edition never repeats last night's */ own = (await env.LIMITS.get("dayo:" + idx, "json").catch(() => null)) || []; return all.filter(h => own.indexOf(h) < 0); }   // stories shown in OTHER drops today (a rebuild of this same drop never counts against itself)
 async function repairEd(env, E, q) {   // one repair round: swap in the next best story, redo what is missing
   const b = E.b, x = E.x = E.x || {}, dayH = await dayList(env, b.idx != null ? b.idx : dropIdx(Date.now())), acts = [];
   const rep = (h, it) => (dayH || []).some(d => simw(d, h) >= 0.6) || edItems(b).some(o => o !== it && simw(o.h, h) >= 0.6);
@@ -1090,7 +1152,8 @@ async function advance(env, idx) {   // one step per call (every cron tick, or e
 }
 async function getEdition(env, force, dbg, ctx) {   // what a phone gets: this drop's edition once it has passed the check, otherwise the last good one (never a broken one)
   const idx = dropIdx(Date.now()), key = "ed9y:" + idx, kv = env.LIMITS; let E = kv ? await kv.get(key, "json").catch(() => null) : null;
-  if (E && E.pub) { if (kv && E.b && !E.fx3) { E.fx3 = 1; try { const c = E.b.ceo; if (c && c.founder && c.name) { const w = await wikiImg(env, c.name, true).catch(() => ""); if (w) { c.img = w; c.vf = 4; } } await clearHeads(env, E.b); await kv.put(key, JSON.stringify(E), { expirationTtl: 172800 }); } catch (e) {} }   // one-time repair of an edition published before these rules: the founder's own photo, clearer headlines
+  if (E && E.pub) { if (kv && E.b && E.b.cotd && E.b.cotd.logo === undefined) { E.b.cotd.logo = await logoData(E.b.cotd).catch(() => ""); await kv.put(key, JSON.stringify(E), { expirationTtl: 172800 }).catch(() => 0); }
+    if (kv && E.b && !E.fx3) { E.fx3 = 1; try { const c = E.b.ceo; if (c && c.founder && c.name) { const w = await wikiImg(env, c.name, true).catch(() => ""); if (w) { c.img = w; c.vf = 4; } } await clearHeads(env, E.b); await kv.put(key, JSON.stringify(E), { expirationTtl: 172800 }); } catch (e) {} }   // one-time repair of an edition published before these rules: the founder's own photo, clearer headlines
     const o = finalize(E.b); o.fin = 1; if (dbg) { o._dbg = E.b._dbg; o._q = E.q; o._log = E.log; } return o; }
   let L = null; try { const pt = kv && await kv.get("edpub", "json"); if (pt) L = await kv.get(pt.key, "json"); } catch (e) { L = null; }
   if (!L && kv) { for (const k8 of ["ed8:" + idx, "ed8:" + (idx - 1)]) { const v = await kv.get(k8, "json").catch(() => null); if (v && v.b && v.st === "ready") { L = v; break; } } }   // first deploy: the previous generation's finished edition keeps showing while the new one is built
