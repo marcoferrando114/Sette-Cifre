@@ -6230,9 +6230,26 @@ Numbers on the receipt may use a comma for decimals (RD$2.000,00 means 2000). If
     let run=0; const pts = Object.keys(by).sort().map(d => ({d, v: run += by[d]}));
     const ini = config.inicio || "2026-09-01";
     if(pts.length && pts[0].d > ini) pts.unshift({d:ini, v:0});
-    // Nov 26: end on the same total as the savings card (USD account + market gain/loss count today)
-    let g = 0; try{ g = mktGain() || 0; }catch(e){}
-    if(pts.length && g){ const t = today(), l = pts[pts.length-1]; if(l.d === t) l.v += g; else pts.push({d:t, v:l.v + g}); }
+    // Nov 26: add the USD account (from the day it started) and the IBKR gain/loss day by day from its value history, so the line
+    // follows what savings really did and today ends on the savings card total
+    try{
+      const t = today(), fx = fxToday() || 60, cfg = (config.inversiones||[]).find(x=>/ibkr/i.test(x.nombre||"")), costRd = cfg ? Number(cfg.rd)||0 : 0;
+      const usdD = usdAcc && usdAcc.date ? usdAcc.date : null, usdV = usdAccRd();
+      const ibD = {}; ((ibkr && ibkr.hist) || []).forEach(h => { const v = Number(h.v); if(!(v>0) || !h.t) return; ibD[new Date(h.t*1000).toLocaleDateString("en-CA",{timeZone:"America/Santo_Domingo"})] = v; });
+      const ibStart = cfg && cfg.fecha ? cfg.fecha : Object.keys(ibD).sort()[0];
+      const starts = [usdD, ibStart].filter(Boolean).sort();
+      if(pts.length && starts.length){
+        const days = new Set(pts.map(p=>p.d)); for(let d = starts[0]; d <= t; d = addDays(d, 1)) days.add(d);
+        const ibKeys = Object.keys(ibD).sort(); let live = 0; try{ const c = ibkrCalc(); live = c ? c.gainRd : 0; }catch(e){}
+        const off = d => {
+          let o = (usdD && d >= usdD) ? usdV : 0;
+          if(ibStart && d >= ibStart){ if(d >= t) o += live; else { let v = null; for(const k of ibKeys){ if(k <= d) v = ibD[k]; else break; } if(v !== null && costRd) o += Math.round(v*fx) - costRd; } }
+          return o;
+        };
+        const out = [...days].sort().map(d => ({d, v: (valAt(pts, d) ?? 0) + off(d)}));
+        return out;
+      }
+    }catch(e){}
     return pts;
   }
   function ccPts(){
