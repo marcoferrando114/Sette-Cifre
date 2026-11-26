@@ -4877,7 +4877,8 @@ html.tabh.tabh-st .tabs{top:calc(100lvh - var(--tabh))!important;bottom:auto!imp
     const favPending = favs.reduce((t,d)=>t+favNet(d),0) - favEarned;
     const earned = earned0 + favEarned;
     const pending = act.reduce((t,l)=>t+loanRemaining(l)*shareOf(l),0) + favPending;
-    const capAct = act.reduce((t,l)=>t+l.monto,0);
+    // Nov 26: what is still out on active loans (after repayments), same as the Loans total above, not the original amounts
+    const capAct = owedLoans;
     const actSav = act.filter(l=>l.retiroId).reduce((t,l)=>{ const r=entries.find(e=>e.id===l.retiroId); return t+(r?r.amount:0); },0);
     const pctSav = actSav>0 ? actSav/(total+actSav)*100 : 0;
     $("loanStats").innerHTML = loans.length ? `
