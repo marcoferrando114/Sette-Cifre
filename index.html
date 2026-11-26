@@ -2298,6 +2298,17 @@ html:not(.mp-guest) #s-gst{display:none!important}
 <div id="sgSetup" hidden><div class="g" id="sgForm"><div class="sg-bar"><i id="sgBarI"></i></div><button type="button" class="lnk sg-x" id="sgClose" hidden>Close</button><div id="sgBody"></div>
 <div class="sg-nav"><button class="primary" type="button" id="sgNext">Next</button><div class="sg-row2"><button type="button" class="lnk" id="sgBack">Back</button><button type="button" class="lnk" id="sgSkip">Skip</button></div></div><div class="hint" id="sgMsg" aria-live="polite"></div></div></div>
 <script src="mp-firebase.js?v=10"></script>
+<script>
+// Nov 26: the db has no batch() and doc() needs an id; add both so moves can save
+(function(){ if(!window.claude||!window.claude.use) return; var use=window.claude.use;
+  var rid=function(){ var c="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789",r=""; for(var i=0;i<20;i++) r+=c[Math.floor(Math.random()*62)]; return r; };
+  window.claude.use=function(k){ return Promise.resolve(use.apply(this,arguments)).then(function(d){
+    if(k!=="db"||!d||d.__patched) return d; d.__patched=true; var col=d.collection.bind(d);
+    d.collection=function(n){ var c=col(n), doc=c.doc.bind(c); c.doc=function(id){ return doc(id==null?rid():id); }; return c; };
+    if(!d.batch) d.batch=function(){ var ops=[]; return { set:function(r,v){ops.push(function(){return r.set(v);});}, update:function(r,v){ops.push(function(){return r.update(v);});}, delete:function(r){ops.push(function(){return r.delete();});}, commit:function(){ return Promise.all(ops.map(function(f){return f();})); } }; };
+    return d; }); };
+})();
+</script>
 <script src="faceid.js?v=2" defer></script>
 <script src="sync.js?v=7" defer></script>
 <script src="gmail.js?v=4" defer></script>
