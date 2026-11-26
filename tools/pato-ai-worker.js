@@ -672,7 +672,7 @@ async function cotdPick(env, cand) {
 async function logoData(c) {   // Marco Nov 26: the Company of the day logo is fetched once here and sent inside the edition as a picture, so the phone never waits on a logo site
   const urls = [c.tk ? "https://assets.parqet.com/logos/symbol/" + encodeURIComponent(c.tk) + "?format=png" : "", c.dom ? "https://www.google.com/s2/favicons?domain=" + encodeURIComponent(c.dom) + "&sz=128" : "", c.dom ? "https://icons.duckduckgo.com/ip3/" + encodeURIComponent(c.dom) + ".ico" : "", c.dom ? "https://" + c.dom + "/apple-touch-icon.png" : "", c.dom ? "https://" + c.dom + "/favicon.ico" : "", c.dom ? "https://icon.horse/icon/" + encodeURIComponent(c.dom) : ""].filter(Boolean);
   for (const u of urls) { try { const r = await fetch(u, { headers: { "user-agent": "Mozilla/5.0" }, cf: { cacheTtl: 86400 } }); if (!r.ok) continue; const ct = (r.headers.get("content-type") || "").split(";")[0]; if (!/^image\//.test(ct)) continue;
-    const a = new Uint8Array(await r.arrayBuffer()); if (a.length < 120 || a.length > 150000) continue; let s = ""; for (let i = 0; i < a.length; i += 8192) s += String.fromCharCode.apply(null, a.subarray(i, i + 8192)); return "data:" + ct + ";base64," + btoa(s); } catch (e) {} }
+    const a = new Uint8Array(await r.arrayBuffer()); if (a.length < 120 || a.length > 150000) continue; if (a[0] === 0x89 && a[1] === 0x50 && ((a[16] << 24) | (a[17] << 16) | (a[18] << 8) | a[19]) < 48) continue;   /* a tiny PNG is a blank placeholder, not a logo */ let s = ""; for (let i = 0; i < a.length; i += 8192) s += String.fromCharCode.apply(null, a.subarray(i, i + 8192)); return "data:" + ct + ";base64," + btoa(s); } catch (e) {} }
   return "";
 }
 // Marco Nov 14: ONE personal founder story a day (not news about unknown CEOs). Written by Pato from well-known, widely reported facts; the link goes to the person's Wikipedia page. Never explains success by ethnicity, religion or nationality.
@@ -1152,7 +1152,7 @@ async function advance(env, idx) {   // one step per call (every cron tick, or e
 }
 async function getEdition(env, force, dbg, ctx) {   // what a phone gets: this drop's edition once it has passed the check, otherwise the last good one (never a broken one)
   const idx = dropIdx(Date.now()), key = "ed9y:" + idx, kv = env.LIMITS; let E = kv ? await kv.get(key, "json").catch(() => null) : null;
-  if (E && E.pub) { if (kv && E.b && E.b.cotd && !E.b.cotd.logo && !E.b.cotd.lg2) { E.b.cotd.lg2 = 1; E.b.cotd.logo = await logoData(E.b.cotd).catch(() => ""); await kv.put(key, JSON.stringify(E), { expirationTtl: 172800 }).catch(() => 0); }
+  if (E && E.pub) { if (kv && E.b && E.b.cotd && !E.b.cotd.lg3) { E.b.cotd.lg3 = 1; E.b.cotd.logo = await logoData(E.b.cotd).catch(() => ""); await kv.put(key, JSON.stringify(E), { expirationTtl: 172800 }).catch(() => 0); }
     if (kv && E.b && !E.fx3) { E.fx3 = 1; try { const c = E.b.ceo; if (c && c.founder && c.name) { const w = await wikiImg(env, c.name, true).catch(() => ""); if (w) { c.img = w; c.vf = 4; } } await clearHeads(env, E.b); await kv.put(key, JSON.stringify(E), { expirationTtl: 172800 }); } catch (e) {} }   // one-time repair of an edition published before these rules: the founder's own photo, clearer headlines
     const o = finalize(E.b); o.fin = 1; if (dbg) { o._dbg = E.b._dbg; o._q = E.q; o._log = E.log; } return o; }
   let L = null; try { const pt = kv && await kv.get("edpub", "json"); if (pt) L = await kv.get(pt.key, "json"); } catch (e) { L = null; }
