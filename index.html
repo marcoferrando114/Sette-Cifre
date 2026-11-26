@@ -2194,7 +2194,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261126181000";try{ if("serviceWorker" in navigator) window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); }); }catch(e){}window.NW=function(s){ s = String(s || "").replace(/\s*·?\s*Wikipedia/i, "").trim(); return s || "Pato"; };(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261126183000";try{ if("serviceWorker" in navigator) window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); }); }catch(e){}window.NW=function(s){ s = String(s || "").replace(/\s*·?\s*Wikipedia/i, "").trim(); return s || "Pato"; };(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -8685,6 +8685,10 @@ html.mp-guest .pk-ended,html.mp-guest:not(.tr-casino) #pkSum [data-v="ar"],html.
 .up-parts{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
 .up-parts span{display:flex;align-items:baseline;gap:6px;white-space:nowrap}
 .up-parts small{font-size:.66rem;font-weight:600;opacity:.55}
+/* Marco Nov 26: never crop a story photo. The photo shows whole, at its own shape (very tall ones are capped and centered) */
+#pdV .pd-img,#pdV .pd-img:has(+ .pd-k),#pdV .pd-img.pd-fd{aspect-ratio:auto!important;height:auto!important;background:rgba(0,0,0,.25)}
+#pdV .pd-img img{width:100%!important;height:auto!important;max-height:58vh;object-fit:contain!important;object-position:center!important;margin:0 auto}
+#pdV .pd-img.pd-ph{aspect-ratio:4/3!important}
 #pkPull{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 6px);z-index:40;width:44px;height:44px;margin-left:-22px;border-radius:50%;background:var(--card);box-shadow:0 6px 18px rgba(0,0,0,.35);display:flex;align-items:center;justify-content:center;transform:translateY(-70px);opacity:0;pointer-events:none}
 #pkPull img{width:30px;height:30px;border-radius:8px}
 #pkPull.go{transition:transform .3s cubic-bezier(.22,1,.36,1),opacity .3s}#pkPull.spin img{animation:pkDuckBob .6s ease-in-out infinite}
