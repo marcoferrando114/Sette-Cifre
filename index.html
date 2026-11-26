@@ -6230,6 +6230,9 @@ Numbers on the receipt may use a comma for decimals (RD$2.000,00 means 2000). If
     let run=0; const pts = Object.keys(by).sort().map(d => ({d, v: run += by[d]}));
     const ini = config.inicio || "2026-09-01";
     if(pts.length && pts[0].d > ini) pts.unshift({d:ini, v:0});
+    // Nov 26: end on the same total as the savings card (USD account + market gain/loss count today)
+    let g = 0; try{ g = mktGain() || 0; }catch(e){}
+    if(pts.length && g){ const t = today(), l = pts[pts.length-1]; if(l.d === t) l.v += g; else pts.push({d:t, v:l.v + g}); }
     return pts;
   }
   function ccPts(){
