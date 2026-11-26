@@ -76,6 +76,10 @@ async function ingestCore(S, a) {
       await S.put("spend", a.id, { date, merchant: "Código Cash · ATM", raw: "Código Cash", amount: a.amount, currency: "DOP", rd: a.amount, kind: "retiro", status: /Reversada/i.test(a.status) ? "Reversada" : bad ? "Declinada" : "Aprobada", cat: "cash", source: "email", excluded: false, ts });
       return "cash withdrawal row";
     }
+    if (a.kind === "deposit") {   // Marco may have logged "Cash → Popular" by hand already: attach this alert to that row, no income row
+      const mine = (await S.range("spend", "date", addDays(date, -1), addDays(date, 1))).find(t => t.kind === "deposito" && t.source === "manual" && !(t.bhdIds || []).length && Math.abs((Number(t.rd) || 0) - a.amount) < 0.5);
+      if (mine) { await S.put("spend", mine.id, { bhdIds: [a.id] }); return "matched your cash deposit " + mine.id; }
+    }
     if (a.kind === "deposit") {   // the ATM deposit email does not say who it is from; it is logged as income and Marco sorts it (loan payment, etc.) as before
       await S.put("spend", a.id, { date, merchant: "ATM deposit", raw: a.raw || "Depósito por ATM", amount: a.amount, currency: "DOP", rd: a.amount, kind: "ingreso", status: "Aprobada", cat: "income", source: "email", excluded: false, ts });
       return "deposit row";

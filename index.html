@@ -2451,7 +2451,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
     <button class="mini" type="button" id="mvOpen" style="margin-top:10px">Move money between accounts</button>
     <div id="mvBox" hidden style="margin-top:10px">
       <div class="row">
-        <select id="mvDir" aria-label="Direction"><option value="pb">Popular → BHD</option><option value="bp">BHD → Popular</option></select>
+        <select id="mvDir" aria-label="Direction"><option value="pb">Popular → BHD</option><option value="bp">BHD → Popular</option><option value="cb">Cash → BHD</option><option value="cp">Cash → Popular</option></select>
         <input id="mvAmt" inputmode="decimal" placeholder="Amount (RD$)" autocomplete="off" aria-label="Amount to move">
       </div>
       <div class="row" style="margin-top:8px">
@@ -4839,7 +4839,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
       const ml = $("mvHist"); ml.innerHTML = "";
       mv.slice(0,5).forEach(e => { const li = document.createElement("li");
         li.innerHTML = `<div><div class="src"></div></div><div class="amt num"></div>`;
-        li.querySelector(".src").textContent = fmtDate(e.date,false) + " · " + (e.type==="in" ? "Popular → BHD" : "BHD → Popular");
+        li.querySelector(".src").textContent = fmtDate(e.date,false) + " · " + (e.cash ? "Cash → BHD" : e.type==="in" ? "Popular → BHD" : "BHD → Popular");
         li.querySelector(".amt").textContent = fmt(e.amount); ml.appendChild(li); }); }
     const ch = $("ccHist"); ch.innerHTML = "";
     cc.slice(0,6).forEach(c => {
@@ -5491,8 +5491,34 @@ html:not(.mp-guest) #s-gst{display:none!important}
   $("mvAmt").addEventListener("input", ()=>{ $("mvSave").disabled = !db || !(parseAmt($("mvAmt").value) > 0); });
   $("mvSave").onclick = async () => {
     if(!db) return;
-    const amt = parseAmt($("mvAmt").value), toBhd = $("mvDir").value==="pb", date = $("mvDate").value || today();
+    const dir = $("mvDir").value, amt = parseAmt($("mvAmt").value), toBhd = dir==="pb", date = $("mvDate").value || today();
     if(!(amt>0)) return;
+    if(dir==="cb" || dir==="cp"){   // cash deposited: the cash in hand drops, the account goes up, never spending or income
+      const w = spWallet();
+      if(w!==null && amt > w + 0.5 && !await sure(`Cash in hand shows ${fmt(w)}. Deposit ${fmt(amt)} anyway?`)) return;
+      $("mvSave").disabled = true;
+      try{
+        const now = Date.now(), batch = db.batch(), sRef = db.collection("spend").doc(), undo = [];
+        if(dir==="cb"){
+          const eRef = db.collection("entries").doc();
+          batch.set(eRef, {type:"in", source:"Otro", amount:amt, date, createdAt:now, note:"Cash deposited", traslado:true, cash:true});
+          batch.set(sRef, {date, merchant:"Cash to BHD", amount:amt, currency:"DOP", rd:amt, kind:"deposito", status:"Aprobada", cat:"cash", source:"manual", excluded:false, ts:now, entryRef:eRef.id});
+          undo.push(eRef, sRef);
+        }else{
+          // the Popular ATM alert may already be logged as income: turn that row into the deposit instead of adding a second one
+          const est = ccEstimate(), last = est.last, hit = spend.find(t => spIsIn(t) && t.source==="email" && /ATM/i.test(t.merchant||"") && Math.abs((Number(t.rd)||0) - amt) < 0.5 && Math.abs(new Date(t.date+"T12:00") - new Date(date+"T12:00")) <= 864e5);
+          const cRef = db.collection("corriente").doc();
+          batch.set(cRef, {saldo: Math.max(0, (last ? est.est : 0) + (hit ? 0 : amt)), date: date > (last&&last.date||"") ? date : today(), createdAt: now, move: amt});
+          if(hit){ batch.update(db.collection("spend").doc(hit.id), {kind:"deposito", cat:"cash", merchant:"Cash to Popular"}); undo.push(cRef); }
+          else { batch.set(sRef, {date, merchant:"Cash to Popular", amount:amt, currency:"DOP", rd:amt, kind:"deposito", status:"Aprobada", cat:"cash", source:"manual", excluded:false, ts:now}); undo.push(sRef, cRef); }
+          var hitRef = hit ? hit.id : null;
+        }
+        await batch.commit();
+        $("mvAmt").value = ""; $("mvBox").hidden = true;
+        toast("Cash deposited", `${fmt(amt)} · Cash → ${dir==="cb" ? "BHD" : "Popular"}`, false, async () => { const u = db.batch(); undo.forEach(r=>u.delete(r)); if(hitRef) u.update(db.collection("spend").doc(hitRef), {kind:"ingreso", cat:"income", merchant:"ATM deposit"}); await u.commit(); });
+      }catch(e){ warnMsg("Couldn’t save the deposit."); $("mvSave").disabled = false; }
+      return;
+    }
     const last = [...corriente].sort((a,b)=>(b.date||"").localeCompare(a.date||"") || (b.createdAt||0)-(a.createdAt||0))[0];
     const cc0 = last ? last.saldo : 0;
     if(toBhd && amt > cc0 + 0.5 && !await sure(`Checking only shows ${fmt(cc0)}. Move ${fmt(amt)} anyway?`)) return;
