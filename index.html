@@ -7173,6 +7173,7 @@ TRACKER DATA:
   var db = null, spend = [], bets = [], file = null;
   var CATS = {food:"Food", gas:"Car", sport:"Tennis & club", out:"Going out", subs:"Subscriptions", rides:"Rides", health:"Pharmacy & health", family:"Family", needs:"Essentials", shopping:"Wants", fees:"Fees", other:"Other"};
   window.__SNAPC = CATS;
+  window.__snapShow = function(d, tab){ return show(d, tab); };
   var HINT = {"tab-savings":"a deposit or transfer receipt", "tab-spending":"a store receipt or bank transfer receipt", "tab-stocks":"an Interactive Brokers screen (orders, trades or positions)", "tab-poker":"a sports bet slip", "tab-loans":"a bank transfer for a loan (money lent or paid back)", "tab-trends":"a receipt"};
   var esc = function(s){ return String(s==null?"":s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]; }); };
   var rd = function(n){ return "RD$" + Math.round(Number(n)||0).toLocaleString("en-US"); };
@@ -7221,7 +7222,7 @@ TRACKER DATA:
       '{"kind":"receipt","merchant":string,"amount":number,"date":"YYYY-MM-DD","cat":one of ' + JSON.stringify(Object.keys(CATS)) + ',"paid":"card"|"cash"|null}\n' +
       '{"kind":"bet","casa":string (sportsbook),"tipo":"single"|"parlay","stake":number,"odds":American odds integer for the whole ticket,"toWin":number,"payout":number (0 if lost or pending),"result":"won"|"lost"|"pending"|"void","fecha":"YYYY-MM-DD","hora":"HH:MM","legs":[{"sport":string,"game":string,"pick":string,"odds":integer,"result":"won"|"lost"|"pending"|"void","fecha":"YYYY-MM-DD HH:MM"}]}\n' +
       '{"kind":"stocks","trades":[{"t":ticker,"side":"buy"|"sell","sh":number,"price":number,"usd":number,"fee":number,"limite":number,"status":"filled"|"open"|"cancelled","date":"YYYY-MM-DD"}],"summary":string}\n' +
-      '{"kind":"transfer","direction":"out"|"in","amount":number,"date":"YYYY-MM-DD","person":string (the other person, no account numbers),"bank":string,"note":string,"cat":one of ' + JSON.stringify(Object.keys(CATS)) + ',"own":true if it went to their own account}\n' +
+      '{"kind":"transfer","direction":"out"|"in","amount":number (the amount sent, WITHOUT bank charges),"fee":number (bank charges, commission or taxes on top; 0 if none),"date":"YYYY-MM-DD","person":string (the other person, no account numbers),"bank":string,"note":string,"cat":one of ' + JSON.stringify(Object.keys(CATS)) + ',"own":true if it went to their own account}\n' +
       (typed ? '{"kind":"casino","result":"loss"|"win","amount":number,"date":"YYYY-MM-DD","game":"arcade"|"poker_casino"|"poker_amigos","from":"bhd"|"popular"|"cash"|null (where the money came from or went, only if said)}  (use for money lost or won at a casino, slots, online casino or "arcade"; "casino" and "arcade" mean game "arcade"; poker at a casino is "poker_casino"; poker at home or with friends is "poker_amigos")\n' +
       '{"kind":"income","amount":number,"from":string|null (who paid, no account numbers),"to":"bhd"|"popular"|"cash"|null (only if said),"date":"YYYY-MM-DD","note":string|null}  (use for money the person received or earned: "received 5000 from Isaac", "Isaac paid me 2000", "got paid 15000"; instead of transfer)\n' +
       '{"kind":"move","from":"cash"|"popular"|"bhd","to":"cash"|"popular"|"bhd","amount":number|null,"date":"YYYY-MM-DD","cash_left":number|null}  (money moved between the person\'s own accounts, e.g. "deposited 5000 cash at Popular", "the rest was my cash"; never income or spending; cash_left = cash still in hand if said)\n' +
@@ -7478,7 +7479,14 @@ TRACKER DATA:
     }
     if(k === "transfer"){
       var a = Number(d.amount)||0, dt2 = okDate(d.date), out = d.direction !== "in";
-      var html4 = '<h3>Transfer ' + (out ? "sent" : "received") + '</h3><p class="sub">' + esc(d.bank || "") + '</p>' + rows([[out ? "To" : "From", d.person], ["Amount", rd(a)], ["Date", dt2], ["Note", d.note]]);
+      // Nov 27 (Marco): "Monto X más cargos de Y" = X is the transfer, Y is a bank fee logged on its own
+      var fee = out ? Math.round((Number(d.fee)||0)*100)/100 : 0, fm = String(d.note||"").replace(/,/g, "").match(/monto\s*(?:RD\$|\$)?\s*([\d.]+)[^\d]{0,40}?(?:cargos?|comisi[oó]n(?:es)?|impuestos?)\s*(?:de\s*)?(?:RD\$|\$)?\s*([\d.]+)/i);
+      if(out && fm){ var mb = Number(fm[1])||0, mf = Number(fm[2])||0; if(mb > 0 && mf > 0 && mf < mb){ fee = mf; a = mb; } }
+      d.amount = a; d.fee = fee;
+      var html4 = '<h3>Transfer ' + (out ? "sent" : "received") + '</h3><p class="sub">' + esc(d.bank || "") + '</p>' + rows([[out ? "To" : "From", d.person], ["Amount", rd(a)], ["Bank fee", fee > 0 ? rd(fee) : null], ["Date", dt2], ["Note", d.note]]);
+      var logFee = async function(){ if(!(fee > 0)) return; var to = String(d.person||"").slice(0,60), bhd = /bhd/i.test(d.bank||"") || /bhd/i.test(d.note||""), now = Date.now(), sp = {date:dt2, merchant:(bhd ? "BHD" : String(d.bank||"Bank").slice(0,30)) + " transfer fee", amount:fee, currency:"DOP", rd:fee, kind:"manual", status:"Aprobada", cat:"fees", source:"manual", excluded:false, ts:now, fromSnap:true, note:"Fee on the transfer to " + to};
+        if(bhd && isOwner()){ var e = await db.collection("entries").add({type:"out", source:"Retiro", motivo:"gasto", amount:fee, date:dt2, createdAt:now, note:"BHD transfer fee"}); Object.assign(sp, {fromSav:true, savEntry:e.id, bank:"bhd"}); }
+        await db.collection("spend").add(sp); };
       var acts4 = [];
       var saveTr = function(own){ return async function(){ var to = String(d.person||"someone").slice(0,80), cat = own ? "other" : (CATS[d.cat] ? d.cat : "other");
         var doc = {date:dt2, merchant:(own ? "Transfer to own account · " : "Transfer to ") + to, amount:a, currency:"DOP", rd: own ? 0 : a, kind:"transfer", status:"Aprobada", cat:cat, source:"manual", excluded:false, ts:Date.now(), note: own ? "RD$" + a + " moved between own accounts; not spending" : "RD$" + a, fromSnap:true}; if(own) doc.own = true;
@@ -7498,6 +7506,7 @@ TRACKER DATA:
       acts4.push([tab === "tab-loans" ? (out ? "Save as a loan" : "Save as a payment") : out ? "It’s a loan" : "Save", async function(){ if((window.MP_ME&&!window.MP_ME.owner) && window.__gstTr){ window.__gstTr(d, tab, out); return; }
         if(window.__gstTr){ if(!out && window.__patoPay && window.__patoPay(d.person, a, dt2, /bhd/i.test(d.bank||""))) return; window.__gstTr(d, out ? tab : "tab-savings", out); return; }
         await queue(d, tab === "tab-loans" ? (out ? "loan given" : "loan payment received") : ""); toast("Saved", "It’s added within the hour"); }]);
+      if(fee > 0) acts4 = acts4.map(function(x){ if(x[0] === "Cancel") return x; var f = x[1]; return [x[0], async function(){ var r = await f.apply(this, arguments); try{ await logFee(); }catch(e){ console.error(e); toast("Fee not logged", rd(fee), true); } return r; }]; });
       open(html4 + buttons(acts4)); wire(acts4); return;
     }
     if(k === "casino"){ casino(d); return; }
