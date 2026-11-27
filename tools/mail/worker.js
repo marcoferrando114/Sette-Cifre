@@ -245,6 +245,8 @@ async function watch(env) {
       try { await notify(env, title, body, "bank-" + id, { ...a, id, ts: Number(m.internalDate) || Date.now() }); } catch (e) { console.log("notify failed", String(e)); break; }   // not marked seen: tried again on the next run (for 3 hours)
       log.push({ id, ts: Number(m.internalDate) || Date.now(), ...a }); sent++; }
     st.seen.push(id);
+    st.seen = st.seen.slice(-200); await env.LIMITS.put(wk, JSON.stringify(st));   // Nov 27: save after each email, so a run that gets cut off never redoes or loses one
+    if (sent) await env.LIMITS.put("gm:alerts:" + uid, JSON.stringify(log.slice(-60)));
   }
   st.seen = st.seen.slice(-200);
   await env.LIMITS.put(wk, JSON.stringify(st));
