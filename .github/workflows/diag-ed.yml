@@ -15,5 +15,7 @@ jobs:
       - run: |
           python3 -c "import json;e=json.load(open('edition.json'));print(json.dumps(e.get('cats',{}).get('playbook') or [k for k in e.get('cats',{})])[:3000])"
           python3 -c "import json;e=json.load(open('edition.json'));print(json.dumps(e.get('playbook'))[:3000])"
+      - run: |
+          for k in big deep ceo last cotd mistake playbook model; do u=$(python3 -c "import json;e=json.load(open('edition.json'));print((e.get('$k') or {}).get('img') or '')"); [ -n "$u" ] && echo "$k $(curl -s -o /dev/null -w '%{http_code} %{size_download} %{time_total}' -A 'Mozilla/5.0 (iPhone)' "$u")"; done; true
       - run: (python3 -m http.server 8765 >/dev/null 2>&1 &) ; sleep 2
       - run: EDITION_FILE=edition.json ACCT=owner node tools/render-check.js
