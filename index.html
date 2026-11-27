@@ -2317,8 +2317,11 @@ html:not(.mp-guest) #s-gst{display:none!important}
 /* Nov 26 (Marco: tab bar still not stable): in the home-screen app the bar is pinned from the TOP of the screen (100lvh minus its own height).
    iOS sometimes shrinks the layout viewport (after the keyboard or an app switch), which drags anything pinned to bottom:0 up the screen;
    the large viewport height doesn't change, so the bar stays put with no measuring or re-docking while you scroll. */
-@media (display-mode: standalone){ html.tabh .tabs{top:calc(100lvh - var(--tabh))!important;bottom:auto!important} }
-html.tabh.tabh-st .tabs{top:calc(100lvh - var(--tabh))!important;bottom:auto!important}
+/* Nov 27 (Marco: the bar moves while scrolling): in the home-screen app the page itself never scrolls; the content scrolls inside
+   #pkScr (a full-screen box), so the bar, pinned to the bottom of a screen that doesn't move, can't be dragged by iOS scrolling */
+html.tabh-st,html.tabh-st body{height:100%;overflow:hidden}
+#pkScr{position:fixed;inset:0;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:none}
+html.tabh-st .tabs{top:auto!important;bottom:0!important}
 </style>
 <script id="stakd-dockfix">(function(){
   var st = navigator.standalone || (window.matchMedia && matchMedia("(display-mode: standalone)").matches);
@@ -2326,7 +2329,17 @@ html.tabh.tabh-st .tabs{top:calc(100lvh - var(--tabh))!important;bottom:auto!imp
   var H = document.documentElement; H.classList.add("tabh-st");
   // the bar's own height (changes only when its content does), so its top edge = screen height - this
   function size(){ var bar = document.querySelector(".tabs"); if (!bar) return; var h = Math.round(bar.getBoundingClientRect().height); if (h > 20 && h < 200){ H.style.setProperty("--tabh", h + "px"); H.classList.add("tabh"); } }
-  function start(){ var bar = document.querySelector(".tabs"); if (!bar) return; size(); if (window.ResizeObserver) new ResizeObserver(size).observe(bar); }
+  // the content scrolls inside #pkScr; window.scrollY / scrollTo / "scroll" keep working for the rest of the app
+  var scr = null;
+  function wrap(){ var m = document.querySelector("main"); if (!m || scr) return; scr = document.createElement("div"); scr.id = "pkScr"; m.parentNode.insertBefore(scr, m); scr.appendChild(m);
+    scr.addEventListener("scroll", function(){ try{ window.dispatchEvent(new Event("scroll")); }catch(e){} }, {passive: true}); }
+  try{
+    var oTo = window.scrollTo.bind(window), oBy = window.scrollBy.bind(window);
+    window.scrollTo = function(x, y){ if (!scr) return oTo.apply(null, arguments); if (x && typeof x === "object") scr.scrollTo(x); else scr.scrollTo(x || 0, y || 0); };
+    window.scrollBy = function(x, y){ if (!scr) return oBy.apply(null, arguments); if (x && typeof x === "object") scr.scrollBy(x); else scr.scrollBy(x || 0, y || 0); };
+    ["scrollY", "pageYOffset"].forEach(function(k){ Object.defineProperty(window, k, {configurable: true, get: function(){ return scr ? scr.scrollTop : 0; }}); });
+  }catch(e){}
+  function start(){ wrap(); var bar = document.querySelector(".tabs"); if (!bar) return; size(); if (window.ResizeObserver) new ResizeObserver(size).observe(bar); }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", start); else start();
   // keyboard: hide the bar while typing; when the keyboard closes iOS can leave the page shifted, so nudge it back
   function kb(){ var bar = document.querySelector(".tabs"); if (!bar || !window.visualViewport) return;
