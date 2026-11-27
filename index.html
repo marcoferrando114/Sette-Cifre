@@ -2321,7 +2321,19 @@ html:not(.mp-guest) #s-gst{display:none!important}
    #pkScr (a full-screen box), so the bar, pinned to the bottom of a screen that doesn't move, can't be dragged by iOS scrolling */
 html.tabh-st,html.tabh-st body{height:100%;overflow:hidden}
 #pkScr{position:fixed;inset:0;overflow-x:hidden;overflow-y:auto;-webkit-overflow-scrolling:touch;overscroll-behavior:none}
-html.tabh-st .tabs{top:auto!important;bottom:0!important}
+/* Nov 27 (Marco: bar should be closer to the bottom): iOS can make the layout viewport shorter than the screen (by about the status bar),
+   so bottom:0 left a gap under the bar; pin the bar and the scroll box to the full screen height (100lvh) instead */
+html.tabh-st .tabs{top:calc(100lvh - var(--tabh,65px))!important;bottom:auto!important}
+html.tabh-st #pkScr{bottom:auto;height:100vh;height:100lvh}
+/* Nov 27 (Marco: refresh message too big): toasts are a small pill at the top of the screen */
+.toast{top:calc(env(safe-area-inset-top,0px) + 8px)!important;bottom:auto!important;min-width:0!important;max-width:calc(100% - 48px)!important;
+ padding:5px 14px 5px 5px!important;gap:8px!important;border-radius:999px!important;font-size:.82rem!important;line-height:1.2;
+ box-shadow:0 6px 18px rgba(0,0,0,.22)!important;transform:translate(-50%,-180%)!important}
+.toast.on{transform:translate(-50%,0)!important}
+.toast .tk,.toast .tk.pk-tk{width:24px!important;height:24px!important;font-size:.75rem!important}
+.toast b{font-weight:700}
+.toast small{font-size:.72rem!important;margin-top:0!important}
+.toast .tundo{padding:3px 10px!important;border-radius:999px!important}
 </style>
 <script id="stakd-dockfix">(function(){
   var st = navigator.standalone || (window.matchMedia && matchMedia("(display-mode: standalone)").matches);
