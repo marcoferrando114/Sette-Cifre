@@ -2194,7 +2194,7 @@ html:not(.mp-guest) #s-gst{display:none!important}
 </style>
 </head>
 <body>
-<script id="stakd-ver">window.STAKD_V="20261126183000";try{ if("serviceWorker" in navigator) window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); }); }catch(e){}window.NW=function(s){ s = String(s || "").replace(/\s*·?\s*Wikipedia/i, "").trim(); return s || "Pato"; };(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
+<script id="stakd-ver">window.STAKD_V="20261127200000";try{ if("serviceWorker" in navigator) window.addEventListener("load", function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); }); }catch(e){}window.NW=function(s){ s = String(s || "").replace(/\s*·?\s*Wikipedia/i, "").trim(); return s || "Pato"; };(function(){function chk(){fetch("version.json?t="+Date.now(),{cache:"no-store"}).then(function(r){return r.json()}).then(function(j){if(j&&j.v&&j.v!==window.STAKD_V){var u=location.pathname+"?v="+j.v;if(location.search!=="?v="+j.v)location.replace(u);}}).catch(function(){});}chk();document.addEventListener("visibilitychange",function(){if(!document.hidden)chk();});})();</script>
 
 
 
@@ -8096,7 +8096,7 @@ TRACKER DATA:
       var DL = cats.deals && cats.deals[0];
       if(DL){ L.push({id: ed + ":deal:" + DL.h, ord: 4.2, cls: "", news: 1, t: "Deal of the day", w: ago(DL.t) + " ago", u: DL.u, pic: DL.u, ph: DL.h, ps: DL.s, fk: "deal", nav: "💰 Deal", sh: {k: "Deal of the day", h: DL.h, s: DL.s, u: DL.u},
         body: '<div class="pd-k">💰 DEAL OF THE DAY</div><div class="pd-h1">' + esc(DL.h) + '</div><div class="pd-m">' + by(DL) + '</div>' + (kfBox(DL) || plain(DL)) + jgBox(DL) + fyBox(ownT(DL) + (DL.fy || ""))}); }
-      [["mistake", "💥 BIG MISTAKE", "Big mistake", "💥 Mistake", 4.4], ["playbook", "🧠 INVESTOR PLAYBOOK", "Investor playbook", "🧠 Playbook", 4.6], ["model", "🏗️ HOW THEY MAKE MONEY", "How they make money", "🏗️ Models", 4.8]].forEach(function(d3){
+      [["mistake", "COSTLY BETS", "Costly bets", "Costly bets", 4.4], ["playbook", "🧠 INVESTOR PLAYBOOK", "Investor playbook", "🧠 Playbook", 4.6], ["model", "🏗️ HOW THEY MAKE MONEY", "How they make money", "🏗️ Models", 4.8]].forEach(function(d3){
         var SI = E[d3[0]]; if(!SI || !SI.h) return;
         L.push({id: ed + ":" + d3[0] + ":" + SI.name, ord: d3[4], cls: "", news: 1, t: d3[2], w: "today", u: SI.u, pic: SI.u, ph: SI.h, ps: NW(SI.s), fk: d3[0], nr: 1, nav: d3[3], sh: {k: d3[2], h: SI.h, s: NW(SI.s), u: SI.u},
           body: '<div class="pd-k">' + d3[1] + '</div><div class="pd-h1">' + esc(SI.h) + '</div>' + (SI.pl ? '<div class="pd-ctx">' + esc(SI.pl) + '</div>' : '') + '<div class="pd-m">Source: ' + esc(NW(SI.s)) + '</div>' + (SI.cost ? '<div class="pd-know"><i>HOW BIG</i>' + kp(SI.cost) + '</div>' : '') + (SI.sec || []).map(function(x){ return '<div class="pd-know"><i>' + esc(x[0]) + '</i>' + kp(x[1]) + '</div>'; }).join("") + fyBox(SI.fy || "")}); });
