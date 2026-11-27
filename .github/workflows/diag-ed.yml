@@ -1,0 +1,16 @@
+name: diag-ed
+on:
+  push:
+    branches: [diag-ed]
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm i playwright@1.49.0 && npx playwright install --with-deps chromium
+      - run: |
+          curl -s -H "Origin: https://marcoferrando114.github.io" "https://pato-ai.marcoferrando.workers.dev/edition" -o edition.json && python3 -c "import json;e=json.load(open('edition.json'));c=e.get('cotd') or {};print('idx',e.get('idx'),'day',e.get('day'),'ceo',(e.get('ceo') or {}).get('name'),'cotd',c.get('name'),'logo',len(c.get('logo') or ''),'deal',((e.get('cats') or {}).get('deals') or [{}])[0].get('h'))"
+      - run: (python3 -m http.server 8765 >/dev/null 2>&1 &) ; sleep 2
+      - run: EDITION_FILE=edition.json ACCT=owner node tools/render-check.js
