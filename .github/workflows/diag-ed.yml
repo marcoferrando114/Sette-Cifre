@@ -12,5 +12,8 @@ jobs:
       - run: npm i playwright@1.49.0 && npx playwright install --with-deps chromium
       - run: |
           curl -s -H "Origin: https://marcoferrando114.github.io" "https://pato-ai.marcoferrando.workers.dev/edition" -o edition.json && python3 -c "import json;e=json.load(open('edition.json'));c=e.get('cotd') or {};print('idx',e.get('idx'),'day',e.get('day'),'ceo',(e.get('ceo') or {}).get('name'),'cotd',c.get('name'),'logo',len(c.get('logo') or ''),'deal',((e.get('cats') or {}).get('deals') or [{}])[0].get('h'))"
+      - run: |
+          python3 -c "import json;e=json.load(open('edition.json'));print(json.dumps(e.get('cats',{}).get('playbook') or [k for k in e.get('cats',{})])[:3000])"
+          python3 -c "import json;e=json.load(open('edition.json'));print(json.dumps(e.get('playbook'))[:3000])"
       - run: (python3 -m http.server 8765 >/dev/null 2>&1 &) ; sleep 2
       - run: EDITION_FILE=edition.json ACCT=owner node tools/render-check.js
