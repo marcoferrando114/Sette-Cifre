@@ -5608,7 +5608,8 @@ html.tabh-st .tabs{top:auto!important;bottom:0!important}
     if(!last) return {est:0, out:0, inn:0, last:null};
     const after = t => t.date > last.date || (t.date===last.date && (t.ts||0) > (last.createdAt||0));
     let out = 0, inn = 0;
-    spend.filter(t=>spLive(t) && after(t)).forEach(t => {
+    // Nov 27: rows paid from BHD (its card 6133, its transfers, receipts matched to the BHD card) never touch Popular checking
+    spend.filter(t=>spLive(t) && after(t) && !(t.fromSav || t.bank==="bhd" || t.source==="bhd")).forEach(t => {
       if(spIsCard(t) || spIsCashOut(t)) out += spAmt(t);
       else if(spIsTransfer(t)) out += (Number(t.amount)||0);
       else if(spIsIn(t) || spIsDep(t)) inn += spAmt(t);   // cash you deposit at Popular lands in checking (Nov 26)
