@@ -398,21 +398,24 @@ export default {
     if (new URL(req.url).pathname === "/health" && req.headers.get("x-edition-check") === "1") return new Response(await editionHealth(env).catch(e => "error " + String(e).slice(0, 100)), { status: 200 });
     const u = new URL(req.url);
     if (u.pathname === "/pay" && (req.method === "POST" || req.method === "GET")) {   // Apple Pay tap from the iPhone Shortcut (Nov 24): ?t=<token from Pato > Settings > Apple Pay>, body {amount, merchant, card}
+      // Nov 28: every hit leaves a trace in spendMeta/applepay (when, what came in, what happened) so a missing tap can be told apart from a failed one
+      const trace = async o => { try { await patchDoc(env, "spendMeta", "applepay", { at: new Date().toISOString(), ...o }); } catch (e) { console.log("trace", String(e).slice(0, 100)); } };
       const tok = await env.LIMITS.get("pay:token"), t = u.searchParams.get("t") || "";
-      if (!tok || t.length !== tok.length || [...t].reduce((x, c, i) => x | (c.charCodeAt(0) ^ tok.charCodeAt(i)), 0) !== 0) return new Response("no", { status: 403 });
-      let b = {}; const ct = req.headers.get("content-type") || "";
-      if (req.method === "POST") { const raw = await req.text(); try { b = JSON.parse(raw); } catch (e) { try { b = Object.fromEntries(new URLSearchParams(raw)); } catch (e2) {} } }
+      if (!tok || t.length !== tok.length || [...t].reduce((x, c, i) => x | (c.charCodeAt(0) ^ tok.charCodeAt(i)), 0) !== 0) { if (!(await env.LIMITS.get("cron:paybad"))) { await env.LIMITS.put("cron:paybad", "1", { expirationTtl: 60 }); await trace({ result: "bad token", tokenLen: t.length }); } return new Response("no", { status: 403 }); }
+      let b = {}, raw = "";
+      if (req.method === "POST") { raw = await req.text(); try { b = JSON.parse(raw); } catch (e) { try { b = Object.fromEntries(new URLSearchParams(raw)); } catch (e2) {} } }
       for (const [k, v] of u.searchParams) if (k !== "t" && b[k] === undefined) b[k] = v;
-      const amount = b.amount, merchant = String(b.merchant || b.name || "").trim();
-      if (!amount || !merchant) return new Response("missing amount or merchant", { status: 400 });
+      const amount = b.amount ?? b.Amount ?? b.total, merchant = String(b.merchant ?? b.Merchant ?? b.name ?? b.store ?? "").trim() || "Apple Pay";   // some terminals send no merchant: still log it
+      if (amount === undefined || amount === null || String(amount).trim() === "") { await trace({ result: "missing amount", body: raw.slice(0, 300) }); return new Response("missing amount", { status: 400 }); }
       const dk = "cron:pay:" + String(amount) + "|" + merchant.slice(0, 30);
-      if (await env.LIMITS.get(dk)) return new Response("dup", { status: 200 });   // the automation fired twice for one tap
+      if (await env.LIMITS.get(dk)) { await trace({ result: "dup", body: raw.slice(0, 300) }); return new Response("dup", { status: 200 }); }   // the automation fired twice for one tap
       await env.LIMITS.put(dk, "1", { expirationTtl: 90 });
       try {
-        const r = await ingestPay(fsStore(env), { amount, currency: b.currency, merchant, card: b.card || b.pass || "" });
+        const r = await ingestPay(fsStore(env), { amount, currency: b.currency, merchant, card: b.card || b.pass || b.Card || "" });
+        await trace({ result: r.result, body: raw.slice(0, 300) });
         if (r.result === "spend row" || /^combined/.test(r.result)) await push(env, "Logged " + rd(r.rdAmt) + " · " + r.merchant, CATL[r.cat] || "Other", APP + "#spend", "applepay-" + Date.now()).catch(() => 0);
         return new Response(JSON.stringify(r), { status: 200, headers: { "content-type": "application/json" } });
-      } catch (e) { await env.LIMITS.delete(dk).catch(() => 0); console.log("pay failed", String(e).slice(0, 200)); await push(env, "Couldn't log your Apple Pay tap", merchant + " · " + String(amount), APP + "#spend", "applepay-err").catch(() => 0); return new Response("error", { status: 503 }); }
+      } catch (e) { await env.LIMITS.delete(dk).catch(() => 0); console.log("pay failed", String(e).slice(0, 200)); await trace({ result: "error", err: String(e).slice(0, 200), body: raw.slice(0, 300) }); await push(env, "Couldn't log your Apple Pay tap", merchant + " · " + String(amount), APP + "#spend", "applepay-err").catch(() => 0); return new Response("error", { status: 503 }); }
     }
     if (req.method === "POST" && u.pathname === "/notify") {   // instant bank alert from pato-mail (shared key in KV, so only our own workers can use it)
       const key = await env.LIMITS.get("gm:notifykey");
